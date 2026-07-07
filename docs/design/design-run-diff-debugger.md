@@ -102,10 +102,11 @@ authoritative; where the decision trail below conflicts, THIS wins.
 - **C. Benchmark Mode A — REALITY-CORRECTED.** Who&When ships zero passing runs, so same-task
   Mode-A pairs are not constructible from it (notebook 001). Primary reproducible protocol =
   **controlled-injection localization** on real logs. **Mode A′ (cross-system pairs)** is proven
-  *constructible* (4 real Who&When-failure ↔ TapeAgents-success GAIA pairs built) but building
-  them exposed murky cross-system gold + short algo logs, so Mode A′ is a **research-grade
-  secondary**, not a v1 headline. Do not overclaim it. (See BENCHMARK.md for the governing
-  pre-registered protocol.)
+  constructible **at scale**: 126/128 Who&When GAIA failure logs pair with a public passing HAL
+  run (~450MB for 90% coverage; notebook 002). Scarcity is solved; the open problem is
+  gold-quality (cross-system references diverge from step 0, algo logs are short). So Mode A′ is
+  a **v0.2 co-primary target contingent on gold/metric design**, not a v1 headline — do not
+  overclaim step-exact on it. (See BENCHMARK.md for the governing pre-registered protocol.)
 
 ---
 

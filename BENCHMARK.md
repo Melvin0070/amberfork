@@ -52,11 +52,16 @@ overclaim. If Mode A can't be constructed for a benchmark, say so and report onl
 > the noise-free control (the aligner's value IS the non-determinism tolerance). Also: the
 > "first non-sync move" fork rule is empirically dead (0%) — use the resync/sustained rule.
 >
-> **Mode A′ (same day):** natural-failure run-vs-reference IS constructible as **cross-system**
-> pairs: Who&When's algorithm-generated logs carry genuine GAIA task UUIDs, and public
-> known-good runs on the same tasks exist (HAL traces, TapeAgents tapes, leaderboard
-> submissions — see Data & licensing). The reference comes from a *different* agent system —
-> disclose that; it stress-tests alignment and matches the real incident-postmortem case.
+> **Mode A′ (constructible at scale — measured 2026-07-08):** natural-failure run-vs-reference
+> pairs exist for **126 of 128 Who&When GAIA failure logs** (algo 96/98, hand 30/30): each pairs
+> with ≥1 public passing HAL run on the same GAIA task. Recipe: read per-task pass/fail from the
+> HAL leaderboard's inline JSON matrix (no download), then pull passing trajectories from HAL
+> trace zips (`agent-evals/hal_traces`, Fernet password `hal1234`, PBKDF2 480k iters) — one
+> 48.8MB o3-mini zip covers 54 tasks; ~450MB → 90%; ~2.9GB → all 106. The reference comes from a
+> *different* agent system (HAL Generalist / smolagents-ODR vs Magnetic-One/AG2) — **disclose the
+> cross-system nature**; it matches the incident-postmortem case but makes step-exact gold murky
+> (references diverge from step 0). Report windowed metrics; prefer long hand-crafted logs vs
+> Magnetic-One references. HAL zips: benchmark-use OK, do NOT redistribute (license unspecified).
 
 ## Metrics
 - **Step-level exact-match** — predicted fork step == gold decisive step (headline; vs 14.2% / ~11%).

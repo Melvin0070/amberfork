@@ -191,9 +191,19 @@ references) before it can headline. HAL-scale pair counts: research agent pendin
   (index-wise `zip_longest` + word highlight); no alignment, no fork detection — desyncs on any
   insertion. Cite as the motivation for alignment-based diffing.
 
-*HAL-scale pair count (Q3 continued):* research agent pending.
+*HAL-scale pair count (Q3 continued) — Mode A′ is constructible AT SCALE, cheaply.* The HAL
+leaderboard page (`hal.cs.princeton.edu/gaia`) embeds a per-task success matrix (165 GAIA tasks
+× 32 configs) as inline JSON — no big download needed to know who passed what. Result:
+**126 of 128 Who&When GAIA failure logs (algo 96/98, hand 30/30; 106/108 unique tasks)** have
+≥1 public passing HAL run. Trajectory cost: HAL zips are Fernet-encrypted with the public
+password `hal1234` (PBKDF2-HMAC-SHA256, 480k iters — replicated in ~15 lines); one 48.8MB
+o3-mini zip alone yields full step-by-step passing trajectories (grouped by GAIA task id) for
+54 tasks; **~450MB gets 90% coverage, ~2.9GB gets all 106.** Two tasks were solved by nobody
+(`whowhen_algo_9`, `whowhen_algo_63`). So the pair-*count* worry is gone; the *gold-quality*
+worry (cross-system references diverge from step 0; algo logs are short) is what keeps Mode A′
+from headlining, not scarcity.
 
-**Decisions (subject to the HAL count, which affects only benchmark scale, not the amendments).**
+**Decisions.**
 1. **Amendment A — fork criterion: ADOPT.** Empirically robust (resync ~0.5 vs first/positional
    0.0 across all 9 configs) and externally supported. Spec: "fork = first non-sync block the
    alignment does not recover from within k sync moves (default k=2, dev-calibrated)." Correct
@@ -204,6 +214,9 @@ references) before it can headline. HAL-scale pair counts: research agent pendin
    the "beat lexical on dev fixtures to earn default status" bar. ONNX/ort therefore leaves the
    *critical path* (T25 downgraded from gate to optional) but is NOT deleted.
 3. **Amendment C — benchmark protocol: ADOPT with a scope flag.** Controlled-injection is the
-   reproducible primary. Mode A′ is proven *constructible* (4 real pairs built) but building them
-   surfaced that cross-system gold is murky and algo logs are short — so Mode A′ is a
-   research-grade secondary needing gold/metric design, NOT a v1 headline. Do not overclaim it.
+   reproducible primary. Mode A′ is proven constructible **at scale** (126/128 GAIA failure logs
+   pairable with public HAL passing runs; ~450MB for 90%), so scarcity is not the blocker — but
+   building the first pairs surfaced that cross-system gold is murky (references legitimately
+   diverge from step 0) and algo logs are short. So Mode A′ is a real **co-primary target for
+   v0.2** contingent on gold/metric design (prefer long hand-crafted Who&When logs vs Magnetic-One
+   HAL references; report windowed metrics), NOT a v1 headline. Do not overclaim step-exact on it.
