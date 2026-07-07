@@ -18,5 +18,19 @@
       "Bash(gh run list:*)",
       "Bash(gh run view:*)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/session-context.sh\"",
+            "timeout": 15,
+            "statusMessage": "Loading agentdiff project state…"
+          }
+        ]
+      }
+    ]
   }
 }
