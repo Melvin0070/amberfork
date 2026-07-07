@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: spike smoke (aligner sanity, offline)
+        run: python3 spike/test_smoke.py
+      - name: rust checks (auto-armed once Cargo.toml exists)
+        run: |
+          if [ -f Cargo.toml ]; then
+            rustup toolchain install stable --profile minimal --component rustfmt,clippy
+            cargo fmt --all --check
+            cargo clippy --all-targets --workspace -- -D warnings
+            cargo test --workspace
+          else
+            echo "no Cargo.toml yet — rust checks skipped (this step arms itself when the workspace lands)"
+          fi

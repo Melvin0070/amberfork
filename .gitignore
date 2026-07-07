@@ -1,0 +1,18 @@
+# Rust
+target/
+
+# Spike: downloaded datasets stay out of the repo (licensing: see BENCHMARK.md).
+# spike/out/ results ARE committed (our numbers, tiny, referenced by docs/notebook.md).
+spike/data/
+spike/.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Local tool state
+.gstack/
+.claude/settings.local.json
+
+# OS
+.DS_Store
