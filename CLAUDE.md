@@ -1,9 +1,34 @@
 # agentdiff
 
 Local, all-Rust developer tool that diffs two AI-agent run trajectories, finds the fork
-point, and attributes the regression. Architecture is locked in `design-run-diff-debugger.md`
-(hybrid passive+record execution model, 13-crate workspace, explainable semantic move-typed
-alignment + counterfactual-causal attribution, embedded Leptos SVG/DOM web UI).
+point, and attributes the regression. Architecture is locked in
+`docs/design/design-run-diff-debugger.md` (hybrid passive+record execution model, 14-crate
+workspace, explainable semantic move-typed alignment + counterfactual-causal attribution,
+embedded Leptos SVG/DOM web UI). Positioning/personas: `docs/design/POSITIONING.md`.
+Benchmark protocol: `BENCHMARK.md`. Engineering notebook (spikes, measurements, dead ends):
+`docs/notebook.md`. Canonical plain-JSON trace input: `docs/trace-format.md`.
+
+## Operating manual (AI-native workflow)
+
+**State:** pre-v1. Tracker = GitHub issues + milestones (`gh issue list`). Decisions and
+measurements live in `docs/notebook.md` (append-only; every experiment gets an entry).
+Benchmark numbers are governed by BENCHMARK.md's pre-registered protocol — never publish a
+number outside it.
+
+**Verify before commit:** `python3 spike/test_smoke.py` (offline, <10s). Once the Rust
+workspace exists: `cargo fmt --all --check && cargo clippy --all-targets -- -D warnings &&
+cargo test --workspace`. CI runs exactly these; a red CI is a stop-the-line event.
+
+**Working rules:**
+- Walking-skeleton discipline: keep `adiff diff <bad> --against <good>` working end-to-end at
+  every commit; thicken vertical slices, never build horizontal layers ahead of need.
+- Planning freeze: no new root-level planning docs until v0.1 ships; new thinking goes to
+  `docs/notebook.md` or an issue.
+- `spike/` is throwaway Python — port its findings to Rust, never import its code.
+- Fork criterion (spike 001, empirical): "first non-sync block the alignment does not recover
+  from" (resync rule) — NOT "first non-sync move". Cost model starts lexical/tf-idf; embeddings
+  must beat lexical on dev fixtures to earn a place.
+- Commit style: short conventional one-liners (`feat:`, `fix:`, `bench:`, `docs:`, `chore:`).
 
 ## Design System
 Always read `DESIGN.md` before making any visual or UI decisions.
