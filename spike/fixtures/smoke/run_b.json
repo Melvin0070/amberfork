@@ -1,0 +1,63 @@
+{
+ "schema_version": "0.1",
+ "id": "smoke_ref",
+ "outcome": "pass",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "user",
+   "outputs": "Find the population of Metropolis in the 2020 census.",
+   "attrs": {}
+  },
+  {
+   "idx": 1,
+   "kind": "llm",
+   "name": "planner",
+   "outputs": "Plan: search census data, extract figure, verify with an official source, answer.",
+   "attrs": {}
+  },
+  {
+   "idx": 2,
+   "kind": "tool",
+   "name": "web.search",
+   "outputs": "q='Metropolis 2020 census population' -> 10 results, top: census.gov/metropolis",
+   "attrs": {}
+  },
+  {
+   "idx": 3,
+   "kind": "llm",
+   "name": "reader",
+   "outputs": "Extracted candidate figure 8,443,000 from result snippets.",
+   "attrs": {}
+  },
+  {
+   "idx": 4,
+   "kind": "llm",
+   "name": "planner",
+   "outputs": "Verify the figure against an official source before answering.",
+   "attrs": {}
+  },
+  {
+   "idx": 5,
+   "kind": "tool",
+   "name": "web.fetch",
+   "outputs": "url=census.gov/quickfacts/metropolis -> page fetched, 2020 population table present",
+   "attrs": {}
+  },
+  {
+   "idx": 6,
+   "kind": "llm",
+   "name": "reader",
+   "outputs": "Official table confirms 8,443,000 (2020 census).",
+   "attrs": {}
+  },
+  {
+   "idx": 7,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "The 2020 census population of Metropolis is 8,443,000.",
+   "attrs": {}
+  }
+ ]
+}

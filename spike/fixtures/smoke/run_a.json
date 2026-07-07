@@ -1,0 +1,70 @@
+{
+ "schema_version": "0.1",
+ "id": "smoke_fail",
+ "outcome": "fail",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "user",
+   "outputs": "Find the population of Metropolis in the 2020 census.",
+   "attrs": {}
+  },
+  {
+   "idx": 1,
+   "kind": "llm",
+   "name": "planner",
+   "outputs": "Plan: search for census data, pull the figure, verify against an official source, then answer.",
+   "attrs": {}
+  },
+  {
+   "idx": 2,
+   "kind": "tool",
+   "name": "web.search",
+   "outputs": "q='Metropolis 2020 census population' -> 0 results (rate limited)",
+   "attrs": {}
+  },
+  {
+   "idx": 3,
+   "kind": "tool",
+   "name": "web.search",
+   "outputs": "retry q='Metropolis census 2020' -> 9 results, top: census.gov/metropolis",
+   "attrs": {}
+  },
+  {
+   "idx": 4,
+   "kind": "llm",
+   "name": "reader",
+   "outputs": "Extracted candidate figure 8,443,000 from result snippets.",
+   "attrs": {}
+  },
+  {
+   "idx": 5,
+   "kind": "llm",
+   "name": "planner",
+   "outputs": "Verify the figure against an official source before answering.",
+   "attrs": {}
+  },
+  {
+   "idx": 6,
+   "kind": "tool",
+   "name": "web.fetch",
+   "outputs": "url=metro-facts.blogspot.com/population -> page fetched, blog post with estimates",
+   "attrs": {}
+  },
+  {
+   "idx": 7,
+   "kind": "llm",
+   "name": "reader",
+   "outputs": "Blog says the city has grown to about 9,100,000 people.",
+   "attrs": {}
+  },
+  {
+   "idx": 8,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "The 2020 census population of Metropolis is 9,100,000.",
+   "attrs": {}
+  }
+ ]
+}
