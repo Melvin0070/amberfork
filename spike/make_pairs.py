@@ -43,7 +43,7 @@ def reindex(steps):
     return steps
 
 
-def make_pair(x_run, y_run, rng, noise):
+def make_pair(x_run, y_run, rng, noise, reword_p=P_REWORD, retries=1):
     x, y = x_run["steps"], y_run["steps"]
     hi = min(len(x), len(y)) - GOLD_MARGIN
     g = rng.randrange(3, hi)
@@ -53,14 +53,15 @@ def make_pair(x_run, y_run, rng, noise):
     if noise:
         # rewording: benign content jitter on the shared prefix
         for s in a_steps[:g]:
-            if rng.random() < P_REWORD:
+            if rng.random() < reword_p:
                 s["outputs"] = reword(str(s.get("outputs", "")), rng)
-        # retry: duplicate one prefix step (structural offset)
-        r = rng.randrange(1, g)
-        dup = copy.deepcopy(a_steps[r])
-        dup["outputs"] = "(retry) " + reword(str(dup.get("outputs", "")), rng)
-        a_steps.insert(r + 1, dup)
-        gold += 1  # insertion is always before the fork
+        # retries: duplicate prefix steps (structural offsets)
+        for _ in range(retries):
+            r = rng.randrange(1, gold)
+            dup = copy.deepcopy(a_steps[r])
+            dup["outputs"] = "(retry) " + reword(str(dup.get("outputs", "")), rng)
+            a_steps.insert(r + 1, dup)
+            gold += 1  # each insertion lands before the fork
 
     a = {
         "schema_version": "0.1",

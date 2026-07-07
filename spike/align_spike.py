@@ -118,6 +118,31 @@ def try_embedder():
         return None
 
 
+def try_bge():
+    """The embedding model the design doc actually specs (BGE-small-en-v1.5 via fastembed/ONNX).
+    Returns sim fn or None."""
+    try:
+        from fastembed import TextEmbedding  # type: ignore
+
+        model = TextEmbedding("BAAI/bge-small-en-v1.5")
+        cache = {}
+
+        def emb(step):
+            k = id(step)
+            if k not in cache:
+                v = next(iter(model.embed([step["_text"]])))
+                n = float(v @ v) ** 0.5 or 1.0
+                cache[k] = v / n
+            return cache[k]
+
+        def sim(a, b):
+            return float(emb(a) @ emb(b))
+
+        return sim
+    except Exception:
+        return None
+
+
 # ---------- affine-gap Needleman-Wunsch (minimizing cost) ----------
 
 def _argmin3(m_val, ix_val, iy_val):
@@ -306,6 +331,9 @@ def main():
     sims = {"structural": sim_structural, "lexical": sim_lexical, "tfidf": tfidf.sim}
     if emb_sim:
         sims["embed"] = emb_sim
+    bge_sim = try_bge()
+    if bge_sim:
+        sims["bge"] = bge_sim
 
     golds = [p["gold"] for p in pairs]
     lens = [len(p["a"]["steps"]) for p in pairs]
