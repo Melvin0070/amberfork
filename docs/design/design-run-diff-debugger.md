@@ -54,9 +54,11 @@ cassettes, and a factorized, local-capable judge (semantic naming only, never lo
   dist matrix (T10) → community (T20) → FTO (T11).
 
 **Execution gates on the headline claim:** T4 (semantic alignment beats shallow positional on real
-fixtures) and T25 (ort/ONNX links across linux/darwin/windows × amd64/arm64). If T4 only ties, the
-framing degrades to craft-first (Pillar 2 leads) at no re-architecting cost. If T25 fails, "offline
-single binary" softens to "first run downloads a ~30-45MB model."
+fixtures) — **VALIDATED 2026-07-08**: alignment + resync rule ~0.50 exact vs 0.00 positional
+(spike 002; see Amendment 2026-07-08.A). T25 (ort/ONNX cross-platform link) is **no longer a
+gate** — per Amendment 2026-07-08.B the v1 cost model is lexical/tf-idf, so "offline single
+binary" holds without ONNX; embeddings (and T25) are optional, gated on beating lexical on dev
+fixtures.
 
 **Visual system:** DESIGN.md is the locked source of truth for all UI. North star: "sameness
 recedes, divergence glows." Amber `#FF7A1A` is the only divergence accent; red/green only inside
@@ -67,6 +69,43 @@ exists.
 proposed *deferring* counterfactual, cluster/consensus, and the judge to lead with craft. Per the
 2026-07-05 decision to keep full ambition, those capabilities are IN scope here (phased, not cut).
 This architecture doc is authoritative for scope.
+
+## Amendment 2026-07-08 — empirical (spikes 001–002; supersedes conflicting lines below)
+
+Founder-approved (issue #8) after two feasibility spikes on real Who&When trajectories +
+external prior-art verification (`docs/notebook.md` 001–002). These three lines are now
+authoritative; where the decision trail below conflicts, THIS wins.
+
+- **A. Fork criterion (the product's core output) — CHANGED.** The doc's "**fork = 1st non-sync
+  move**" (data-flow diagram line ~435; echoed in the design-review pane at ~1397) is
+  **empirically dead: 0.00 exact localization across all 9 sweep configs**, because benign
+  retries/rewordings are the first non-sync move. Replace with: **fork = the first non-sync
+  BLOCK the alignment does not recover from within k synchronous moves (resync-k, default k=2,
+  dev-calibrated).** This scored ~0.50 exact / ~0.75 ±1 vs 0.00 for both first-divergence and
+  positional. Externally supported: the counterfactual-recoverability standard of Who&When /
+  AgenTracer / CausalFlow / CHIEF, process-mining deviation-*pattern* aggregation (BPM'24), and
+  the X-drop heuristic (BLAST). The lone first-divergence definition (WebStep "bifurcation")
+  works only on clean discrete states and explicitly disclaims recovery. Update every doc that
+  cites "fork = 1st non-sync move," and correct spike 001's headline (70% was seed-42; the
+  across-seed mean is ~50% exact / ~75% ±1).
+
+- **B. Cost model + T25/ONNX gate — DEMOTED, not deleted.** On a fair test, BGE-small-en-v1.5 via
+  fastembed (the exact specced model+runtime) **tied** lexical/tf-idf for same-system alignment
+  (0.53 vs 0.50/0.53 exact) and did not justify its ONNX runtime + 30–45MB model. **v1 default =
+  lexical/tf-idf** (dependency-free, deterministic, seed-stable). Embeddings stay behind the
+  cost-model trait as a first-class experiment with a hard bar: **must beat lexical on dev
+  fixtures to become default.** Consequently **T25 (ort/ONNX cross-platform link) drops from an
+  execution GATE to an OPTIONAL de-risking task**; the "offline single binary" headline no longer
+  depends on it. (Embeddings showed a real edge on *cross-system* pairs — kept as the reason to
+  retain the trait, not to ship ONNX in v1.)
+
+- **C. Benchmark Mode A — REALITY-CORRECTED.** Who&When ships zero passing runs, so same-task
+  Mode-A pairs are not constructible from it (notebook 001). Primary reproducible protocol =
+  **controlled-injection localization** on real logs. **Mode A′ (cross-system pairs)** is proven
+  *constructible* (4 real Who&When-failure ↔ TapeAgents-success GAIA pairs built) but building
+  them exposed murky cross-system gold + short algo logs, so Mode A′ is a **research-grade
+  secondary**, not a v1 headline. Do not overclaim it. (See BENCHMARK.md for the governing
+  pre-registered protocol.)
 
 ---
 
@@ -455,6 +494,11 @@ OTLP recv        tolerant parser)        over the matrix                │  (ab
 > passive+record** data-flow — including `adiff-store`, `adiff-record`, `adiff-bench`, and the
 > Layout / SuccessPredicate / Counterfactual seams — is in **"## Architecture Completeness
 > Pass"** at the end of this doc.
+>
+> **Amendment 2026-07-08:** the diagram's `fork = 1st non-sync move (positional)` and
+> `embed … via ONNX` cells are BOTH superseded (see "## Amendment 2026-07-08" up top): fork =
+> first non-sync BLOCK the alignment does not recover from (resync-k); step similarity is
+> lexical/tf-idf by default, embeddings/ONNX optional and gated on beating lexical.
 
 ## Module / crate layout (Cargo workspace)
 

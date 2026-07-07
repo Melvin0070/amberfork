@@ -111,3 +111,99 @@ pre-registered protocol in BENCHMARK.md governs anything published.
 - **Decision 3 amended:** benchmark = controlled-injection (primary, fully reproducible) +
   Mode A′ cross-system natural pairs (co-primary target via HAL/TapeAgents) + self-generated
   references demoted to optional stretch.
+
+---
+
+## 002 · 2026-07-08 · Decision-grade evidence for the issue-#8 amendments
+
+Purpose: the founder delegated issue #8 ("adopt spike-001 amendments into the locked
+architecture doc") pending stronger evidence. This entry hardens or overturns each amendment
+before the doc is touched. Questions (pre-stated):
+1. **Fork rule robustness.** Does resync > first-divergence hold across seeds (42/43/44) and
+   noise levels (reword 0.2/0.4/0.6, retries 1/1/2)? How sensitive to the resync-k parameter
+   (k=1/2/3)?
+2. **The fair embeddings test.** Spike 001 used a weak static model. Does **BGE-small-en-v1.5
+   via fastembed** — the exact model+runtime the design doc specs — beat lexical on the same
+   pairs?
+3. **Mode A′ reality.** Build actual cross-system pairs (TapeAgents passing tape ↔ Who&When
+   failing log, same GAIA task) and measure. How many pairs are constructible from public
+   sources (HAL count via research agent)?
+4. **External legitimacy.** Do published definitions (agent failure-attribution 2025–26,
+   process-mining conformance, bioinformatics) support first-divergence or sustained-divergence?
+
+Method: `spike/robustness.py` (3×3 sweep, n=20/config, best-τ oracle reporting — method
+ceilings, labeled as such); `spike/make_realpairs.py` (4 real pairs found: all 8 published
+TapeAgents GAIA tapes match Who&When tasks; 4 are successes); two web-research agents (HAL
+per-task results; prior-art definitions).
+
+**Results.**
+
+*Q1 — the fork rule holds, decisively, and spike 001's headline gets an honest correction.*
+Across all 9 configs (3 seeds × 3 noise levels), best-τ **oracle** results (`spike/out/robustness/`):
+positional first-mismatch and NW+first-divergence score **0.00 exact in every single config** —
+even with the threshold chosen oracle-optimally. NW+resync-k2: **0.47–0.50 mean exact,
+0.72–0.85 mean ±1**, stable across noise levels. Honest correction: spike 001's "70% exact" was
+the seed-42 draw; the across-seed mean is **~0.50 exact / ~0.75 ±1** (lexical spread 0.25–0.70
+by seed). The effect that matters — resync vs first/positional — is **~0.5 vs 0.0** everywhere.
+k-sensitivity: k=1 collapses (0.05–0.07; one sync step forgives the true fork too), k=2 best,
+k=3 slightly worse (0.28–0.42). The recovery window is a real tunable: default k=2, calibrate
+on dev fixtures.
+
+*Q2 — the fair embeddings test changes the amendment's shape.* BGE-small-en-v1.5 via fastembed
+(the exact specced model+runtime), same-system base noise: **0.53 exact (0.50–0.55)** — a
+statistical TIE with lexical 0.50 (0.25–0.70) and tf-idf 0.53 (0.35–0.65), though notably more
+seed-stable. On the **real cross-system pairs** (Q3, n=4): embeddings are the only arms
+reaching 100% ±3 (lexical/tf-idf ~50% ±3; random 74% ±3 on these short runs — n=4, granularity
+0.25, treat as directional). Net: embeddings do NOT earn their dependency cost (ONNX runtime +
+30–45MB model) for same-system alignment, but show a real niche for cross-system alignment
+where surface vocabulary differs.
+
+*Q3 — Mode A′ pairs are real.* All 8 published TapeAgents GAIA tapes match Who&When tasks; the
+4 successful tapes became the first real failing↔passing pairs (`spike/make_realpairs.py`).
+Two validity caveats discovered by building them: (a) cross-system "gold" is murky — a
+reference from a different agent system legitimately diverges from step 0 (different rosters,
+different plan shapes), so the annotated mistake_step is a weaker target than in same-system
+pairs; (b) Who&When algo logs are short (7–10 steps), so ±3 windows cover most of the run.
+Mode A′ needs deliberate gold/metric design (e.g., longer hand-crafted logs vs Magnetic-One
+references) before it can headline. HAL-scale pair counts: research agent pending.
+
+*Q4 — external prior-art supports the direction and sharpens the novelty claim.*
+- **Fork rule.** Only ONE published work defines a two-run fork as first-divergence — WebStep
+  "bifurcation = last shared state before divergence" (arXiv 2606.15673) — and it works only on
+  clean discrete semantic states and *explicitly disclaims* recovery/sustained divergence. On
+  noisy free-text traces the dominant ground-truth standard is **counterfactual recoverability**:
+  Who&When ("earliest step whose correction alone makes the task succeed", 2505.00212),
+  AgenTracer (2509.03312), CausalFlow (2605.25338), CHIEF (2602.23701) all define the decisive
+  step by "the error is not recovered from" — the same intuition as our resync rule, computed by
+  re-simulation instead of alignment geometry. Process-mining independently moved from per-move
+  flags to segment/pattern-level deviations (BPM 2024, "Beyond Log and Model Moves"); "cut on
+  sustained score-drop, tolerate transient mismatch" is textbook **X-drop** (BLAST). So our
+  combination — two-run semantic alignment + sustained-divergence/resync on noisy agent text —
+  is novel and unclaimed, and the naive first-divergence rule is contraindicated by the field,
+  matching our ~0% measurement.
+- **Lexical vs embeddings.** BEIR (NeurIPS'21): BM25 is a strong zero-shot baseline dense
+  retrievers fail to beat out-of-domain; log-representation literature keeps token/template
+  methods competitive. BGE-small has a 512-token cap and known MTEB-rank-doesn't-transfer
+  behavior. Literature's remedy is *hybrid* (+2–5%), so "lexical beat generic embeddings here"
+  is well-supported but "embeddings never help" is not — our CLAUDE.md bar ("must beat lexical
+  on dev fixtures to earn a place") is exactly right.
+- **Tooling foil.** ServiceNow TapeAgents `tape_diff.py` compares two runs **positionally**
+  (index-wise `zip_longest` + word highlight); no alignment, no fork detection — desyncs on any
+  insertion. Cite as the motivation for alignment-based diffing.
+
+*HAL-scale pair count (Q3 continued):* research agent pending.
+
+**Decisions (subject to the HAL count, which affects only benchmark scale, not the amendments).**
+1. **Amendment A — fork criterion: ADOPT.** Empirically robust (resync ~0.5 vs first/positional
+   0.0 across all 9 configs) and externally supported. Spec: "fork = first non-sync block the
+   alignment does not recover from within k sync moves (default k=2, dev-calibrated)." Correct
+   spike 001's 70%→~50% across-seed exact in all docs.
+2. **Amendment B — cost model: ADOPT, REFINED.** v1 ships lexical/tf-idf as the default
+   (dependency-free, deterministic, seed-stable, ties BGE same-system). Keep embeddings behind
+   the cost-model trait as a first-class experiment — they showed a real cross-system edge — with
+   the "beat lexical on dev fixtures to earn default status" bar. ONNX/ort therefore leaves the
+   *critical path* (T25 downgraded from gate to optional) but is NOT deleted.
+3. **Amendment C — benchmark protocol: ADOPT with a scope flag.** Controlled-injection is the
+   reproducible primary. Mode A′ is proven *constructible* (4 real pairs built) but building them
+   surfaced that cross-system gold is murky and algo logs are short — so Mode A′ is a
+   research-grade secondary needing gold/metric design, NOT a v1 headline. Do not overclaim it.
