@@ -3,6 +3,14 @@
 version = 4
 
 [[package]]
+name = "amberfork-align"
+version = "0.1.0"
+dependencies = [
+ "amberfork-model",
+ "serde_json",
+]
+
+[[package]]
 name = "amberfork-ingest"
 version = "0.1.0"
 dependencies = [

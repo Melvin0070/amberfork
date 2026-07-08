@@ -220,3 +220,40 @@ from headlining, not scarcity.
    diverge from step 0) and algo logs are short. So Mode A′ is a real **co-primary target for
    v0.2** contingent on gold/metric design (prefer long hand-crafted Who&When logs vs Magnetic-One
    HAL references; report windowed metrics), NOT a v1 headline. Do not overclaim step-exact on it.
+
+## 003 · 2026-07-08 · Cost-model port (issue #3): token-level gestalt replaces char-level difflib
+
+**Question (pre-stated).** The spike's `sim_lexical` is Python `difflib.SequenceMatcher.ratio()`
+over 600-char-capped step text. `difflib` silently applies *autojunk* (elements above 1%
+frequency are junked whenever the second sequence is ≥200 chars) — a stdlib quirk we do not want
+to re-implement in Rust. Does a cleanly-portable variant match or beat the spike numbers on the
+dev fixtures, per issue #3's bar ("must match or beat … 70% exact @ n=20 noise")?
+
+**Method.** Re-scored two candidates through the existing spike harness (no Rust yet):
+(a) char-level Ratcliff–Obershelp with autojunk OFF (the naive faithful port), and
+(b) token-level Ratcliff–Obershelp over `[a-z0-9]+` lowercase tokens (same tokenizer as the
+tf-idf arm). Fixtures: committed smoke pair; committed seed-42 n=20 noise chimera pairs
+(resync-k2); then the full spike-002 robustness protocol (seeds 42/43/44 × noise low/base/high,
+N=20, best-τ oracle) for (b) vs the recorded char-difflib arm.
+
+**Results.**
+- Smoke: fork=6 preserved by both candidates; positional control still misled. Token-RO holds
+  fork=6 across τ=0.2–0.4.
+- Committed n=20 noise: char-RO-nojunk **0.65** exact — *below* the recorded 0.70, i.e. the
+  autojunk quirk was load-bearing for the naive port. Token-RO **0.75** exact, ±1 0.90, flat
+  across τ=0.2–0.4.
+- Robustness (exact mean over seeds, best-τ): token-RO vs char-difflib — low **0.48/0.47**,
+  base **0.52/0.50**, high **0.52/0.48**; token-RO's worst seed ≥ char's at every level
+  (high: min 0.45 vs 0.40). Best τ mostly 0.2.
+
+**Decision.** v1 `LexicalCost` (crate `amberfork-align`) = token-level gestalt ratio over
+lowercase ASCII-alphanumeric token sequences of 600-char-capped `"name: outputs"` text.
+Equal-or-better on every dev-fixture condition, no stdlib quirks to port, ~36× fewer DP cells
+than char-level, and the tokenizer is shared with a future tf-idf model. Bit-parity with Python
+is explicitly a non-goal; the committed fixtures + these numbers are the contract.
+
+**Caveats.** Dev-fixture scale only (chimera pairs, N=20 per cell); best-τ numbers are method
+ceilings as in 002; benchmark claims remain governed by BENCHMARK.md. The chimera pairs are NOT
+committed (`spike/data/` untracked) — the Rust crate can regression-test against
+`spike/fixtures/smoke` only, so whether to commit a regenerated dev-pair set for the ≥0.70
+parity check is an open decision for a later slice of #3.
