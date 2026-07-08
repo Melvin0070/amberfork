@@ -16,5 +16,7 @@
 //! job; this crate is a function from two runs to a diff.
 
 mod cost;
+mod nw;
 
 pub use cost::{CostModel, LexicalCost};
+pub use nw::{AlignParams, align};
