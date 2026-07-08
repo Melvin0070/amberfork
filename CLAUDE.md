@@ -38,6 +38,17 @@ the Rust workspace exists: `cargo fmt --all --check && cargo clippy --all-target
 push only when the user asks.
 
 **Engineering standards (build like a senior engineer):**
+- **Optimize for the artifact, not the effort.** When weighing a technical decision, give
+  essentially NO weight to development cost — solo-dev hours, time pressure, how hard something is
+  to write. Weigh quality, simplicity, modern industry practice, robustness, scalability, and
+  long-term maintainability. Choose the correct, durable design over the expedient one: the proper
+  abstraction, the right data structure, the type-safe API, the honest error path — even when a
+  shortcut would ship sooner. "It's just a solo project / that's faster to hack" is not a valid
+  reason to pick the lesser option. (This governs HOW each slice is built, not WHICH slices exist:
+  it is NOT license to gold-plate, add speculative features, or break the vertical-slice/scope
+  discipline below. Simplicity is itself a quality goal — pick the highest-quality *simplest*
+  implementation of the thing actually needed now, and reach for complexity only when the problem
+  genuinely demands it.)
 - **Vertical slices, not horizontal layers.** Keep `adiff diff <bad> --against <good>` working
   end-to-end at every commit; thicken the slice. Never build a crate ahead of the need it serves.
 - **Contracts first.** The `DiffResult`/trace-format schema is the seam every consumer reads;
