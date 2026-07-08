@@ -2,8 +2,9 @@
 //! pair — benign retry offset + reworded prefix, then a genuinely wrong `web.fetch` — the
 //! Rust pipeline must localize the fork at the gold step, exactly as `spike/test_smoke.py`
 //! does. The gold value lives in `pair_smoke.json`, the same manifest the spike reads.
+//! Everything goes through [`amberfork_align::diff`], the seam the CLI will call.
 
-use amberfork_align::{AlignParams, ForkParams, LexicalCost, align, find_fork};
+use amberfork_align::{DiffParams, LexicalCost, diff};
 use amberfork_model::Run;
 use std::path::{Path, PathBuf};
 
@@ -29,13 +30,9 @@ fn smoke_pair_forks_at_gold_step() {
     let reference = load_run(&dir.join(manifest["reference"].as_str().unwrap()));
     let failing = load_run(&dir.join(manifest["failing"].as_str().unwrap()));
 
-    let moves = align(
-        &reference.steps,
-        &failing.steps,
-        &LexicalCost,
-        &AlignParams::default(),
-    );
-    let fork = find_fork(&moves, &ForkParams::default())
+    let result = diff(&reference, &failing, &LexicalCost, &DiffParams::default());
+    let fork = result
+        .fork
         .expect("smoke pair must fork — it encodes a real divergence");
 
     assert_eq!(
@@ -47,6 +44,7 @@ fn smoke_pair_forks_at_gold_step() {
         fork.confidence > 0.0,
         "a real divergence must not read as a marginal call"
     );
+    assert_eq!(result.runs.b.id, failing.id);
 }
 
 #[test]
@@ -54,16 +52,7 @@ fn smoke_runs_self_align_clean() {
     // Same data, converged case: each run against itself.
     for file in ["run_a.json", "run_b.json"] {
         let run = load_run(&fixture_dir().join(file));
-        let moves = align(
-            &run.steps,
-            &run.steps,
-            &LexicalCost,
-            &AlignParams::default(),
-        );
-        assert_eq!(
-            find_fork(&moves, &ForkParams::default()),
-            None,
-            "{file} vs itself must converge"
-        );
+        let result = diff(&run, &run, &LexicalCost, &DiffParams::default());
+        assert_eq!(result.fork, None, "{file} vs itself must converge");
     }
 }

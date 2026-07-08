@@ -257,3 +257,22 @@ ceilings as in 002; benchmark claims remain governed by BENCHMARK.md. The chimer
 committed (`spike/data/` untracked) — the Rust crate can regression-test against
 `spike/fixtures/smoke` only, so whether to commit a regenerated dev-pair set for the ≥0.70
 parity check is an open decision for a later slice of #3.
+
+## 004 · 2026-07-08 · Issue #3 done: Rust engine meets fixture parity
+
+The `amberfork-align` port (four reviewed slices: `CostModel`/`LexicalCost`, Gotoh affine-gap
+NW, resync-k fork rule, public `diff()`) hits the issue's pre-stated bar, measured on the
+actual Rust binary via `cargo test --test chimera_parity -- --ignored`:
+
+- **Chimera seed-42 n=20 noise: 15/20 exact (0.75)** vs the spike bar 14/20 (0.70) — and equal
+  to the Python token-RO validation in 003, i.e. no fidelity lost in the port.
+- Smoke fixture: fork localized at gold step 6 through `diff()` (the CLI seam); both fixture
+  runs converge against themselves.
+- Property guard: proptest self-align invariant (any run vs itself ⇒ all-sync, no fork, even
+  at τ=0) in CI.
+
+The chimera test stays `#[ignore]`d in CI: the pairs derive from Who&When logs whose questions
+originate in gated GAIA (redistribution unresolved — notebook 001 / T30), so they are not
+committed; the test regenerates locally via `spike/make_pairs.py`. Scoring uses the spike's
+failing-side prediction rule (b-side index of the fork move, or consumed-count for model-only
+forks) — that logic lives in the test for now and moves into `amberfork-bench` with issue #6.
