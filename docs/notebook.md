@@ -276,3 +276,25 @@ originate in gated GAIA (redistribution unresolved — notebook 001 / T30), so t
 committed; the test regenerates locally via `spike/make_pairs.py`. Scoring uses the spike's
 failing-side prediction rule (b-side index of the fork move, or consumed-count for model-only
 forks) — that logic lives in the test for now and moves into `amberfork-bench` with issue #6.
+
+## 005 · 2026-07-09 · Fork confidence is informative (designed formula validated)
+
+**Question.** The engine's fork confidence — `(evidence − τ)/(1 − τ)`, evidence = fork move's
+sync cost or a gap move's distance-to-closest-counterpart — was designed for explainability,
+not measured. Before any surface renders it as a trust meter: do high-confidence forks hit the
+gold step more often?
+
+**Method.** `spike/confidence_check.py`: replicates the Rust pipeline (token gestalt, τ=0.3,
+k=2 — parity per 004) over the robustness protocol's 9 cells (seeds 42/43/44 × noise
+low/base/high, N=20 each). 180 forked pairs, 0 no-fork. Metric: confidence vs exact-hit.
+
+**Results.** Overall exact 87/180 (0.48, matching 002/003 means). Mean confidence of hits
+**0.476** vs misses **0.141**; point-biserial r(confidence, hit) = **0.563**. Terciles:
+low [0.00..0.00] → **0/60**; mid (0.00..0.44] → 41/60 (0.68); high (0.44..0.98] → 46/60
+(**0.77**). The zero bucket is exactly the designed "weak call" case (evidence ≤ τ: marginal
+sync or a gapped step with a sync-grade twin) — and it is never exactly right on these pairs.
+
+**Decision.** Confidence may be displayed as a meter (CLI #4, UI later) — it separates hits
+from misses. Render `confidence ≈ 0` as an explicit "marginal call / weak fork" state, not a
+small bar: on dev pairs it means "do not trust the exact step". Directional caveat: dev
+chimera pairs only, one cost model, τ fixed at 0.3; recalibrate before any benchmark claim.
