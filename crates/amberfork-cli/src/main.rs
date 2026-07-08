@@ -71,7 +71,13 @@ fn run_diff(args: &DiffArgs) -> Result<ExitCode, IngestError> {
     let good = amberfork_ingest::load_file(&args.against)?;
     let bad = amberfork_ingest::load_file(&args.bad)?;
 
-    let mut result = diff(&good.run, &bad.run, &LexicalCost, &DiffParams::default());
+    // The single decision point for engine params: anything user-supplied (future --tau
+    // style flags) routes through validated() here and maps ParamError to exit 2 — the
+    // engine itself never asserts. Defaults are valid by unit test in amberfork-align.
+    let params = DiffParams::default()
+        .validated()
+        .expect("dev-calibrated defaults satisfy their own invariants");
+    let mut result = diff(&good.run, &bad.run, &LexicalCost, &params);
     result.warnings = merged_warnings(good.warnings, bad.warnings);
 
     if args.json {
