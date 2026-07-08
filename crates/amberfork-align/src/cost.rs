@@ -32,6 +32,11 @@ pub trait CostModel {
 /// outputs only, not inputs, because outputs carry the step's observable behavior while inputs
 /// largely echo the previous step's outputs (spike 001 design, kept). The text is tokenized to
 /// lowercase ASCII-alphanumeric runs, the same vocabulary a future tf-idf model would use.
+///
+/// Perf note: tokens are recomputed on every call, so a full alignment does O(n·m)
+/// tokenizations where O(n+m) would do. Deliberate at current scale (the gestalt DP dominates;
+/// the whole dev set diffs in ~2s unoptimized) — this is the first place to cache if very long
+/// runs ever feel slow.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct LexicalCost;
 

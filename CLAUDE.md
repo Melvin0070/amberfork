@@ -35,7 +35,10 @@ by BENCHMARK.md's pre-registered protocol — never publish a number outside it.
 **Verify before commit (non-negotiable):** `python3 spike/test_smoke.py` (offline, <10s). Once
 the Rust workspace exists: `cargo fmt --all --check && cargo clippy --all-targets -- -D warnings
 && cargo test --workspace`. CI runs exactly these; a red CI is a stop-the-line event. Commit or
-push only when the user asks.
+push only when the user asks. **When `amberfork-align` internals change**, additionally run the
+quantitative gate CI cannot see (pairs are uncommitted GAIA-derived data, notebook 001/T30):
+`cargo test -p amberfork-align --test chimera_parity -- --ignored` (regenerate pairs first via
+`python3 spike/make_pairs.py` if `spike/data/pairs_noise` is missing).
 
 **Engineering standards (build like a senior engineer):**
 - **Optimize for the artifact, not the effort.** When weighing a technical decision, give
