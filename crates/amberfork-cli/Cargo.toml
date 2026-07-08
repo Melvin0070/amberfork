@@ -1,0 +1,28 @@
+[package]
+name = "amberfork-cli"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "The amberfork command: diff two agent-run traces and render where they fork."
+
+# The crate is amberfork-cli (crate names stay namespaced), but the installed command is
+# the product name.
+[[bin]]
+name = "amberfork"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+amberfork-align = { workspace = true }
+amberfork-ingest = { workspace = true }
+amberfork-model = { workspace = true }
+clap = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = { workspace = true }

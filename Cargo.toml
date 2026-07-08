@@ -1,6 +1,11 @@
 [workspace]
 resolver = "3"
-members = ["crates/amberfork-model", "crates/amberfork-ingest", "crates/amberfork-align"]
+members = [
+    "crates/amberfork-model",
+    "crates/amberfork-ingest",
+    "crates/amberfork-align",
+    "crates/amberfork-cli",
+]
 
 [workspace.package]
 edition = "2024"
@@ -14,9 +19,13 @@ rust-version = "1.85"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 proptest = "1"
+clap = { version = "4", features = ["derive"] }
+assert_cmd = "2"
+predicates = "3"
 # Internal crates share versions here too, so a path move is a one-line change.
 amberfork-model = { path = "crates/amberfork-model" }
 amberfork-align = { path = "crates/amberfork-align" }
+amberfork-ingest = { path = "crates/amberfork-ingest" }
 
 # Deny-by-default lints applied workspace-wide. CI runs `clippy --all-targets -- -D warnings`;
 # keeping the intent here documents that a warning is a stop-the-line event.
