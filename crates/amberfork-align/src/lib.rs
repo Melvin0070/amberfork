@@ -16,7 +16,9 @@
 //! job; this crate is a function from two runs to a diff.
 
 mod cost;
+mod fork;
 mod nw;
 
 pub use cost::{CostModel, LexicalCost};
+pub use fork::{ForkParams, find_fork};
 pub use nw::{AlignParams, align};
