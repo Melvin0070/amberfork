@@ -1,6 +1,6 @@
 //! Round-trip and invariant tests for the `DiffResult` output schema.
 
-use adiff_model::{
+use amberfork_model::{
     Attribution, AttributionMode, Counterfactual, DiffResult, FieldDiff, FieldDiffKind, Fork, Meta,
     Move, MoveKind, Outcome, Recovery, RunPair, RunRef, Source, Warning, WarningCode,
 };

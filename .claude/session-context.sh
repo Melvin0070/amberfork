@@ -24,7 +24,7 @@ notebook="$(grep -E '^## ' docs/notebook.md 2>/dev/null | tail -n 1)"
 
 # Build the context with printf (no heredoc, no stray quotes) into one string.
 ctx="$(
-  printf '%s\n' "agentdiff — session-start state (HEAD $head)"
+  printf '%s\n' "amberfork — session-start state (HEAD $head)"
   printf '%s\n' "Branch: $branch"
   printf '%s\n' "Working tree:" "$status"
   printf '%s\n' "Recent commits:" "$recent"
@@ -33,12 +33,12 @@ ctx="$(
   printf '%s\n' ""
   printf '%s\n' "Working agreement (full version in CLAUDE.md Operating manual):"
   printf '%s\n' "- Verify before commit: python3 spike/test_smoke.py (+ cargo fmt/clippy/test once Cargo.toml exists). Red CI stops the line."
-  printf '%s\n' "- Walking skeleton: keep adiff diff working end-to-end; thicken vertical slices, no horizontal layers ahead of need."
+  printf '%s\n' "- Walking skeleton: keep amberfork diff working end-to-end; thicken vertical slices, no horizontal layers ahead of need."
   printf '%s\n' "- Every experiment gets a docs/notebook.md entry. Benchmark numbers follow the pre-registered protocol in BENCHMARK.md."
   printf '%s\n' "- Fork rule = first non-sync BLOCK that never re-syncs (resync-k). Cost model = lexical/tf-idf; embeddings must beat it on dev to earn a place."
 )"
 
 jq -n --arg ctx "$ctx" \
   '{hookSpecificOutput: {hookEventName: "SessionStart", additionalContext: $ctx}}' \
-  2>/dev/null || printf '%s' '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"agentdiff session start (context script degraded; see CLAUDE.md)"}}'
+  2>/dev/null || printf '%s' '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"amberfork session start (context script degraded; see CLAUDE.md)"}}'
 exit 0

@@ -2,9 +2,9 @@
 //! string-encoded 0-indexed `mistake_step` (and its unusable variants), and the canonical
 //! guard — a converted run must re-load cleanly through the plain-JSON loader.
 
-use adiff_ingest::from_json_str;
-use adiff_ingest::whowhen::{self, GoldStep, Split};
-use adiff_model::{Outcome, Payload, StepKind};
+use amberfork_ingest::from_json_str;
+use amberfork_ingest::whowhen::{self, GoldStep, Split};
+use amberfork_model::{Outcome, Payload, StepKind};
 
 /// Hand-Crafted split: history entries carry `role` (not `name`), the reference answer is under
 /// the `groundtruth` key, and one agent name has the `Websurfer` casing drift.

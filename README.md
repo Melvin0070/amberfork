@@ -1,8 +1,8 @@
-# agentdiff
+# amberfork
 
-[![ci](https://github.com/Melvin0070/agentdiff/actions/workflows/ci.yml/badge.svg)](https://github.com/Melvin0070/agentdiff/actions/workflows/ci.yml)
+[![ci](https://github.com/Melvin0070/amberfork/actions/workflows/ci.yml/badge.svg)](https://github.com/Melvin0070/amberfork/actions/workflows/ci.yml)
 
-Point at a failing AI-agent run. agentdiff aligns it against a known-good run, finds the
+Point at a failing AI-agent run. amberfork aligns it against a known-good run, finds the
 exact step where they diverged, and shows what changed. Local, deterministic, no account.
 
 > **Status: pre-v1 — no usable binary yet.** Current work is a feasibility spike on the two
@@ -12,10 +12,10 @@ exact step where they diverged, and shows what changed. Local, deterministic, no
 
 ## What v1 will do
 
-- `adiff diff <bad> --against <good>` — align two agent-run traces (OTel GenAI /
+- `amberfork diff <bad> --against <good>` — align two agent-run traces (OTel GenAI /
   OpenInference / [plain JSON](docs/trace-format.md)), light the fork up in the terminal,
   `--json` for machines.
-- `cargo run -p adiff-bench` — reproduce the scoring table offline, deterministically, no
+- `cargo run -p amberfork-bench` — reproduce the scoring table offline, deterministically, no
   API key. Protocol: [`BENCHMARK.md`](BENCHMARK.md).
 
 ## What exists today

@@ -1,12 +1,12 @@
-//! Canonical trajectory model for agentdiff — the frozen contract every crate reads.
+//! Canonical trajectory model for amberfork — the frozen contract every crate reads.
 //!
 //! A [`Run`] is one agent trajectory: an ordered list of [`Step`]s plus optional DAG
-//! [`Edge`]s. This is the *input* seam — `adiff-ingest` produces it from OTel/plain JSON,
-//! and `adiff-align` consumes it. It mirrors the public wire format documented in
+//! [`Edge`]s. This is the *input* seam — `amberfork-ingest` produces it from OTel/plain JSON,
+//! and `amberfork-align` consumes it. It mirrors the public wire format documented in
 //! `docs/trace-format.md`; once this crate exists, these types are the source of truth and
 //! that document tracks them.
 //!
-//! [`DiffResult`] is the matching *output* seam: what `adiff-align` fills in and the CLI's
+//! [`DiffResult`] is the matching *output* seam: what `amberfork-align` fills in and the CLI's
 //! `--json` and the Leptos UI render.
 //!
 //! Design rules baked into the types (see `docs/design/design-run-diff-debugger.md`):
@@ -58,7 +58,7 @@ impl Default for SchemaVersion {
 }
 
 /// Run-level verdict, if known. Deliberately supplied by the user (an assertion, a label, a
-/// gold answer) — agentdiff never derives it from trace/span status.
+/// gold answer) — amberfork never derives it from trace/span status.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Outcome {
@@ -68,7 +68,7 @@ pub enum Outcome {
 }
 
 /// The structural class of a step. Part of the identity the aligner keys on. This is the
-/// canonical, post-normalization vocabulary: `adiff-ingest` is responsible for mapping the
+/// canonical, post-normalization vocabulary: `amberfork-ingest` is responsible for mapping the
 /// many framework-specific span kinds down onto these four.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -129,7 +129,7 @@ pub struct Step {
     pub parent_idx: Option<usize>,
 }
 
-/// One agent trajectory: the unit `adiff diff` aligns against another.
+/// One agent trajectory: the unit `amberfork diff` aligns against another.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Run {
     /// Version of the contract this run was written against.

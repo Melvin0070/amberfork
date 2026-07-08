@@ -3,16 +3,16 @@
 version = 4
 
 [[package]]
-name = "adiff-ingest"
+name = "amberfork-ingest"
 version = "0.1.0"
 dependencies = [
- "adiff-model",
+ "amberfork-model",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "adiff-model"
+name = "amberfork-model"
 version = "0.1.0"
 dependencies = [
  "serde",

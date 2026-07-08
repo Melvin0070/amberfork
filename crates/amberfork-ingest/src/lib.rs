@@ -1,9 +1,9 @@
-//! Forgiving loader from plain-JSON trace files into the canonical [`adiff_model::Run`].
+//! Forgiving loader from plain-JSON trace files into the canonical [`amberfork_model::Run`].
 //!
 //! This is the input edge of the pipeline. `docs/trace-format.md` promises a *deliberately
 //! forgiving* format: a step's unknown fields are preserved into `attrs` and surfaced as an
 //! "unmapped attributes" warning rather than failing the parse. That forgiveness lives here,
-//! not in the frozen model — [`adiff_model::Step`] is strict and cannot hold unknown fields,
+//! not in the frozen model — [`amberfork_model::Step`] is strict and cannot hold unknown fields,
 //! so this crate deserializes into private `Raw*` mirror types that *capture* the extras
 //! (`#[serde(flatten)]`) and folds them into `attrs` during conversion.
 //!
@@ -15,7 +15,7 @@
 //! Sync by design: this is `std::fs` only. `tokio` is reserved for the genuine async I/O edge
 //! (record/serve), so the ingest path stays a pure, testable function.
 
-use adiff_model::{
+use amberfork_model::{
     Edge, Outcome, Payload, Run, SchemaVersion, Step, StepKind, Warning, WarningCode,
 };
 use serde::Deserialize;
@@ -28,7 +28,7 @@ use std::path::{Path, PathBuf};
 pub mod whowhen;
 
 /// A loaded run together with any non-fatal diagnostics raised while normalizing it. The
-/// warnings flow onward into [`adiff_model::DiffResult::warnings`].
+/// warnings flow onward into [`amberfork_model::DiffResult::warnings`].
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ingested {
     pub run: Run,

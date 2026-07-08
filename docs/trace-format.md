@@ -1,10 +1,10 @@
 # Canonical trace format (plain JSON) — v0.1
 
 > The zero-dependency way in. OTel GenAI / OpenInference ingestion is the framework-agnostic
-> path, but nobody should need OTel to try agentdiff: any log that can be massaged into this
-> shape (a run = an ordered list of steps) is a valid input to `adiff diff a.json b.json`.
+> path, but nobody should need OTel to try amberfork: any log that can be massaged into this
+> shape (a run = an ordered list of steps) is a valid input to `amberfork diff a.json b.json`.
 > This file is the public contract for that shape. It mirrors the canonical model in
-> `docs/design/design-run-diff-debugger.md` (`Run`/`Step`); once `adiff-model` exists, the Rust
+> `docs/design/design-run-diff-debugger.md` (`Run`/`Step`); once `amberfork-model` exists, the Rust
 > types are the source of truth and this document tracks them.
 
 ## Shape

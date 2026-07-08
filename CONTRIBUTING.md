@@ -1,4 +1,4 @@
-# Contributing to agentdiff
+# Contributing to amberfork
 
 This repo is built AI-native (primarily via Claude Code) to senior-engineer standards. The rules
 that keep every session consistent live in [`CLAUDE.md`](CLAUDE.md) ("Operating manual"); this
@@ -11,7 +11,7 @@ file is the human-readable summary of the same working agreement.
 2. **Read the governing doc.** Each issue points at the section of `docs/design/`, `BENCHMARK.md`,
    or `DESIGN.md` that specifies it. The design corpus is authoritative; where it conflicts, the
    dated "Amendment" / "Current State" blocks win.
-3. **Build a vertical slice.** Keep `adiff diff <bad> --against <good>` working end-to-end. Don't
+3. **Build a vertical slice.** Keep `amberfork diff <bad> --against <good>` working end-to-end. Don't
    build a crate ahead of the need it serves.
 4. **Verify before commit.** `python3 spike/test_smoke.py` today; `cargo fmt --all --check &&
    cargo clippy --all-targets -- -D warnings && cargo test --workspace` once the workspace exists.

@@ -1,4 +1,4 @@
-//! Adapter from Who&When failure logs into the canonical [`adiff_model::Run`] plus its gold
+//! Adapter from Who&When failure logs into the canonical [`amberfork_model::Run`] plus its gold
 //! label. Ported from `spike/convert_whowhen.py` (Who&When = `ag2ai/Agents_Failure_Attribution`,
 //! MIT).
 //!
@@ -22,7 +22,7 @@
 //! agent name `Websurfer` drifts from the canonical `WebSurfer`.
 
 use crate::IngestError;
-use adiff_model::{Outcome, Payload, Run, SchemaVersion, Step, StepKind};
+use amberfork_model::{Outcome, Payload, Run, SchemaVersion, Step, StepKind};
 use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::path::Path;

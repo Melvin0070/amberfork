@@ -1,7 +1,7 @@
 //! Loader behavior tests: clean parse, the two forgiving warnings, strictness, and I/O errors.
 
-use adiff_ingest::{IngestError, from_json_str, load_file};
-use adiff_model::{Outcome, Payload, StepKind, WarningCode};
+use amberfork_ingest::{IngestError, from_json_str, load_file};
+use amberfork_model::{Outcome, Payload, StepKind, WarningCode};
 
 const MINIMAL_TRACE: &str = r#"{
   "schema_version": "0.1",

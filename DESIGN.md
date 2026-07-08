@@ -1,4 +1,4 @@
-# Design System — agentdiff
+# Design System — amberfork
 
 > Source of truth for all visual and UI decisions. Created by /design-consultation, 2026-06-30.
 > Grounded in research (Linear, Vercel, Raycast, difftastic, Warp, Railway) and the locked
@@ -111,7 +111,7 @@ Example (unified layout, grayscale-safe):
 
 ## Single-run view (gateway, not a viewer product)
 
-`adiff open <run>` renders ONE run on the same spine — gray, no diff panes, no amber. Its only
+`amberfork open <run>` renders ONE run on the same spine — gray, no diff panes, no amber. Its only
 job is killing the dead-end first-contact state ("need a second run to diff") so the tool is
 worth opening before the day a regression hands you a pair. Scope-capped by design: no search, no
 filtering, no analytics — the diff view minus run B, nothing more. (Single-run *viewing* is

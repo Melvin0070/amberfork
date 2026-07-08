@@ -27,7 +27,7 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/session-context.sh\"",
             "timeout": 15,
-            "statusMessage": "Loading agentdiff project state…"
+            "statusMessage": "Loading amberfork project state…"
           }
         ]
       }

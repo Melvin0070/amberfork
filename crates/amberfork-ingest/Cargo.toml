@@ -1,16 +1,16 @@
 [package]
-name = "adiff-ingest"
+name = "amberfork-ingest"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Forgiving loader from plain-JSON trace files into the canonical adiff-model Run."
+description = "Forgiving loader from plain-JSON trace files into the canonical amberfork-model Run."
 
 [lints]
 workspace = true
 
 [dependencies]
-adiff-model = { workspace = true }
+amberfork-model = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

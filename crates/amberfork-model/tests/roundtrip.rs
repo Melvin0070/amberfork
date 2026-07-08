@@ -3,7 +3,7 @@
 //! The canonical example there *is* the spec, so it is embedded verbatim below. If the model
 //! ever disagrees with the documented format, these tests go red first.
 
-use adiff_model::{Edge, Outcome, Payload, Run, SchemaVersion, Step, StepKind};
+use amberfork_model::{Edge, Outcome, Payload, Run, SchemaVersion, Step, StepKind};
 
 /// The exact canonical example from `docs/trace-format.md` (## Shape).
 const TRACE_FORMAT_EXAMPLE: &str = r#"{

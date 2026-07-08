@@ -1,12 +1,12 @@
-# BENCHMARK.md — agentdiff proof-of-skill benchmark plan
+# BENCHMARK.md — amberfork proof-of-skill benchmark plan
 
 > Created 2026-07-02. The standout artifact for the Phase-1 build (see the "Strategic Reframe — v2"
-> section of `design-run-diff-debugger.md`). A public benchmark number is what separates agentdiff
+> section of `design-run-diff-debugger.md`). A public benchmark number is what separates amberfork
 > from the ~6 shallow "agent diff" tools already in the lane. Build the engine to the point it runs
 > this, then publish the table.
 
 ## Purpose
-Prove — with a number, not a claim — that agentdiff's **explainable, local, non-LLM** alignment
+Prove — with a number, not a claim — that amberfork's **explainable, local, non-LLM** alignment
 localizes the failure/divergence step **at least as well as the LLM-judge attribution the SOTA
 reports**, and better than the shallow positional diffs the competitors ship.
 
@@ -19,7 +19,7 @@ reports**, and better than the shallow positional diffs the competitors ship.
 | *(optional)* **TraceElephant** | full-trace vs output-only attribution | full traces improve attribution **up to +76%** over output-only | arXiv |
 
 ## The evaluation crux (state this honestly in the writeup)
-These are **single-trajectory** failure-attribution benchmarks; agentdiff is a **cross-run aligner**.
+These are **single-trajectory** failure-attribution benchmarks; amberfork is a **cross-run aligner**.
 That mismatch is the intellectually interesting part — turn it into the scientific claim under test:
 
 > *Aligning a failing run against a known-good reference run localizes the decisive error step at
@@ -35,7 +35,7 @@ Two evaluation modes:
   deterministic — capture N, take consensus, report variance).
 - **Mode B — run-vs-consensus (fallback; exercises the cluster path).** When no clean single
   reference exists, align the failing trace against a **consensus of N successful runs** — tests
-  `adiff-align`'s gated cluster→consensus path.
+  `amberfork-align`'s gated cluster→consensus path.
 
 Both modes are a **novel evaluation protocol** and a **threat to validity**. Document them; do not
 overclaim. If Mode A can't be constructed for a benchmark, say so and report only what it supports.
@@ -69,23 +69,23 @@ overclaim. If Mode A can't be constructed for a benchmark, say so and report onl
   can legitimately differ by a step.
 - **Agent-level** accuracy (vs 53.5%).
 - **Calibration** — does the alignment confidence score correlate with correctness?
-- Report all of the above for agentdiff **and every baseline**, on the same fixtures.
+- Report all of the above for amberfork **and every baseline**, on the same fixtures.
 
 ## Baselines (must run alongside — the number is meaningless without them)
 1. **Random step** (floor).
 2. **Shallow positional diff** — align by index, first mismatch. This is the agent-replay/agx
    approach and the control that demonstrates *why* semantic move-typed alignment is better.
 3. **All-in-one LLM judge** and **step-by-step LLM judge** (the Who&When methods) — via the optional
-   `adiff-judge` provider trait, network-gated and cassette-cached for reproducibility.
+   `amberfork-judge` provider trait, network-gated and cassette-cached for reproducibility.
 
 ## Harness design (Rust; fits the workspace)
-- New crate **`adiff-bench`** (or an `xtask bench` subcommand): fixture loader → convert to canonical
+- New crate **`amberfork-bench`** (or an `xtask bench` subcommand): fixture loader → convert to canonical
   `Run`/`Step` → run aligner + baselines → score → emit markdown table + JSON.
-- **Converters:** TRAIL is OpenInference/OTel → reuse `adiff-ingest` directly. Who&When ships its own
-  JSON logs → write a dedicated converter; segment into runs via `adiff-store`.
+- **Converters:** TRAIL is OpenInference/OTel → reuse `amberfork-ingest` directly. Who&When ships its own
+  JSON logs → write a dedicated converter; segment into runs via `amberfork-store`.
 - **Determinism:** the core method is offline (local ONNX embeddings, no network). The LLM-judge
   baseline is opt-in and **cassette-cached**, so the published table is reproducible without live API.
-- **Output:** `cargo run -p adiff-bench` prints the results table; snapshot with `insta`; paste into
+- **Output:** `cargo run -p amberfork-bench` prints the results table; snapshot with `insta`; paste into
   README.
 
 ## Data & licensing (RESOLVED 2026-07-07 — notebook 001 addendum)
@@ -114,11 +114,11 @@ overclaim. If Mode A can't be constructed for a benchmark, say so and report onl
    separately (do not silently mix content-present and content-absent cases).
 
 ## Definition of done
-- `cargo run -p adiff-bench` reproduces the results table, **offline** for the core method.
-- README shows: agentdiff (Mode A) vs shallow-diff vs LLM-judge vs random — step-level + windowed +
+- `cargo run -p amberfork-bench` reproduces the results table, **offline** for the core method.
+- README shows: amberfork (Mode A) vs shallow-diff vs LLM-judge vs random — step-level + windowed +
   agent-level — on Who&When and TRAIL.
 - An honest **"where it fails"** paragraph.
-- Paired with the `adiff demo` <90s GIF on one vivid divergent trace (the amber-fork moment).
+- Paired with the `amberfork demo` <90s GIF on one vivid divergent trace (the amber-fork moment).
 
 ## Pre-registered protocol (added 2026-07-07; binding before any number is published)
 

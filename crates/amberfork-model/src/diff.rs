@@ -1,7 +1,7 @@
 //! The `DiffResult` output schema — the public `--json` contract and the shape the UI reads.
 //!
 //! Where [`crate`]'s [`Run`](crate::Run) is the *input* seam, `DiffResult` is the *output*
-//! seam: what `adiff-align` fills in and `adiff-cli` / the Leptos UI render. It is transcribed
+//! seam: what `amberfork-align` fills in and `amberfork-cli` / the Leptos UI render. It is transcribed
 //! from the design doc's result schema (`docs/design/design-run-diff-debugger.md`, "Result
 //! schema").
 //!
@@ -218,7 +218,7 @@ pub enum WarningCode {
 }
 
 /// Which execution path produced the inputs: passively aligning existing traces, or an
-/// `adiff record` capture session.
+/// `amberfork record` capture session.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Source {

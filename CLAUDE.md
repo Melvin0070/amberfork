@@ -1,4 +1,4 @@
-# agentdiff
+# amberfork
 
 Local, all-Rust developer tool that diffs two AI-agent run trajectories, finds the fork
 point, and attributes the regression. Architecture is locked in
@@ -49,7 +49,7 @@ push only when the user asks.
   discipline below. Simplicity is itself a quality goal — pick the highest-quality *simplest*
   implementation of the thing actually needed now, and reach for complexity only when the problem
   genuinely demands it.)
-- **Vertical slices, not horizontal layers.** Keep `adiff diff <bad> --against <good>` working
+- **Vertical slices, not horizontal layers.** Keep `amberfork diff <bad> --against <good>` working
   end-to-end at every commit; thicken the slice. Never build a crate ahead of the need it serves.
 - **Contracts first.** The `DiffResult`/trace-format schema is the seam every consumer reads;
   change it deliberately, version it (`schema_version`), never fork it per-consumer.

@@ -1,4 +1,4 @@
-# agentdiff: Market, Use Cases, User Stories, and Positioning
+# amberfork: Market, Use Cases, User Stories, and Positioning
 
 > Companion to `design-run-diff-debugger.md` (architecture) and `DESIGN.md` (visual system).
 > This doc answers "who is this for, what is it good for, why would a strong engineer respect
@@ -8,7 +8,7 @@
 > kept.
 >
 > **Grounding.** Competitive facts here come from the project's research passes (memory:
-> `agentdiff-competitive-demand-research`, `agentdiff-replay-benchmark-landscape`) and hands-on
+> `amberfork-competitive-demand-research`, `amberfork-replay-benchmark-landscape`) and hands-on
 > checks of LangSmith, Langfuse, Neatlogs, and Laminar. Where a claim is a judgment call, it
 > says so. Numbers are directional, not a TAM exercise.
 
@@ -16,11 +16,11 @@
 
 ## 0. One-liner
 
-**Point at a failing agent run. agentdiff aligns it against a known-good run, ignites the exact
+**Point at a failing agent run. amberfork aligns it against a known-good run, ignites the exact
 step where they diverged in amber, and tells you what changed. Local, all-Rust, deterministic,
 no account.**
 
-The mental model to teach: *observability shows you what one run did; agentdiff shows you what
+The mental model to teach: *observability shows you what one run did; amberfork shows you what
 **changed** between two.*
 
 ---
@@ -59,9 +59,9 @@ feature." That is an honest headwind for *adoption*, and it is exactly why this 
 **respect, not adoption**. An empty corner in a crowded room is a great place to plant a flag for a
 portfolio artifact and a risky place to build a business.
 
-### What this means for agentdiff's goal
+### What this means for amberfork's goal
 
-agentdiff is a **portfolio / craft artifact** whose stated goal is to earn strong-engineer respect;
+amberfork is a **portfolio / craft artifact** whose stated goal is to earn strong-engineer respect;
 organic usage is a welcome byproduct, not the bar. So the "market" that matters most is not a user
 base, it is the **audience of strong engineers** who read the repo, the benchmark, and the writeup.
 The tool must be genuinely useful (the use cases below are real), but its success is measured in
@@ -104,7 +104,7 @@ Expects:   single binary, point at traces they already have, opinionated default
            they can see in one look and copy text out of.
 ```
 
-This persona is real but secondary. The install path is kept warm (`adiff demo`, `adiff record`),
+This persona is real but secondary. The install path is kept warm (`amberfork demo`, `amberfork record`),
 not optimized as the growth engine.
 
 ### Tertiary (occasional): the Team Lead / Reviewer
@@ -116,7 +116,7 @@ where two runs split, instead of narrating 80 log lines in Slack.
 
 ## 3. Use cases (the core)
 
-Structure for each: **the situation → what they do today → what agentdiff does → why it wins →
+Structure for each: **the situation → what they do today → what amberfork does → why it wins →
 strength + honest constraint.** Rated by how solid the use case is for *this* tool.
 
 ### UC1 — Regression after a change  ★★★★★ (the strongest; build the spine here)
@@ -130,7 +130,7 @@ them by hand looking for where they split. On a 40-step multi-agent run, the vis
 often 15 steps *downstream* of the real cause, so you scroll, guess, and re-read. AGDebugger's CHI'25
 study found devs read 50-100+ messages by hand for exactly this.
 
-**What agentdiff does.** `adiff diff <bad> --against <good>`. It aligns the two trajectories with the
+**What amberfork does.** `amberfork diff <bad> --against <good>`. It aligns the two trajectories with the
 move-typed aligner, computes the first decisive divergence, and lights it in amber: *step 12, the
 model called `search` with a truncated query; every downstream step cascaded from there.* The
 field-level diff shows the exact argument that changed. Optionally, counterfactual re-execution
@@ -154,7 +154,7 @@ validated complaints in the space (Ouyang TOSEM'24: 47-76% of agent runs non-rep
 **Today.** You rerun until you catch a failure, then eyeball the pass and the fail side by side, or
 you give up and add a retry.
 
-**What agentdiff does.** Diff the passing run against the failing run. The fork shows the first
+**What amberfork does.** Diff the passing run against the failing run. The fork shows the first
 step where the two stochastic paths meaningfully diverged (for example: the model sampled a
 different tool call, or a tool returned different data that sent the run down a bad branch).
 
@@ -163,7 +163,7 @@ different tool call, or a tool returned different data that sent the run down a 
 
 **Strength + constraint.** Very real, very common. Constraint: because the divergence is stochastic
 rather than caused by a code change, the "fix" is often "add a guard / reduce variance" rather than
-"revert a change." agentdiff localizes; it doesn't always prescribe. And replay can reproduce the
+"revert a change." amberfork localizes; it doesn't always prescribe. And replay can reproduce the
 recorded path but not re-derive the divergent one (stated openly: fork-finding is semantic, not
 byte-exact).
 
@@ -175,7 +175,7 @@ PR changes the agent's behavior on that task, and to tell you *where*.
 **Today.** You assert on final output (brittle, misses mid-trajectory drift) or you eyeball traces
 manually after the fact.
 
-**What agentdiff does.** `adiff diff --gate <new> --against <golden>` runs in CI, exits non-zero when
+**What amberfork does.** `amberfork diff --gate <new> --against <golden>` runs in CI, exits non-zero when
 a decisive divergence is attributed, and emits `--json` naming the fork step and the changed field.
 A green badge means "behavior matches the reference trajectory," machine-checkable.
 
@@ -192,11 +192,11 @@ as task success.
 **Situation.** You have two prompt versions (or two model configs) for the same task. Evals tell you
 A scores higher than B. They don't tell you *why the behavior differs*.
 
-**What agentdiff does.** Diff a representative A run against a B run. The fork + field diff show the
+**What amberfork does.** Diff a representative A run against a B run. The fork + field diff show the
 *behavioral* divergence (A took the reasoning path that called the calculator; B hallucinated the
 number), which complements the eval score's "A > B" with "here's the mechanism."
 
-**Why it wins.** Eval platforms give you the *what* (scores); agentdiff gives you the *why* (the
+**Why it wins.** Eval platforms give you the *what* (scores); amberfork gives you the *why* (the
 decision point that produced the score gap).
 
 **Strength + constraint.** Genuinely useful, but weaker than UC1-3: you have to pick "representative"
@@ -208,7 +208,7 @@ harness, not standalone.
 **Situation.** A production agent failed on a customer task. You have the failing trace and a
 successful trace of the same or a similar task.
 
-**What agentdiff does.** Diff the incident trace against the known-good trace to localize the
+**What amberfork does.** Diff the incident trace against the known-good trace to localize the
 decisive step, then use the field diff and (if recorded) counterfactual re-run to confirm cause for
 the write-up.
 
@@ -217,13 +217,13 @@ fork, here's the changed field, here's the counterfactual that confirms it."
 
 **Strength + constraint.** Real, but depends on having a comparable good trace on hand, and prod
 traces often lack captured content (OTel content capture is opt-in). The tool degrades honestly to a
-structural-only diff with a "run under `adiff record` to capture arguments" nudge.
+structural-only diff with a "run under `amberfork record` to capture arguments" nudge.
 
 ### UC6 — Explaining agent behavior to a teammate  ★★☆☆☆
 
 **Situation.** You need to show a colleague *where* two runs diverged without narrating 80 log lines.
 
-**What agentdiff does.** The amber-fork view is a shareable, selectable, screenshot-able artifact:
+**What amberfork does.** The amber-fork view is a shareable, selectable, screenshot-able artifact:
 "look, they were identical through step 11, then this happened."
 
 **Strength + constraint.** A nice byproduct of the craft, not a reason anyone installs the tool.
@@ -260,7 +260,7 @@ so the value is visible, not abstract.
 
 **Narrative.** Priya swaps her agent's model to save 40% on cost. The nightly eval drops from 92% to
 71% on the "refund-triage" task. She has last week's passing trace and today's failing trace. She
-runs `adiff diff today.otlp --against lastweek.otlp`. The amber fork lands on step 18: the new model
+runs `amberfork diff today.otlp --against lastweek.otlp`. The amber fork lands on step 18: the new model
 called `lookup_order` with the customer's *name* instead of the *order id*, because it summarized the
 context differently three steps earlier. The field diff shows `order_id: "..." → name: "..."`. She
 adds one line to the tool's arg description, re-runs, eval back to 91%. Total time: under ten minutes.
@@ -273,7 +273,7 @@ The old workflow was "reran it a few times, read a lot of logs, guessed."
 > blind retry.
 
 **Narrative.** Dana's research agent fails ~1 in 4 runs with no code change. She captures one pass and
-one fail. `adiff diff fail.otlp --against pass.otlp` shows the two runs identical through step 9, then
+one fail. `amberfork diff fail.otlp --against pass.otlp` shows the two runs identical through step 9, then
 forking at step 10: the failing run's retrieval returned 3 documents, the passing run's returned 5,
 and the model, given fewer docs, skipped a verification tool. The fix isn't a retry; it's pinning the
 retrieval `k` and adding a guard. She only knew *where* to look because the fork was localized.
@@ -285,7 +285,7 @@ retrieval `k` and adding a guard. She only knew *where* to look because the fork
 > get caught in review, not in production.
 
 **Narrative.** Sam commits a golden trace for the "invoice-parse" task and adds
-`adiff diff --gate $CANDIDATE --against golden.otlp` to the GitHub Action. A teammate's PR tweaks a
+`amberfork diff --gate $CANDIDATE --against golden.otlp` to the GitHub Action. A teammate's PR tweaks a
 prompt; CI goes red with `fork at step 7: tool 'extract_total' args changed (currency field dropped)`.
 The teammate sees exactly what their prompt change did to behavior, fixes it, CI goes green. No one had
 to read a trace by hand.
@@ -298,9 +298,9 @@ to read a trace by hand.
 
 **Narrative.** Marcus lands on the repo. First screen: a one-liner and a GIF of an amber fork igniting
 on a real divergent run in under 90 seconds. He gets it instantly. He scrolls to the benchmark table:
-agentdiff vs shallow-positional vs random on Who&When and TRAIL, with an honest "here's where it ties,
+amberfork vs shallow-positional vs random on Who&When and TRAIL, with an honest "here's where it ties,
 here's where it loses" row and a plain caveat that the two-run aligner is handed a known-good
-reference the single-trajectory baselines were not. He runs `cargo run -p adiff-bench`; the table
+reference the single-trajectory baselines were not. He runs `cargo run -p amberfork-bench`; the table
 prints offline, no API key. He skims `crates/`: `align`, `attrib`, `bench`, clear names, tests
 present. Five minutes in he stars it and posts "finally someone did the two-sequence alignment
 properly, and it's honest about the privileged-reference caveat." He is the market.
@@ -313,7 +313,7 @@ properly, and it's honest about the privileged-reference caveat." He is the mark
 **Narrative.** Raj's eval says prompt A beats prompt B by 8 points. He diffs a B run against an A run.
 They match until step 5, where A's phrasing led the model to call the calculator and B's led it to
 estimate. Now Raj knows the score gap is "tool use vs guessing," not noise, and he ports A's phrasing
-into B. The eval gave him the *what*; agentdiff gave him the *why*.
+into B. The eval gave him the *what*; amberfork gave him the *why*.
 
 ### US6 — The incident review (UC5)
 
@@ -323,7 +323,7 @@ into B. The eval gave him the *what*; agentdiff gave him the *why*.
 
 **Narrative.** A customer's onboarding agent failed. Lena diffs the incident trace against a known-good
 onboarding run. The fork is at step 22 (a tool timeout cascaded into a wrong branch). Because the good
-run was recorded under `adiff record`, she re-executes the sub-trajectory from step 22 with the timeout
+run was recorded under `amberfork record`, she re-executes the sub-trajectory from step 22 with the timeout
 removed; the run recovers. Her post-mortem says "confirmed cause: step 22 timeout, verified by
 counterfactual re-run," not "we think it was the timeout."
 
@@ -363,7 +363,7 @@ Aimed at the primary persona. Each is a thing the evaluator *sees* and reads as 
    That verifiable asymmetry is more impressive to a skeptic than a contestable "beats SOTA," and it
    doubles as the answer to "why not just use an LLM?"
 
-5. **Reproducible in one offline command.** `cargo run -p adiff-bench` prints the scoring table with no
+5. **Reproducible in one offline command.** `cargo run -p amberfork-bench` prints the scoring table with no
    API key, no network, cross-platform in CI with a green badge. The skeptic can *verify*, which is the
    difference between "impressive" and "asserted."
 
@@ -389,7 +389,7 @@ Aimed at the primary persona. Each is a thing the evaluator *sees* and reads as 
 
 | Tool | Category | Local / offline | Two-run **semantic** alignment | **Automated** fork localization | Deterministic (non-LLM) core | Open source | Primary audience |
 |------|----------|:---:|:---:|:---:|:---:|:---:|------|
-| **agentdiff** | run-diff debugger | **yes** | **yes** | **yes** | **yes** | **yes** | strong engineers / agent builders |
+| **amberfork** | run-diff debugger | **yes** | **yes** | **yes** | **yes** | **yes** | strong engineers / agent builders |
 | LangSmith | observability + eval | no (cloud) | no (side-by-side, manual) | no | no (LLM assist: Polly) | no | LangChain teams |
 | Langfuse | observability + eval | yes (self-host) | no (trace tree; manual causal) | no | no | yes | LLM eng teams |
 | Arize Phoenix | observability + eval | yes (local-first) | no | no | no | yes | LLM eng teams |
@@ -402,7 +402,7 @@ Aimed at the primary persona. Each is a thing the evaluator *sees* and reads as 
 ### How it's SIMILAR (the shared ground)
 
 - **Same problem space as the observability tools:** debugging agents, inspecting step-by-step
-  trajectories, catching regressions. agentdiff reads the same OTel/OpenInference traces they do.
+  trajectories, catching regressions. amberfork reads the same OTel/OpenInference traces they do.
 - **Same "compare runs" intent as LangSmith/Langfuse:** the desire to look at two runs and understand
   the difference. They ship a *side-by-side* version of this.
 - **Same diffing UX lineage as difftastic/delta:** structural, legible, "you see the change." That's a
@@ -412,28 +412,28 @@ Aimed at the primary persona. Each is a thing the evaluator *sees* and reads as 
 
 1. **Automated semantic alignment vs manual eyeballing.** LangSmith and Langfuse show you two trees and
    leave *you* to find the divergence (Langfuse's own docs: "multi-step causal analysis across agent
-   turns is manual"). agentdiff *computes* the alignment and the fork. That is the core capability none
+   turns is manual"). amberfork *computes* the alignment and the fork. That is the core capability none
    of them have.
 2. **Deterministic + explainable vs LLM-in-the-loop.** Neatlogs' "ask it to investigate" and LangSmith's
-   Polly hand the trace to an LLM and get a probabilistic guess. agentdiff's core is a deterministic
+   Polly hand the trace to an LLM and get a probabilistic guess. amberfork's core is a deterministic
    algorithm you can reproduce and explain step by step. (An optional local judge does *semantic naming
    only*, never localization.)
 3. **Local / offline / no account vs cloud SDK-to-dashboard.** Neatlogs, LangSmith, and Laminar send your
-   traces to a hosted service. agentdiff is a single local binary; nothing leaves your machine.
+   traces to a hosted service. amberfork is a single local binary; nothing leaves your machine.
 4. **Two-run fork attribution vs single-run inspection or metric dashboards.** Everyone else does
    single-run trace views (plus "compare experiments" dashboards that are metric/score-level, not
    trajectory alignment). The run-vs-run *watershed* is the thing.
-5. **Craft artifact vs product/SaaS.** The others optimize adoption funnels; agentdiff optimizes
+5. **Craft artifact vs product/SaaS.** The others optimize adoption funnels; amberfork optimizes
    legibility, reproducibility, and taste for an audience that reads code and UI, not pricing pages.
 
 ### The sharpest objection, and the answer
 
 > "Isn't this just LangSmith's compare view plus Polly? Or just asking an LLM to diff two traces?"
 
-**No, and here's the one-liner:** LangSmith shows you two trees and an LLM's *guess*; agentdiff
+**No, and here's the one-liner:** LangSmith shows you two trees and an LLM's *guess*; amberfork
 *computes* the divergence with a deterministic, explainable aligner, locally, with no key, and can
 *confirm* the cause by counterfactual re-execution. The LLM version is non-deterministic, cloud-bound,
-and unverifiable; agentdiff is reproducible and legible. And the automated fork is a real capability the
+and unverifiable; amberfork is reproducible and legible. And the automated fork is a real capability the
 LLM-diff and the side-by-side view both leave as manual work. (Honest caveat kept: on very short runs,
 "just read them" wins, and that's in the README.)
 
@@ -470,7 +470,7 @@ LLM-diff and the side-by-side view both leave as manual work. (Honest caveat kep
 
 - **README hero:** "Point at a failing agent run. See exactly where it diverged from a known-good run,
   and what changed. Local, deterministic, no account."
-- **Mental-model teacher:** "Observability shows you what happened. agentdiff shows you what *changed*."
+- **Mental-model teacher:** "Observability shows you what happened. amberfork shows you what *changed*."
 - **The intuition pump (use once, not as the headline):** "Like `git bisect`, but for agent runs."
 - **The depth claim (for the writeup):** "A move-typed sequence aligner that localizes the decisive step
   in a regression as well as an LLM judge, but locally, explainably, and reproducibly without a key."

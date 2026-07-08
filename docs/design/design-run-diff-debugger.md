@@ -1,6 +1,6 @@
-# agentdiff: Architecture and Design (authoritative, reconciled 2026-07-05)
+# amberfork: Architecture and Design (authoritative, reconciled 2026-07-05)
 
-> Single source of truth for building agentdiff. This document accreted across five review
+> Single source of truth for building amberfork. This document accreted across five review
 > passes and preserves the full decision trail below. **Read the Current State block first;
 > where any later section conflicts with it, the Current State block wins.** Full ambition is
 > kept: nothing is cut for scope, and the "phases" are build ORDER, not a smaller product.
@@ -12,10 +12,10 @@ Passes folded in: office-hours (2026-06-27), eng-review (2026-06-30), strategic 
 Everything below this block is the decision trail. **Where an earlier section conflicts with
 this block, this block is authoritative.**
 
-**What it is.** agentdiff: a local, all-Rust tool that takes two AI-agent run trajectories,
+**What it is.** amberfork: a local, all-Rust tool that takes two AI-agent run trajectories,
 aligns them with an explainable move-typed affine-gap aligner, ignites the fork point in amber,
 and attributes the regression. Hybrid execution: a PASSIVE path (align any two existing OTel
-traces) and a RECORD path (`adiff record` wraps an agent under a capture proxy for full-content
+traces) and a RECORD path (`amberfork record` wraps an agent under a capture proxy for full-content
 cassettes and counterfactual re-execution).
 
 **Goal.** Earn strong-engineer respect. Organic usage is a welcome byproduct, not the bar.
@@ -23,7 +23,7 @@ Primary persona is the skeptical senior engineer judging the repo/benchmark/writ
 minutes, not the person installing it (do not degrade the install path either).
 
 **Success = two equal, independent belief pillars** (neither alone can sink or carry the project):
-1. **Credibility.** `cargo run -p adiff-bench` reproduces the scoring table offline,
+1. **Credibility.** `cargo run -p amberfork-bench` reproduces the scoring table offline,
    deterministically, no API key. The headline claim is the defensible ASYMMETRY ("localizes the
    decisive error step as well as an LLM judge, but locally, explainably, deterministically, and
    reproducibly without a network or key"), stated WITH the honest privileged-reference caveat (a
@@ -37,10 +37,10 @@ minutes, not the person installing it (do not degrade the install path either).
 debugger content is prompt/arg/error text that must be selectable, copyable, and accessible). Any
 "wgpu" in the sections below is stale and superseded by this line.
 
-**Workspace: 14 crates + `ui/`** (full roster in "## Module / crate layout"): adiff-model,
-adiff-core, adiff-store, adiff-ingest, adiff-embed, adiff-align (moat), adiff-bench (payoff),
-adiff-cli, adiff-replay, adiff-record, adiff-attrib (moat), adiff-judge, adiff-layout,
-adiff-server, plus `ui/`. Full feature set kept: move-typed alignment, field-level diff,
+**Workspace: 14 crates + `ui/`** (full roster in "## Module / crate layout"): amberfork-model,
+amberfork-core, amberfork-store, amberfork-ingest, amberfork-embed, amberfork-align (moat), amberfork-bench (payoff),
+amberfork-cli, amberfork-replay, amberfork-record, amberfork-attrib (moat), amberfork-judge, amberfork-layout,
+amberfork-server, plus `ui/`. Full feature set kept: move-typed alignment, field-level diff,
 counterfactual-causal attribution, cluster-to-consensus (gated on a corpus), replay/record
 cassettes, and a factorized, local-capable judge (semantic naming only, never localization).
 
@@ -492,7 +492,7 @@ OTLP recv        tolerant parser)        over the matrix                │  (ab
 
 > **Completeness Pass (2026-07-03):** the diagram above shows the PASSIVE path only, and its
 > `wgpu DAG` label predates the DOM+SVG decision (wgpu dropped). The authoritative **hybrid
-> passive+record** data-flow — including `adiff-store`, `adiff-record`, `adiff-bench`, and the
+> passive+record** data-flow — including `amberfork-store`, `amberfork-record`, `amberfork-bench`, and the
 > Layout / SuccessPredicate / Counterfactual seams — is in **"## Architecture Completeness
 > Pass"** at the end of this doc.
 >
@@ -504,22 +504,22 @@ OTLP recv        tolerant parser)        over the matrix                │  (ab
 ## Module / crate layout (Cargo workspace)
 
 ```
-agentdiff/                      LANE tokio? PHASE  role
+amberfork/                      LANE tokio? PHASE  role
 ├── crates/
-│   ├── adiff-model     A   no    1    canonical typed-DAG (Run,Step,Edge) + DiffResult + SuccessPredicate/Verdict
-│   ├── adiff-core      A   no    1    pipeline wiring + serde result schema (result-schema owner)
-│   ├── adiff-store     A   no    1    segment OTLP→runs, persist, list, pick A=good/B=bad, pair
-│   ├── adiff-ingest    A   yes   1    OTLP parse + multi-namespace normalizer + unmapped report
-│   ├── adiff-embed     B   no    1    fastembed-rs wrapper + content-hash embedding cache
-│   ├── adiff-align     C   no    1    cost model + move-typed aligner + gated consensus       ← moat
-│   ├── adiff-bench     H   no    1    fixtures + baselines + scorer + benchmark table          ← payoff
-│   ├── adiff-cli       G   yes   1    headless CLI (demo/diff/record/ls/open; --json/--gate)
-│   ├── adiff-replay    D   yes  1(t)  VCR cassette: boundary full-input capture + re-exec
-│   ├── adiff-record    D   yes  1(t)  record-mode proxy/shim: full-content capture + predicate hook
-│   ├── adiff-attrib    F   no    2    ddmin/HDD + counterfactual orchestration                 ← moat
-│   ├── adiff-judge     E   yes   2    provider trait + reqwest/SSE + GPA rubric (naming; bench baseline)
-│   ├── adiff-layout    G   no    2    server-side DAG layout → separate Layout schema
-│   └── adiff-server    G   yes   2    axum + rust-embed (serves WASM + result API)
+│   ├── amberfork-model     A   no    1    canonical typed-DAG (Run,Step,Edge) + DiffResult + SuccessPredicate/Verdict
+│   ├── amberfork-core      A   no    1    pipeline wiring + serde result schema (result-schema owner)
+│   ├── amberfork-store     A   no    1    segment OTLP→runs, persist, list, pick A=good/B=bad, pair
+│   ├── amberfork-ingest    A   yes   1    OTLP parse + multi-namespace normalizer + unmapped report
+│   ├── amberfork-embed     B   no    1    fastembed-rs wrapper + content-hash embedding cache
+│   ├── amberfork-align     C   no    1    cost model + move-typed aligner + gated consensus       ← moat
+│   ├── amberfork-bench     H   no    1    fixtures + baselines + scorer + benchmark table          ← payoff
+│   ├── amberfork-cli       G   yes   1    headless CLI (demo/diff/record/ls/open; --json/--gate)
+│   ├── amberfork-replay    D   yes  1(t)  VCR cassette: boundary full-input capture + re-exec
+│   ├── amberfork-record    D   yes  1(t)  record-mode proxy/shim: full-content capture + predicate hook
+│   ├── amberfork-attrib    F   no    2    ddmin/HDD + counterfactual orchestration                 ← moat
+│   ├── amberfork-judge     E   yes   2    provider trait + reqwest/SSE + GPA rubric (naming; bench baseline)
+│   ├── amberfork-layout    G   no    2    server-side DAG layout → separate Layout schema
+│   └── amberfork-server    G   yes   2    axum + rust-embed (serves WASM + result API)
 └── ui/                 G   —     2    Leptos WASM + SVG/DOM renderer (wgpu dropped)
 
 # 14 crates + ui. LANE H = new bench lane. PHASE per Strategic Reframe v2; 1(t) = Phase-1 tail.
@@ -558,15 +558,15 @@ relative step-level accuracy). Virtualize clock/seed/tool-state; normalize tool-
 ## Test & eval strategy (engine target: 100% branch)
 
 ```
-adiff-ingest:  golden multi-framework OTLP fixtures → insta snapshot; both namespaces map
+amberfork-ingest:  golden multi-framework OTLP fixtures → insta snapshot; both namespaces map
                identically; content-absent → metadata-only + banner; malformed → warn no panic
-adiff-align:   proptest invariant (self-align = all synchronous); known divergent pairs →
+amberfork-align:   proptest invariant (self-align = all synchronous); known divergent pairs →
                expected fork; benign reorder → consensus → NO false fork; long trace → banded+timeout
-adiff-attrib:  ddmin minimal-cause on synthetic divergence; counterfactual oracle stable via
+amberfork-attrib:  ddmin minimal-cause on synthetic divergence; counterfactual oracle stable via
                recorded cassette; inconclusive → "unverified cause" (never fabricate)
-adiff-judge:   [EVAL not unit] vs TRAIL / Who&When fixtures; track localize/detect rate +
+amberfork-judge:   [EVAL not unit] vs TRAIL / Who&When fixtures; track localize/detect rate +
                regression baseline gate
-adiff-replay:  cache-miss at fork → "cannot reproduce divergent path" (by design)
+amberfork-replay:  cache-miss at fork → "cannot reproduce divergent path" (by design)
 e2e:           fixture pair → JSON result snapshot; server smoke serves UI + API
 ui:            component tests + headless render smoke
 ```
@@ -615,19 +615,19 @@ Critical gaps: none, IF the test plan is implemented. Watch item: normalizer sil
 
 Lanes A (model→ingest), B (embed), D (replay), E (judge) launch in parallel. Then C (align,
 needs model+embed). Then F (attrib, needs align+replay+judge). G (layout/server/UI) after the
-`adiff-core` result schema is frozen. Conflict flag: everything touches `adiff-model` early —
+`amberfork-core` result schema is frozen. Conflict flag: everything touches `amberfork-model` early —
 **freeze the model + result schema first**, in its own short lane, before fanning out.
 
 ## Implementation Tasks
 
-- [ ] **T1 (P1)** — adiff-model + adiff-core — Freeze canonical typed-DAG model + serde result schema. Files: `crates/adiff-model`, `crates/adiff-core`. Verify: `cargo test -p adiff-model`. (Blocks all lanes.)
-- [ ] **T2 (P1)** — adiff-ingest — OTLP parse + multi-namespace normalizer (`gen_ai.*` + `openinference.*`/`llm.*`) + "unmapped attributes" report. Files: `crates/adiff-ingest`. Verify: insta snapshot on golden fixtures.
-- [ ] **T3 (P1)** — adiff-embed — fastembed-rs wrapper + content-hash cache. Files: `crates/adiff-embed`. Verify: `cargo test -p adiff-embed`.
-- [ ] **T4 (P1)** — adiff-align — semantic cost model + move-typed aligner (rust-bio affine/banded) + cluster/POA consensus. Files: `crates/adiff-align`. Verify: proptest self-align invariant + known-fork fixtures.
-- [ ] **T5 (P1)** — adiff-replay — boundary full-input cassette + virtualized re-execution + tool-call-ID normalization. Files: `crates/adiff-replay`. Verify: recorded-cassette determinism test.
-- [ ] **T6 (P1)** — adiff-attrib — ddmin/HDD bisection + counterfactual orchestration + origination-vs-propagation labeling. Files: `crates/adiff-attrib`. Verify: minimal-cause + stable-oracle tests.
-- [ ] **T7 (P2)** — adiff-judge — provider trait + reqwest/SSE + factorized Agent-GPA rubric. Files: `crates/adiff-judge`. Verify: TRAIL/Who&When EVAL suite + baseline gate.
-- [ ] **T8 (P2)** — adiff-layout + adiff-server + adiff-cli — server-side DAG layout, axum+rust-embed server, headless JSON CLI. Files: `crates/adiff-layout`, `crates/adiff-server`, `crates/adiff-cli`. Verify: e2e fixture → JSON snapshot + server smoke.
+- [ ] **T1 (P1)** — amberfork-model + amberfork-core — Freeze canonical typed-DAG model + serde result schema. Files: `crates/amberfork-model`, `crates/amberfork-core`. Verify: `cargo test -p amberfork-model`. (Blocks all lanes.)
+- [ ] **T2 (P1)** — amberfork-ingest — OTLP parse + multi-namespace normalizer (`gen_ai.*` + `openinference.*`/`llm.*`) + "unmapped attributes" report. Files: `crates/amberfork-ingest`. Verify: insta snapshot on golden fixtures.
+- [ ] **T3 (P1)** — amberfork-embed — fastembed-rs wrapper + content-hash cache. Files: `crates/amberfork-embed`. Verify: `cargo test -p amberfork-embed`.
+- [ ] **T4 (P1)** — amberfork-align — semantic cost model + move-typed aligner (rust-bio affine/banded) + cluster/POA consensus. Files: `crates/amberfork-align`. Verify: proptest self-align invariant + known-fork fixtures.
+- [ ] **T5 (P1)** — amberfork-replay — boundary full-input cassette + virtualized re-execution + tool-call-ID normalization. Files: `crates/amberfork-replay`. Verify: recorded-cassette determinism test.
+- [ ] **T6 (P1)** — amberfork-attrib — ddmin/HDD bisection + counterfactual orchestration + origination-vs-propagation labeling. Files: `crates/amberfork-attrib`. Verify: minimal-cause + stable-oracle tests.
+- [ ] **T7 (P2)** — amberfork-judge — provider trait + reqwest/SSE + factorized Agent-GPA rubric. Files: `crates/amberfork-judge`. Verify: TRAIL/Who&When EVAL suite + baseline gate.
+- [ ] **T8 (P2)** — amberfork-layout + amberfork-server + amberfork-cli — server-side DAG layout, axum+rust-embed server, headless JSON CLI. Files: `crates/amberfork-layout`, `crates/amberfork-server`, `crates/amberfork-cli`. Verify: e2e fixture → JSON snapshot + server smoke.
 - [ ] **T9 (P2)** — ui/ — Leptos DOM + animated SVG DAG renderer (wgpu dropped) + time-travel scrubber. /design-consultation done (DESIGN.md). Files: `ui/`. Verify: component tests + headless render smoke.
 - [ ] **T10 (P2)** — CI/dist — cargo-dist + GH Actions matrix (linux/darwin/windows × amd64/arm64), brew/cargo install, embedded assets. Files: `.github/workflows/`, `Cargo.toml`. Verify: tagged release builds all targets.
 - [ ] **T11 (P3)** — FTO hygiene — dated prior-art notes (NW, process-mining alignments); confirm semantic-step domain distance from US 11,093,368 family. Files: `docs/fto.md`.
@@ -650,12 +650,12 @@ telemetry photo). Resolution: two ingestion paths sharing ONE canonical model + 
 schema + UI.
 - PASSIVE path: ingest any existing OTel traces -> align -> static minimal-diff fork
   localization + optional naming. Framework-agnostic; works on traces you already have.
-- RECORD path (`adiff-record`): a proxy/SDK shim wraps agent execution -> captures FULL
+- RECORD path (`amberfork-record`): a proxy/SDK shim wraps agent execution -> captures FULL
   content boundary I/O, enables sub-trajectory counterfactual re-execution, enforces a
   user-defined success predicate, and can emit many runs for cluster/consensus.
 
 ```
-                          passive (any OTel trace)    record-mode (run under adiff)
+                          passive (any OTel trace)    record-mode (run under amberfork)
 align + fork                      yes                          yes
 field-level static diff           yes                          yes
 full content guaranteed           no (opt-in/often absent)     yes
@@ -670,11 +670,11 @@ expected-output match, (b) a rubric scored by the factorized judge, or (c) a man
 OTel span status (OK/ERROR) is NOT treated as task-success.
 
 ### New / changed crates (resolves OV-3, OV-4)
-- ADD `adiff-store` (lane A): segment OTLP stream into runs, persist, list, pick
+- ADD `amberfork-store` (lane A): segment OTLP stream into runs, persist, list, pick
   A=good / B=bad. Owns run selection + pairing.
-- ADD `adiff-record` (lane D, tokio): record-mode proxy/shim; full-content capture; produces
+- ADD `amberfork-record` (lane D, tokio): record-mode proxy/shim; full-content capture; produces
   re-runnable cassettes and run corpora.
-- `adiff-align` consensus (linfa/hnsw/POA) is GATED: active only when a corpus exists
+- `amberfork-align` consensus (linfa/hnsw/POA) is GATED: active only when a corpus exists
   (record-mode or an ingested many-run set). For the 2-run case it is bypassed; benign
   non-determinism is handled by the cost model + a confidence score. Not on the 2-run
   critical path.
@@ -727,16 +727,16 @@ Selectable / accessible / copy-pasteable text for prompts, tool args, and errors
 SVG DAG; all-Rust preserved.
 
 ### Lanes / priorities fixed (resolves OV-11)
-- `adiff-model` + `adiff-core` (INCLUDING the result schema) + `adiff-store` = Lane A,
+- `amberfork-model` + `amberfork-core` (INCLUDING the result schema) + `amberfork-store` = Lane A,
   FROZEN FIRST, before any fan-out.
-- `adiff-record` = Lane D. Priority encodes the real serial chain:
+- `amberfork-record` = Lane D. Priority encodes the real serial chain:
   model/core/store/schema (P1) -> ingest/embed (P1) -> align (P1) -> replay/record (P1) ->
   attrib (P1, after align+replay) -> judge (P2) -> layout/server/cli (P2) -> ui (P2) ->
   ci/dist (P2).
 
 ### Revised task additions
-- [ ] **T12 (P1)** — adiff-store — run segmentation/persistence/selection (A=good/B=bad). Lane A.
-- [ ] **T13 (P1)** — adiff-record — record-mode proxy/shim: full-content capture + re-runnable cassette + success-predicate hook. Lane D.
+- [ ] **T12 (P1)** — amberfork-store — run segmentation/persistence/selection (A=good/B=bad). Lane A.
+- [ ] **T13 (P1)** — amberfork-record — record-mode proxy/shim: full-content capture + re-runnable cassette + success-predicate hook. Lane D.
 - T4 revised: hand-rolled affine-gap NW over embedding cost matrix; consensus gated on corpus.
 - T7 revised: judge optional + local-model path.
 - T1 revised: freeze the OUTPUT `DiffResult` schema, not just the Run/Step input model.
@@ -758,10 +758,10 @@ Expects:   single binary (brew/cargo), point at traces they already have,
 ```
 
 ## Empathy narrative (the planned first run)
-I `brew install agentdiff` (fast, one binary). I want the magic, so I need two traces.
+I `brew install amberfork` (fast, one binary). I want the magic, so I need two traces.
 But I haven't wired up OTel. Before I see anything I must instrument my agent, run it
 twice, capture two OTLP files, and hope content was captured (opt-in, often absent).
-Twenty minutes in I run `adiff diff a.otlp b.otlp` and if content was missing I get a
+Twenty minutes in I run `amberfork diff a.otlp b.otlp` and if content was missing I get a
 degraded metadata-only diff, not the glowing fork I was promised. I might bounce before
 the magic. **Root DX risk: the magic is gated behind having two good traces.**
 
@@ -772,12 +772,12 @@ the magic. **Root DX risk: the magic is gated behind having two good traces.**
 | LangSmith | minutes | cloud + account gate |
 | Phoenix | ~3-5 min | local, but instrument first |
 | pprof | instant | bundled view of data you already produced |
-| **agentdiff (as designed)** | ~20 min | RED FLAG — gated behind instrument + 2 runs |
-| **agentdiff (post-review)** | **<30s via `adiff demo`** | **Champion — magic before any setup** |
+| **amberfork (as designed)** | ~20 min | RED FLAG — gated behind instrument + 2 runs |
+| **amberfork (post-review)** | **<30s via `amberfork demo`** | **Champion — magic before any setup** |
 
 ## Magical moment spec
-Vehicle: bundled `adiff demo`. Ship a sample divergent trace pair (with content) inside
-the binary; `adiff demo` runs the full pipeline and opens the UI on the glowing fork in
+Vehicle: bundled `amberfork demo`. Ship a sample divergent trace pair (with content) inside
+the binary; `amberfork demo` runs the full pipeline and opens the UI on the glowing fork in
 <30s, zero setup, offline. The first experience is the magic, not the 20-min path.
 
 ## Developer journey map
@@ -785,27 +785,27 @@ the binary; `adiff demo` runs the full pipeline and opens the UI on the glowing 
 |-------|----------------|--------|
 | Discover | README + demo GIF | fix: GIF + one-line value prop |
 | Install | `brew install` / `cargo install` | ok: single binary |
-| Hello world | `adiff demo` | FIXED: <30s magic (was: 20-min instrument) |
-| Real usage (passive) | `adiff diff a.otlp b.otlp` | fix: content-absent error guides to record |
-| Real usage (record) | `adiff record -- python agent.py` | FIXED: zero-code wrapper |
+| Hello world | `amberfork demo` | FIXED: <30s magic (was: 20-min instrument) |
+| Real usage (passive) | `amberfork diff a.otlp b.otlp` | fix: content-absent error guides to record |
+| Real usage (record) | `amberfork record -- python agent.py` | FIXED: zero-code wrapper |
 | Debug | read fork + attribution in UI | ok |
-| CI | `adiff diff --gate A B` | NEW: regression gate, non-zero exit |
+| CI | `amberfork diff --gate A B` | NEW: regression gate, non-zero exit |
 | Upgrade | semver + CHANGELOG; `--json`/cassette are versioned contracts | fix: document |
 
 ## Locked DX decisions
-- **Getting started:** install → `adiff demo` → `adiff diff a b`. Champion tier.
-- **CLI surface:** `demo` · `diff <a> <b>` (no args = two most-recent runs in store) · `record -- <cmd>` · `ls` · `open <id>`. Flags: `--json`, `--judge local|off`, `--no-open`, `--gate`. Progressive disclosure: `adiff diff a b` just works.
-- **Record-mode integration (DX-1):** zero-code CLI wrapper `adiff record -- <cmd>` via env-var base-URL proxy capture; SDK shim is the documented escape hatch for in-process tools the proxy can't see.
-- **CI regression gate (DX-2):** `adiff diff --gate A B` returns non-zero + `--json` when a regression cause is attributed; GitHub Actions snippet in docs. Depends on the success-predicate/threshold from record-mode's oracle.
+- **Getting started:** install → `amberfork demo` → `amberfork diff a b`. Champion tier.
+- **CLI surface:** `demo` · `diff <a> <b>` (no args = two most-recent runs in store) · `record -- <cmd>` · `ls` · `open <id>`. Flags: `--json`, `--judge local|off`, `--no-open`, `--gate`. Progressive disclosure: `amberfork diff a b` just works.
+- **Record-mode integration (DX-1):** zero-code CLI wrapper `amberfork record -- <cmd>` via env-var base-URL proxy capture; SDK shim is the documented escape hatch for in-process tools the proxy can't see.
+- **CI regression gate (DX-2):** `amberfork diff --gate A B` returns non-zero + `--json` when a regression cause is attributed; GitHub Actions snippet in docs. Depends on the success-predicate/threshold from record-mode's oracle.
 - **Error standard:** 3-tier (problem + cause + fix + doc link). Canonical example (the modal failure):
   > `No prompt/tool content in run_a.otlp — aligned structure only, not arguments.`
   > Cause: OTel GenAI content capture is opt-in and was off. Fix: set
   > `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=SPAN_AND_EVENT` and re-run, or use
-  > `adiff record` to capture it automatically. Docs: <url>.
+  > `amberfork record` to capture it automatically. Docs: <url>.
 
 ## NOT in scope (DX, deferred)
 - Default telemetry / cloud analytics — contradicts local/no-account identity (TTHW self-report + opt-in only).
-- Hosted web playground — contradicts local-only; `adiff demo` covers the zero-install magic locally.
+- Hosted web playground — contradicts local-only; `amberfork demo` covers the zero-install magic locally.
 - Editor/LSP plugins — it's a CLI, not a language.
 - Multi-language SDKs — the record proxy is language-agnostic by construction; Rust crates cover library use.
 
@@ -831,7 +831,7 @@ the UI; the `DiffResult` schema is the public `--json` contract.
 +--------------------------------------------------------------------+
 | TTHW                 | <2 min (<30s demo) | was ~20 min           |
 | Competitive Rank     | Champion (via demo)                          |
-| Magical Moment       | designed via bundled `adiff demo`            |
+| Magical Moment       | designed via bundled `amberfork demo`            |
 | Product Type         | CLI + Rust library/SDK + local web UI        |
 | Mode                 | DX EXPANSION                                 |
 | Overall DX           |  8/10  |  3/10  |  +5 ↑  |
@@ -841,19 +841,19 @@ the UI; the `DiffResult` schema is the public `--json` contract.
 | Fight Uncertainty  | covered (3-tier errors)                        |
 | Opinionated + Escape Hatches | covered (defaults + SDK escape hatch)|
 | Code in Context    | covered (per-framework record recipes)        |
-| Magical Moments    | covered (adiff demo)                           |
+| Magical Moments    | covered (amberfork demo)                           |
 +====================================================================+
 ```
 
 ## Implementation Tasks (DX)
-- [ ] **T14 (P1)** — demo — bundle a sample divergent trace pair (with content) + `adiff demo` (the magical moment). Files: `crates/adiff-cli`, `examples/`. Verify: `adiff demo` opens UI on the fork in <30s.
-- [ ] **T15 (P1)** — cli — verb surface (`demo`/`diff`/`record`/`ls`/`open`) + flags (`--json`/`--judge`/`--no-open`/`--gate`) + no-arg defaults. Files: `crates/adiff-cli`. Verify: `adiff --help` is guessable; `adiff diff` with no args picks 2 most-recent.
-- [ ] **T16 (P1)** — errors — 3-tier error standard + content-absent canonical message across ingest/align/attrib. Files: `crates/adiff-*`. Verify: trigger content-absent → message shows problem+cause+fix+docs.
-- [ ] **T17 (P1)** — record — zero-code `adiff record -- <cmd>` env-var proxy capture; SDK shim escape hatch documented. Files: `crates/adiff-record`. Verify: wrap a sample agent, get full-content cassette with no code change.
-- [ ] **T18 (P2)** — ci-gate — `adiff diff --gate` exit codes + `--json` + GH Actions snippet. Files: `crates/adiff-cli`, `docs/ci.md`. Verify: regression → non-zero exit in CI.
+- [ ] **T14 (P1)** — demo — bundle a sample divergent trace pair (with content) + `amberfork demo` (the magical moment). Files: `crates/amberfork-cli`, `examples/`. Verify: `amberfork demo` opens UI on the fork in <30s.
+- [ ] **T15 (P1)** — cli — verb surface (`demo`/`diff`/`record`/`ls`/`open`) + flags (`--json`/`--judge`/`--no-open`/`--gate`) + no-arg defaults. Files: `crates/amberfork-cli`. Verify: `amberfork --help` is guessable; `amberfork diff` with no args picks 2 most-recent.
+- [ ] **T16 (P1)** — errors — 3-tier error standard + content-absent canonical message across ingest/align/attrib. Files: `crates/amberfork-*`. Verify: trigger content-absent → message shows problem+cause+fix+docs.
+- [ ] **T17 (P1)** — record — zero-code `amberfork record -- <cmd>` env-var proxy capture; SDK shim escape hatch documented. Files: `crates/amberfork-record`. Verify: wrap a sample agent, get full-content cassette with no code change.
+- [ ] **T18 (P2)** — ci-gate — `amberfork diff --gate` exit codes + `--json` + GH Actions snippet. Files: `crates/amberfork-cli`, `docs/ci.md`. Verify: regression → non-zero exit in CI.
 - [ ] **T19 (P2)** — docs — README (quickstart + demo GIF), concepts page, per-framework record recipes, OTel content gotcha, supported-frameworks matrix. Files: `README.md`, `docs/`.
-- [ ] **T20 (P2)** — community — LICENSE + CONTRIBUTING + issue templates + custom-normalizer plugin point. Files: repo root, `crates/adiff-ingest`.
-- [ ] **T21 (P3)** — measurement — `adiff demo --timings` TTHW self-report; design for /devex-review boomerang; opt-in anonymous metrics only. Files: `crates/adiff-cli`.
+- [ ] **T20 (P2)** — community — LICENSE + CONTRIBUTING + issue templates + custom-normalizer plugin point. Files: repo root, `crates/amberfork-ingest`.
+- [ ] **T21 (P3)** — measurement — `amberfork demo --timings` TTHW self-report; design for /devex-review boomerang; opt-in anonymous metrics only. Files: `crates/amberfork-cli`.
 
 > The GSTACK REVIEW REPORT that previously sat here has moved to the end of this document
 > (it must be the file's terminal section). See the bottom for the current report.
@@ -865,7 +865,7 @@ the UI; the `DiffResult` schema is the public `--json` contract.
 ## Why this section exists
 Four adversarially-verified research passes (~150 subagents: competitive landscape, academic
 SOTA, real developer demand, verbatim practitioner pain) run *after* the build architecture was
-locked. Full findings persisted in agent memory (`agentdiff-competitive-demand-research`). This
+locked. Full findings persisted in agent memory (`amberfork-competitive-demand-research`). This
 section **re-sequences and re-positions** the locked plan. It does **NOT delete** anything from the
 Engineering Review — every crate and capability survives. What changes is **order** and **pitch**.
 
@@ -902,10 +902,10 @@ Keeping every capability on the roadmap costs nothing. Building them before the 
 benchmarks costs everything (scope is the #1 killer of solo projects; the benchmark is the payoff;
 "14 crates, no number" reads as over-engineering). So: keep all, phase strictly.
 
-- **Phase 1 — Proof of skill (the standout).** `adiff-model` + `DiffResult` schema (T1/T12) →
+- **Phase 1 — Proof of skill (the standout).** `amberfork-model` + `DiffResult` schema (T1/T12) →
   ingest/normalizer (T2) → embed (T3) → **align: move-typed affine-gap NW (T4) ← the moat** →
   field-level diff → CLI + `--json` (T15) → **benchmark on Who&When/TRAIL (NEW — see `BENCHMARK.md`)**
-  → record/replay reproduction (T13/T17) → `adiff demo` + <90s GIF (T14).
+  → record/replay reproduction (T13/T17) → `amberfork demo` + <90s GIF (T14).
   *Definition of done:* a reproducible **offline** benchmark table (explainable, **local**) that
   states the defensible-asymmetry claim against the published ~14% step / ~11% joint baseline plus
   named cheap baselines (random + shallow-positional), with the privileged-reference caveat, plus
@@ -944,7 +944,7 @@ non-goal / nice-to-have; do not distort the build chasing it.
 # Architecture Completeness Pass
 
 Added by /plan-eng-review on 2026-07-03. A completeness + consistency audit found the architecture
-~90% specified but with 11 gaps — mostly because `adiff-store`, `adiff-record`, `adiff-bench`, and
+~90% specified but with 11 gaps — mostly because `amberfork-store`, `amberfork-record`, `amberfork-bench`, and
 the hybrid passive+record model were added *after* the original diagrams were drawn, leaving stale
 pictures and a few unowned contracts. This section is now the **authoritative** data-flow, crate
 roster, schema seams, and task order. Where it conflicts with an earlier diagram, this wins.
@@ -953,19 +953,19 @@ roster, schema seams, and task order. Where it conflicts with an earlier diagram
 
 ```
  PASSIVE (any existing OTel trace)
- OTLP ─▶ adiff-ingest ─▶ adiff-store ─┐
+ OTLP ─▶ amberfork-ingest ─▶ amberfork-store ─┐
         (normalize→DAG)  (segment,     │
                           pick A/B)     ▼
-                              adiff-embed ─▶ adiff-align ─▶ field-diff ─▶ adiff-attrib ─▶ DiffResult ─▶ adiff-layout ─▶ server ─▶ ui
+                              amberfork-embed ─▶ amberfork-align ─▶ field-diff ─▶ amberfork-attrib ─▶ DiffResult ─▶ amberfork-layout ─▶ server ─▶ ui
                               (structural   (move-typed     (typed        (STATIC or      (pure,         (Layout        (axum+   (Leptos
                                identity)     NW  ←moat)      value diff)    COUNTERFACTUAL   portable       schema,        embed)   SVG/DOM)
                                                  ▲                          ←moat)          --json)        separate)
- RECORD (run under adiff)                        │                            ▲
- adiff-record ─▶ adiff-replay ───────────────────┘  (corpus ─▶ gated         │
+ RECORD (run under amberfork)                        │                            ▲
+ amberfork-record ─▶ amberfork-replay ───────────────────┘  (corpus ─▶ gated         │
  (proxy, full     (VCR cassette)  ── counterfactual re-exec ──────────────────┘
-  content)  ─▶ SuccessPredicate (assert-fn | rubric | label) ─▶ attrib + cli --gate;  adiff-judge = optional semantic naming
+  content)  ─▶ SuccessPredicate (assert-fn | rubric | label) ─▶ attrib + cli --gate;  amberfork-judge = optional semantic naming
 
- adiff-bench (Phase-1 payoff):  Who&When/TRAIL ─▶ ingest/store ─▶ align + baselines(random | positional | [judge=P2]) ─▶ score ─▶ table
+ amberfork-bench (Phase-1 payoff):  Who&When/TRAIL ─▶ ingest/store ─▶ align + baselines(random | positional | [judge=P2]) ─▶ score ─▶ table
 ```
 
 Every crate now has an owner, a lane, a phase, and a defined seam. Canonical roster: see the
@@ -974,7 +974,7 @@ corrected 14-crate table in "## Module / crate layout" above.
 ## Layout is a separate schema, not part of DiffResult (closes G2)
 
 `DiffResult` stays **layout-free** — it is the portable `--json` contract and must not carry
-presentation geometry. `adiff-layout` consumes `DiffResult` and emits a separate `Layout`:
+presentation geometry. `amberfork-layout` consumes `DiffResult` and emits a separate `Layout`:
 
 ```
 Layout {                                    // presentation-only; server → UI; NOT in --json
@@ -991,22 +991,22 @@ clean. `Layout` versions independently (`layout_version`).
 
 ## SuccessPredicate has an owner (closes G3)
 
-The success oracle is now a first-class type in **`adiff-model`** (the shared vocabulary), so
+The success oracle is now a first-class type in **`amberfork-model`** (the shared vocabulary), so
 `attrib`, `record`, `judge`, and `cli --gate` all speak one shape instead of four:
 
 ```
-// adiff-model
+// amberfork-model
 enum Verdict { Pass, Fail, Unknown }
 enum SuccessPredicate {
   AssertFn(FnRef),        // expected-output match / user assertion
-  Rubric(RubricRef),      // scored by adiff-judge (optional, local-capable)
+  Rubric(RubricRef),      // scored by amberfork-judge (optional, local-capable)
   ManualLabel(Verdict),   // human label
 }
 // OTel span status (OK/ERROR) is NEVER treated as task success.
 ```
 
-Owned by `adiff-model`; enforced by `adiff-record`; evaluated by `adiff-attrib` and `adiff-cli
---gate`; the `Rubric` variant delegates to `adiff-judge`.
+Owned by `amberfork-model`; enforced by `amberfork-record`; evaluated by `amberfork-attrib` and `amberfork-cli
+--gate`; the `Rubric` variant delegates to `amberfork-judge`.
 
 ## Counterfactual injection seam (closes G11)
 
@@ -1014,20 +1014,20 @@ The attrib↔replay interaction (the moat's key mechanism) now has a contract, f
 in Phase 2:
 
 ```
-// adiff-attrib decides the mutation; adiff-replay executes it
+// amberfork-attrib decides the mutation; amberfork-replay executes it
 Counterfactual { step_idx, field_path, new_value }
 replay::reexec_from(cassette, step_idx, mutation) -> SubTrajectory
 // attrib scores `recovered?` by running the SuccessPredicate over the re-run
 ```
 
-## adiff-bench placement + baseline dependency resolved (closes G4)
+## amberfork-bench placement + baseline dependency resolved (closes G4)
 
 - **Real crate, lane H, Phase 1** (not an `xtask` subcommand): the industry-grade workspace *is*
   the artifact, and a testable bench crate reads as rigor.
 - **Baseline dependency inversion fixed.** Phase-1 baselines = **random** + **shallow-positional**
   (both cheap, in-crate) measured against the **published SOTA cited as the number to beat**
   (Who&When 14.2% step / 53.5% agent; TRAIL ~11% joint). The self-run LLM-judge head-to-head moves
-  to **Phase 2** with `adiff-judge` (cassette-cached, so the published table stays reproducible
+  to **Phase 2** with `amberfork-judge` (cassette-cached, so the published table stays reproducible
   offline). Phase 1's payoff no longer secretly depends on a Phase-2 crate.
 
 ## Distribution completeness: ONNX + embedding model (closes G9, G10)
@@ -1036,18 +1036,18 @@ replay::reexec_from(cassette, step_idx, mutation) -> SubTrajectory
   static binary, offline, no account" promise. **Pre-build spike (T25):** confirm it links (static
   or vendored) across linux/darwin/windows × amd64/arm64 *before* betting the DX headline on it.
 - **Embedding model bundling:** default = **bundle int8 BGE-small-en-v1.5 (~30–45MB) via rust-embed**
-  so `adiff demo` runs offline from one binary. If the total binary exceeds an ~80MB ceiling, fall
+  so `amberfork demo` runs offline from one binary. If the total binary exceeds an ~80MB ceiling, fall
   back to first-run fetch into a cache dir with an explicit "first run downloads the model" caveat.
   Decide against the measured size in the spike.
 
 ## Test-strategy additions (closes G7 — consolidated block was missing 5 crates)
 
 ```
-adiff-model/core: DiffResult + Layout serde round-trip; schema_version + layout_version stability (insta)
-adiff-store:      golden OTLP stream → expected run segmentation; A/B pick + pairing; ambiguous → explicit error
-adiff-embed:      content-hash cache hit skips recompute; identical input → identical vector; model-load fail surfaced
-adiff-record:     wrap sample agent → full-content cassette; proxy-miss → SDK-shim guidance; re-run determinism
-adiff-bench:      fixture→canonical conversion snapshot; baseline scores reproducible OFFLINE; results table byte-stable
+amberfork-model/core: DiffResult + Layout serde round-trip; schema_version + layout_version stability (insta)
+amberfork-store:      golden OTLP stream → expected run segmentation; A/B pick + pairing; ambiguous → explicit error
+amberfork-embed:      content-hash cache hit skips recompute; identical input → identical vector; model-load fail surfaced
+amberfork-record:     wrap sample agent → full-content cassette; proxy-miss → SDK-shim guidance; re-run determinism
+amberfork-bench:      fixture→canonical conversion snapshot; baseline scores reproducible OFFLINE; results table byte-stable
 ```
 
 ## Failure-mode additions (closes G8 — table was missing 4 codepaths)
@@ -1074,24 +1074,24 @@ column** in the corrected roster. One authoritative order:
 
 ## New tasks
 
-- [ ] **T22 (P1)** — adiff-bench — real crate (lane H): Who&When/TRAIL fixture loader + random +
-  shallow-positional baselines + scorer + `insta` results table. Files: `crates/adiff-bench`,
-  `bench/fetch`. Verify: `cargo run -p adiff-bench` reproduces the table offline.
-- [ ] **T23 (P1)** — Layout seam — add the `Layout` schema to `adiff-model`; `adiff-layout` emits it
-  from `DiffResult`; `DiffResult` stays layout-free. Files: `crates/adiff-model`, `crates/adiff-layout`.
+- [ ] **T22 (P1)** — amberfork-bench — real crate (lane H): Who&When/TRAIL fixture loader + random +
+  shallow-positional baselines + scorer + `insta` results table. Files: `crates/amberfork-bench`,
+  `bench/fetch`. Verify: `cargo run -p amberfork-bench` reproduces the table offline.
+- [ ] **T23 (P1)** — Layout seam — add the `Layout` schema to `amberfork-model`; `amberfork-layout` emits it
+  from `DiffResult`; `DiffResult` stays layout-free. Files: `crates/amberfork-model`, `crates/amberfork-layout`.
   Verify: `DiffResult` `--json` carries no geometry; `Layout` round-trips.
 - [ ] **T24 (P1)** — model contracts — `SuccessPredicate`/`Verdict` + `Counterfactual` types frozen in
-  `adiff-model` at T1. Files: `crates/adiff-model`. Verify: `attrib`, `record`, `cli --gate` all depend
+  `amberfork-model` at T1. Files: `crates/amberfork-model`. Verify: `attrib`, `record`, `cli --gate` all depend
   on the one type.
 - [ ] **T25 (P1)** — dist spike — confirm `ort`/ONNX-Runtime links across all 4 targets + decide
   embedding-model bundling (bundle vs first-run fetch) against measured binary size. Files:
-  `.github/workflows/`, `crates/adiff-embed`. Verify: a static/vendored build runs the demo offline on
+  `.github/workflows/`, `crates/amberfork-embed`. Verify: a static/vendored build runs the demo offline on
   each target.
 
 ## Defaults applied in this pass (veto any)
 
-1. `adiff-core` → **lane A** (was mislabeled F). 2. `Layout` → **separate schema**, not in
-`DiffResult`. 3. `SuccessPredicate`/`Verdict` → owned by **`adiff-model`**. 4. `adiff-bench` → **real
+1. `amberfork-core` → **lane A** (was mislabeled F). 2. `Layout` → **separate schema**, not in
+`DiffResult`. 3. `SuccessPredicate`/`Verdict` → owned by **`amberfork-model`**. 4. `amberfork-bench` → **real
 crate**, Phase 1; **LLM-judge baseline deferred to Phase 2**, published SOTA cited in Phase 1. 5.
 Embedding model → **bundle int8 BGE-small** pending the T25 size spike. 6. Counterfactual seam →
 `Counterfactual{step,field,value}` frozen in T1. None are one-way doors; all are reversible doc edits.
@@ -1118,8 +1118,8 @@ demo work still holds. What changed is **who the primary developer is** and ther
 ## Why this section exists (supersession note)
 
 The 2026-06-30 DX review optimized for an **agent-builder** persona (an AI engineer with a
-regressing agent who installs agentdiff and runs it on their own traces) and locked
-`adiff demo` as the magical moment. The **Strategic Reframe v2 (2026-07-02)** then made the
+regressing agent who installs amberfork and runs it on their own traces) and locked
+`amberfork demo` as the magical moment. The **Strategic Reframe v2 (2026-07-02)** then made the
 project's north star a **public benchmark number** and stated the mental model must be
 *taught, not assumed* ("diff two runs" is builder vocab that scored 1pt/0 comments on Show
 HN). Combined with the builder's stated goal — **impress strong engineers; usage is a
@@ -1146,13 +1146,13 @@ Bounces:   when the number is asserted not backed, repro is broken/gated, the GI
 
 ## Empathy narrative (evaluator first contact — confirmed accurate 2026-07-05)
 
-> I land on the agentdiff repo from an HN post. First screen: a one-liner and a GIF. If the
+> I land on the amberfork repo from an HN post. First screen: a one-liner and a GIF. If the
 > GIF shows an amber fork igniting on a real divergent run in under 90 seconds, I get it
-> instantly: it finds where two agent runs split. I scroll to the benchmark table: agentdiff
+> instantly: it finds where two agent runs split. I scroll to the benchmark table: amberfork
 > vs shallow-positional-diff vs LLM-judge vs random, on Who&When and TRAIL, step-level plus
 > windowed. If the numbers are honest — and there's a "where it fails" paragraph — my
 > skepticism drops, this is real work, not a wrapper. I want to verify, so I hunt for the
-> repro command: `cargo run -p adiff-bench`. If it prints the table offline with no API key,
+> repro command: `cargo run -p amberfork-bench`. If it prints the table offline with no API key,
 > I'm sold. Then I skim `crates/`: clear names (`align`, `attrib`, `bench`), tests present.
 > That reads as rigor. Five minutes in I either star and share it, or I bounce because the
 > number was asserted not reproducible, the GIF made me read a wall of text first, or 14
@@ -1175,18 +1175,18 @@ how fast a skeptic goes from landing to "this is real, I'll star it."
 | difftastic | ~30s | 4 progressive screenshots teach a novel model; ships **Non-goals + Known Issues** |
 | hyperfine | ~30s | GIF shows the tool doing its real job; the harness *is* the reproduction |
 | paperswithcode norm | — | results table + one-command repro; complete repos ~196★ median vs ~0 |
-| **agentdiff (as planned)** | unclear | GIF + benchmark planned, but README ordering unspecified + repro hid a `bench/fetch` step |
-| **agentdiff (post-review)** | **<60s** | reproduce-locally-no-key headline + explainable-craft co-pillar + amber-fork GIF |
+| **amberfork (as planned)** | unclear | GIF + benchmark planned, but README ordering unspecified + repro hid a `bench/fetch` step |
+| **amberfork (post-review)** | **<60s** | reproduce-locally-no-key headline + explainable-craft co-pillar + amber-fork GIF |
 
 ## Magical moment specification (evaluator) — TWO EQUAL PILLARS
 
-The 06-30 review's `adiff demo` was the moment for the agent-builder. This re-review's initial
+The 06-30 review's `amberfork demo` was the moment for the agent-builder. This re-review's initial
 draft made the *reproducible SOTA number* the single primary moment; the outside voice + the
 project's own `craft-over-benchmark-in-saturated-lane` learning showed that is a fragile,
 contestable single point of failure. Resolution (builder-approved 2026-07-05): **two
 independent, equal belief pillars**, so neither one failing sinks the project.
 
-- **Pillar 1 — credibility (the reproducible local eval).** `cargo run -p adiff-bench`
+- **Pillar 1 — credibility (the reproducible local eval).** `cargo run -p amberfork-bench`
   reproduces the scoring table **offline, deterministically, no API key**. The headline claim is
   the *defensible asymmetry*, NOT "beats 14.2% SOTA": **"localizes the decisive error step as
   well as an LLM judge — but locally, explainably, deterministically, and reproducibly without a
@@ -1216,7 +1216,7 @@ cross-platform** so a green badge is machine-checkable proof (T29, gated on the 
 |-------|----------------|---------------------|------------|
 | 1. Discover | Reads HN title / tagline | "diff two runs" = builder vocab, flopped on Show HN (1pt/0 comments) | T28 hook + T33 writeup (the actual gate) |
 | 2. Read README | Scans first screen for GIF + number | ordering unspecified (T19 listed contents, not priority) | T28: above-the-fold order (hero = table + GIF) |
-| 3. Reproduce number | `cargo run -p adiff-bench` | `bench/fetch` hid a network+licensing+size step | T26: results JSON + license-clean fixture → zero-fetch table; T29: no-secrets cross-platform CI |
+| 3. Reproduce number | `cargo run -p amberfork-bench` | `bench/fetch` hid a network+licensing+size step | T26: results JSON + license-clean fixture → zero-fetch table; T29: no-secrets cross-platform CI |
 | 4. See the magic | Watches <90s GIF | GIF spec was "<90s", no storyboard | Pillar-2 hero (magical-moment spec) |
 | 5. Judge novelty | "what's new vs NW+ddmin+process-mining?" | review didn't answer the evaluator's first question | T28/T33: lead depth story with the novel run-vs-reference protocol + explainability |
 | 6. Skim code | Opens `crates/`, DESIGN.md | 14 crates read as over-scope | T31: crate map BELOW the number + visibly Phase-1 surface |
@@ -1244,9 +1244,9 @@ T+4:30  decides: star+share if number reproduced + code legible
 - **Magical moment:** two equal pillars — reproducible local eval (defensible-asymmetry claim) AND
   the explainable engine/UI. Neither is a single point of failure.
 - **F1 / Repro:** commit raw results JSON + a **license-clean** fixture pair so
-  `cargo run -p adiff-bench` prints the table offline with ZERO fetch; `bench/fetch` pulls full
+  `cargo run -p amberfork-bench` prints the table offline with ZERO fetch; `bench/fetch` pulls full
   Who&When/TRAIL only for deep reproduction; pin dataset versions/commit. (T26, depends on T30)
-- **F2 / CLI:** asymmetric `adiff diff <bad> --against <good>` teaches the failing-vs-known-good
+- **F2 / CLI:** asymmetric `amberfork diff <bad> --against <good>` teaches the failing-vs-known-good
   model; symmetric two-arg and no-arg (2 most-recent, newest = candidate) remain as escape
   hatches. (T27)
 - **F3 / Hook + novelty:** README + writeup lead = "Point at a failing agent run, see exactly
@@ -1294,22 +1294,22 @@ own conclusions. Highest-value points and resolutions:
   the two-pillar framing absorbs a tie, so a standalone spike is optional, not required.
 - **Actively optimizing the install-and-run-on-your-traces path beyond the 06-30 work** — the
   agent-builder is the secondary persona now, but do NOT degrade that path (outside-voice caution:
-  evaluator→user is a one-week delay). `adiff demo` / `adiff record` keep it warm.
+  evaluator→user is a one-week delay). `amberfork demo` / `amberfork record` keep it warm.
 - **A hosted playground / "try in browser"** — contradicts local-only; committed results JSON +
-  `adiff demo` cover zero-install credibility. (Reaffirmed from 06-30.)
+  `amberfork demo` cover zero-install credibility. (Reaffirmed from 06-30.)
 - **Multi-language SDKs / editor plugins** — irrelevant to an evaluator and to a CLI. (06-30.)
 - **Chasing organic adoption funnels** — goal is respect; measure via stars/HN/writeup reception,
   not funnels. TTHW self-report stays opt-in only.
 
 ## What already exists (reuse)
 
-- The 2026-06-30 DX section: `adiff demo`, `adiff record`, the 3-tier error standard, the CLI verb
+- The 2026-06-30 DX section: `amberfork demo`, `amberfork record`, the 3-tier error standard, the CLI verb
   set (extended, not replaced, by T27's `--against`).
 - BENCHMARK.md already contains the "evaluation crux," the "threats to validity," and the "where
   it fails" paragraph (DoD) plus the baseline list — T28's benchmark-trust block and T33's writeup
   promote that honesty into the README/post instead of burying it.
 - DESIGN.md governs the amber-fork GIF (Pillar 2 hero); the `DiffResult` schema is the public
-  `--json`/SDK contract; the `adiff-bench` crate (T22) is the reproduction harness.
+  `--json`/SDK contract; the `amberfork-bench` crate (T22) is the reproduction harness.
 
 ## DX Scorecard (evaluator lens)
 
@@ -1377,13 +1377,13 @@ headline must soften to "first run downloads a 30-45MB model."
 ## Implementation Tasks (DX v2)
 
 - [ ] **T26 (P1)** — bench offline repro — commit raw results JSON + a **license-clean** fixture
-  pair so `cargo run -p adiff-bench` prints the table offline with ZERO fetch; `bench/fetch` pulls
-  full Who&When/TRAIL only for deep repro; pin dataset versions/commit. Files: `crates/adiff-bench`,
+  pair so `cargo run -p amberfork-bench` prints the table offline with ZERO fetch; `bench/fetch` pulls
+  full Who&When/TRAIL only for deep repro; pin dataset versions/commit. Files: `crates/amberfork-bench`,
   `bench/`, `README.md`. Depends on: **T30**. Verify: fresh `git clone` + airplane mode →
-  `cargo run -p adiff-bench` prints the table.
-- [ ] **T27 (P1)** — asymmetric CLI — `adiff diff <bad> --against <good>` teaches the
+  `cargo run -p amberfork-bench` prints the table.
+- [ ] **T27 (P1)** — asymmetric CLI — `amberfork diff <bad> --against <good>` teaches the
   candidate-vs-reference model; symmetric two-arg + no-arg (2 most-recent, newest = candidate)
-  remain as escape hatches. Files: `crates/adiff-cli`. Verify: `adiff diff --help` teaches the
+  remain as escape hatches. Files: `crates/amberfork-cli`. Verify: `amberfork diff --help` teaches the
   asymmetry; no-arg picks candidate = newest.
 - [ ] **T28 (P1)** — README spec — above-the-fold order (badges → localization value-prop → hero =
   benchmark table + amber-fork GIF → 3 highlights → install → how-it-works mechanism paragraph →
@@ -1391,11 +1391,11 @@ headline must soften to "first run downloads a 30-45MB model."
   hardware + exact command + a "where we tie/lose" row + variance + the **defensible-asymmetry
   claim replacing "beats SOTA," with the privileged-reference caveat**); lead the depth story with
   the **novel run-vs-reference protocol + explainability**; git-bisect anchor is a one-liner, not
-  the hero. Files: `README.md`, `docs/`. Verify: a cold reader states what agentdiff does, what's
+  the hero. Files: `README.md`, `docs/`. Verify: a cold reader states what amberfork does, what's
   new, and why the number is trustworthy in <60s.
-- [ ] **T29 (P1)** — bench in CI + regression gate — run `adiff-bench` in CI with **no secrets /
+- [ ] **T29 (P1)** — bench in CI + regression gate — run `amberfork-bench` in CI with **no secrets /
   offline across a mac + linux + windows matrix**; publish a green badge; exit non-zero if numbers
-  regress. Gated on **T25**. Files: `.github/workflows/`, `crates/adiff-bench`. Verify: CI passes
+  regress. Gated on **T25**. Files: `.github/workflows/`, `crates/amberfork-bench`. Verify: CI passes
   with no secrets on all three OSes; a seeded regression turns it red.
 - [ ] **T30 (P2)** — dataset licensing — confirm Who&When + TRAIL licenses permit benchmarking,
   publishing derived numbers, **and redistributing any vendored derived fixture**; add attribution
@@ -1408,7 +1408,7 @@ headline must soften to "first run downloads a 30-45MB model."
   after the benchmark on the page.
 - [ ] **T32 (P2)** — repro error paths — extend the 3-tier error standard to `bench/fetch`
   (dataset gated/unreachable, checksum mismatch) + ONNX/ort load-or-link failure. Files:
-  `crates/adiff-bench`, `crates/adiff-embed`. Verify: trigger a gated-dataset + a checksum
+  `crates/amberfork-bench`, `crates/amberfork-embed`. Verify: trigger a gated-dataset + a checksum
   mismatch → each shows problem + cause + fix + docs link.
 - [ ] **T33 (P2)** — writeup / distribution — treat the HN/dev.to post as a first-class artifact
   (for a "be seen" goal it is the product, and the on-the-nose framing is proven weak: 1pt/0
@@ -1420,7 +1420,7 @@ headline must soften to "first run downloads a 30-45MB model."
 
 # Design Review — fork-diff UI (added 2026-07-05 by /plan-design-review)
 
-Reviewed the agentdiff instrument UI as specified in this plan + DESIGN.md. Classifier: APP UI
+Reviewed the amberfork instrument UI as specified in this plan + DESIGN.md. Classifier: APP UI
 (data-dense instrument). Passes the Design Hard Rules clean (no hard rejections; litmus all green:
 unmistakable brand, one visual anchor = the amber fork, scannable, one job per pane, motion improves
 hierarchy, premium without decorative shadows). The visual SYSTEM (DESIGN.md) is strong; the gaps
@@ -1448,7 +1448,7 @@ hand-built and approved (see Approved Mockups). Overall design completeness 6/10
   result → plain-English cause. Where, then what moved, then what changed, then proof, then why. (T36)
 - **DR6 / Content-absent degraded pane (Pass 2).** When OTel content is opt-in-off, the pane shows the
   structural/move-typed diff only (no field VALUE diff), an amber "content: limited" banner, and a
-  "run under `adiff record` to capture arguments" nudge. Reuses the DX 3-tier error standard. (T36/T37)
+  "run under `amberfork record` to capture arguments" nudge. Reuses the DX 3-tier error standard. (T36/T37)
 - **DR7 / Loading/compute state (Pass 2).** Embedding is the throughput floor; align is banded+timeout
   on long traces. The canvas reveals the spine progressively as steps embed, with an "aligning N
   steps" indicator — the wait is oriented, not a frozen blank. (T37)
@@ -1465,7 +1465,7 @@ hand-built and approved (see Approved Mockups). Overall design completeness 6/10
 | State | What the user sees |
 |-------|--------------------|
 | Loading/compute | spine reveals progressively as steps embed; "aligning N steps" indicator; no frozen blank |
-| Empty · no runs | first-launch: rail prompts "point at two OTel traces or `adiff record`"; empty-instrument affordance |
+| Empty · no runs | first-launch: rail prompts "point at two OTel traces or `amberfork record`"; empty-instrument affordance |
 | Empty · one run | "need a second run to diff — pick a reference (A=good)"; rail highlights pairing |
 | Empty · converged | spine fully gray/synced + "Identical through N steps / no decisive divergence" + confidence (DR1) |
 | Partial · content-absent | structural/move-typed diff only + amber "content: limited" banner + record nudge (DR6) |
@@ -1512,14 +1512,14 @@ Overall design completeness          6/10 → 9/10
 ## Implementation Tasks (Design)
 
 - [ ] **T34 (P1)** — converged + empty states — no-divergence "converged" view (gray spine + calm
-  message + confidence) + no-runs / one-run empty states. Files: `ui/`, `crates/adiff-layout`.
+  message + confidence) + no-runs / one-run empty states. Files: `ui/`, `crates/amberfork-layout`.
   Verify: two identical runs → converged state, not a blank/dead screen.
 - [ ] **T35 (P1)** — colorblind + uniform amber — fork carries `⑂ FORK` label + distinct stroke +
   distinct divergent line style (grayscale-legible); divergent path uniform amber (drop intensity-
   grading). Files: `ui/`, `DESIGN.md`. Verify: a grayscale screenshot still shows the fork; one amber token.
 - [ ] **T36 (P1)** — attribution pane spec — reading order (fork → moves → field diff → confidence →
   counterfactual → cause) + content-absent degraded variant + multiple-divergence list (primary +
-  navigable secondaries). Files: `ui/`, `crates/adiff-layout`. Verify: content-absent run → structural-
+  navigable secondaries). Files: `ui/`, `crates/amberfork-layout`. Verify: content-absent run → structural-
   only pane + record nudge; multi-fork run → secondaries listed and steppable.
 - [ ] **T37 (P1)** — interaction-state table — implement loading/compute, empty (no-runs/one-run/
   converged), content-absent, error (malformed/unmapped/inconclusive/cache-miss), success. Files:
@@ -1528,7 +1528,7 @@ Overall design completeness          6/10 → 9/10
   contrast pass (retire `#55555C` from essential text), selectable/copyable text. Files: `ui/`,
   `DESIGN.md`. Verify: keyboard-only step to the fork; essential text ≥ 4.5:1.
 - [ ] **T39 (P2)** — canvas IA — auto-center on the fork on load + long-DAG (50-100 step) scroll/
-  virtualization + spine/scrubber orientation. Files: `ui/`, `crates/adiff-layout`. Verify: a 60-step
+  virtualization + spine/scrubber orientation. Files: `ui/`, `crates/amberfork-layout`. Verify: a 60-step
   run opens centered on the fork.
 - [ ] **T40 (P2)** — DESIGN.md ratification — fully spec move-typed chips, the confidence meter, the
   counterfactual result row, the uniform-amber path, and the colorblind rule in the design system.

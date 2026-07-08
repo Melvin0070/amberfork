@@ -1,4 +1,4 @@
-# agentdiff — engineering notebook
+# amberfork — engineering notebook
 
 Chronological working log: questions, measurements, dead ends, decisions. The benchmark's
 pre-registered protocol (`BENCHMARK.md`) requires test-set runs to be logged here. Nothing in
@@ -81,7 +81,7 @@ pre-registered protocol in BENCHMARK.md governs anything published.
 **Decisions.**
 1. **Fork criterion amended:** "fork = first non-sync move" is empirically wrong; the spec
    becomes "first non-sync block the alignment does not recover from" (resync-k). Carry into
-   `adiff-align`'s design (architecture doc needs a dated amendment — flagged, not yet edited).
+   `amberfork-align`'s design (architecture doc needs a dated amendment — flagged, not yet edited).
 2. **Embedding bet demoted to a hypothesis:** the v1 cost model starts lexical/tf-idf
    (dependency-free, deterministic, no 30–45MB model, no ort/ONNX linking risk). fastembed/ONNX
    stays behind the cost-model trait as an *experiment* that must beat lexical on dev fixtures
@@ -101,7 +101,7 @@ pre-registered protocol in BENCHMARK.md governs anything published.
   returns as *cross-system* alignment, honestly disclosed.
 - **TRAIL corrected:** 148 traces / 1,987 spans (117 GAIA + 31 SWE-Bench), MIT via GitHub (HF
   copy gated no-reshare — always source GitHub). Real OpenInference span trees — validates the
-  `adiff-ingest` plan directly. 4 zero-error traces; span-located error annotations usable as
+  `amberfork-ingest` plan directly. 4 zero-error traces; span-located error annotations usable as
   localization gold. No same-task duplicate runs within TRAIL.
 - **Licensing rules of the road:** Who&When + TRAIL = MIT via their GitHub repos (attribution +
   notice when vendoring fixtures); never vendor from gated HF copies; strip/hash GAIA
