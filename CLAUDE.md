@@ -19,6 +19,13 @@ isn't already named, pick the lowest-numbered unblocked issue in the current mil
 (`gh issue list`); skim the issue body for the doc section that governs it. If resuming, run the
 verify command to confirm a green baseline before changing anything.
 
+**Collaboration mode (founder chose 2026-07-08 — "I build, you review"):** the founder is
+learning proper software dev, so work ONE vertical slice at a time and teach through it:
+(1) state the contract + the test you'll write, (2) test-first: red → green → refactor,
+(3) show the diff and the WHY behind each choice, (4) WAIT for the founder to review/approve
+before committing or merging, (5) next slice. Keep commits small and reviewable. Never batch
+multiple issues silently. This is a learning collaboration, not autonomous delivery.
+
 **State:** pre-v1. Tracker = GitHub issues + milestones (`gh issue list`). Milestones encode the
 cut line: **v0.1 = walking skeleton** (#1 model → #2 ingest → #3 align → #4 CLI → #5 demo),
 **v0.2 = offline benchmark** (#6 bench, #7 Mode A′). Decisions and measurements live in
