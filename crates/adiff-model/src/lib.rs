@@ -6,6 +6,9 @@
 //! `docs/trace-format.md`; once this crate exists, these types are the source of truth and
 //! that document tracks them.
 //!
+//! [`DiffResult`] is the matching *output* seam: what `adiff-align` fills in and the CLI's
+//! `--json` and the Leptos UI render.
+//!
 //! Design rules baked into the types (see `docs/design/design-run-diff-debugger.md`):
 //! - `outcome` is a run-level verdict supplied by the user, **never inferred from span
 //!   status**.
@@ -16,6 +19,12 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+
+mod diff;
+pub use diff::{
+    Attribution, AttributionMode, Counterfactual, DiffResult, FieldDiff, FieldDiffKind, Fork, Meta,
+    Move, MoveKind, Recovery, RunPair, RunRef, Source, Warning, WarningCode,
+};
 
 /// Version of the trace-format / model contract. Breaking changes (renames, removals,
 /// semantic shifts) bump it; additive optional fields do not. Kept as a newtype so the
