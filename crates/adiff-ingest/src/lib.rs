@@ -23,6 +23,10 @@ use serde_json::{Map, Value};
 use std::fmt;
 use std::path::{Path, PathBuf};
 
+/// Framework source adapters. Unlike the canonical loader above, these map a foreign trace shape
+/// onto [`Run`]; each is namespaced so its quirks stay isolated from the canonical format.
+pub mod whowhen;
+
 /// A loaded run together with any non-fatal diagnostics raised while normalizing it. The
 /// warnings flow onward into [`adiff_model::DiffResult::warnings`].
 #[derive(Debug, Clone, PartialEq)]
