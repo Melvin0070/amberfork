@@ -1,0 +1,20 @@
+---
+source: crates/amberfork-cli/tests/render_cli.rs
+assertion_line: 43
+expression: stdout
+---
+  A  smoke_ref   ·  reference · 8 steps · pass
+  B  smoke_fail  ·  observed  · 9 steps · fail
+
+  step 00  ·  llm    user        Find the population of Metropolis in the 2020 …  [sync]
+  step 01  ·  llm    planner     Plan: search for census data, pull the figure,…  [sync]
+  step 02  ·  tool   web.search  q='Metropolis 2020 census population' -> 0 res…  [log-move]
+  step 03  ·  tool   web.search  retry q='Metropolis census 2020' -> 9 results,…  [sync]
+  step 04  ·  llm    reader      Extracted candidate figure 8,443,000 from resu…  [sync]
+  step 05  ·  llm    planner     Verify the figure against an official source b…  [sync]
+⑂ step 06  ✗  tool   web.fetch   A: url=census.gov/quickfacts/metropolis -> page  [FORK · conf 0.47]
+                                 fetched, 2020 population table present
+                                 B: url=metro-facts.blogspot.com/population ->
+                                 page fetched, blog post with estimates
+  step 07  ✗  llm    reader      Blog says the city has grown to about 9,100,00…  [sync]
+  step 08  ✗  llm    answer      The 2020 census population of Metropolis is 9,…  [sync]

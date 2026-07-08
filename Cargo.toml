@@ -20,8 +20,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 proptest = "1"
 clap = { version = "4", features = ["derive"] }
+terminal_size = "0.4"
 assert_cmd = "2"
 predicates = "3"
+insta = "1"
 # Internal crates share versions here too, so a path move is a one-line change.
 amberfork-model = { path = "crates/amberfork-model" }
 amberfork-align = { path = "crates/amberfork-align" }

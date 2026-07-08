@@ -22,7 +22,9 @@ amberfork-ingest = { workspace = true }
 amberfork-model = { workspace = true }
 clap = { workspace = true }
 serde_json = { workspace = true }
+terminal_size = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
 predicates = { workspace = true }
+insta = { workspace = true }

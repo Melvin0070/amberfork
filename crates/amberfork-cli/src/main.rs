@@ -11,10 +11,14 @@
 
 use amberfork_align::{DiffParams, LexicalCost, diff};
 use amberfork_ingest::IngestError;
-use amberfork_model::{DiffResult, Warning};
+use amberfork_model::Warning;
 use clap::{Args, Parser, Subcommand};
+use render::{RenderOpts, resolve_color_mode};
+use std::io::IsTerminal;
 use std::path::PathBuf;
 use std::process::ExitCode;
+
+mod render;
 
 const EXIT_CONVERGED: u8 = 0;
 const EXIT_FORKED: u8 = 1;
@@ -47,6 +51,10 @@ struct DiffArgs {
     /// Emit the DiffResult as JSON on stdout — the machine contract.
     #[arg(long)]
     json: bool,
+
+    /// Disable ANSI styling (also honored: a non-empty NO_COLOR, piped stdout, TERM=dumb).
+    #[arg(long)]
+    no_color: bool,
 }
 
 fn main() -> ExitCode {
@@ -71,7 +79,24 @@ fn run_diff(args: &DiffArgs) -> Result<ExitCode, IngestError> {
             .expect("DiffResult serialization is infallible (no non-string map keys)");
         println!("{json}");
     } else {
-        print_summary(&result);
+        let color = resolve_color_mode(
+            args.no_color,
+            std::io::stdout().is_terminal(),
+            std::env::var("NO_COLOR").ok().as_deref(),
+            std::env::var("TERM").ok().as_deref(),
+            std::env::var("COLORTERM").ok().as_deref(),
+        );
+        let width = terminal_size::terminal_size().map_or(100, |(w, _)| usize::from(w.0));
+        let opts = RenderOpts {
+            color,
+            width: width.max(60),
+        };
+        print!("{}", render::render(&result, &good.run, &bad.run, &opts));
+        // Diagnostics stay off stdout: stdout is the result, stderr is the channel for
+        // everything about producing it.
+        for warning in &result.warnings {
+            eprintln!("amberfork: warning: {}", warning.msg);
+        }
     }
 
     let code = if result.fork.is_some() {
@@ -92,27 +117,4 @@ fn merged_warnings(reference: Vec<Warning>, observed: Vec<Warning>) -> Vec<Warni
         })
     }
     tag('a', reference).chain(tag('b', observed)).collect()
-}
-
-/// Placeholder human summary — one honest line. Slice 2 of issue #4 replaces this with the
-/// DESIGN.md terminal render (sync spine, `⑂ FORK` gutter, amber, field diff).
-fn print_summary(result: &DiffResult) {
-    match result.fork {
-        Some(fork) => {
-            let side = |label: char, step: Option<usize>| match step {
-                Some(idx) => format!("{label} step {idx}"),
-                None => format!("no {label}-side step"),
-            };
-            println!(
-                "fork: {} / {} (confidence {:.2})",
-                side('b', fork.b_step),
-                side('a', fork.a_step),
-                fork.confidence
-            );
-        }
-        None => println!(
-            "converged: no fork across {} aligned moves",
-            result.alignment.len()
-        ),
-    }
 }
