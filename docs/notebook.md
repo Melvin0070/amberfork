@@ -382,3 +382,33 @@ The factorial ladder now shows content earns not just accuracy but *calibration*
 product's confidence separates hits from misses; the structure-only arm's does not separate
 at all. Published-curve numbers come from the test split under the frozen protocol, not from
 these dev n's. Remaining for issue #6: committed-results `report` mode.
+
+## 009 · 2026-07-09 · Offline reproduction closed: committed results + `report` (issue #6 slice 6)
+
+**What changed.** The last open loop in BENCHMARK.md's definition of done — "reproduces the
+results table, offline" — is now a committed artifact plus a renderer, not a promise.
+`bench/results/chimera_noise_seed42_dev.json` is the dev-split run on the real seed-42 noise
+set under the frozen config (`8ebd95ce8f3d`), and `amberfork-bench report` re-renders it to
+the published table with zero pair loading, zero engine work, zero fetch. Committing the
+document also finally lands rule 1's "the split manifest is committed" in the repo: the doc
+carries every pair's task key and dev/test assignment (opaque `whowhen_hand_*` ids only —
+never GAIA text, audited before commit). The committed side is **dev, deliberately**: rule 2
+seals the test split until a release tag, and a pre-release repo publishing test numbers
+would be spending the test set to decorate a README.
+
+**Design.** One document, one renderer: the results types moved to a `results` module, gained
+`Deserialize` (schema 0.4 unchanged — same JSON bytes, `&'static str` fields became `String`),
+and both `run` and `report` print through the same `render()`. The round-trip test makes the
+guarantee explicit — `run`'s stdout and `report`'s stdout on the same document are asserted
+byte-identical — and an insta snapshot locks the committed artifact's rendering in CI, so
+either the document or the renderer drifting is a red test, not a stale table. A document
+`report` cannot vouch for (missing, or a foreign `bench_schema_version` — checked before
+shape, so the error names the actual problem) is trouble (exit 2), never a partial render.
+
+**Check.** `cargo run -q -p amberfork-bench -- report` from a clean checkout prints the dev
+baseline exactly as notebook 006/008 recorded it: nw-lexical/resync **0.75 exact
+[0.41, 0.93], 0.88 ±1, 1.00 ±3, n=8** over baselines at 0.00 exact; README now carries the
+table (verified byte-identical against the live render) with the dev-split caveat and the
+one claim n=8 supports — the product's exact interval [0.41, 0.93] clears every baseline's
+[0.00, 0.32]. Issue #6's slice plan is complete; next in the milestone is #7 (Mode A′) and
+the #11 decision on a CI-visible parity pair set.

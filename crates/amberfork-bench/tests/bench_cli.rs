@@ -30,6 +30,13 @@
 //! the confidence-bearing arms. On the designed splices both aligner forks are near-certain
 //! (top bin), the product hits 2/2 there against the content-blind arm's 1/2, and the four
 //! empty bins print as `—` / `rate: null` — published, never dropped.
+//!
+//! `report` closes the loop (BENCHMARK.md's definition of done: the table reproduces
+//! offline): it renders a committed results document — no pairs, no engine, no fetch — and
+//! its stdout is byte-identical to the `run` that wrote the document, because both modes
+//! print through one renderer. The insta snapshot locks the committed dev-split artifact
+//! (`bench/results/`); a document the renderer cannot vouch for (missing, or a foreign
+//! `bench_schema_version`) is trouble, never a partial table.
 
 use assert_cmd::Command;
 use predicates::prelude::*;
@@ -349,6 +356,81 @@ fn an_invalid_params_file_is_trouble_not_a_fallback() {
         .assert()
         .code(2)
         .stderr(predicate::str::contains("tau must be within [0, 1]"));
+}
+
+/// The canonical committed results document (the dev-split run on the real seed-42 noise
+/// set; the test split stays sealed until a release tag — rule 2).
+fn committed_results() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bench/results/chimera_noise_seed42_dev.json")
+}
+
+#[test]
+fn report_reproduces_the_committed_dev_results_offline() {
+    // The whole point of the committed document: anyone can re-render the published table
+    // from the repo alone. The snapshot IS the published artifact — if either the document
+    // or the renderer drifts, this goes red before a stale table reaches a reader.
+    let output = bench()
+        .arg("report")
+        .arg("--results")
+        .arg(committed_results())
+        .assert()
+        .success();
+    let stdout = String::from_utf8(output.get_output().stdout.clone()).expect("utf-8 stdout");
+    insta::assert_snapshot!("report_committed_dev", stdout);
+}
+
+#[test]
+fn report_output_is_identical_to_the_run_that_wrote_the_document() {
+    // One renderer, two modes: `run` prints the artifact it just computed, `report` prints
+    // the artifact a document carries. Byte-identical stdout is the guarantee that a
+    // committed table never diverges from what a live run would have published.
+    let json_path = Path::new(env!("CARGO_TARGET_TMPDIR")).join("roundtrip.json");
+    let run = bench()
+        .arg("run")
+        .arg("--pairs")
+        .arg(fixtures_dir())
+        .arg("--params")
+        .arg(frozen_params())
+        .arg("--json-out")
+        .arg(&json_path)
+        .assert()
+        .success();
+    let report = bench()
+        .arg("report")
+        .arg("--results")
+        .arg(&json_path)
+        .assert()
+        .success();
+    assert_eq!(
+        String::from_utf8(run.get_output().stdout.clone()).expect("utf-8 stdout"),
+        String::from_utf8(report.get_output().stdout.clone()).expect("utf-8 stdout"),
+        "report must reproduce the run's published artifact byte for byte"
+    );
+}
+
+#[test]
+fn report_on_a_missing_results_file_is_trouble() {
+    bench()
+        .args(["report", "--results", "does/not/exist.json"])
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("does/not/exist.json"));
+}
+
+#[test]
+fn report_on_an_unsupported_schema_version_is_trouble() {
+    // A renderer that silently draws a table from a document shaped by different rules
+    // would misrepresent it. The version gate speaks before any shape error can.
+    let path = Path::new(env!("CARGO_TARGET_TMPDIR")).join("foreign_version.json");
+    std::fs::write(&path, r#"{ "bench_schema_version": "0.3" }"#).expect("write scratch doc");
+
+    bench()
+        .arg("report")
+        .arg("--results")
+        .arg(&path)
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("0.3").and(predicate::str::contains("0.4")));
 }
 
 #[test]

@@ -29,6 +29,7 @@ dependencies = [
  "amberfork-model",
  "assert_cmd",
  "clap",
+ "insta",
  "predicates",
  "serde",
  "serde_json",

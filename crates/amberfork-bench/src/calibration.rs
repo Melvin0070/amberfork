@@ -13,7 +13,7 @@
 
 use crate::arms::Prediction;
 use crate::score::{Rate, wilson95};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Number of fixed-width confidence bins. Five is the standard reliability-curve
 /// granularity; the last bin is closed so confidence 1.0 has a home.
@@ -22,7 +22,7 @@ pub const N_BINS: usize = 5;
 /// One bin of the reliability curve: the half-open confidence interval `[lo, hi)` (closed at
 /// 1.0 for the last bin) and the exact-hit rate of the predictions that landed in it —
 /// `None` when the bin is empty, which is data, not an omission.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct CalibrationBin {
     pub lo: f64,
     pub hi: f64,

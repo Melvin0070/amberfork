@@ -6,7 +6,7 @@
 //! silently shrinking the denominator — and is additionally reported as its own `no_pred`
 //! rate so a method can't hide behind abstention.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// z for a two-sided 95% normal interval (Φ⁻¹(0.975)).
 const Z95: f64 = 1.959_963_984_540_054;
@@ -14,7 +14,7 @@ const Z95: f64 = 1.959_963_984_540_054;
 /// A binomial rate with its Wilson 95% score interval. `rate` is `hits / n`; the interval is
 /// asymmetric near the boundaries, which is exactly why Wilson over normal approximation on
 /// small n (Who&When-scale fixture sets).
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Rate {
     pub hits: usize,
     pub n: usize,
@@ -26,7 +26,7 @@ pub struct Rate {
 /// One arm's localization scores on one fixture set: step exact-match, within ±1, within ±3
 /// (the honest windows — "first divergence" and "decisive error" can legitimately differ by a
 /// step), and the abstention rate.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct ArmScore {
     pub exact: Rate,
     pub w1: Rate,
