@@ -1,13 +1,12 @@
 //! `amberfork-bench` — the offline benchmark harness (issue #6, BENCHMARK.md's
 //! pre-registered protocol).
 //!
-//! Slice 1: `run --pairs <dir>` scores the product arm (`nw-lexical/resync` — the exact
-//! engine `amberfork diff` ships) on a local chimera pair set and emits the markdown results
-//! table (stdout) plus an optional results JSON (`--json-out`). Wilson 95% intervals on every
-//! rate; abstentions reported, never dropped. Still to land, slice by slice: the factorial
-//! baselines (random / positional / NW-structural), the dev/test split manifest with
-//! exclusions-as-data, frozen params (`bench/params.toml` + config hash), the calibration
-//! curve, and the committed-results `report` mode.
+//! `run --pairs <dir>` scores every protocol arm ([`arms::ALL`] — the factorial ladder from
+//! the random floor to the shipped engine) on a local chimera pair set and emits the markdown
+//! results table (stdout) plus an optional results JSON (`--json-out`). Wilson 95% intervals
+//! on every rate; abstentions reported, never dropped. Still to land, slice by slice: the
+//! dev/test split manifest with exclusions-as-data, frozen params (`bench/params.toml` +
+//! config hash), the calibration curve, and the committed-results `report` mode.
 //!
 //! Real pair sets are NOT committed: chimera pairs derive from Who&When logs whose questions
 //! originate in GAIA (gated upstream — notebook 001/T30). Regenerate locally with
@@ -17,12 +16,13 @@
 //! A harness, not the product CLI: exit 0 = ran, 2 = trouble. stdout carries only the table
 //! (paste-ready); diagnostics and context go to stderr.
 
+mod arms;
 mod pairs;
 mod score;
 
-use amberfork_align::{DiffParams, LexicalCost, diff};
+use amberfork_align::DiffParams;
 use clap::{Args, Parser, Subcommand};
-use pairs::{Pair, load_pairs};
+use pairs::load_pairs;
 use score::{ArmScore, Rate};
 use serde::Serialize;
 use std::path::PathBuf;
@@ -110,10 +110,6 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
 
     let params = DiffParams::default();
     let golds: Vec<usize> = pairs.iter().map(|pair| pair.gold_step).collect();
-    let preds: Vec<Option<usize>> = pairs
-        .iter()
-        .map(|pair| nw_lexical_resync(pair, &params))
-        .collect();
 
     let results = BenchResults {
         bench_schema_version: "0.1",
@@ -125,10 +121,19 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
             gap_open: params.align.gap_open,
             gap_ext: params.align.gap_ext,
         },
-        arms: vec![ArmResult {
-            arm: "nw-lexical/resync",
-            score: score::score(&preds, &golds),
-        }],
+        arms: arms::ALL
+            .iter()
+            .map(|arm| {
+                let preds: Vec<Option<usize>> = pairs
+                    .iter()
+                    .map(|pair| arm.predict(pair, &params))
+                    .collect();
+                ArmResult {
+                    arm: arm.name(),
+                    score: score::score(&preds, &golds),
+                }
+            })
+            .collect(),
     };
 
     if let Some(path) = &args.json_out {
@@ -147,12 +152,6 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     );
     println!("{}", markdown_table(&results));
     Ok(ExitCode::from(EXIT_OK))
-}
-
-/// The product arm: affine-gap NW over the lexical cost model plus the resync-k fork rule —
-/// exactly what `amberfork diff` runs — predicting the failing-run step the fork points at.
-fn nw_lexical_resync(pair: &Pair, params: &DiffParams) -> Option<usize> {
-    diff(&pair.reference, &pair.failing, &LexicalCost, params).fork_step_observed()
 }
 
 /// The results as a markdown table (the shape BENCHMARK.md's published table takes):
