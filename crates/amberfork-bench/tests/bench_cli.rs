@@ -20,6 +20,13 @@
 //! reference run's id: `restock-good` hashes to test, `greenhouse-good` to dev, so the two
 //! sets between them lock both assignments end-to-end.
 //!
+//! A third set, `mode_a_prime_synthetic`, locks the issue-#7 cross-system disclosure: two
+//! pairs whose manifests declare `cross_system: true` (a CaptainAgent-style failing run vs a
+//! smolagents-style passing reference on the same task). On them `run` labels the protocol
+//! `mode-a-prime` and prints the disclosure banner — cross-system references diverge from step
+//! 0, so the windowed metrics are the ones of record and step-exact is not claimed. The
+//! chimera set is the control: `cross_system: 0`, no banner, table byte-identical to before.
+//!
 //! Rule 2 (parameter freeze) is locked here too: every run names its params file
 //! (`--params`, default `bench/params.toml`), the published artifact carries the file's
 //! sha256 — recomputed in-test from the committed bytes, never hardcoded, so a changelog
@@ -49,6 +56,14 @@ fn fixtures_dir() -> PathBuf {
 
 fn zoo_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/exclusion_zoo")
+}
+
+/// The synthetic Mode A′ set (issue #7): two cross-system pairs — a CaptainAgent-style failing
+/// run against a smolagents-style passing reference on the same task, rosters and step shapes
+/// diverging from step 0. Hand-authored fiction, same as `chimera_synthetic`; the manifests
+/// carry `cross_system: true`, which is what drives the table's cross-system disclosure.
+fn mode_a_prime_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/mode_a_prime_synthetic")
 }
 
 /// The committed frozen-params file (rule 2), reached from the crate root — integration
@@ -119,14 +134,18 @@ fn run_scores_the_synthetic_set_and_writes_the_results_json() {
         .stdout(predicate::str::contains("| [0.0, 0.2) | — | — |"))
         .stdout(predicate::str::contains(
             "| [0.8, 1.0] | 1/2 · 0.50 [0.09, 0.91] | 2/2 · 1.00 [0.34, 1.00] |",
-        ));
+        ))
+        // The cross-system disclosure seam is inert for a same-system set: no banner appears,
+        // and the table below is exactly what it was before Mode A′ existed.
+        .stdout(predicate::str::contains("cross-system:").not());
 
     let text = std::fs::read_to_string(&json_path).expect("results JSON written");
     let results: serde_json::Value = serde_json::from_str(&text).expect("results JSON parses");
-    assert_eq!(results["bench_schema_version"], "0.4");
+    assert_eq!(results["bench_schema_version"], "0.5");
     assert_eq!(results["protocol"], "chimera");
     assert_eq!(results["split"], "all");
     assert_eq!(results["n_pairs"], 3);
+    assert_eq!(results["cross_system"], 0, "no cross-system pairs here");
 
     // Rule 2 in the committed document: the params carry their identity (source + sha256),
     // not just their values.
@@ -218,6 +237,49 @@ fn run_scores_the_synthetic_set_and_writes_the_results_json() {
             "{name}: both forks are near-certain"
         );
     }
+}
+
+#[test]
+fn run_discloses_cross_system_pairs() {
+    // Issue #7 (Mode A′): a set whose pairs align a failing run against a reference from a
+    // *different* agent system must SAY SO in the published table. Cross-system references
+    // legitimately diverge from step 0 (different rosters, different plan shapes), so step-exact
+    // gold is murky and the windowed ±1/±3 metrics are the ones of record (BENCHMARK.md,
+    // notebook 002). The disclosure is derived from the pairs' own `cross_system: true`, not an
+    // operator flag — the data declares its nature, so it cannot be mislabeled.
+    let json_path = Path::new(env!("CARGO_TARGET_TMPDIR")).join("mode_a_prime_results.json");
+
+    bench()
+        .arg("run")
+        .arg("--pairs")
+        .arg(mode_a_prime_dir())
+        .arg("--params")
+        .arg(frozen_params())
+        .arg("--json-out")
+        .arg(&json_path)
+        .assert()
+        .success()
+        // Both scored pairs are cross-system, so the banner reads 2/2 and states the honest
+        // reading of the numbers below it.
+        .stdout(predicate::str::contains(
+            "cross-system: 2/2 scored pairs align a failing run against a reference from a \
+             different agent system — cross-system references diverge from step 0, so ±1/±3 \
+             are the metric of record and step-exact is not claimed.",
+        ));
+
+    let text = std::fs::read_to_string(&json_path).expect("results JSON written");
+    let results: serde_json::Value = serde_json::from_str(&text).expect("results JSON parses");
+    assert_eq!(results["bench_schema_version"], "0.5");
+    // A set carrying cross-system pairs is Mode A′, not controlled-injection chimera — the
+    // coarse protocol label follows the data, and the banner carries the detail.
+    assert_eq!(results["protocol"], "mode-a-prime");
+    assert_eq!(results["n_pairs"], 2);
+    assert_eq!(
+        results["cross_system"], 2,
+        "both scored pairs are cross-system"
+    );
+    assert_eq!(results["coverage"]["total"], 2);
+    assert_eq!(results["coverage"]["evaluated"], 2);
 }
 
 #[test]
@@ -422,7 +484,7 @@ fn report_on_an_unsupported_schema_version_is_trouble() {
     // A renderer that silently draws a table from a document shaped by different rules
     // would misrepresent it. The version gate speaks before any shape error can.
     let path = Path::new(env!("CARGO_TARGET_TMPDIR")).join("foreign_version.json");
-    std::fs::write(&path, r#"{ "bench_schema_version": "0.3" }"#).expect("write scratch doc");
+    std::fs::write(&path, r#"{ "bench_schema_version": "0.4" }"#).expect("write scratch doc");
 
     bench()
         .arg("report")
@@ -430,7 +492,7 @@ fn report_on_an_unsupported_schema_version_is_trouble() {
         .arg(&path)
         .assert()
         .code(2)
-        .stderr(predicate::str::contains("0.3").and(predicate::str::contains("0.4")));
+        .stderr(predicate::str::contains("0.4").and(predicate::str::contains("0.5")));
 }
 
 #[test]

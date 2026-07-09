@@ -1,0 +1,52 @@
+{
+  "schema_version": "0.1",
+  "id": "capt-expense-bad",
+  "task": "reconcile the Q3 travel expenses for employee E-4471 against the per-diem policy",
+  "outcome": "fail",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "orchestrator",
+      "outputs": "Plan: retrieve employee E-4471's Q3 receipts, look up the per-diem policy for their travel tier, sum eligible amounts, then flag any overage."
+    },
+    {
+      "idx": 1,
+      "kind": "agent",
+      "name": "web_surfer",
+      "outputs": "Opened the corporate travel policy portal. The per-diem schedule lives on the 'Tier tables' tab; the caps vary by travel tier."
+    },
+    {
+      "idx": 2,
+      "kind": "tool",
+      "name": "policy.lookup_perdiem",
+      "inputs": { "tier": "domestic-standard" },
+      "outputs": { "meal_cap": 75, "lodging_cap": 180 }
+    },
+    {
+      "idx": 3,
+      "kind": "llm",
+      "name": "assistant",
+      "outputs": "Applying meal cap 75 and lodging cap 180 across the 6 travel days for E-4471."
+    },
+    {
+      "idx": 4,
+      "kind": "tool",
+      "name": "expense.sum",
+      "inputs": { "employee": "E-4471", "quarter": "Q3" },
+      "outputs": { "meals": 512, "lodging": 1040 }
+    },
+    {
+      "idx": 5,
+      "kind": "llm",
+      "name": "assistant",
+      "outputs": "Meals 512 against a 6x75=450 cap is a 62 overage; lodging 1040 against 6x180=1080 is within cap. Flag a 62 meal overage."
+    },
+    {
+      "idx": 6,
+      "kind": "llm",
+      "name": "orchestrator",
+      "outputs": "Result: flag a $62 meal overage for E-4471 Q3; lodging within policy."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": "0.1",
+  "id": "smol-expense-good",
+  "task": "reconcile the Q3 travel expenses for employee E-4471 against the per-diem policy",
+  "outcome": "pass",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "code_agent",
+      "outputs": "I'll load the receipts and the per-diem policy from code, resolve the traveler's tier, then compute overages against the correct caps."
+    },
+    {
+      "idx": 1,
+      "kind": "tool",
+      "name": "python",
+      "inputs": { "code": "policy = get_policy('E-4471'); print(policy.tier)" },
+      "outputs": { "stdout": "international-economy" }
+    },
+    {
+      "idx": 2,
+      "kind": "tool",
+      "name": "python",
+      "inputs": { "code": "cap = perdiem('international-economy'); print(cap)" },
+      "outputs": { "stdout": "{'meal_cap': 55, 'lodging_cap': 140}" }
+    },
+    {
+      "idx": 3,
+      "kind": "tool",
+      "name": "python",
+      "inputs": { "code": "print(overages('E-4471', 'Q3', cap))" },
+      "outputs": { "stdout": "{'meal_overage': 182, 'lodging_overage': 200}" }
+    },
+    {
+      "idx": 4,
+      "kind": "llm",
+      "name": "code_agent",
+      "outputs": "Final: E-4471 Q3 has a $182 meal overage and a $200 lodging overage against the international-economy per-diem."
+    }
+  ]
+}

@@ -14,7 +14,7 @@ use std::path::Path;
 
 /// The document version [`load`] vouches for. Bumped whenever the shape changes, so a
 /// renderer never draws a table from a document shaped by different rules.
-pub const SCHEMA_VERSION: &str = "0.4";
+pub const SCHEMA_VERSION: &str = "0.5";
 
 /// The results document `run --json-out` writes and `report` renders. Versioned
 /// independently of the trace schema so a committed copy stays readable as later slices
@@ -22,17 +22,26 @@ pub const SCHEMA_VERSION: &str = "0.4";
 /// (the rule-1 split manifest); `n_pairs` narrowed from "pairs loaded" to "pairs scored".
 /// 0.3: `params` gained its identity — `source` (the file as named on the command line) and
 /// `sha256` of its exact bytes (rule 2). 0.4: confidence-bearing arms carry `calibration`,
-/// the rule-7 reliability curve (fixed-width bins, exact-hit rate per bin).
+/// the rule-7 reliability curve (fixed-width bins, exact-hit rate per bin). 0.5: `cross_system`
+/// — how many scored pairs align against a different-agent-system reference (Mode A′); when it
+/// is non-zero the protocol reads `mode-a-prime` and the table carries the cross-system
+/// disclosure (issue #7).
 #[derive(Serialize, Deserialize)]
 pub struct BenchResults {
     pub bench_schema_version: String,
-    /// The evaluation protocol: `chimera` = controlled injection on real logs (BENCHMARK.md).
+    /// The evaluation protocol: `chimera` = controlled injection on real logs, `mode-a-prime`
+    /// = natural cross-system run-vs-reference pairs (BENCHMARK.md).
     pub protocol: String,
     /// Which split selection produced the arm scores.
     pub split: String,
     pub coverage: Coverage,
     /// Pairs actually scored: evaluated ∩ selected split.
     pub n_pairs: usize,
+    /// Of the scored pairs, how many are cross-system (Mode A′): the reference is a run of a
+    /// different agent system, so it diverges from step 0 and step-exact gold is murky. Drives
+    /// the table's cross-system disclosure; zero for a same-system chimera set.
+    #[serde(default)]
+    pub cross_system: usize,
     pub params: ParamsUsed,
     /// The split manifest: every evaluated pair with its task key and assignment, whatever
     /// the selection — committed alongside results so the split is auditable (rule 1).
@@ -122,17 +131,37 @@ pub fn load(path: &Path) -> Result<BenchResults, String> {
     serde_json::from_str(&text).map_err(|err| format!("results document {}: {err}", path.display()))
 }
 
-/// The full published artifact: coverage line, params line, arms table, calibration table —
-/// the exact stdout of both `run` and `report`.
+/// The full published artifact: coverage line, params line, an optional cross-system
+/// disclosure, the arms table, the calibration table — the exact stdout of both `run` and
+/// `report`. The disclosure appears only for a Mode A′ set, so a same-system chimera table is
+/// byte-identical to what it was before the seam existed.
 #[must_use]
 pub fn render(results: &BenchResults) -> String {
+    let mut header = vec![coverage_line(results), params_line(results)];
+    if let Some(line) = cross_system_line(results) {
+        header.push(line);
+    }
     format!(
-        "{}\n{}\n\n{}\n\n{}",
-        coverage_line(results),
-        params_line(results),
+        "{}\n\n{}\n\n{}",
+        header.join("\n"),
         markdown_table(results),
         calibration_table(results)
     )
+}
+
+/// The cross-system disclosure (issue #7), present only when the scored set contains Mode A′
+/// pairs. Cross-system references come from a different agent system and legitimately diverge
+/// from step 0, so the honest reading of the table below is the windowed one — BENCHMARK.md's
+/// "report windowed metrics; do not overclaim step-exact", notebook 002's decision C.
+fn cross_system_line(results: &BenchResults) -> Option<String> {
+    (results.cross_system > 0).then(|| {
+        format!(
+            "cross-system: {}/{} scored pairs align a failing run against a reference from a \
+             different agent system — cross-system references diverge from step 0, so ±1/±3 are \
+             the metric of record and step-exact is not claimed.",
+            results.cross_system, results.n_pairs
+        )
+    })
 }
 
 /// The coverage line the table is published under (rule 4: a rate without its denominator's

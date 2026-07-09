@@ -32,6 +32,13 @@ pub struct Pair {
     pub task_key: String,
     /// Where the task key hashes in the dev/test split.
     pub split: Split,
+    /// Whether the reference run comes from a *different* agent system than the failing run
+    /// (Mode A′, issue #7). Cross-system references legitimately diverge from step 0, so a set
+    /// carrying such pairs is scored under a windowed reading and the table discloses it — see
+    /// BENCHMARK.md and notebook 002. Declared per pair in the manifest (`cross_system`,
+    /// default false), because it is a fact of how the pair was constructed, not an operator
+    /// choice at scoring time.
+    pub cross_system: bool,
     pub reference: Run,
     pub failing: Run,
     pub gold_step: usize,
@@ -147,6 +154,10 @@ struct Manifest {
     failing: PathBuf,
     reference: PathBuf,
     gold_step: usize,
+    /// True when the reference is a run of a *different* agent system (Mode A′). Optional and
+    /// false by default: a same-system chimera manifest simply omits it.
+    #[serde(default)]
+    cross_system: bool,
 }
 
 /// Why a pair set failed to load *as a whole*. Per-pair problems are [`Exclusion`]s, not
@@ -286,6 +297,7 @@ fn evaluate_manifest(
         name: name.to_string(),
         split: Split::of(&task_key),
         task_key,
+        cross_system: manifest.cross_system,
         reference,
         failing,
         gold_step: manifest.gold_step,

@@ -1,0 +1,34 @@
+{
+  "schema_version": "0.1",
+  "id": "smol-tz-good",
+  "task": "find the earliest overlapping meeting slot next Tuesday for the Nairobi and Lisbon teams",
+  "outcome": "pass",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "code_agent",
+      "outputs": "I'll compute the overlap with a timezone library rather than reasoning about offsets by hand."
+    },
+    {
+      "idx": 1,
+      "kind": "tool",
+      "name": "python",
+      "inputs": { "code": "from zoneinfo import ZoneInfo; convert('09:00', 'Africa/Nairobi', 'Europe/Lisbon')" },
+      "outputs": { "stdout": "07:00" }
+    },
+    {
+      "idx": 2,
+      "kind": "tool",
+      "name": "python",
+      "inputs": { "code": "earliest_overlap(nairobi_hours, lisbon_hours, 'next Tuesday')" },
+      "outputs": { "stdout": "Tue 09:00 Lisbon / 11:00 Nairobi" }
+    },
+    {
+      "idx": 3,
+      "kind": "llm",
+      "name": "code_agent",
+      "outputs": "Earliest overlap next Tuesday is 09:00 Lisbon, which is 11:00 in Nairobi."
+    }
+  ]
+}

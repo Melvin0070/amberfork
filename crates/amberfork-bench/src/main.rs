@@ -178,6 +178,16 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     let params = frozen.params;
     let golds: Vec<usize> = scored.iter().map(|pair| pair.gold_step).collect();
 
+    // The set's cross-system character is a fact of its pairs, not an operator flag: a scored
+    // pair is Mode A′ iff its manifest declared it. A set carrying any such pair is labeled
+    // `mode-a-prime` and gets the table's cross-system disclosure (issue #7).
+    let cross_system = scored.iter().filter(|pair| pair.cross_system).count();
+    let protocol = if cross_system > 0 {
+        "mode-a-prime"
+    } else {
+        "chimera"
+    };
+
     let mut reasons: BTreeMap<String, usize> = BTreeMap::new();
     for exclusion in &set.exclusions {
         *reasons
@@ -187,7 +197,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
 
     let results = BenchResults {
         bench_schema_version: results::SCHEMA_VERSION.to_string(),
-        protocol: "chimera".to_string(),
+        protocol: protocol.to_string(),
         split: args.split.as_str().to_string(),
         coverage: Coverage {
             total: set.total(),
@@ -206,6 +216,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
                 .collect(),
         },
         n_pairs: scored.len(),
+        cross_system,
         params: ParamsUsed {
             source: frozen.source,
             sha256: frozen.sha256,

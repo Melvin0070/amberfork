@@ -1,5 +1,5 @@
 {
-  "bench_schema_version": "0.4",
+  "bench_schema_version": "0.5",
   "protocol": "chimera",
   "split": "dev",
   "coverage": {
@@ -11,6 +11,7 @@
     "exclusions": []
   },
   "n_pairs": 8,
+  "cross_system": 0,
   "params": {
     "source": "bench/params.toml",
     "sha256": "8ebd95ce8f3d50549017b4d381c8d0dc1f76264184ce92e5795895b383f36014",

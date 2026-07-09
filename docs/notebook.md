@@ -412,3 +412,34 @@ table (verified byte-identical against the live render) with the dev-split cavea
 one claim n=8 supports — the product's exact interval [0.41, 0.93] clears every baseline's
 [0.00, 0.32]. Issue #6's slice plan is complete; next in the milestone is #7 (Mode A′) and
 the #11 decision on a CI-visible parity pair set.
+
+## 010 · 2026-07-09 · Mode A′ opens: the cross-system disclosure seam (issue #7 slice 1)
+
+**What changed.** The harness can now honestly render a cross-system pair set. A pair manifest
+may declare `cross_system: true` (promoted from the spike's throwaway `meta.cross_system` to a
+first-class field, because it changes *which metrics are the headline*); the harness carries
+that fact through to the results document (`bench_schema_version` 0.4 → 0.5, new `cross_system`
+count) and, when any scored pair is cross-system, prints a disclosure banner and labels the
+protocol `mode-a-prime` instead of `chimera`. The banner states the honest reading BENCHMARK.md
+line 62-64 and notebook 002's decision C require: *cross-system references diverge from step 0,
+so ±1/±3 are the metric of record and step-exact is not claimed.* This is the contract seam the
+rest of #7 (converters, pair construction, `bench/fetch`) lands in — a converted or fetched
+Mode A′ pair now has an honest home in the table before any of that machinery exists.
+
+**Design.** The disclosure is *derived from the data, not asserted by the operator*: there is no
+`--protocol` flag. A pair is Mode A′ iff its manifest says so, and the set's label follows the
+count of such pairs among the scored split — a set cannot be mislabeled at scoring time. The
+banner renders only when the count is non-zero, so a same-system chimera table is byte-identical
+to what it was before the seam existed (the committed `chimera_noise_seed42_dev.json` regenerated
+at 0.5 differs from its 0.4 self by exactly two lines: the version and `cross_system: 0` — every
+arm score, CI, and calibration bin unchanged; the `report` snapshot never moved).
+
+**Check (the number that justifies the disclosure).** On a hand-authored synthetic Mode A′ set
+(two pairs: a CaptainAgent-style failing team vs a smolagents-style passing reference, rosters
+diverging from step 0), the shipped aligner scores **0.00 exact but 1.00 ±3** — the cross-system
+step-0 divergence collapses step-exact while the windowed metric holds, exactly the phenomenon
+the banner discloses and notebook 002 predicted for cross-system gold. Same-system chimera is the
+control (`cross_system: 0`, no banner). Full gate green (fmt/clippy/`cargo test --workspace`,
+40 bench tests incl. the offline-reproduction snapshot). Next #7 slice: port the Who&When and
+TapeAgents converters from spike Python to Rust so real cross-system pairs can be constructed
+in-tree and fed through this seam.

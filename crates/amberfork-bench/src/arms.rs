@@ -217,6 +217,7 @@ mod tests {
             name: name.to_string(),
             split: crate::split::Split::of(&task_key),
             task_key,
+            cross_system: false,
             reference,
             failing,
             gold_step: 0,

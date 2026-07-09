@@ -1,0 +1,10 @@
+{
+  "failing": "a_00_capt_expense.json",
+  "reference": "b_00_smol_expense.json",
+  "gold_step": 2,
+  "cross_system": true,
+  "meta": {
+    "provenance": "hand-authored synthetic fixture — no benchmark-derived content",
+    "design": "Mode A' cross-system: CaptainAgent-style failing team vs smolagents-style passing reference; rosters and step shapes diverge from step 0. Gold = the wrong per-diem tier lookup."
+  }
+}

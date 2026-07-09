@@ -1,0 +1,45 @@
+{
+  "schema_version": "0.1",
+  "id": "capt-tz-bad",
+  "task": "find the earliest overlapping meeting slot next Tuesday for the Nairobi and Lisbon teams",
+  "outcome": "fail",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "orchestrator",
+      "outputs": "Plan: get both teams' working hours, convert them to a common timezone, then find the earliest overlap next Tuesday."
+    },
+    {
+      "idx": 1,
+      "kind": "agent",
+      "name": "web_surfer",
+      "outputs": "Nairobi is UTC+3 year-round. Lisbon observes daylight time in summer under Western European Summer Time."
+    },
+    {
+      "idx": 2,
+      "kind": "llm",
+      "name": "assistant",
+      "outputs": "Nairobi 09:00 is 06:00 UTC. Lisbon summer is UTC-1, so that lands at 05:00 Lisbon local."
+    },
+    {
+      "idx": 3,
+      "kind": "tool",
+      "name": "calendar.overlap",
+      "inputs": { "a": "Nairobi 09:00-17:00", "b": "Lisbon 05:00-13:00" },
+      "outputs": { "earliest": "Lisbon 05:00 / Nairobi 09:00" }
+    },
+    {
+      "idx": 4,
+      "kind": "llm",
+      "name": "assistant",
+      "outputs": "Earliest overlap is 05:00 Lisbon / 09:00 Nairobi next Tuesday."
+    },
+    {
+      "idx": 5,
+      "kind": "llm",
+      "name": "orchestrator",
+      "outputs": "Proposed slot: Tuesday 05:00 Lisbon time."
+    }
+  ]
+}

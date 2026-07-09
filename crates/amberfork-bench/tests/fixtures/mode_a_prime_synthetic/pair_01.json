@@ -1,0 +1,10 @@
+{
+  "failing": "a_01_capt_tz.json",
+  "reference": "b_01_smol_tz.json",
+  "gold_step": 2,
+  "cross_system": true,
+  "meta": {
+    "provenance": "hand-authored synthetic fixture — no benchmark-derived content",
+    "design": "Mode A' cross-system: CaptainAgent-style failing team vs smolagents-style passing reference on the same task. Gold = the wrong Lisbon summer offset."
+  }
+}
