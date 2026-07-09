@@ -1,0 +1,3 @@
+# Transient build artifacts from build_demo.sh (VHS frame layers + rotated sequence).
+.frames/
+.rot/
