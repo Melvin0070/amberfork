@@ -1,0 +1,7 @@
+{
+  "schema_version": "0.1",
+  "id": "greenhouse-empty",
+  "task": "greenhouse-audit #7: verify the tomato bay climate",
+  "outcome": "fail",
+  "steps": []
+}

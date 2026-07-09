@@ -1,0 +1,32 @@
+{
+  "schema_version": "0.1",
+  "id": "greenhouse-bad",
+  "task": "greenhouse-audit #7: verify the tomato bay climate",
+  "outcome": "fail",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Plan: read the bay-3 thermostat, check the humidity sensor, compare against the tomato profile, file the audit note."
+    },
+    {
+      "idx": 1,
+      "kind": "tool",
+      "name": "thermostat.read",
+      "outputs": "bay-3: 24.1 C"
+    },
+    {
+      "idx": 2,
+      "kind": "tool",
+      "name": "soil_ph.read",
+      "outputs": "bay-5: pH 6.8"
+    },
+    {
+      "idx": 3,
+      "kind": "llm",
+      "name": "auditor",
+      "outputs": "Soil acidity looks acceptable; filing the audit note against the wrong bay entirely."
+    }
+  ]
+}

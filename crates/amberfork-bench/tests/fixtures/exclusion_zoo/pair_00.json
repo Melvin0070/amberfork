@@ -1,0 +1,9 @@
+{
+  "failing": "good_fail.json",
+  "reference": "good_ref.json",
+  "gold_step": 2,
+  "meta": {
+    "provenance": "hand-authored synthetic fixture — no benchmark-derived content",
+    "design": "the one evaluable pair in the zoo; forks at step 2 (wrong sensor read)"
+  }
+}

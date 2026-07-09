@@ -1,0 +1,9 @@
+{
+  "failing": "good_fail.json",
+  "reference": "good_ref.json",
+  "gold_step": 99,
+  "meta": {
+    "provenance": "hand-authored synthetic fixture — no benchmark-derived content",
+    "design": "gold_step 99 outside a 4-step failing run → gold-out-of-range exclusion"
+  }
+}

@@ -298,3 +298,29 @@ sync or a gapped step with a sync-grade twin) — and it is never exactly right 
 from misses. Render `confidence ≈ 0` as an explicit "marginal call / weak fork" state, not a
 small bar: on dev pairs it means "do not trust the exact step". Directional caveat: dev
 chimera pairs only, one cost model, τ fixed at 0.3; recalibrate before any benchmark claim.
+
+## 006 · 2026-07-09 · Protocol rules 1+4 live: dev/test split + exclusions-as-data (issue #6 slice 3)
+
+**What changed.** `amberfork-bench` now assigns every pair its dev/test side (stable FNV-1a
+hash of the task key; dev iff bucket < 30 of 100 — committed code constants, deliberately NOT
+`bench/params.toml` material: a re-tunable split is no split) and treats unevaluable cases as
+counted exclusions tabulated by reason (manifest-unreadable/-invalid, run-unloadable,
+empty-run, gold-out-of-range) instead of hard load errors. The coverage line publishes with
+the table; the results JSON (bench_schema 0.2) carries coverage + the per-pair split manifest,
+so committing results (slice 6) commits the manifest. Task key = the **reference run's `id`**
+(`whowhen_hand_14`-style; one Who&When log = one question) — never the `task` field, which
+carries gated GAIA question text (001/T30). Pairs of one task co-locate by construction (the
+leakage guard). Caveat recorded in `split.rs`: the chimera tail's source log Y is not
+split-keyed; the split protects the prefix task X, where the gold step lives.
+
+**Local seed-42 noise set (n=20):** 8 dev / 12 test across 13 unique tasks; `whowhen_hand_49`'s
+three pairs all land dev — the guard visibly working. Dev tuning baseline (the number every
+future cost/τ/k change is judged against): **nw-lexical/resync 0.75 exact [0.41, 0.93], 0.88 ±1,
+1.00 ±3, n=8**; random / pos-lexical / nw-structural all 0.00 exact on dev. Consistent with the
+full-set 0.75 (003/004), so the dev draw is not a skewed subset.
+
+**Discipline from this commit.** Tuning runs `--split dev` only. The test side runs with frozen
+params once per release tag (arrives with slice 4). Honesty note: 003/004/005 measured on all
+20 pairs before the split existed, so this *local* set's test side is not pristine — acceptable
+for dev-stage mechanics, but published-table fixture sets get generated and split under the
+frozen protocol from birth, and any post-test change reports old-alongside-new (rule 3).

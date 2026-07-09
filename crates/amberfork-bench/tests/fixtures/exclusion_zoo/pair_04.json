@@ -1,0 +1,9 @@
+{
+  "failing": "empty_fail.json",
+  "reference": "good_ref.json",
+  "gold_step": 1,
+  "meta": {
+    "provenance": "hand-authored synthetic fixture — no benchmark-derived content",
+    "design": "failing run has zero steps → empty-run exclusion"
+  }
+}

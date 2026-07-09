@@ -4,27 +4,34 @@
 //! `run --pairs <dir>` scores every protocol arm ([`arms::ALL`] — the factorial ladder from
 //! the random floor to the shipped engine) on a local chimera pair set and emits the markdown
 //! results table (stdout) plus an optional results JSON (`--json-out`). Wilson 95% intervals
-//! on every rate; abstentions reported, never dropped. Still to land, slice by slice: the
-//! dev/test split manifest with exclusions-as-data, frozen params (`bench/params.toml` +
+//! on every rate; abstentions reported, never dropped. Rules 1 and 4 live here too: every
+//! pair carries its dev/test assignment (stable hash of the task key — `--split` selects
+//! which side is scored), and the coverage line above the table counts every excluded case
+//! with its reason. Still to land, slice by slice: frozen params (`bench/params.toml` +
 //! config hash), the calibration curve, and the committed-results `report` mode.
 //!
 //! Real pair sets are NOT committed: chimera pairs derive from Who&When logs whose questions
 //! originate in GAIA (gated upstream — notebook 001/T30). Regenerate locally with
-//! `python3 spike/make_pairs.py`. The committed set under `tests/fixtures/` is hand-authored
-//! fiction, kept so CI can lock the harness itself.
+//! `python3 spike/make_pairs.py`. The committed sets under `tests/fixtures/` are
+//! hand-authored fiction, kept so CI can lock the harness itself.
 //!
-//! A harness, not the product CLI: exit 0 = ran, 2 = trouble. stdout carries only the table
-//! (paste-ready); diagnostics and context go to stderr.
+//! A harness, not the product CLI: exit 0 = ran, 2 = trouble. stdout carries only the
+//! published artifact (coverage line + table, paste-ready); diagnostics and context go to
+//! stderr.
 
 mod arms;
+mod hash;
 mod pairs;
 mod score;
+mod split;
 
 use amberfork_align::DiffParams;
-use clap::{Args, Parser, Subcommand};
-use pairs::load_pairs;
+use clap::{Args, Parser, Subcommand, ValueEnum};
+use pairs::{Pair, load_pairs};
 use score::{ArmScore, Rate};
 use serde::Serialize;
+use split::Split;
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -51,21 +58,94 @@ struct RunArgs {
     #[arg(long, value_name = "DIR")]
     pairs: PathBuf,
 
+    /// Which protocol split to score: dev while tuning, test only with frozen params.
+    #[arg(long, value_enum, default_value_t = SplitSelection::All)]
+    split: SplitSelection,
+
     /// Also write the full results document as JSON.
     #[arg(long, value_name = "FILE")]
     json_out: Option<PathBuf>,
 }
 
+/// The `--split` choices — the two protocol sides plus `all` (the whole evaluated set, the
+/// walking-skeleton default; published tables come from `test`).
+#[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum SplitSelection {
+    All,
+    Dev,
+    Test,
+}
+
+impl SplitSelection {
+    fn admits(self, split: Split) -> bool {
+        match self {
+            Self::All => true,
+            Self::Dev => split == Split::Dev,
+            Self::Test => split == Split::Test,
+        }
+    }
+
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::Dev => "dev",
+            Self::Test => "test",
+        }
+    }
+}
+
 /// The results document `--json-out` writes. Versioned independently of the trace schema so
-/// a committed copy stays readable as later slices extend it.
+/// a committed copy stays readable as later slices extend it. 0.2: added `split` (the
+/// selection scored), `coverage` (rule 4), and `pairs` (the rule-1 split manifest);
+/// `n_pairs` narrowed from "pairs loaded" to "pairs scored".
 #[derive(Serialize)]
 struct BenchResults {
     bench_schema_version: &'static str,
     /// The evaluation protocol: `chimera` = controlled injection on real logs (BENCHMARK.md).
     protocol: &'static str,
+    /// Which split selection produced the arm scores.
+    split: &'static str,
+    coverage: Coverage,
+    /// Pairs actually scored: evaluated ∩ selected split.
     n_pairs: usize,
     params: ParamsUsed,
+    /// The split manifest: every evaluated pair with its task key and assignment, whatever
+    /// the selection — committed alongside results so the split is auditable (rule 1).
+    pairs: Vec<PairRecord>,
     arms: Vec<ArmResult>,
+}
+
+/// Rule 4's accounting: every manifest found is either evaluated (and split-assigned) or
+/// excluded for a tabulated reason. `evaluated / total` is the coverage the table reports.
+#[derive(Serialize)]
+struct Coverage {
+    total: usize,
+    evaluated: usize,
+    /// Evaluated pairs on each side of the split.
+    dev: usize,
+    test: usize,
+    /// Exclusion counts by reason kind (empty when nothing was excluded).
+    reasons: BTreeMap<&'static str, usize>,
+    /// Per-case records, in manifest order.
+    exclusions: Vec<ExclusionRecord>,
+}
+
+/// One excluded case in the results document: dir-relative file, kebab-case reason. The
+/// prose diagnostics stay on stderr — they may carry absolute paths and OS error text, which
+/// have no business in a committed artifact.
+#[derive(Serialize)]
+struct ExclusionRecord {
+    name: String,
+    reason: &'static str,
+    file: String,
+}
+
+/// One line of the split manifest.
+#[derive(Serialize)]
+struct PairRecord {
+    name: String,
+    task_key: String,
+    split: &'static str,
 }
 
 /// The engine parameters every arm ran with, echoed for provenance. The frozen-config hash
@@ -96,8 +176,14 @@ fn main() -> ExitCode {
 }
 
 fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
-    let pairs = load_pairs(&args.pairs)?;
-    for pair in &pairs {
+    let set = load_pairs(&args.pairs)?;
+    for exclusion in &set.exclusions {
+        eprintln!(
+            "amberfork-bench: excluded {}: {}",
+            exclusion.name, exclusion.reason
+        );
+    }
+    for pair in &set.pairs {
         for (file, warning) in &pair.warnings {
             eprintln!(
                 "amberfork-bench: {}: {}: {}",
@@ -108,23 +194,73 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
         }
     }
 
+    let dev = set
+        .pairs
+        .iter()
+        .filter(|pair| pair.split == Split::Dev)
+        .count();
+    let test = set.pairs.len() - dev;
+    let scored: Vec<&Pair> = set
+        .pairs
+        .iter()
+        .filter(|pair| args.split.admits(pair.split))
+        .collect();
+    if scored.is_empty() {
+        return Err(format!(
+            "no pairs to score in split {} (evaluated: dev {dev}, test {test})",
+            args.split.as_str()
+        )
+        .into());
+    }
+
     let params = DiffParams::default();
-    let golds: Vec<usize> = pairs.iter().map(|pair| pair.gold_step).collect();
+    let golds: Vec<usize> = scored.iter().map(|pair| pair.gold_step).collect();
+
+    let mut reasons: BTreeMap<&'static str, usize> = BTreeMap::new();
+    for exclusion in &set.exclusions {
+        *reasons.entry(exclusion.reason.kind()).or_default() += 1;
+    }
 
     let results = BenchResults {
-        bench_schema_version: "0.1",
+        bench_schema_version: "0.2",
         protocol: "chimera",
-        n_pairs: pairs.len(),
+        split: args.split.as_str(),
+        coverage: Coverage {
+            total: set.total(),
+            evaluated: set.pairs.len(),
+            dev,
+            test,
+            reasons,
+            exclusions: set
+                .exclusions
+                .iter()
+                .map(|exclusion| ExclusionRecord {
+                    name: exclusion.name.clone(),
+                    reason: exclusion.reason.kind(),
+                    file: exclusion.reason.file().display().to_string(),
+                })
+                .collect(),
+        },
+        n_pairs: scored.len(),
         params: ParamsUsed {
             tau: params.fork.tau,
             resync_k: params.fork.resync_k,
             gap_open: params.align.gap_open,
             gap_ext: params.align.gap_ext,
         },
+        pairs: set
+            .pairs
+            .iter()
+            .map(|pair| PairRecord {
+                name: pair.name.clone(),
+                task_key: pair.task_key.clone(),
+                split: pair.split.as_str(),
+            })
+            .collect(),
         arms: arms::ALL
             .iter()
             .map(|arm| {
-                let preds: Vec<Option<usize>> = pairs
+                let preds: Vec<Option<usize>> = scored
                     .iter()
                     .map(|pair| arm.predict(pair, &params))
                     .collect();
@@ -143,15 +279,43 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     }
 
     eprintln!(
-        "chimera protocol · {} pairs · tau={} resync_k={} gap={}+{}",
+        "chimera protocol · split={} · {} scored of {} evaluated · tau={} resync_k={} gap={}+{}",
+        results.split,
         results.n_pairs,
+        results.coverage.evaluated,
         results.params.tau,
         results.params.resync_k,
         results.params.gap_open,
         results.params.gap_ext
     );
+    println!("{}\n", coverage_line(&results));
     println!("{}", markdown_table(&results));
     Ok(ExitCode::from(EXIT_OK))
+}
+
+/// The coverage line the table is published under (rule 4: a rate without its denominator's
+/// history is a lie). Exclusion reasons appear inline, alphabetically, only when present.
+fn coverage_line(results: &BenchResults) -> String {
+    let coverage = &results.coverage;
+    let excluded = if coverage.reasons.is_empty() {
+        String::new()
+    } else {
+        let reasons: Vec<String> = coverage
+            .reasons
+            .iter()
+            .map(|(kind, count)| format!("{kind} {count}"))
+            .collect();
+        format!(" (excluded: {})", reasons.join(", "))
+    };
+    format!(
+        "coverage: {}/{} pairs evaluated{excluded} · split={} (dev {}, test {}) · scored {}",
+        coverage.evaluated,
+        coverage.total,
+        results.split,
+        coverage.dev,
+        coverage.test,
+        results.n_pairs
+    )
 }
 
 /// The results as a markdown table (the shape BENCHMARK.md's published table takes):

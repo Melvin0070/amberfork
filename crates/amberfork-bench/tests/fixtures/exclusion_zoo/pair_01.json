@@ -1,0 +1,9 @@
+{
+  "failing": "missing.json",
+  "reference": "good_ref.json",
+  "gold_step": 1,
+  "meta": {
+    "provenance": "hand-authored synthetic fixture — no benchmark-derived content",
+    "design": "failing run file does not exist → run-unloadable exclusion"
+  }
+}

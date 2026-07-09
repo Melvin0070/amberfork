@@ -17,6 +17,7 @@
 //! reordered or extended pair set never changes another pair's draw, and no external RNG
 //! crate can shift the numbers under a version bump.
 
+use crate::hash::fnv1a64;
 use crate::pairs::Pair;
 use amberfork_align::{CostModel, DiffParams, LexicalCost, diff};
 use amberfork_model::Step;
@@ -126,16 +127,6 @@ fn splitmix64(state: &mut u64) -> u64 {
     z ^ (z >> 31)
 }
 
-/// FNV-1a over `data`, the pair-name → stream-seed mix. Stable and dependency-free.
-fn fnv1a64(data: &[u8]) -> u64 {
-    let mut hash = 0xCBF2_9CE4_8422_2325u64;
-    for byte in data {
-        hash ^= u64::from(*byte);
-        hash = hash.wrapping_mul(0x0000_0100_0000_01B3);
-    }
-    hash
-}
-
 /// Map a full-width draw onto `[0, len)` by widening multiply (Lemire). Bias is O(len/2⁶⁴) —
 /// immaterial at run lengths — and it needs no rejection loop.
 fn bounded(draw: u64, len: usize) -> usize {
@@ -179,8 +170,11 @@ mod tests {
     }
 
     fn pair(name: &str, reference: Run, failing: Run) -> Pair {
+        let task_key = reference.id.clone();
         Pair {
             name: name.to_string(),
+            split: crate::split::Split::of(&task_key),
+            task_key,
             reference,
             failing,
             gold_step: 0,
@@ -195,13 +189,6 @@ mod tests {
         assert_eq!(splitmix64(&mut state), 0xE220_A839_7B1D_CDAF);
         let mut state = 1_234_567u64;
         assert_eq!(splitmix64(&mut state), 0x599E_D017_FB08_FC85);
-    }
-
-    #[test]
-    fn fnv1a64_matches_independent_reference_values() {
-        // Empty input = the FNV offset basis; "pair_00" computed independently (Python).
-        assert_eq!(fnv1a64(b""), 0xCBF2_9CE4_8422_2325);
-        assert_eq!(fnv1a64(b"pair_00"), 0x45D7_A4AA_EE8B_FDBA);
     }
 
     #[test]
