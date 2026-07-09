@@ -474,3 +474,50 @@ so `PASS_TAPE` was made realistic (every node carries content, as real tapes do)
 zero warnings). No committed benchmark number moved: this is an adapter + tests, no pipeline wiring
 yet. Next #7 slice: pair construction — match tape ↔ Who&When log by `task_id`, filter on
 `is_success()`, write the cross-system manifest the seam already reads.
+
+## 012 · 2026-07-10 · Cross-system pair construction — raw data to the honest table (issue #7 slice 3)
+
+**What changed.** The join between the two source adapters now exists: `amberfork-bench
+build-pairs --tapes DIR --logs DIR --out DIR` converts each TapeAgents tape (reference side,
+`amberfork_ingest::tape`) and each Who&When log (failing side, `amberfork_ingest::whowhen`),
+matches a *successful* tape to a failing log on their shared GAIA `task_id`, and writes the
+`pair_*.json` + `a_*`/`b_*` triples the slice-1 disclosure seam already reads. This is the Rust
+successor to `spike/make_realpairs.py` and the last construction piece Mode A′ needed — a real
+cross-system pair now has an in-tree path from raw upstream data all the way to the honest table,
+no Python in the loop. The two adapters landed in slices 1–2 (notebook 010/011); this slice is the
+seam between them.
+
+**Design — a pure core in a thin I/O shell.** The intellectual content is
+`build::match_pairs(references, failings) -> BuildOutcome`, a pure function with zero filesystem
+contact: it sorts both sides by stem, indexes failing logs by `task_id` (lowest-stem wins on
+collision), and emits one pair per eligible reference. Six unit tests pin the *algorithm* —
+matching, the gold carried through from the failing side, determinism under shuffled input,
+collision resolution — without touching disk. Dir-reading and file-writing wrap it. The build
+lives in `amberfork-bench` (not `amberfork-ingest`) on purpose: it produces the manifest only
+`load_pairs` reads, so keeping it here lets one end-to-end test round-trip **build → write →
+`load_pairs` → score** inside a single crate — the strongest guard against the writer's manifest
+shape and the reader's drifting apart. (The reader and writer keep separate serde mirrors of the
+pair contract; the round-trip test bridges them, so a field-name drift is a red test.)
+
+**Three honesty boundaries, same ethos as the loader.** (1) *A tape earns reference status.* The
+spike hardcoded `pass` and filtered late; here a tape anchors a pair only if `is_success()` **and**
+it names a `task_id`, else it is a counted, named drop (`unsuccessful` / `missing-task-id` /
+`no-failing-match`) on stderr — never a silent skip. (2) *A failing log must offer a usable fork.*
+Only a log whose gold resolves to `GoldStep::Valid` becomes a failing candidate; gold-less logs are
+counted (`logs_without_gold`), not paired. (3) *Strict inputs, honest zero.* A malformed source
+file is a hard `BuildError` (exit 2 — the operator's raw data on their own disk, theirs to fix
+loudly), unlike `load_pairs`' tolerance for a bad *committed* set; but building zero pairs is a
+legitimate outcome (raw sources may not overlap on `task_id`), so it exits 0 with a loud count, not
+a failure.
+
+**Check.** 6 pure unit tests + one end-to-end (`tests/build_cli.rs`): synthetic *raw* tape +
+Who&When JSON (a 6×7 arithmetic task, hand-authored fiction under `CARGO_TARGET_TMPDIR` — nothing
+benchmark-derived committed, notebook 001/T30) → `build-pairs` builds exactly one pair (the losing
+tape a counted drop) → the manifest carries `cross_system: true`, `gold_step: 2` → `run` on the
+generated set prints the Mode A′ banner and the results document records `protocol: mode-a-prime`,
+`cross_system: 1`. Full gate green (fmt / clippy `-D warnings` / `cargo test --workspace`, 22 test
+groups). No committed benchmark number moved: this is a generator + tests, and real pairs stay
+uncommitted. `amberfork-align` untouched, so the quantitative parity gate does not apply. What
+remains on #7 is acquisition (a `bench/fetch` step to pull the gated upstream tapes/logs the
+generator consumes) and the separate #11 decision on a CI-visible sanitized parity set — the
+*construction* machinery is now complete.

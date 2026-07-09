@@ -27,6 +27,7 @@
 //! stderr.
 
 mod arms;
+mod build;
 mod calibration;
 mod hash;
 mod pairs;
@@ -61,6 +62,8 @@ enum Command {
     Run(RunArgs),
     /// Re-render a committed results document — offline, zero fetch.
     Report(ReportArgs),
+    /// Construct a cross-system Mode A′ pair set from raw TapeAgents + Who&When data (issue #7).
+    BuildPairs(BuildPairsArgs),
 }
 
 #[derive(Args)]
@@ -95,6 +98,22 @@ struct ReportArgs {
     results: PathBuf,
 }
 
+#[derive(Args)]
+struct BuildPairsArgs {
+    /// Directory of raw TapeAgents tape JSON files (the reference/passing side).
+    #[arg(long, value_name = "DIR")]
+    tapes: PathBuf,
+
+    /// Directory holding `Hand-Crafted/` and/or `Algorithm-Generated/` subdirectories of raw
+    /// Who&When logs (the failing side).
+    #[arg(long, value_name = "DIR")]
+    logs: PathBuf,
+
+    /// Directory to write the `pair_*.json` + `a_*`/`b_*` triples into (created if absent).
+    #[arg(long, value_name = "DIR")]
+    out: PathBuf,
+}
+
 /// The `--split` choices — the two protocol sides plus `all` (the whole evaluated set, the
 /// walking-skeleton default; published tables come from `test`).
 #[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -127,6 +146,7 @@ fn main() -> ExitCode {
     let outcome = match cli.command {
         Command::Run(args) => run(&args),
         Command::Report(args) => report(&args),
+        Command::BuildPairs(args) => build_pairs(&args),
     };
     outcome.unwrap_or_else(|err| {
         eprintln!("amberfork-bench: {err}");
@@ -267,6 +287,30 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
         results.split, results.n_pairs, results.coverage.evaluated,
     );
     println!("{}", results::render(&results));
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+/// Construct a Mode A′ pair set (issue #7). A data-prep step, not a scoring run: it emits no
+/// table, only the pair triples and a coverage summary on stderr. Building zero pairs is a
+/// legitimate outcome (raw sources may not overlap), so it is loud, not an error — only an
+/// unreadable input or output path is trouble.
+fn build_pairs(args: &BuildPairsArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let stats = build::build_pairs(&args.tapes, &args.logs, &args.out)?;
+    for dropped in &stats.drops {
+        eprintln!(
+            "amberfork-bench: unpaired tape {}: {}",
+            dropped.stem, dropped.reason
+        );
+    }
+    eprintln!(
+        "amberfork-bench: built {} cross-system pair(s) -> {} \
+         (tapes: {}, logs: {}; {} log(s) without a usable gold step)",
+        stats.pairs,
+        args.out.display(),
+        stats.tapes_read,
+        stats.logs_read,
+        stats.logs_without_gold,
+    );
     Ok(ExitCode::from(EXIT_OK))
 }
 
