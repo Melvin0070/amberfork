@@ -324,3 +324,34 @@ params once per release tag (arrives with slice 4). Honesty note: 003/004/005 me
 20 pairs before the split existed, so this *local* set's test side is not pristine — acceptable
 for dev-stage mechanics, but published-table fixture sets get generated and split under the
 frozen protocol from birth, and any post-test change reports old-alongside-new (rule 3).
+
+## 007 · 2026-07-09 · Protocol rule 2 live: parameter freeze (issue #6 slice 4)
+
+**What changed.** `bench/params.toml` (repo root, where BENCHMARK.md pre-registered it) is now
+the ONLY parameter source `amberfork-bench run` accepts — the `DiffParams::default()` fallback
+is gone. `--params <FILE>` defaults to `bench/params.toml` resolved from the working directory
+(the repo root in the publishing workflow); a missing or invalid file is exit-2 trouble, never
+a silent fall back, because a freeze with a fallback is decorative. Loading is strict: deny
+unknown keys, require every key, then the engine's own `DiffParams::validated()` — a typo
+cannot half-apply. The published artifact names its config: a `params:` line above the table
+carries file + sha256 prefix (`8ebd95ce8f3d` for the initial freeze), and the results JSON
+(bench_schema 0.3) carries `params.source` + the full digest.
+
+**Design choices worth remembering.** (1) The hash is sha256 of the exact file *bytes*, not of
+parsed values — a comment or changelog edit is a new config revision too, and any reviewer
+verifies with plain `shasum -a 256 bench/params.toml` (the unit test's known-answer vector was
+computed with coreutils, not the sha2 crate, so the check isn't circular). (2) The file's
+schema mirrors the engine's params tree via bench-local structs rather than deserializing into
+the engine types, so deny-unknown-fields stays a bench policy and a new engine knob forces a
+conscious schema change. (3) A unit test pins frozen file == `DiffParams::default()`: the
+table must describe the product people actually run; a deliberate retune touches both, plus
+the file's changelog and a notebook entry (rules 2+3). New deps: `toml` (the pre-registered
+format; comments carry the changelog) and `sha2` (standard hash = independently verifiable;
+in-crate fnv1a64 stays for split/stream seeding only, where the requirement is stability, not
+audit).
+
+**Check.** The 006 dev tuning baseline reproduces bit-for-bit under the frozen file:
+nw-lexical/resync **0.75 exact [0.41, 0.93], 0.88 ±1, 1.00 ±3, n=8**, config `8ebd95ce8f3d`.
+Initial freeze = the dev-calibrated engine defaults (001 grid; 003/004 parity): gap 0.6+0.3,
+τ 0.3, resync_k 2. Remaining for issue #6: calibration curve (rule 7), committed-results
+`report` mode.

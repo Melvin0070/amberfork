@@ -19,9 +19,16 @@
 //! reason, never silently dropped and never fatal. The dev/test split (rule 1) keys on the
 //! reference run's id: `restock-good` hashes to test, `greenhouse-good` to dev, so the two
 //! sets between them lock both assignments end-to-end.
+//!
+//! Rule 2 (parameter freeze) is locked here too: every run names its params file
+//! (`--params`, default `bench/params.toml`), the published artifact carries the file's
+//! sha256 — recomputed in-test from the committed bytes, never hardcoded, so a changelog
+//! edit doesn't break the suite — and a missing or invalid file is trouble, never a silent
+//! fall back to code defaults.
 
 use assert_cmd::Command;
 use predicates::prelude::*;
+use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 
 fn fixtures_dir() -> PathBuf {
@@ -32,6 +39,20 @@ fn zoo_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/exclusion_zoo")
 }
 
+/// The committed frozen-params file (rule 2), reached from the crate root — integration
+/// tests run with the package as working directory, so the in-repo default `bench/params.toml`
+/// does not resolve here and every invocation passes the file explicitly.
+fn frozen_params() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bench/params.toml")
+}
+
+/// The sha256 hex of the committed params file, recomputed from its exact bytes — what the
+/// published artifact must echo.
+fn frozen_params_sha256() -> String {
+    let bytes = std::fs::read(frozen_params()).expect("committed bench/params.toml reads");
+    format!("{:x}", Sha256::digest(&bytes))
+}
+
 fn bench() -> Command {
     Command::cargo_bin("amberfork-bench").expect("amberfork-bench binary builds")
 }
@@ -39,11 +60,14 @@ fn bench() -> Command {
 #[test]
 fn run_scores_the_synthetic_set_and_writes_the_results_json() {
     let json_path = Path::new(env!("CARGO_TARGET_TMPDIR")).join("results.json");
+    let sha = frozen_params_sha256();
 
     bench()
         .arg("run")
         .arg("--pairs")
         .arg(fixtures_dir())
+        .arg("--params")
+        .arg(frozen_params())
         .arg("--json-out")
         .arg(&json_path)
         .assert()
@@ -51,6 +75,12 @@ fn run_scores_the_synthetic_set_and_writes_the_results_json() {
         .stdout(predicate::str::contains(
             "coverage: 3/3 pairs evaluated · split=all (dev 0, test 3) · scored 3",
         ))
+        // Rule 2: the table publishes with the config that produced it — file, hash, values.
+        .stdout(predicate::str::contains(format!(
+            "params: {} sha256:{} · tau 0.3 · resync_k 2 · gap 0.6+0.3",
+            frozen_params().display(),
+            &sha[..12]
+        )))
         .stdout(predicate::str::contains(
             "| random | 0.00 [0.00, 0.56] | 0.33 [0.06, 0.79] | 0.67 [0.21, 0.94] | 0.00 | 3 |",
         ))
@@ -66,12 +96,22 @@ fn run_scores_the_synthetic_set_and_writes_the_results_json() {
 
     let text = std::fs::read_to_string(&json_path).expect("results JSON written");
     let results: serde_json::Value = serde_json::from_str(&text).expect("results JSON parses");
-    assert_eq!(results["bench_schema_version"], "0.2");
+    assert_eq!(results["bench_schema_version"], "0.3");
     assert_eq!(results["protocol"], "chimera");
     assert_eq!(results["split"], "all");
     assert_eq!(results["n_pairs"], 3);
+
+    // Rule 2 in the committed document: the params carry their identity (source + sha256),
+    // not just their values.
+    assert_eq!(
+        results["params"]["source"],
+        frozen_params().display().to_string()
+    );
+    assert_eq!(results["params"]["sha256"], sha);
     assert_eq!(results["params"]["tau"], 0.3);
     assert_eq!(results["params"]["resync_k"], 2);
+    assert_eq!(results["params"]["gap_open"], 0.6);
+    assert_eq!(results["params"]["gap_ext"], 0.3);
 
     // Rule 4: coverage rides in the results document, exclusions tabulated (none here).
     assert_eq!(results["coverage"]["total"], 3);
@@ -127,6 +167,8 @@ fn split_test_selects_the_synthetic_pairs() {
         .arg("run")
         .arg("--pairs")
         .arg(fixtures_dir())
+        .arg("--params")
+        .arg(frozen_params())
         .args(["--split", "test"])
         .assert()
         .success()
@@ -146,6 +188,8 @@ fn a_split_with_no_pairs_is_trouble() {
         .arg("run")
         .arg("--pairs")
         .arg(fixtures_dir())
+        .arg("--params")
+        .arg(frozen_params())
         .args(["--split", "dev"])
         .assert()
         .code(2)
@@ -162,6 +206,8 @@ fn exclusions_are_counted_and_tabulated_not_fatal() {
         .arg("run")
         .arg("--pairs")
         .arg(zoo_dir())
+        .arg("--params")
+        .arg(frozen_params())
         .arg("--json-out")
         .arg(&json_path)
         .assert()
@@ -216,9 +262,47 @@ fn exclusions_are_counted_and_tabulated_not_fatal() {
 }
 
 #[test]
+fn a_missing_params_file_is_trouble_and_names_the_default_path() {
+    // No --params given: the default is `bench/params.toml` relative to the working
+    // directory, which for this test process is the crate root — nothing there. Rule 2 has
+    // no code-default fallback: a run that cannot name its config must not print a table.
+    bench()
+        .arg("run")
+        .arg("--pairs")
+        .arg(fixtures_dir())
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("bench/params.toml"));
+}
+
+#[test]
+fn an_invalid_params_file_is_trouble_not_a_fallback() {
+    // A frozen file that violates an engine invariant is rejected through the engine's own
+    // validation, naming the offending value.
+    let path = Path::new(env!("CARGO_TARGET_TMPDIR")).join("bad_params.toml");
+    std::fs::write(
+        &path,
+        "[align]\ngap_open = 0.6\ngap_ext = 0.3\n\n[fork]\ntau = 2.0\nresync_k = 2\n",
+    )
+    .expect("write scratch params");
+
+    bench()
+        .arg("run")
+        .arg("--pairs")
+        .arg(fixtures_dir())
+        .arg("--params")
+        .arg(&path)
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("tau must be within [0, 1]"));
+}
+
+#[test]
 fn a_missing_pairs_dir_is_trouble() {
     bench()
         .args(["run", "--pairs", "does/not/exist"])
+        .arg("--params")
+        .arg(frozen_params())
         .assert()
         .code(2)
         .stderr(predicate::str::contains("does/not/exist"));
@@ -233,6 +317,8 @@ fn an_empty_pairs_dir_is_trouble() {
         .arg("run")
         .arg("--pairs")
         .arg(&dir)
+        .arg("--params")
+        .arg(frozen_params())
         .assert()
         .code(2)
         .stderr(predicate::str::contains("no pair manifests"));

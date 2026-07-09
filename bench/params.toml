@@ -1,0 +1,21 @@
+# Frozen engine parameters — BENCHMARK.md pre-registered protocol, rule 2.
+#
+# This file is the ONLY parameter source `amberfork-bench run` accepts; there is no
+# code-default fallback. Every published table names the sha256 of these exact bytes
+# (verify: `shasum -a 256 bench/params.toml`), so ANY edit — a value, a comment, this
+# changelog — is a new config revision. All tuning happens on the dev split (rule 1); a
+# value change needs a dev-split justification in docs/notebook.md and a changelog line
+# here, and if it lands after a test run, the old number is reported alongside the new
+# one (rule 3). The test split runs once per release tag with this file frozen.
+#
+# Changelog:
+#   2026-07-09 · initial freeze: the dev-calibrated engine defaults (spike grid, notebook
+#                001; Rust parity 003/004; dev tuning baseline 0.75 exact, notebook 006).
+
+[align]
+gap_open = 0.6
+gap_ext = 0.3
+
+[fork]
+tau = 0.3
+resync_k = 2

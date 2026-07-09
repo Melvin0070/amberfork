@@ -7,8 +7,10 @@
 //! on every rate; abstentions reported, never dropped. Rules 1 and 4 live here too: every
 //! pair carries its dev/test assignment (stable hash of the task key — `--split` selects
 //! which side is scored), and the coverage line above the table counts every excluded case
-//! with its reason. Still to land, slice by slice: frozen params (`bench/params.toml` +
-//! config hash), the calibration curve, and the committed-results `report` mode.
+//! with its reason. Rule 2 as well: parameters come ONLY from a frozen file (`--params`,
+//! default `bench/params.toml`), and the published artifact names that file's sha256 — no
+//! code-default fallback exists. Still to land, slice by slice: the calibration curve and
+//! the committed-results `report` mode.
 //!
 //! Real pair sets are NOT committed: chimera pairs derive from Who&When logs whose questions
 //! originate in GAIA (gated upstream — notebook 001/T30). Regenerate locally with
@@ -22,10 +24,10 @@
 mod arms;
 mod hash;
 mod pairs;
+mod params;
 mod score;
 mod split;
 
-use amberfork_align::DiffParams;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use pairs::{Pair, load_pairs};
 use score::{ArmScore, Rate};
@@ -62,6 +64,11 @@ struct RunArgs {
     #[arg(long, value_enum, default_value_t = SplitSelection::All)]
     split: SplitSelection,
 
+    /// Frozen engine parameters (protocol rule 2). The file's sha256 publishes with the
+    /// table; there is no code-default fallback. The default resolves from the repo root.
+    #[arg(long, value_name = "FILE", default_value = "bench/params.toml")]
+    params: PathBuf,
+
     /// Also write the full results document as JSON.
     #[arg(long, value_name = "FILE")]
     json_out: Option<PathBuf>,
@@ -97,7 +104,9 @@ impl SplitSelection {
 /// The results document `--json-out` writes. Versioned independently of the trace schema so
 /// a committed copy stays readable as later slices extend it. 0.2: added `split` (the
 /// selection scored), `coverage` (rule 4), and `pairs` (the rule-1 split manifest);
-/// `n_pairs` narrowed from "pairs loaded" to "pairs scored".
+/// `n_pairs` narrowed from "pairs loaded" to "pairs scored". 0.3: `params` gained its
+/// identity — `source` (the file as named on the command line) and `sha256` of its exact
+/// bytes (rule 2).
 #[derive(Serialize)]
 struct BenchResults {
     bench_schema_version: &'static str,
@@ -148,10 +157,13 @@ struct PairRecord {
     split: &'static str,
 }
 
-/// The engine parameters every arm ran with, echoed for provenance. The frozen-config hash
-/// (protocol rule 2) arrives with the params-freeze slice.
+/// The engine parameters every arm ran with, carrying their identity (protocol rule 2):
+/// which file they came from and the sha256 of its exact bytes. The values are echoed too,
+/// so a results document is readable without chasing the file.
 #[derive(Serialize)]
 struct ParamsUsed {
+    source: String,
+    sha256: String,
     tau: f64,
     resync_k: usize,
     gap_open: f64,
@@ -176,6 +188,9 @@ fn main() -> ExitCode {
 }
 
 fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    // Config before data: a run that cannot establish its frozen parameters (rule 2) has
+    // nothing meaningful to say about any pair set.
+    let frozen = params::load(&args.params)?;
     let set = load_pairs(&args.pairs)?;
     for exclusion in &set.exclusions {
         eprintln!(
@@ -213,7 +228,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
         .into());
     }
 
-    let params = DiffParams::default();
+    let params = frozen.params;
     let golds: Vec<usize> = scored.iter().map(|pair| pair.gold_step).collect();
 
     let mut reasons: BTreeMap<&'static str, usize> = BTreeMap::new();
@@ -222,7 +237,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     }
 
     let results = BenchResults {
-        bench_schema_version: "0.2",
+        bench_schema_version: "0.3",
         protocol: "chimera",
         split: args.split.as_str(),
         coverage: Coverage {
@@ -243,6 +258,8 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
         },
         n_pairs: scored.len(),
         params: ParamsUsed {
+            source: frozen.source,
+            sha256: frozen.sha256,
             tau: params.fork.tau,
             resync_k: params.fork.resync_k,
             gap_open: params.align.gap_open,
@@ -279,16 +296,11 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     }
 
     eprintln!(
-        "chimera protocol · split={} · {} scored of {} evaluated · tau={} resync_k={} gap={}+{}",
-        results.split,
-        results.n_pairs,
-        results.coverage.evaluated,
-        results.params.tau,
-        results.params.resync_k,
-        results.params.gap_open,
-        results.params.gap_ext
+        "chimera protocol · split={} · {} scored of {} evaluated",
+        results.split, results.n_pairs, results.coverage.evaluated,
     );
-    println!("{}\n", coverage_line(&results));
+    println!("{}", coverage_line(&results));
+    println!("{}\n", params_line(&results));
     println!("{}", markdown_table(&results));
     Ok(ExitCode::from(EXIT_OK))
 }
@@ -315,6 +327,22 @@ fn coverage_line(results: &BenchResults) -> String {
         coverage.dev,
         coverage.test,
         results.n_pairs
+    )
+}
+
+/// The config-identity line (rule 2: every published table names the config hash that
+/// produced it). The 12-hex prefix reads like a git short hash; the results JSON carries
+/// the full digest, and `shasum -a 256 <source>` verifies it.
+fn params_line(results: &BenchResults) -> String {
+    let params = &results.params;
+    format!(
+        "params: {} sha256:{} · tau {} · resync_k {} · gap {}+{}",
+        params.source,
+        &params.sha256[..12],
+        params.tau,
+        params.resync_k,
+        params.gap_open,
+        params.gap_ext
     )
 }
 
