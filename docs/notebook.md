@@ -443,3 +443,34 @@ control (`cross_system: 0`, no banner). Full gate green (fmt/clippy/`cargo test 
 40 bench tests incl. the offline-reproduction snapshot). Next #7 slice: port the Who&When and
 TapeAgents converters from spike Python to Rust so real cross-system pairs can be constructed
 in-tree and fed through this seam.
+
+## 011 · 2026-07-09 · TapeAgents reference adapter ported to Rust (issue #7 slice 2)
+
+**What changed.** The *reference* side of a Mode A′ pair now has an in-tree home:
+`amberfork_ingest::tape` converts a ServiceNow TapeAgents tape (Apache-2.0) into a canonical
+[`Run`] plus a `TapeMeta` (GAIA `task_id`, gold `Final answer`, produced `result`), mirroring the
+already-landed `whowhen` failing-side adapter. Ported from `spike/make_realpairs.py::convert_tape`.
+The Who&When half was ported long ago (`amberfork_ingest::whowhen`), so this closes the "port both
+converters" task notebook 010 left open — the two source adapters now exist side by side, and a
+later slice can match a tape to a failing log by `task_id` and emit a `cross_system: true` manifest
+that flows through the slice-1 disclosure seam.
+
+**Two deliberate corrections to the spike, not a literal port.** (1) *Structured outputs, not a
+blob.* Each tape node's body (everything past `kind`/`metadata`, peeled off with
+`#[serde(flatten)]`) becomes a field-diffable `Payload::Object`, not the spike's
+`json.dumps(body)` string — the canonical model has a typed payload the Python didn't, and the diff
+engine field-diffs objects. (2) *Honest outcome.* The spike stamped `outcome: "pass"` on every tape
+and filtered non-passers downstream; here `outcome = Pass` iff the produced `result` matches the
+gold `Final answer` (trimmed/case-folded, GAIA's grading), else `Fail`, with one `normalize` helper
+as the single source of truth and `TapeMeta::is_success()` the pairing filter. A run never claims a
+success it didn't achieve. A non-object `task` block degrades to no task (an `object_or_none`
+deserializer) instead of failing the parse — the crate's forgiving-loader ethos.
+
+**Check.** 6 unit tests (`crates/amberfork-ingest/tests/tape.rs`); full gate green
+(fmt/clippy/`cargo test --workspace`). The canonical round-trip guard earned its keep: a
+contentless bookkeeping node round-trips with a *correct* `ContentAbsent` advisory from the loader,
+so `PASS_TAPE` was made realistic (every node carries content, as real tapes do) and the empty-body
+→ `None` case got its own focused test — the guard stays as strong as `whowhen`'s (identical run,
+zero warnings). No committed benchmark number moved: this is an adapter + tests, no pipeline wiring
+yet. Next #7 slice: pair construction — match tape ↔ Who&When log by `task_id`, filter on
+`is_success()`, write the cross-system manifest the seam already reads.
