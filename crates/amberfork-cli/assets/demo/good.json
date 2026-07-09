@@ -1,0 +1,93 @@
+{
+  "schema_version": "0.1",
+  "id": "refund-good",
+  "task": "refund-triage #4512",
+  "outcome": "pass",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "planner",
+      "inputs": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Ticket #4512: customer Dana G. requests a refund on order 8841."
+          }
+        ]
+      },
+      "outputs": "Plan: look up order 8841, find the refund policy for its category, check eligibility, then process or decline.",
+      "attrs": { "model": "claude-sonnet-5" }
+    },
+    {
+      "idx": 1,
+      "kind": "tool",
+      "name": "crm.lookup_order",
+      "inputs": { "order_id": "8841" },
+      "outputs": {
+        "status": "delivered",
+        "delivered": "2026-06-15",
+        "total": 129.0,
+        "category": "electronics"
+      }
+    },
+    {
+      "idx": 2,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Order 8841: electronics, $129.00, delivered 2026-06-15. Next: pull the electronics refund policy and check the return window.",
+      "attrs": { "model": "claude-sonnet-5" }
+    },
+    {
+      "idx": 3,
+      "kind": "tool",
+      "name": "kb.search",
+      "inputs": { "q": "electronics refund policy" },
+      "outputs": {
+        "hits": ["policy/refunds_v3.md", "archive/refunds_v1.md", "guides/returns_faq.md"]
+      }
+    },
+    {
+      "idx": 4,
+      "kind": "tool",
+      "name": "kb.fetch",
+      "inputs": { "doc": "policy/refunds_v3.md" },
+      "outputs": "Refunds v3 (CURRENT, effective 2026-02-01). Electronics: 30-day return window from delivery; refund to the original payment method."
+    },
+    {
+      "idx": 5,
+      "kind": "llm",
+      "name": "policy_checker",
+      "outputs": "23 days since delivery (2026-06-15 to 2026-07-08), inside the 30-day window. Eligible: full refund of $129.00.",
+      "attrs": { "model": "claude-sonnet-5" }
+    },
+    {
+      "idx": 6,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Customer is eligible. Refund $129.00 to the original payment method, then resolve the ticket.",
+      "attrs": { "model": "claude-sonnet-5" }
+    },
+    {
+      "idx": 7,
+      "kind": "tool",
+      "name": "payments.refund",
+      "inputs": { "order_id": "8841", "amount": 129.0 },
+      "outputs": { "status": "succeeded", "txn": "re_20260708_9917" }
+    },
+    {
+      "idx": 8,
+      "kind": "tool",
+      "name": "crm.set_status",
+      "inputs": { "ticket": "4512", "status": "resolved", "note": "refund issued" },
+      "outputs": { "ok": true }
+    },
+    {
+      "idx": 9,
+      "kind": "llm",
+      "name": "answer",
+      "outputs": "Hi Dana — your refund of $129.00 for order 8841 was processed today. You'll see it on your original payment method within 3-5 business days.",
+      "attrs": { "model": "claude-sonnet-5" }
+    }
+  ]
+}

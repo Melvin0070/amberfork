@@ -1,0 +1,5 @@
+{
+ "failing": "bad.json",
+ "reference": "good.json",
+ "gold_step": 5
+}

@@ -133,8 +133,9 @@ impl ColorMode {
     }
 
     /// Dim gray for the sync spine — the terminal's own `dim` attribute, so it respects the
-    /// user's palette at every capability level.
-    fn dim(self, text: &str) -> String {
+    /// user's palette at every capability level. Crate-visible so `main` can style chrome
+    /// (the demo hand-off line) without duplicating escape codes.
+    pub(crate) fn dim(self, text: &str) -> String {
         self.sgr("2", text)
     }
 
