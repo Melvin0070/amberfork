@@ -8,7 +8,7 @@
 //! then run `cargo test -p amberfork-align --test chimera_parity -- --ignored`.
 
 use amberfork_align::{DiffParams, LexicalCost, diff};
-use amberfork_model::{DiffResult, Run};
+use amberfork_model::Run;
 use std::path::{Path, PathBuf};
 
 /// Spike's recorded number on these pairs: 14/20 exact (spike/out/noise, notebook 001–003).
@@ -23,21 +23,6 @@ fn load_run(path: &Path) -> Run {
     let text =
         std::fs::read_to_string(path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {}: {e}", path.display()))
-}
-
-/// The failing-run step a fork points at, for scoring against a failing-side gold index.
-/// A fork move that has a `b` side names it directly; a model-only fork (the failing run
-/// skipped steps) counts the failing steps consumed before it — the spike's `a_pos` rule.
-fn predicted_failing_step(result: &DiffResult, n_failing: usize) -> Option<usize> {
-    let fork = result.fork?;
-    let fork_move = result.alignment[fork.index];
-    fork_move.b_idx.or_else(|| {
-        let consumed = result.alignment[..fork.index]
-            .iter()
-            .filter(|m| m.b_idx.is_some())
-            .count();
-        Some(consumed.min(n_failing.saturating_sub(1)))
-    })
 }
 
 #[test]
@@ -77,7 +62,7 @@ fn chimera_noise_localization_meets_spike_bar() {
         let failing = load_run(&dir.join(manifest["failing"].as_str().unwrap()));
 
         let result = diff(&reference, &failing, &LexicalCost, &DiffParams::default());
-        let pred = predicted_failing_step(&result, failing.steps.len());
+        let pred = result.fork_step_observed();
         if pred == Some(gold) {
             exact += 1;
         } else {

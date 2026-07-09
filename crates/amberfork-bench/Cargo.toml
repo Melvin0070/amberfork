@@ -1,0 +1,27 @@
+[package]
+name = "amberfork-bench"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Offline benchmark harness: the pre-registered chimera protocol (BENCHMARK.md), arms scored on identical fixtures."
+
+[[bin]]
+name = "amberfork-bench"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+amberfork-align = { workspace = true }
+amberfork-ingest = { workspace = true }
+amberfork-model = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = { workspace = true }

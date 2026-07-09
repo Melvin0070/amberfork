@@ -161,6 +161,61 @@ fn enum_wire_encodings_are_stable() {
 }
 
 #[test]
+fn fork_step_observed_names_the_b_side_directly() {
+    // The common case: the fork move touches the observed run, so `Fork::b_step` is the answer.
+    assert_eq!(diagnosed().fork_step_observed(), Some(2));
+}
+
+#[test]
+fn fork_step_observed_is_none_when_converged() {
+    let mut result = diagnosed();
+    result.fork = None;
+    assert_eq!(result.fork_step_observed(), None);
+}
+
+#[test]
+fn fork_step_observed_falls_back_to_consumed_steps_on_a_model_only_fork() {
+    // The observed run skipped steps the reference has: the fork move is model-only (no
+    // `b_step`). The nearest observed step is the first one not yet consumed when the gap
+    // opens — here moves 0 and 1 consumed observed steps 0 and 1, so the gap points at 2.
+    let mut result = diagnosed();
+    result.runs.b.n_steps = 4;
+    result.alignment = vec![
+        Move::sync(0, 0, 0.0, 1.0),
+        Move::sync(1, 1, 0.1, 0.9),
+        Move::model(2, 0.6, 0.5),
+        Move::model(3, 0.3, 0.5),
+    ];
+    result.fork = Some(Fork {
+        index: 2,
+        a_step: Some(2),
+        b_step: None,
+        confidence: 0.5,
+    });
+    assert_eq!(result.fork_step_observed(), Some(2));
+}
+
+#[test]
+fn fork_step_observed_clamps_a_trailing_gap_to_the_last_step() {
+    // A model-only gap after every observed step was consumed: there is no "next" observed
+    // step, so the pointer clamps to the last real one.
+    let mut result = diagnosed();
+    result.runs.b.n_steps = 2;
+    result.alignment = vec![
+        Move::sync(0, 0, 0.0, 1.0),
+        Move::sync(1, 1, 0.1, 0.9),
+        Move::model(2, 0.6, 0.5),
+    ];
+    result.fork = Some(Fork {
+        index: 2,
+        a_step: Some(2),
+        b_step: None,
+        confidence: 0.5,
+    });
+    assert_eq!(result.fork_step_observed(), Some(1));
+}
+
+#[test]
 fn field_diff_add_remove_omit_the_absent_side() {
     let added = FieldDiff {
         step: 0,

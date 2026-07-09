@@ -1,0 +1,9 @@
+{
+  "failing": "a_01_retry_splice5.json",
+  "reference": "b_restock.json",
+  "gold_step": 6,
+  "meta": {
+    "provenance": "hand-authored synthetic fixture — no benchmark-derived content",
+    "design": "retry blip inserted at 3, splice X[:5] + Y[5:] (gold shifted 5 -> 6); the resync rule must skip the blip and hit gold"
+  }
+}

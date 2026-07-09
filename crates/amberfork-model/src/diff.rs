@@ -265,3 +265,29 @@ pub struct DiffResult {
     pub warnings: Vec<Warning>,
     pub meta: Meta,
 }
+
+impl DiffResult {
+    /// The observed-run (side `b`) step the fork points at, or `None` on a converged diff.
+    ///
+    /// A fork whose move touches the observed run names its step directly ([`Fork::b_step`]).
+    /// A model-only fork — the observed run is missing steps the reference has — has no `b`
+    /// side; the nearest observed step is the first one not yet consumed when the gap opens
+    /// (the count of `b`-consuming moves before the fork), clamped to the last real step.
+    /// Every consumer answering "where did MY run go wrong" (bench scoring, the parity test)
+    /// reads this one rule instead of re-deriving it.
+    #[must_use]
+    pub fn fork_step_observed(&self) -> Option<usize> {
+        let fork = self.fork?;
+        if fork.b_step.is_some() {
+            return fork.b_step;
+        }
+        // A deserialized result is not validated, so don't trust `fork.index` to be in
+        // bounds; an out-of-range index just counts the whole alignment.
+        let before_fork = self.alignment.len().min(fork.index);
+        let consumed = self.alignment[..before_fork]
+            .iter()
+            .filter(|m| m.b_idx.is_some())
+            .count();
+        Some(consumed.min(self.runs.b.n_steps.saturating_sub(1)))
+    }
+}

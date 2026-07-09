@@ -5,6 +5,7 @@ members = [
     "crates/amberfork-ingest",
     "crates/amberfork-align",
     "crates/amberfork-cli",
+    "crates/amberfork-bench",
 ]
 
 [workspace.package]

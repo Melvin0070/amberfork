@@ -1,0 +1,9 @@
+{
+  "failing": "a_00_splice4.json",
+  "reference": "b_restock.json",
+  "gold_step": 4,
+  "meta": {
+    "provenance": "hand-authored synthetic fixture — no benchmark-derived content",
+    "design": "clean splice X[:4] + Y[4:]; the arm should hit gold exactly"
+  }
+}

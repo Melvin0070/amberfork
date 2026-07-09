@@ -1,0 +1,9 @@
+{
+  "failing": "a_02_reworded.json",
+  "reference": "b_restock.json",
+  "gold_step": 5,
+  "meta": {
+    "provenance": "hand-authored synthetic fixture — no benchmark-derived content",
+    "design": "benign rewording only, no injected fork; the arm should abstain (the designed no-pred case)"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1",
+  "id": "restock-bad-splice4",
+  "task": "inventory-restock #221: set the reorder for SKU T-880",
+  "outcome": "fail",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Plan: look up SKU T-880 stock, pull the 30-day sales velocity, compute the reorder point, get a supplier quote, then raise the purchase order."
+    },
+    {
+      "idx": 1,
+      "kind": "tool",
+      "name": "inventory.lookup_sku",
+      "inputs": { "sku": "T-880" },
+      "outputs": { "on_hand": 42, "reserved": 15, "warehouse": "OSA-2" }
+    },
+    {
+      "idx": 2,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "On hand 42 minus 15 reserved leaves 27 sellable units in OSA-2. Next: pull the 30-day sales velocity for T-880."
+    },
+    {
+      "idx": 3,
+      "kind": "tool",
+      "name": "sales.velocity_report",
+      "inputs": { "sku": "T-880", "days": 30 },
+      "outputs": { "units_per_day": 6.5, "trend": "rising" }
+    },
+    {
+      "idx": 4,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Humidity drift detected in zone A: sensors GH-04 and GH-11 disagree by 12 percent. Schedule a calibration pass before tonight's misting cycle."
+    },
+    {
+      "idx": 5,
+      "kind": "tool",
+      "name": "calibrate.schedule",
+      "inputs": { "sensors": ["GH-04", "GH-11"], "window": "18:00-19:00" },
+      "outputs": { "ticket": "CAL-88", "status": "scheduled" }
+    },
+    {
+      "idx": 6,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Calibration ticket CAL-88 booked for the 18:00 window. Verify the misting controller pauses during the pass."
+    },
+    {
+      "idx": 7,
+      "kind": "tool",
+      "name": "notify.maintenance",
+      "inputs": { "ticket": "CAL-88" },
+      "outputs": { "ack": true, "crew": "evening" }
+    },
+    {
+      "idx": 8,
+      "kind": "llm",
+      "name": "reviewer",
+      "outputs": "Evening crew acknowledged CAL-88 and the misting pause is confirmed. The audit can close once recalibration readings return."
+    },
+    {
+      "idx": 9,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Done: flagged the drifting sensors in zone A, scheduled calibration CAL-88, and notified the evening maintenance crew."
+    }
+  ]
+}

@@ -21,6 +21,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "amberfork-bench"
+version = "0.1.0"
+dependencies = [
+ "amberfork-align",
+ "amberfork-ingest",
+ "amberfork-model",
+ "assert_cmd",
+ "clap",
+ "predicates",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "amberfork-cli"
 version = "0.1.0"
 dependencies = [

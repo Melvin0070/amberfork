@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1",
+  "id": "restock-bad-retry-splice5",
+  "task": "inventory-restock #221: set the reorder for SKU T-880",
+  "outcome": "fail",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Plan: look up SKU T-880 stock, pull the 30-day sales velocity, compute the reorder point, get a supplier quote, then raise the purchase order."
+    },
+    {
+      "idx": 1,
+      "kind": "tool",
+      "name": "inventory.lookup_sku",
+      "inputs": { "sku": "T-880" },
+      "outputs": { "on_hand": 42, "reserved": 15, "warehouse": "OSA-2" }
+    },
+    {
+      "idx": 2,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "On hand 42 minus 15 reserved leaves 27 sellable units in OSA-2. Next: pull the 30-day sales velocity for T-880."
+    },
+    {
+      "idx": 3,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "(retry) On hand 42 minus 15 reserved leaves 27 sellable units. Next: pull the 30-day velocity for T-880."
+    },
+    {
+      "idx": 4,
+      "kind": "tool",
+      "name": "sales.velocity_report",
+      "inputs": { "sku": "T-880", "days": 30 },
+      "outputs": { "units_per_day": 6.5, "trend": "rising" }
+    },
+    {
+      "idx": 5,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Velocity 6.5 units per day and rising: 27 sellable units cover about four days. Reorder point breached — order for a 21-day horizon plus buffer: 150 units."
+    },
+    {
+      "idx": 6,
+      "kind": "tool",
+      "name": "calibrate.schedule",
+      "inputs": { "sensors": ["GH-04", "GH-11"], "window": "18:00-19:00" },
+      "outputs": { "ticket": "CAL-88", "status": "scheduled" }
+    },
+    {
+      "idx": 7,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Calibration ticket CAL-88 booked for the 18:00 window. Verify the misting controller pauses during the pass."
+    },
+    {
+      "idx": 8,
+      "kind": "tool",
+      "name": "notify.maintenance",
+      "inputs": { "ticket": "CAL-88" },
+      "outputs": { "ack": true, "crew": "evening" }
+    },
+    {
+      "idx": 9,
+      "kind": "llm",
+      "name": "reviewer",
+      "outputs": "Evening crew acknowledged CAL-88 and the misting pause is confirmed. The audit can close once recalibration readings return."
+    },
+    {
+      "idx": 10,
+      "kind": "llm",
+      "name": "planner",
+      "outputs": "Done: flagged the drifting sensors in zone A, scheduled calibration CAL-88, and notified the evening maintenance crew."
+    }
+  ]
+}
