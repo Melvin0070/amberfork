@@ -5,7 +5,7 @@
 Point at a failing AI-agent run. amberfork aligns it against a known-good run, finds the
 exact step where they diverged, and shows what changed. Local, deterministic, no account.
 
-![amberfork demo: two agent runs aligned in the terminal — a rate-limit retry is absorbed as a log-move, and the step where the bad run fetched a stale policy doc glows amber as the fork](docs/assets/demo.gif)
+![amberfork demo: two agent runs aligned in the terminal — a rate-limit retry is absorbed as a log-move, and the step where the bad run fetched a stale policy doc glows amber as the fork](docs/assets/hero.gif)
 
 ## Try it (30 seconds)
 

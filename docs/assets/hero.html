@@ -1,0 +1,259 @@
+<!doctype html>
+<!--
+  amberfork README hero — a designed, choreographed motion piece (NOT a terminal recording).
+  The one beat (DESIGN.md): two runs align in calm gray, then the amber IGNITES at the fork and
+  flows down the divergent path. Everything is driven by a single deterministic timeline function
+  window.__render(t) so build_hero.sh can seek and screenshot any frame; when opened directly it
+  autoplays for preview. Palette + type are the DESIGN.md system. No red/green (amber is the only
+  scarce accent); flat colors keep the GIF clean.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg:#0A0A0B; --card:#0D0D0F; --line:rgba(255,255,255,.06);
+    --text:#E6E6E9; --muted:#8A8A93; --faint:#4E4E55;
+    --amber:#FF7A1A; --blue:#5AA2FF;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:var(--bg); }
+  #stage {
+    width:1200px; height:675px; position:relative; overflow:hidden;
+    background:var(--bg);   /* flat — gradients band in a 256-colour GIF; the card + shadow carry depth */
+    font-family:"Monaspace Neon","SF Mono",ui-monospace,Menlo,monospace;
+    -webkit-font-smoothing:antialiased; text-rendering:geometricPrecision;
+    display:flex; align-items:center; justify-content:center;
+  }
+  /* faint warm glow behind the card, centered on the fork; barely visible, dialed to avoid banding */
+  #glow {
+    position:absolute; width:760px; height:520px; left:50%; top:52%;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(closest-side, rgba(255,122,26,.10), rgba(255,122,26,0) 72%);
+    opacity:0; filter:blur(6px); pointer-events:none;
+  }
+  #card {
+    position:relative; width:1040px; border:1px solid var(--line); border-radius:14px;
+    background:linear-gradient(180deg,#101014 0%, var(--card) 20%);
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.85), 0 1px 0 0 rgba(255,255,255,.05) inset;
+    overflow:hidden;
+  }
+  #bar {
+    height:46px; display:flex; align-items:center; padding:0 18px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+  }
+  .dot { width:11px; height:11px; border-radius:50%; margin-right:9px; background:#2A2A2F; }
+  #bar .title {
+    position:absolute; left:0; right:0; text-align:center; color:var(--faint);
+    font-size:13px; letter-spacing:.02em; pointer-events:none;
+  }
+  #body { padding:26px 30px 30px; font-size:15px; line-height:1.55; color:var(--text); }
+  .cmd { color:var(--muted); margin-bottom:16px; letter-spacing:.01em; }
+  .cmd b { color:var(--blue); font-weight:400; margin-right:8px; }
+  .cmd i { color:var(--text); font-style:normal; }
+
+  .runs { display:flex; gap:34px; margin-bottom:18px; font-size:14px; color:var(--muted); }
+  .runs .k { color:var(--text); font-weight:500; margin-right:8px; }
+  .runs .sep { color:var(--faint); margin:0 8px; }
+
+  #steps { position:relative; }
+  /* left gutter path line: hidden until the fork ignites, then draws downward */
+  #path {
+    position:absolute; left:5px; top:0; width:2px; background:var(--amber);
+    border-radius:2px; height:0; box-shadow:0 0 8px rgba(255,122,26,.6);
+  }
+  .step {
+    position:relative; display:grid;
+    grid-template-columns:16px 30px 44px 168px 1fr auto; gap:0 14px;
+    align-items:baseline; padding:2.5px 0; font-size:14.5px; color:var(--muted);
+    white-space:nowrap;
+  }
+  .step .mark { color:var(--amber); font-size:14px; text-align:center; opacity:0; }
+  .step .idx  { color:var(--faint); }
+  .step .kind { color:var(--muted); }
+  .step .tool { color:var(--text); }
+  .step .sum  { color:var(--muted); overflow:hidden; text-overflow:ellipsis; }
+  .step .badge{ color:var(--faint); font-size:13px; }
+  .badge.mv { color:var(--muted); }
+
+  /* fork row */
+  .step.fork .tool { color:var(--text); }
+  .step.fork .badge { color:var(--amber); }
+  .forkbody {
+    grid-column:4 / -1; overflow:hidden; height:0; opacity:0;
+    font-size:14px; line-height:1.5;
+  }
+  .forkbody .ab { color:var(--amber); }
+  .forkbody .ab .lab { color:var(--amber); font-weight:600; margin-right:8px; }
+  .forkbody .ab .dim { color:#C98A55; }
+
+  /* divergent rows carry an amber tint once lit (JS lerps the actual color) */
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+  <div id="card">
+    <div id="bar">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="title">amberfork — refund-good ⟷ refund-bad</span>
+    </div>
+    <div id="body">
+      <div class="cmd" id="cmd"><b>❯</b><i>amberfork demo</i></div>
+      <div class="runs" id="runs">
+        <span class="a"><span class="k">A</span>refund-good<span class="sep">·</span>reference<span class="sep">·</span>10 steps<span class="sep">·</span>pass</span>
+        <span class="b"><span class="k">B</span>refund-bad<span class="sep">·</span>observed<span class="sep">·</span>10 steps<span class="sep">·</span>fail</span>
+      </div>
+      <div id="steps">
+        <div id="path"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- content: the real `amberfork demo` alignment, condensed for a hero ------------------
+const STEPS = [
+  {i:"00", kind:"llm",  tool:"planner",          sum:"Plan: look up order 8841, find refund policy", badge:"sync"},
+  {i:"01", kind:"tool", tool:"crm.lookup_order",  sum:'{"error":"rate_limited","retry_after_ms":2000}', badge:"log-move", mv:1},
+  {i:"02", kind:"tool", tool:"crm.lookup_order",  sum:'{"category":"electronics","delivered":"2026-06-15"}', badge:"sync"},
+  {i:"03", kind:"llm",  tool:"planner",           sum:"Order 8841: electronics, $129.00, delivered", badge:"sync"},
+  {i:"04", kind:"tool", tool:"kb.search",         sum:'{"hits":["policy/refunds_v3.md", …]}', badge:"sync"},
+  {i:"05", kind:"tool", tool:"kb.fetch",          sum:"", badge:"FORK · 0.68", fork:1,
+     forkA:{lab:"A", head:"Refunds v3 (CURRENT)", dim:"30-day return window, original payment"},
+     forkB:{lab:"B", head:"Refunds v1 (ARCHIVED)", dim:"14-day window, store credit only"}},
+  {i:"06", kind:"llm",  tool:"policy_checker",    sum:"Order is 23 days old — past the 14-day limit", badge:"", div:1},
+  {i:"07", kind:"llm",  tool:"planner",           sum:"Policy says no. Draft a polite denial", badge:"", div:1},
+  {i:"07", kind:"tool", tool:"payments.refund",   sum:'{"status":"succeeded","txn":"re_2026…"}', badge:"model-move", mv:1, div:1},
+  {i:"08", kind:"tool", tool:"crm.set_status",    sum:'{"ok":true}', badge:"", div:1},
+  {i:"09", kind:"llm",  tool:"answer",            sum:"Hi Dana — order 8841 falls outside…", badge:"", div:1},
+];
+const FORK_IDX = 5;
+
+// ---- build DOM ---------------------------------------------------------------------------
+const stepsEl = document.getElementById("path").parentNode;
+const rows = STEPS.map((s, n) => {
+  const el = document.createElement("div");
+  el.className = "step" + (s.fork ? " fork" : "") + (s.div ? " div" : "");
+  el.innerHTML =
+    `<span class="mark">${s.fork ? "⑂" : "•"}</span>` +
+    `<span class="idx">${s.i}</span>` +
+    `<span class="kind">${s.kind}</span>` +
+    `<span class="tool">${s.tool}</span>` +
+    `<span class="sum">${s.sum || ""}</span>` +
+    `<span class="badge${s.mv ? " mv" : ""}">${s.badge || "·"}</span>` +
+    (s.fork ? `<div class="forkbody"><div class="ab"><span class="lab">A</span>${s.forkA.head} <span class="dim">· ${s.forkA.dim}</span></div><div class="ab"><span class="lab">B</span>${s.forkB.head} <span class="dim">· ${s.forkB.dim}</span></div></div>` : "");
+  stepsEl.appendChild(el);
+  return el;
+});
+
+// ---- easing + helpers --------------------------------------------------------------------
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const seg = (t, start, dur) => clamp01((t - start) / dur);            // linear progress in a window
+const outCubic = x => 1 - Math.pow(1 - x, 3);
+const outBack  = x => { const c1=1.70158, c3=c1+1; return 1 + c3*Math.pow(x-1,3) + c1*Math.pow(x-1,2); };
+const inOut    = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x+2,3)/2;
+const lerp = (a,b,x) => a + (b-a)*x;
+const AMBER=[255,122,26], MUTED=[138,138,147], TEXT=[230,230,233], FAINT=[78,78,85];
+const mix = (c1,c2,x) => `rgb(${Math.round(lerp(c1[0],c2[0],x))},${Math.round(lerp(c1[1],c2[1],x))},${Math.round(lerp(c1[2],c2[2],x))})`;
+
+// ---- timeline (seconds) ------------------------------------------------------------------
+const T = {
+  chrome:   [0.00, 0.34],   // cmd + run headers fade in
+  rowStart: 0.55, rowStep: 0.075, rowDur: 0.30,   // staggered step reveal
+  settle:   1.62,
+  ignite:   [1.72, 2.16],   // fork turns amber + expands
+  flowStart:2.18, flowStep:0.10, flowDur:0.34,    // divergent path draws + rows ignite
+  hold:     [2.95, 5.15],   // payoff (poster lives here)
+  fade:     [5.15, 5.55],   // soft loop-out
+};
+const DURATION = 5.55;
+const POSTER_T = 3.00;      // frame the GIF loop starts on (fully-lit payoff)
+const divRows = STEPS.map((s,n)=>({s,n})).filter(o=>o.s.div);
+
+function render(t) {
+  // global loop-out fade
+  const outp = t >= T.fade[0] ? seg(t, T.fade[0], T.fade[1]-T.fade[0]) : 0;
+  const globalOpacity = 1 - outp;
+
+  // chrome (cmd + run headers)
+  const cp = seg(t, T.chrome[0], T.chrome[1]-T.chrome[0]);
+  const cmd = document.getElementById("cmd"), runs = document.getElementById("runs");
+  cmd.style.opacity = outCubic(seg(t,0.04,0.26)) * globalOpacity;
+  cmd.style.transform = `translateY(${lerp(6,0,outCubic(seg(t,0.04,0.26)))}px)`;
+  runs.style.opacity = outCubic(seg(t,0.18,0.28)) * globalOpacity;
+  runs.style.transform = `translateY(${lerp(6,0,outCubic(seg(t,0.18,0.28)))}px)`;
+
+  // steps: staggered reveal
+  rows.forEach((el, n) => {
+    const p = outCubic(seg(t, T.rowStart + n*T.rowStep, T.rowDur));
+    el.style.opacity = p * globalOpacity;
+    el.style.transform = `translateY(${lerp(7,0,p)}px)`;
+  });
+
+  // fork ignite: color gray->amber, scale pulse, glow bloom, expand body
+  const fork = rows[FORK_IDX];
+  const ig = seg(t, T.ignite[0], T.ignite[1]-T.ignite[0]);
+  const igE = outCubic(ig);
+  const mark = fork.querySelector(".mark");
+  mark.style.opacity = igE;
+  const pulse = Math.sin(clamp01(ig)*Math.PI);          // 0..1..0 bloom
+  mark.style.transform = `scale(${1 + 0.28*pulse})`;
+  mark.style.textShadow = `0 0 ${lerp(0,14,pulse)}px rgba(255,122,26,${lerp(.2,.9,pulse)})`;
+  fork.querySelector(".tool").style.color = mix(TEXT, AMBER, igE*0.0 + 0); // tool stays text
+  fork.querySelector(".badge").style.color = mix(FAINT, AMBER, igE);
+  fork.querySelector(".badge").style.textShadow = `0 0 ${lerp(0,8,pulse)}px rgba(255,122,26,${.6*pulse})`;
+  // expand forkbody
+  const fb = fork.querySelector(".forkbody");
+  const ex = outCubic(seg(t, T.ignite[0]+0.12, 0.34));
+  fb.style.height = (ex*46) + "px";
+  fb.style.opacity = ex * globalOpacity;
+
+  // flow down the divergent path
+  const nDiv = divRows.length;
+  const flowLast = T.flowStart + (nDiv-1)*T.flowStep + T.flowDur;
+  // gutter path line grows from fork row to last divergent row
+  const pathEl = document.getElementById("path");
+  const forkTop = fork.offsetTop + 6;
+  const lastEl = rows[divRows[nDiv-1].n];
+  const fullH = (lastEl.offsetTop + lastEl.offsetHeight) - forkTop - 6;
+  const gp = inOut(seg(t, T.flowStart, flowLast - T.flowStart));
+  pathEl.style.top = forkTop + "px";
+  pathEl.style.height = (fullH * gp) + "px";
+  pathEl.style.opacity = (ig > 0.4 ? 1 : 0) * globalOpacity;
+
+  // each divergent row ignites in sequence
+  divRows.forEach((o, k) => {
+    const el = rows[o.n];
+    const p = outCubic(seg(t, T.flowStart + k*T.flowStep, T.flowDur));
+    el.querySelector(".mark").style.opacity = p;
+    el.querySelector(".mark").style.color = "var(--amber)";
+    el.querySelector(".idx").style.color = mix(FAINT, AMBER, p*0.9);
+    el.querySelector(".tool").style.color = mix(TEXT, AMBER, p*0.55);
+    el.querySelector(".sum").style.color = mix(MUTED, AMBER, p*0.5);
+  });
+
+  document.getElementById("body").style.opacity = 1; // body itself steady; globalOpacity applied per-el
+  // subtle glow behind card ramps in with the ignite and holds
+  document.getElementById("glow").style.opacity = (0.65*outCubic(seg(t, T.ignite[0], 0.6))) * globalOpacity;
+}
+
+window.__render = render;
+window.__duration = DURATION;
+window.__poster = POSTER_T;
+
+// autoplay preview when opened directly (capture path calls __render explicitly)
+if (!window.__capture) {
+  let start = null;
+  const loop = (ts) => {
+    if (start == null) start = ts;
+    let t = ((ts - start) / 1000) % DURATION;
+    render(t);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
