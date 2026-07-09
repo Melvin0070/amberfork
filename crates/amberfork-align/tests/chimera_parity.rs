@@ -1,22 +1,27 @@
-//! Issue #3's quantitative bar: on the seed-42 n=20 noise chimera pairs, the Rust pipeline
-//! must **match or beat the spike's 70% exact** fork localization (notebook 003 measured the
-//! token-level cost model at 75% via the Python harness; this test checks the Rust port).
+//! Quantitative regression gate: on the committed dev-split chimera pairs, the Rust pipeline
+//! must hold the pinned dev baseline of **6/8 exact (0.75)** fork localization — which is also
+//! the protocol's ≥0.70 floor (`ceil(0.70·8) = 6`; notebook 003/006/013).
 //!
-//! `#[ignore]` because the pairs are NOT in the repo and must not be: their content derives
-//! from Who&When logs whose questions originate in GAIA (gated upstream — redistribution
-//! unresolved, notebook 001 / T30). Regenerate locally with `python3 spike/make_pairs.py`,
-//! then run `cargo test -p amberfork-align --test chimera_parity -- --ignored`.
+//! Runs in CI (no `#[ignore]`). The pairs live in the repo at
+//! `bench/fixtures/chimera_noise_seed42_dev/` — the dev-split subset of the seed-42 n=20 noise
+//! set, GAIA-sanitized per BENCHMARK.md's licensing rule (two-stage redaction; provenance and
+//! the re-runnable sanitizer are documented beside the data). The test side is deliberately not
+//! committed — a committed test set invites tuning-on-test (protocol rule 2). Regenerate/audit
+//! the full set with `spike/make_pairs.py` + `spike/sanitize_gaia.py` (see the fixture README).
+//!
+//! `DiffParams::default()` here equals the frozen bench config `bench/params.toml`
+//! (sha256:8ebd95ce8f3d; a bench unit test pins that equality — notebook 007).
 
 use amberfork_align::{DiffParams, LexicalCost, diff};
 use amberfork_model::Run;
 use std::path::{Path, PathBuf};
 
-/// Spike's recorded number on these pairs: 14/20 exact (spike/out/noise, notebook 001–003).
-const SPIKE_BAR: usize = 14;
-const EXPECTED_PAIRS: usize = 20;
+/// Pinned dev baseline: 6/8 exact (notebook 006/013). Also the ≥0.70 protocol floor at n=8.
+const DEV_BAR: usize = 6;
+const EXPECTED_PAIRS: usize = 8;
 
 fn pairs_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spike/data/pairs_noise")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bench/fixtures/chimera_noise_seed42_dev")
 }
 
 fn load_run(path: &Path) -> Run {
@@ -26,16 +31,10 @@ fn load_run(path: &Path) -> Run {
 }
 
 #[test]
-#[ignore = "needs local spike/data/pairs_noise (python3 spike/make_pairs.py); not committed per GAIA licensing (notebook 001/T30)"]
-fn chimera_noise_localization_meets_spike_bar() {
+fn chimera_dev_localization_holds_baseline() {
     let dir = pairs_dir();
     let mut manifests: Vec<PathBuf> = std::fs::read_dir(&dir)
-        .unwrap_or_else(|e| {
-            panic!(
-                "read {}: {e} — regenerate via spike/make_pairs.py",
-                dir.display()
-            )
-        })
+        .unwrap_or_else(|e| panic!("read {}: {e}", dir.display()))
         .filter_map(Result::ok)
         .map(|e| e.path())
         .filter(|p| {
@@ -48,7 +47,7 @@ fn chimera_noise_localization_meets_spike_bar() {
     assert_eq!(
         manifests.len(),
         EXPECTED_PAIRS,
-        "expected the seed-42 n=20 set; found {} manifests",
+        "expected the committed dev set of {EXPECTED_PAIRS} pairs; found {}",
         manifests.len()
     );
 
@@ -74,9 +73,9 @@ fn chimera_noise_localization_meets_spike_bar() {
     }
 
     assert!(
-        exact >= SPIKE_BAR,
-        "exact {exact}/{EXPECTED_PAIRS} is below the spike bar {SPIKE_BAR}/{EXPECTED_PAIRS}; misses:\n{}",
+        exact >= DEV_BAR,
+        "exact {exact}/{EXPECTED_PAIRS} is below the pinned dev baseline {DEV_BAR}/{EXPECTED_PAIRS}; misses:\n{}",
         misses.join("\n")
     );
-    println!("chimera parity: exact {exact}/{EXPECTED_PAIRS} (spike bar {SPIKE_BAR})");
+    println!("chimera dev parity: exact {exact}/{EXPECTED_PAIRS} (baseline {DEV_BAR})");
 }

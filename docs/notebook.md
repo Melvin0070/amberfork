@@ -521,3 +521,57 @@ uncommitted. `amberfork-align` untouched, so the quantitative parity gate does n
 remains on #7 is acquisition (a `bench/fetch` step to pull the gated upstream tapes/logs the
 generator consumes) and the separate #11 decision on a CI-visible sanitized parity set — the
 *construction* machinery is now complete.
+
+## 013 · 2026-07-10 · The parity gate goes CI-visible: sanitize preserves the number (issue #11)
+
+**Decision (founder, 2026-07-10).** Commit a GAIA-sanitized **dev-split** chimera set so the
+fork-localization number is guarded by CI, not only by operator discipline. Chosen over the
+aggressive-redaction and decline-and-document options after the deciding experiment below. The
+issue itself pre-registered the experiment: "sanitize, re-run the dev baseline, and compare
+before deciding."
+
+**The number survives sanitization — exactly.** N=4 phrasing redaction (replace any run of ≥4
+consecutive question tokens, wherever it appears in step content, with per-question hash
+placeholders; boundary-redact the answer; hash the `task` field) leaves nw-lexical/resync
+**bit-identical**: dev **6/8 = 0.75 [0.41, 0.93]**, all **15/20 = 0.75**, ±1 0.88/0.90, ±3
+1.00 — matching the notebook 006/009 baseline arm-for-arm. Baselines stay at 0.00. The one
+perturbation is a single pair crossing the [0.2] *calibration* bin edge (fork confidence is a
+continuous function of the fork step's sync cost, which placeholders nudge); localization — what
+the gate asserts — is untouched. Mechanism: the aligner localizes where the token stream
+*diverges*, and deterministic substitution applied identically to both chimera sides preserves
+prefix-match / tail-divergence. Confirmed invariant even under aggressive bag-of-content-word
+redaction (still 0.75) — the number measures structure, not vocabulary, exactly as a
+controlled-injection localization test should.
+
+**Two stages, both load-bearing (the non-obvious part).** A single naive pass fails two ways:
+- *Order.* `reword()` noise is added during `make_pairs`. Sanitizing pairs *after* generation
+  redacts the failing side's noised prefix and the reference's clean prefix **differently**,
+  breaking alignment symmetry: measured **0.75 → 0.55**. Fix: sanitize canonical logs *before*
+  `make_pairs`, so placeholders bake into the prefix and reword drops tokens uniformly.
+- *Altitude.* Canonical sanitization redacts each log against *its own* question, but a chimera
+  splices log Y's tail onto log X's prefix — so X's question phrasing reappears through Y's real
+  tail content (caught in the committed set: `('the','dog','genome','was')` from `hand_32`). A
+  per-log sanitizer structurally cannot see this; the committed artifact is the *pair*, so it
+  must be swept against *both* source questions. The sweep runs on already-canonical-sanitized
+  pairs, where the prefix is clean (re-redaction is a no-op) and only post-fork tail residue is
+  touched — so the number holds (0.75) and residue drops to **0**.
+
+`spike/sanitize_gaia.py` exposes both stages (`canonical` / `pairs` subcommands); the committed
+fixture reproduces **byte-for-byte** from `convert_whowhen → sanitize_gaia canonical → make_pairs
+→ sanitize_gaia pairs`, seed 42.
+
+**Residual, recorded not hidden.** No ≥4-token run of any question survives (longest = 3), and no
+boundary-matched answer survives, but **~86% of a question's individual content words still appear
+scattered** across the agent's own reasoning — never as a reconstructable phrase. Whether that
+clears GAIA's "no crawlable resharing" is a licensing judgment; the founder accepted it for a
+dev-only, provenance-noted, MIT-sourced fixture. This is why the pairs carry hash placeholders,
+not natural text.
+
+**What shipped.** `bench/fixtures/chimera_noise_seed42_dev/` (8 pairs + README with provenance,
+license notice, and the re-runnable audit recipe); test side stays out (rule 2, tuning-on-test).
+`chimera_parity.rs` loses `#[ignore]` and now pins the dev baseline in CI: `exact ≥ 6/8`
+(= the ≥0.70 floor at n=8; measured 6). An `amberfork-align` change that tanks parity is now a
+red CI, not a silent pass caught only by the local-regen discipline. `DiffParams::default()` in
+the test equals the frozen bench config `8ebd95ce8f3d` (bench unit test pins that). Local gate
+`cargo test -p amberfork-align --test chimera_parity` is green; the `--ignored` regen path is
+retired.
