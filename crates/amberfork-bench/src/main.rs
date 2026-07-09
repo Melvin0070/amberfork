@@ -9,8 +9,9 @@
 //! which side is scored), and the coverage line above the table counts every excluded case
 //! with its reason. Rule 2 as well: parameters come ONLY from a frozen file (`--params`,
 //! default `bench/params.toml`), and the published artifact names that file's sha256 — no
-//! code-default fallback exists. Still to land, slice by slice: the calibration curve and
-//! the committed-results `report` mode.
+//! code-default fallback exists. Rule 7: the aligner arms publish their reliability curve
+//! (fork confidence binned vs exact-hit rate) under the main table. Still to land: the
+//! committed-results `report` mode.
 //!
 //! Real pair sets are NOT committed: chimera pairs derive from Who&When logs whose questions
 //! originate in GAIA (gated upstream — notebook 001/T30). Regenerate locally with
@@ -22,12 +23,15 @@
 //! stderr.
 
 mod arms;
+mod calibration;
 mod hash;
 mod pairs;
 mod params;
 mod score;
 mod split;
 
+use arms::Prediction;
+use calibration::{CalibrationBin, N_BINS};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use pairs::{Pair, load_pairs};
 use score::{ArmScore, Rate};
@@ -106,7 +110,8 @@ impl SplitSelection {
 /// selection scored), `coverage` (rule 4), and `pairs` (the rule-1 split manifest);
 /// `n_pairs` narrowed from "pairs loaded" to "pairs scored". 0.3: `params` gained its
 /// identity — `source` (the file as named on the command line) and `sha256` of its exact
-/// bytes (rule 2).
+/// bytes (rule 2). 0.4: confidence-bearing arms carry `calibration`, the rule-7 reliability
+/// curve (fixed-width bins, exact-hit rate per bin).
 #[derive(Serialize)]
 struct BenchResults {
     bench_schema_version: &'static str,
@@ -175,6 +180,10 @@ struct ArmResult {
     arm: &'static str,
     #[serde(flatten)]
     score: ArmScore,
+    /// Rule 7's reliability curve — present exactly for the arms whose predictions carry a
+    /// confidence ([`arms::Arm::emits_confidence`]); a baseline has nothing to calibrate.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    calibration: Option<Vec<CalibrationBin>>,
 }
 
 fn main() -> ExitCode {
@@ -237,7 +246,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     }
 
     let results = BenchResults {
-        bench_schema_version: "0.3",
+        bench_schema_version: "0.4",
         protocol: "chimera",
         split: args.split.as_str(),
         coverage: Coverage {
@@ -277,13 +286,20 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
         arms: arms::ALL
             .iter()
             .map(|arm| {
-                let preds: Vec<Option<usize>> = scored
+                let preds: Vec<Option<Prediction>> = scored
                     .iter()
                     .map(|pair| arm.predict(pair, &params))
                     .collect();
+                let steps: Vec<Option<usize>> = preds
+                    .iter()
+                    .map(|pred| pred.map(|prediction| prediction.step))
+                    .collect();
                 ArmResult {
                     arm: arm.name(),
-                    score: score::score(&preds, &golds),
+                    score: score::score(&steps, &golds),
+                    calibration: arm
+                        .emits_confidence()
+                        .then(|| calibration::calibrate(&preds, &golds)),
                 }
             })
             .collect(),
@@ -302,6 +318,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     println!("{}", coverage_line(&results));
     println!("{}\n", params_line(&results));
     println!("{}", markdown_table(&results));
+    println!("\n{}", calibration_table(&results));
     Ok(ExitCode::from(EXIT_OK))
 }
 
@@ -372,4 +389,48 @@ fn cell(rate: Rate) -> String {
         "{:.2} [{:.2}, {:.2}]",
         rate.rate, rate.ci95_lo, rate.ci95_hi
     )
+}
+
+/// The reliability curve as a markdown table (rule 7): one row per confidence bin, one
+/// column per confidence-bearing arm, `hits/n · rate [ci]` per occupied cell and `—` for an
+/// empty bin — published, not dropped. The caption states the correctness metric and why
+/// abstentions are absent, so the table stands alone when pasted.
+fn calibration_table(results: &BenchResults) -> String {
+    let curves: Vec<(&'static str, &Vec<CalibrationBin>)> = results
+        .arms
+        .iter()
+        .filter_map(|arm| arm.calibration.as_ref().map(|bins| (arm.arm, bins)))
+        .collect();
+    let mut lines = vec![
+        "calibration: exact-hit rate by fork confidence (abstentions carry no confidence)"
+            .to_string(),
+        format!(
+            "| confidence | {} |",
+            curves
+                .iter()
+                .map(|(name, _)| *name)
+                .collect::<Vec<_>>()
+                .join(" | ")
+        ),
+        format!("|---{}|", "|---".repeat(curves.len())),
+    ];
+    for bin in 0..N_BINS {
+        let (lo, hi) = curves
+            .first()
+            .map_or((0.0, 0.0), |(_, bins)| (bins[bin].lo, bins[bin].hi));
+        // The last bin is closed so confidence 1.0 has a home; the label says so.
+        let close = if bin == N_BINS - 1 { ']' } else { ')' };
+        let cells: Vec<String> = curves
+            .iter()
+            .map(|(_, bins)| match bins[bin].rate {
+                Some(rate) => format!("{}/{} · {}", rate.hits, rate.n, cell(rate)),
+                None => "—".to_string(),
+            })
+            .collect();
+        lines.push(format!(
+            "| [{lo:.1}, {hi:.1}{close} | {} |",
+            cells.join(" | ")
+        ));
+    }
+    lines.join("\n")
 }

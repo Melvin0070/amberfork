@@ -25,6 +25,11 @@
 //! sha256 — recomputed in-test from the committed bytes, never hardcoded, so a changelog
 //! edit doesn't break the suite — and a missing or invalid file is trouble, never a silent
 //! fall back to code defaults.
+//!
+//! Rule 7 (calibration): the reliability curve publishes under the main table for exactly
+//! the confidence-bearing arms. On the designed splices both aligner forks are near-certain
+//! (top bin), the product hits 2/2 there against the content-blind arm's 1/2, and the four
+//! empty bins print as `—` / `rate: null` — published, never dropped.
 
 use assert_cmd::Command;
 use predicates::prelude::*;
@@ -92,11 +97,26 @@ fn run_scores_the_synthetic_set_and_writes_the_results_json() {
         ))
         .stdout(predicate::str::contains(
             "| nw-lexical/resync | 0.67 [0.21, 0.94] | 0.67 [0.21, 0.94] | 0.67 [0.21, 0.94] | 0.33 | 3 |",
+        ))
+        // Rule 7: the reliability curve publishes with the table. Both aligner arms fork
+        // with near-certain confidence on the designed splices (top bin), where the product
+        // hits 2/2 and the content-blind arm 1/2; the four lower bins publish as empty
+        // rather than vanishing. Abstentions carry no confidence, so each curve sums to 2
+        // of the 3 scored pairs — the third is the no-pred column of the main table.
+        .stdout(predicate::str::contains(
+            "calibration: exact-hit rate by fork confidence (abstentions carry no confidence)",
+        ))
+        .stdout(predicate::str::contains(
+            "| confidence | nw-structural/resync | nw-lexical/resync |",
+        ))
+        .stdout(predicate::str::contains("| [0.0, 0.2) | — | — |"))
+        .stdout(predicate::str::contains(
+            "| [0.8, 1.0] | 1/2 · 0.50 [0.09, 0.91] | 2/2 · 1.00 [0.34, 1.00] |",
         ));
 
     let text = std::fs::read_to_string(&json_path).expect("results JSON written");
     let results: serde_json::Value = serde_json::from_str(&text).expect("results JSON parses");
-    assert_eq!(results["bench_schema_version"], "0.3");
+    assert_eq!(results["bench_schema_version"], "0.4");
     assert_eq!(results["protocol"], "chimera");
     assert_eq!(results["split"], "all");
     assert_eq!(results["n_pairs"], 3);
@@ -155,6 +175,40 @@ fn run_scores_the_synthetic_set_and_writes_the_results_json() {
         assert!(
             arm["exact"]["ci95_lo"].as_f64().is_some(),
             "{name}: every rate carries its interval"
+        );
+    }
+
+    // Rule 7 in the committed document: the curve rides on exactly the confidence-bearing
+    // arms — five fixed-width bins each, empty bins explicit (`rate: null`), occupied bins
+    // a full Wilson-CI rate. The baselines carry no `calibration` key at all: a method
+    // without a confidence has nothing to calibrate, and a fabricated curve would be
+    // decorative.
+    for arm in &arms[..2] {
+        assert!(
+            arm.get("calibration").is_none(),
+            "{}: baselines do not calibrate",
+            arm["arm"]
+        );
+    }
+    for (arm, top_hits) in arms[2..].iter().zip([1, 2]) {
+        let name = &arm["arm"];
+        let bins = arm["calibration"]
+            .as_array()
+            .expect("aligner arms calibrate");
+        assert_eq!(bins.len(), 5, "{name}: five fixed-width bins");
+        assert_eq!(bins[0]["lo"], 0.0);
+        assert_eq!(bins[4]["hi"], 1.0);
+        for bin in &bins[..4] {
+            assert_eq!(
+                bin["rate"],
+                serde_json::Value::Null,
+                "{name}: empty is data"
+            );
+        }
+        assert_eq!(bins[4]["rate"]["hits"], top_hits, "{name} top-bin hits");
+        assert_eq!(
+            bins[4]["rate"]["n"], 2,
+            "{name}: both forks are near-certain"
         );
     }
 }

@@ -42,6 +42,18 @@ pub enum Arm {
     NwLexical,
 }
 
+/// One arm's answer for one pair: the predicted failing-run fork step, and the engine's
+/// confidence in it when the arm has such a notion. Only the aligner arms do — their forks
+/// carry [`amberfork_model::Fork::confidence`], the quantity rule 7's reliability curve
+/// calibrates. The baselines carry `None`: random guessing and index-wise diffing have no
+/// native confidence, and inventing one for a baseline would put a decorative number in a
+/// published table.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Prediction {
+    pub step: usize,
+    pub confidence: Option<f64>,
+}
+
 impl Arm {
     /// The arm's name in tables and results JSON — the spike's vocabulary, kept so numbers
     /// cross-reference against `spike/out/*` grids.
@@ -55,20 +67,50 @@ impl Arm {
         }
     }
 
+    /// Whether this arm's predictions carry a confidence — i.e. whether rule 7's
+    /// reliability curve applies to it. A property of the method, not of any one run: an
+    /// aligner arm that abstained on every pair still publishes its (empty) curve, while a
+    /// baseline never grows one.
+    #[must_use]
+    pub fn emits_confidence(self) -> bool {
+        matches!(self, Self::NwStructural | Self::NwLexical)
+    }
+
     /// Predict the failing-run step where this pair forks, or `None` to abstain.
     #[must_use]
-    pub fn predict(self, pair: &Pair, params: &DiffParams) -> Option<usize> {
+    pub fn predict(self, pair: &Pair, params: &DiffParams) -> Option<Prediction> {
         match self {
-            Self::Random => random_step(pair),
-            Self::PosLexical => positional_first_mismatch(pair, params.fork.tau),
-            Self::NwStructural => {
-                diff(&pair.reference, &pair.failing, &StructuralCost, params).fork_step_observed()
+            Self::Random => random_step(pair).map(|step| Prediction {
+                step,
+                confidence: None,
+            }),
+            Self::PosLexical => {
+                positional_first_mismatch(pair, params.fork.tau).map(|step| Prediction {
+                    step,
+                    confidence: None,
+                })
             }
+            Self::NwStructural => aligned_prediction(diff(
+                &pair.reference,
+                &pair.failing,
+                &StructuralCost,
+                params,
+            )),
             Self::NwLexical => {
-                diff(&pair.reference, &pair.failing, &LexicalCost, params).fork_step_observed()
+                aligned_prediction(diff(&pair.reference, &pair.failing, &LexicalCost, params))
             }
         }
     }
+}
+
+/// An aligner arm's prediction: the observed-side fork step with the fork's own confidence.
+/// `fork_step_observed` is `Some` exactly when the diff forked, so a step always brings its
+/// confidence along.
+fn aligned_prediction(result: amberfork_model::DiffResult) -> Option<Prediction> {
+    result.fork_step_observed().map(|step| Prediction {
+        step,
+        confidence: result.fork.map(|fork| fork.confidence),
+    })
 }
 
 /// The floor: one uniform draw over the failing run's steps, from the pair's own stream.
@@ -202,6 +244,11 @@ mod tests {
         }
     }
 
+    /// The predicted step alone — for tests about localization, not confidence.
+    fn predicted_step(arm: Arm, p: &Pair) -> Option<usize> {
+        arm.predict(p, &DiffParams::default()).map(|pred| pred.step)
+    }
+
     #[test]
     fn random_arm_is_deterministic_per_pair_name_not_position() {
         let reference = run("ref", &[("a", "x"), ("b", "y"), ("c", "z")]);
@@ -210,7 +257,7 @@ mod tests {
         let first = Arm::Random.predict(&p, &DiffParams::default());
         let again = Arm::Random.predict(&p, &DiffParams::default());
         assert_eq!(first, again, "same name + same length = same draw");
-        assert!(first.expect("non-empty run always draws") < 3);
+        assert!(first.expect("non-empty run always draws").step < 3);
 
         let renamed = pair("pair_99", reference, failing);
         // Different name seeds a different stream. (Equal draws are possible in principle;
@@ -232,7 +279,7 @@ mod tests {
             ],
         );
         let p = pair("p", reference, failing);
-        assert_eq!(Arm::PosLexical.predict(&p, &DiffParams::default()), Some(1));
+        assert_eq!(predicted_step(Arm::PosLexical, &p), Some(1));
     }
 
     #[test]
@@ -249,7 +296,7 @@ mod tests {
         let failing = run("fail", &[("plan", "x"), ("fetch", "y"), ("retry", "z")]);
         let p = pair("p", reference, failing);
         assert_eq!(
-            Arm::PosLexical.predict(&p, &DiffParams::default()),
+            predicted_step(Arm::PosLexical, &p),
             Some(2),
             "the first unmatched failing step is the mismatch"
         );
@@ -261,10 +308,57 @@ mod tests {
         let failing = run("fail", &[("plan", "x"), ("fetch", "y")]);
         let p = pair("p", reference, failing);
         assert_eq!(
-            Arm::PosLexical.predict(&p, &DiffParams::default()),
+            predicted_step(Arm::PosLexical, &p),
             Some(1),
             "the missing tail is the mismatch, pointed at the last real failing step"
         );
+    }
+
+    #[test]
+    fn baselines_carry_no_confidence_and_aligner_forks_carry_the_engines() {
+        // The confidence side of the Prediction contract: on a pair whose tail diverges,
+        // every arm answers, but only the aligner arms bring Fork::confidence along. The
+        // divergent step changes NAME, not just content, so even the content-blind
+        // structural arm sees it fork.
+        let reference = run(
+            "ref",
+            &[
+                ("plan", "search for census data"),
+                ("fetch", "census.gov page: population 8,443,000"),
+            ],
+        );
+        let failing = run(
+            "fail",
+            &[
+                ("plan", "search for census data"),
+                ("guess", "the city has probably grown a lot"),
+            ],
+        );
+        let p = pair("p", reference, failing);
+        let params = DiffParams::default();
+
+        for baseline in [Arm::Random, Arm::PosLexical] {
+            assert!(!baseline.emits_confidence());
+            let pred = baseline.predict(&p, &params).expect("baselines answer");
+            assert_eq!(
+                pred.confidence,
+                None,
+                "{} has no confidence",
+                baseline.name()
+            );
+        }
+        for aligner in [Arm::NwStructural, Arm::NwLexical] {
+            assert!(aligner.emits_confidence());
+            let pred = aligner.predict(&p, &params).expect("the tail diverges");
+            let confidence = pred
+                .confidence
+                .unwrap_or_else(|| panic!("{} forks carry confidence", aligner.name()));
+            assert!(
+                (0.0..=1.0).contains(&confidence) && confidence > 0.0,
+                "{}: a clear content mismatch reads above the marginal floor, got {confidence}",
+                aligner.name()
+            );
+        }
     }
 
     #[test]

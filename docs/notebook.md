@@ -355,3 +355,30 @@ nw-lexical/resync **0.75 exact [0.41, 0.93], 0.88 ±1, 1.00 ±3, n=8**, config `
 Initial freeze = the dev-calibrated engine defaults (001 grid; 003/004 parity): gap 0.6+0.3,
 τ 0.3, resync_k 2. Remaining for issue #6: calibration curve (rule 7), committed-results
 `report` mode.
+
+## 008 · 2026-07-09 · Protocol rule 7 live: calibration curve (issue #6 slice 5)
+
+**What changed.** `amberfork-bench run` now publishes the reliability curve under the main
+table: fork confidence binned vs empirical exact-hit rate, for exactly the confidence-bearing
+arms. `Arm::predict` returns `Prediction { step, confidence }` — the aligner arms carry the
+engine's `Fork::confidence` (the 005 formula); the baselines carry none, and none is invented
+for them: a fabricated confidence on a baseline would put a decorative number in a published
+table. Bins are five fixed-width intervals over [0, 1] (last closed), committed code
+constants like the ±1/±3 windows — deliberately NOT the 005 spike's equal-count terciles
+(data-derived edges shift with every fixture set, so curves stop comparing across runs, and
+re-tunable edges hand a cherry-picker a knob) and NOT `bench/params.toml` material (reporting
+shape, not an engine tunable). Empty bins publish as `—` / `rate: null`, never vanish (the
+rule-4 ethos applied to bins); occupied bins carry hits/n with the Wilson interval;
+abstentions carry no confidence and stay outside the curve — they are already the `no_pred`
+rate on the same denominator. Results JSON = bench_schema 0.4.
+
+**Check.** The dev tuning baseline reproduces bit-for-bit under the frozen config
+(`8ebd95ce8f3d`): nw-lexical/resync **0.75 exact [0.41, 0.93], 0.88 ±1, 1.00 ±3, n=8**. The
+dev-side curve (n=8 — read directionally, no claims): nw-lexical 1/2 in [0.0,0.2), 2/2 in
+[0.2,0.4), 2/3 in [0.4,0.6), 1/1 in [0.8,1.0] — consistent with 005's hits-carry-higher-
+confidence. The unplanned observation: **nw-structural is confidently wrong** — 0/4 exact in
+the top bin, because its 0/1 cost turns any (kind, name) mismatch into a confidence-1.0 fork.
+The factorial ladder now shows content earns not just accuracy but *calibration*: the
+product's confidence separates hits from misses; the structure-only arm's does not separate
+at all. Published-curve numbers come from the test split under the frozen protocol, not from
+these dev n's. Remaining for issue #6: committed-results `report` mode.
