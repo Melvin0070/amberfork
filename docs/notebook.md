@@ -575,3 +575,40 @@ red CI, not a silent pass caught only by the local-regen discipline. `DiffParams
 the test equals the frozen bench config `8ebd95ce8f3d` (bench unit test pins that). Local gate
 `cargo test -p amberfork-align --test chimera_parity` is green; the `--ignored` regen path is
 retired.
+
+## 014 · 2026-07-10 · Correction: the 0.75 headline is a lucky seed; lead with the ±3 window
+
+**What prompted it.** Hardening the just-shipped parity gate, I widened it past seed 42 and
+measured seeds 43 + 44 through the identical two-stage pipeline at the frozen τ=0.3. The
+exact-hit rate is strongly **seed-sensitive**, and the committed headline (seed-42 **0.75**) is
+the most favorable of the three.
+
+**Numbers (fixed τ=0.3, frozen config `8ebd95ce8f3d`).** Dev split, per seed → aggregate:
+- exact: seed42 **6/8 (0.75)**, seed43 **2/7 (0.29)**, seed44 **6/10 (0.60)** → **14/25 (0.56)**
+- ±1: 0.72 aggregate · **±3: 25/25 (1.00)** aggregate
+- All-split, n=60: exact **0.52**, ±1 0.72, **±3 0.95**. Baselines stay at 0.00 exact, ±3 ≤ 0.40.
+
+This is **old-alongside-new** (rule 3): the seed-42 dev number is unchanged and reproduces
+bit-for-bit; what changes is the honest *framing*. And it is not a new discovery so much as a
+surfacing — notebook 002/005 already put the cross-seed exact mean at ~0.48–0.52; the fault was
+that the committed README + gate led with seed 42's exact in isolation. For a repo whose whole
+pitch is honesty-as-the-impressive-part, leading with the lucky seed was the one soft spot a
+sharp reviewer catches first.
+
+**Why exact wobbles but ±3 holds.** The controlled fork is a real content boundary; the aligner
+reliably lands *near* it (±3 = 0.95–1.00 everywhere), but pinning the *exact* step depends on how
+the benign-noise rewording/retry draw of a given seed reshapes token overlap right at the seam.
+So exact is the seed-fragile metric and the window is the stable capability — which is the honest
+thing to headline.
+
+**Decisions (founder, 2026-07-10).** (1) *Publish the window.* README now leads with "localizes
+within 3 steps 100% of the time (dev, n=25) vs the best baseline's 0.40", presents exact as
+seed-sensitive (0.56 aggregate), and keeps seed-42's `report`-rendered table as the committed
+reproducible slice. (2) *Gate on all three seeds, per-seed baselines.* `chimera_parity` now pins
+seed42 ≥ 6/8, seed43 ≥ 2/7, seed44 ≥ 6/10 (25 dev pairs); the gate can no longer rest on one
+lucky draw. Seeds 43/44 dev sets committed under `bench/fixtures/chimera_noise_seed{43,44}_dev/`,
+same GAIA-sanitization + provenance, residue 0.
+
+**Also corrected.** The README's Who&When source link said `mingyin1/…`; BENCHMARK.md, the
+converter, and notebook 001 all standardize on the MIT source `ag2ai/Agents_Failure_Attribution`
+— aligned the README to match.

@@ -1,0 +1,10 @@
+{
+ "failing": "a_14.json",
+ "reference": "b_14.json",
+ "gold_step": 4,
+ "meta": {
+  "x": "whowhen_hand_10.json",
+  "y": "whowhen_hand_52.json",
+  "noise": true
+ }
+}

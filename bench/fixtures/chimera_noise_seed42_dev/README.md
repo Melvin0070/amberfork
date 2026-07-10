@@ -1,9 +1,23 @@
-# chimera_noise_seed42_dev — committed dev-split parity fixture
+# chimera_noise dev-split parity fixtures (canonical provenance doc)
 
-The **dev-split** subset (8 of 20 pairs) of the seed-42, n=20 benign-noise chimera set. This is
-the CI-visible guard on the fork-localization number: `crates/amberfork-align/tests/chimera_parity.rs`
-reads these pairs and asserts the pinned dev baseline **6/8 exact (0.75)** — also the protocol's
-≥0.70 floor at n=8 (notebook 003/006/013). Committed per the issue-#11 decision (2026-07-10).
+The **dev-split** subsets of the n=20 benign-noise chimera sets, one directory per RNG seed:
+
+| directory | dev pairs | pinned exact baseline |
+|---|---|---|
+| `chimera_noise_seed42_dev/` | 8 | 6/8 |
+| `chimera_noise_seed43_dev/` | 7 | 2/7 |
+| `chimera_noise_seed44_dev/` | 10 | 6/10 |
+
+`crates/amberfork-align/tests/chimera_parity.rs` reads all three and asserts each seed's own
+baseline in CI (25 dev pairs total). This directory is the canonical provenance doc for the whole
+family; the sibling dirs carry a short pointer back here. Committed per the issue-#11 decision
+(2026-07-10); seeds 43/44 added under notebook 014.
+
+**Why three seeds, and the honest number.** Exact-step localization at the frozen τ=0.3 is
+*seed-sensitive* (notebook 014): seed 42 is a favorable draw (0.75), seed 43 hard (0.29), seed 44
+middling (0.60) — aggregate **14/25 ≈ 0.56 exact**. The *stable* signal is the window: **±3 = 0.95
+across all three seeds (n=60)**. The published claim leads with that window, not seed 42's exact;
+pinning per-seed baselines here means the gate cannot rest on one lucky draw.
 
 The **test split is deliberately not here.** A committed test set invites tuning-on-test
 (BENCHMARK.md protocol rule 2). The test side is regenerated under the frozen protocol once per
@@ -60,14 +74,15 @@ carry hashed placeholders rather than natural text.
 python3 spike/convert_whowhen.py --src <Agents_Failure_Attribution checkout>
 # 2. GAIA-sanitize the canonical logs (stage 1)
 python3 spike/sanitize_gaia.py canonical --src spike/data/canonical --out spike/data/canonical_sanitized
-# 3. generate the seed-42 noise pairs from sanitized logs
-python3 spike/make_pairs.py --canonical spike/data/canonical_sanitized \
+# 3. generate the noise pairs from sanitized logs (repeat per seed: 42, 43, 44)
+python3 spike/make_pairs.py --canonical spike/data/canonical_sanitized --seed 42 \
     --out-noise spike/data/pairs_noise --out-clean spike/data/pairs_clean
 # 4. cross-log sweep (stage 2)
 python3 spike/sanitize_gaia.py pairs --pairs spike/data/pairs_noise \
     --canonical spike/data/canonical --out spike/data/pairs_noise
-# 5. the dev-split subset (pairs 03,06,09,10,14,15,16,18) is this directory, byte-identical.
+# 5. the dev-split subset of each seed is the matching chimera_noise_seed<N>_dev/ dir,
+#    byte-identical. Seed 42 dev = pairs 03,06,09,10,14,15,16,18.
 ```
 
 The dev/test split is `amberfork-bench`'s stable FNV-1a hash of the reference run id (dev iff
-bucket < 30 of 100); these 8 are the pairs it assigns to dev.
+bucket < 30 of 100); `amberfork-bench run --pairs <seed dir> --split dev` lists each seed's set.
