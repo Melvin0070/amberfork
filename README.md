@@ -34,42 +34,52 @@ cargo run --release -q -p amberfork-cli -- diff bad.json --against good.json   #
 - `cargo run -p amberfork-bench` — reproduce the scoring table offline, deterministically, no
   API key. Protocol: [`BENCHMARK.md`](BENCHMARK.md).
 
-## Benchmark — dev baseline (pre-release)
+## Benchmark — sealed test split (v0.2.0)
 
 Fork-localization on chimera pairs: a controlled fork spliced into real agent logs
 ([Who&When](https://github.com/ag2ai/Agents_Failure_Attribution)-derived), every arm on
 identical pairs with an identical denominator. Protocol: [`BENCHMARK.md`](BENCHMARK.md).
 
-**The robust result** (dev split, three seeds, n=25): the full engine localizes the fork
-**within 3 steps 100% of the time** — vs the best baseline's 0.40 — where no baseline lands a
-single exact hit. **Exact-step** localization is *seed-sensitive*: 0.75 / 0.29 / 0.60 on seeds
-42 / 43 / 44 (aggregate **0.56**), so we lead with the ±3 window, not a single lucky seed
-(notebook 014).
+**The headline** (sealed test split, three seeds, n=35 — revealed once, at the v0.2.0 tag,
+under params frozen before any test pair was scored): the full engine localizes the fork
+**within 3 steps 91% of the time** — 0.91 [0.78, 0.97] vs the best baseline's 0.49
+[0.33, 0.64], non-overlapping intervals — and takes **0.49 exact** where the baselines'
+best is 0.03 (notebook 017).
 
-| arm (dev, n=25 across 3 seeds) | exact | ±1 | ±3 |
+| arm (test, n=35 across 3 seeds) | exact | ±1 | ±3 |
 |---|---|---|---|
-| random | 0.00 | 0.04 | 0.08 |
-| pos-lexical | 0.00 | 0.12 | 0.40 |
-| nw-structural/resync | 0.00 | 0.08 | 0.16 |
-| **nw-lexical/resync** (full engine) | **0.56** | **0.72** | **1.00** |
+| random | 0.00 | 0.09 | 0.29 |
+| pos-lexical | 0.00 | 0.20 | 0.49 |
+| nw-structural/resync | 0.03 | 0.20 | 0.20 |
+| **nw-lexical/resync** (full engine) | **0.49** | **0.71** | **0.91** |
 
-The committed, offline-reproducible slice is **seed 42's** dev split (the CI gate additionally
-pins seeds 43/44 — `bench/fixtures/chimera_noise_seed*_dev/`):
+The dev side these params were tuned on agrees: exact 0.56 · ±1 0.72 · ±3 1.00 (n=25) — no
+overfitting cliff. **Exact-step** localization is *seed-sensitive* on unseen pairs too (0.75 /
+0.23 / 0.50 on seeds 42 / 43 / 44), the same shape dev showed — which is why the ±3 window,
+not exact, is the claim (notebooks 014, 017). The engine's fork confidence is calibrated on
+unseen data: exact-hit rate climbs monotonically from 0.08 in the lowest-confidence bin to
+1.00 in the two highest.
+
+The committed, offline-reproducible slices: **seed 42's dev split** (the default `report`
+below; the CI gate additionally pins seeds 43/44 — `bench/fixtures/chimera_noise_seed*_dev/`)
+and the **three test-split documents** (`bench/results/chimera_noise_seed*_test.json`, each
+pinned by a snapshot test):
 
 ```text
 params: bench/params.toml sha256:8ebd95ce8f3d · tau 0.3 · resync_k 2 · gap 0.6+0.3
-| nw-lexical/resync | 0.75 [0.41, 0.93] exact | 0.88 ±1 | 1.00 ±3 | n=8 |
+| nw-lexical/resync | 0.75 [0.41, 0.93] exact | 0.88 ±1 | 1.00 ±3 | n=8 |  (dev, seed 42)
 ```
 
-Read it honestly: these are **dev-split** numbers — the side all tuning happens on. The test
-split stays sealed until a release tag (protocol rule 2). Wilson 95% intervals are wide at these
-n; the claim they support is the *shape* — content-aware alignment localizes within a few steps
-where position and structure do not.
+Read it honestly: Wilson 95% intervals are wide at these n, and the test split is scored
+exactly once per release tag (protocol rule 2) — the next reveal comes with the next tag. The
+claim the numbers support is the *shape* — content-aware alignment localizes within a few
+steps where position and structure do not.
 
-Reproduce the seed-42 table offline — it renders from the committed results document, zero fetch:
+Reproduce the tables offline — they render from the committed results documents, zero fetch:
 
 ```sh
-cargo run -q -p amberfork-bench -- report
+cargo run -q -p amberfork-bench -- report    # seed-42 dev (the default)
+cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_seed42_test.json
 ```
 
 The dev-split pairs are committed (GAIA-sanitized — see `bench/fixtures/`); the CI gate scores

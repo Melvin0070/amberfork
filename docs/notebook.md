@@ -694,3 +694,50 @@ snapshot and the protocol-label assertion; spike tests). Determinism: re-running
 same cache reproduces the committed document **byte-for-byte**. Chimera artifacts untouched
 (their snapshot never moved). This closes #7 — seam (010), adapter (011), construction (012),
 acquisition (015), scored disclosure (here) — and with it the v0.2 milestone.
+
+## 017 · 2026-07-10 · The seal comes off: first test-split reveal, at the v0.2.0 tag
+
+**What prompted it.** The v0.2 milestone closed with notebook 016, which makes this the first
+release tag — and protocol rule 2 says the sealed test split runs **once per release tag** with
+frozen params. This entry is that run. Params are the same bytes frozen since notebook 007
+(`bench/params.toml`, sha256 `8ebd95ce8f3d…`); no tuning has touched them since.
+
+**Recipe audit first.** The full n=20 sets (seeds 42/43/44) were regenerated from scratch per
+the committed recipe (`convert_whowhen` canonical → `sanitize_gaia canonical` → `make_pairs` →
+`sanitize_gaia pairs`), and the dev subsets of all three regenerated sets are **byte-identical**
+to the committed `bench/fixtures/chimera_noise_seed*_dev/` fixtures — every a/b/pair file. The
+chain from raw upstream data to the published dev numbers reproduces exactly; the test pairs
+scored below come from that same validated generation.
+
+**The numbers (frozen `8ebd95ce8f3d`, τ=0.3, `--split test`, n=35: 12+13+10 across seeds).**
+- **nw-lexical/resync (the engine): exact 17/35 = 0.49 [0.33, 0.64] · ±1 0.71 [0.55, 0.84] ·
+  ±3 32/35 = 0.91 [0.78, 0.97]**
+- pos-lexical (best baseline): exact 0.00 [0.00, 0.10] · ±1 0.20 · ±3 0.49 [0.33, 0.64]
+- nw-structural/resync: exact 0.03 · ±3 0.20 · random: exact 0.00 · ±3 0.29 [0.16, 0.45]
+- Per seed, engine exact: seed42 9/12 (0.75) · seed43 3/13 (0.23) · seed44 5/10 (0.50) — the
+  same seed-sensitivity shape as dev (43 hard, 42 favorable), on unseen pairs.
+
+**Read against dev (rule 3: alongside, not instead).** Dev aggregate was exact 0.56 · ±1 0.72 ·
+±3 1.00 (n=25, notebook 014). Test tracks it: exact 0.49 vs 0.56, ±1 0.71 vs 0.72, ±3 0.91 vs
+1.00. No overfitting cliff — and the test exact lands almost exactly on the ~0.48–0.52
+cross-seed mean notebooks 002/005 measured before any Rust existed. The one honest loss: the
+±3 window gives up its perfect 1.00 — 32/35, with 2 misses on seed 43 and 1 on seed 44 (the
+engine abstained on none: no-pred 0.00 in every seed). The claim that matters survives
+with **non-overlapping intervals** (rule 6): engine ±3 [0.78, 0.97] vs best-baseline ±3
+[0.33, 0.64], and engine exact [0.33, 0.64] vs all baselines ≤ [0.01, 0.15].
+
+**Calibration (rule 7) is real on unseen data.** Engine reliability across confidence bins,
+test aggregate: 0.08 (n=12) → 0.57 (7) → 0.60 (10) → 1.00 (4) → 1.00 (2) — monotone. A
+high-confidence fork call on the test split was always an exact hit; the CI `--gate` idea
+stands on something.
+
+**Determinism.** Re-running `run --split test` reproduces each committed results document
+byte-for-byte. The three documents are committed (`bench/results/chimera_noise_seed*_test.json`,
+identifiers only — no GAIA content) with `report` snapshot tests, same contract as the dev and
+Mode A′ tables.
+
+**What it means.** The pre-registered protocol did its job: numbers tuned blind on dev
+generalized to sealed pairs, and the published claim survives its first adversarial checkpoint —
+"localizes within 3 steps" is now a **0.91 [0.78, 0.97] test-split number**, not a dev-only one.
+README updated to lead with the test result and demote dev to context. Next reveal happens at
+the next release tag, on a regenerated split, per rule 2.

@@ -1,0 +1,347 @@
+{
+  "bench_schema_version": "0.5",
+  "protocol": "chimera",
+  "split": "test",
+  "coverage": {
+    "total": 20,
+    "evaluated": 20,
+    "dev": 10,
+    "test": 10,
+    "reasons": {},
+    "exclusions": []
+  },
+  "n_pairs": 10,
+  "cross_system": 0,
+  "params": {
+    "source": "bench/params.toml",
+    "sha256": "8ebd95ce8f3d50549017b4d381c8d0dc1f76264184ce92e5795895b383f36014",
+    "tau": 0.3,
+    "resync_k": 2,
+    "gap_open": 0.6,
+    "gap_ext": 0.3
+  },
+  "pairs": [
+    {
+      "name": "pair_00",
+      "task_key": "whowhen_hand_43",
+      "split": "test"
+    },
+    {
+      "name": "pair_01",
+      "task_key": "whowhen_hand_49",
+      "split": "dev"
+    },
+    {
+      "name": "pair_02",
+      "task_key": "whowhen_hand_1",
+      "split": "dev"
+    },
+    {
+      "name": "pair_03",
+      "task_key": "whowhen_hand_42",
+      "split": "test"
+    },
+    {
+      "name": "pair_04",
+      "task_key": "whowhen_hand_28",
+      "split": "dev"
+    },
+    {
+      "name": "pair_05",
+      "task_key": "whowhen_hand_25",
+      "split": "dev"
+    },
+    {
+      "name": "pair_06",
+      "task_key": "whowhen_hand_17",
+      "split": "test"
+    },
+    {
+      "name": "pair_07",
+      "task_key": "whowhen_hand_49",
+      "split": "dev"
+    },
+    {
+      "name": "pair_08",
+      "task_key": "whowhen_hand_22",
+      "split": "test"
+    },
+    {
+      "name": "pair_09",
+      "task_key": "whowhen_hand_52",
+      "split": "test"
+    },
+    {
+      "name": "pair_10",
+      "task_key": "whowhen_hand_16",
+      "split": "dev"
+    },
+    {
+      "name": "pair_11",
+      "task_key": "whowhen_hand_13",
+      "split": "test"
+    },
+    {
+      "name": "pair_12",
+      "task_key": "whowhen_hand_29",
+      "split": "test"
+    },
+    {
+      "name": "pair_13",
+      "task_key": "whowhen_hand_14",
+      "split": "test"
+    },
+    {
+      "name": "pair_14",
+      "task_key": "whowhen_hand_14",
+      "split": "test"
+    },
+    {
+      "name": "pair_15",
+      "task_key": "whowhen_hand_32",
+      "split": "dev"
+    },
+    {
+      "name": "pair_16",
+      "task_key": "whowhen_hand_25",
+      "split": "dev"
+    },
+    {
+      "name": "pair_17",
+      "task_key": "whowhen_hand_16",
+      "split": "dev"
+    },
+    {
+      "name": "pair_18",
+      "task_key": "whowhen_hand_17",
+      "split": "test"
+    },
+    {
+      "name": "pair_19",
+      "task_key": "whowhen_hand_38",
+      "split": "dev"
+    }
+  ],
+  "arms": [
+    {
+      "arm": "random",
+      "exact": {
+        "hits": 0,
+        "n": 10,
+        "rate": 0.0,
+        "ci95_lo": 0.0,
+        "ci95_hi": 0.2775327998628892
+      },
+      "w1": {
+        "hits": 2,
+        "n": 10,
+        "rate": 0.2,
+        "ci95_lo": 0.05668215145437519,
+        "ci95_hi": 0.5098375284633583
+      },
+      "w3": {
+        "hits": 3,
+        "n": 10,
+        "rate": 0.3,
+        "ci95_lo": 0.10779126740630099,
+        "ci95_hi": 0.6032218525388546
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 10,
+        "rate": 0.0,
+        "ci95_lo": 0.0,
+        "ci95_hi": 0.2775327998628892
+      }
+    },
+    {
+      "arm": "pos-lexical",
+      "exact": {
+        "hits": 0,
+        "n": 10,
+        "rate": 0.0,
+        "ci95_lo": 0.0,
+        "ci95_hi": 0.2775327998628892
+      },
+      "w1": {
+        "hits": 2,
+        "n": 10,
+        "rate": 0.2,
+        "ci95_lo": 0.05668215145437519,
+        "ci95_hi": 0.5098375284633583
+      },
+      "w3": {
+        "hits": 5,
+        "n": 10,
+        "rate": 0.5,
+        "ci95_lo": 0.236593090512564,
+        "ci95_hi": 0.7634069094874361
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 10,
+        "rate": 0.0,
+        "ci95_lo": 0.0,
+        "ci95_hi": 0.2775327998628892
+      }
+    },
+    {
+      "arm": "nw-structural/resync",
+      "exact": {
+        "hits": 1,
+        "n": 10,
+        "rate": 0.1,
+        "ci95_lo": 0.017876213095072896,
+        "ci95_hi": 0.4041500267952385
+      },
+      "w1": {
+        "hits": 4,
+        "n": 10,
+        "rate": 0.4,
+        "ci95_lo": 0.16818032970623614,
+        "ci95_hi": 0.6873262302663417
+      },
+      "w3": {
+        "hits": 4,
+        "n": 10,
+        "rate": 0.4,
+        "ci95_lo": 0.16818032970623614,
+        "ci95_hi": 0.6873262302663417
+      },
+      "no_pred": {
+        "hits": 2,
+        "n": 10,
+        "rate": 0.2,
+        "ci95_lo": 0.05668215145437519,
+        "ci95_hi": 0.5098375284633583
+      },
+      "calibration": [
+        {
+          "lo": 0.0,
+          "hi": 0.2,
+          "rate": {
+            "hits": 0,
+            "n": 4,
+            "rate": 0.0,
+            "ci95_lo": 0.0,
+            "ci95_hi": 0.4898908364545973
+          }
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.4,
+          "rate": null
+        },
+        {
+          "lo": 0.4,
+          "hi": 0.6,
+          "rate": null
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.8,
+          "rate": null
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.0,
+          "rate": {
+            "hits": 1,
+            "n": 4,
+            "rate": 0.25,
+            "ci95_lo": 0.04558726080970055,
+            "ci95_hi": 0.6993581574175981
+          }
+        }
+      ]
+    },
+    {
+      "arm": "nw-lexical/resync",
+      "exact": {
+        "hits": 5,
+        "n": 10,
+        "rate": 0.5,
+        "ci95_lo": 0.236593090512564,
+        "ci95_hi": 0.7634069094874361
+      },
+      "w1": {
+        "hits": 8,
+        "n": 10,
+        "rate": 0.8,
+        "ci95_lo": 0.49016247153664183,
+        "ci95_hi": 0.9433178485456247
+      },
+      "w3": {
+        "hits": 9,
+        "n": 10,
+        "rate": 0.9,
+        "ci95_lo": 0.5958499732047615,
+        "ci95_hi": 0.9821237869049271
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 10,
+        "rate": 0.0,
+        "ci95_lo": 0.0,
+        "ci95_hi": 0.2775327998628892
+      },
+      "calibration": [
+        {
+          "lo": 0.0,
+          "hi": 0.2,
+          "rate": {
+            "hits": 0,
+            "n": 3,
+            "rate": 0.0,
+            "ci95_lo": 5.551115123125783e-17,
+            "ci95_hi": 0.5614970317550454
+          }
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.4,
+          "rate": {
+            "hits": 1,
+            "n": 2,
+            "rate": 0.5,
+            "ci95_lo": 0.09453120573423074,
+            "ci95_hi": 0.9054687942657693
+          }
+        },
+        {
+          "lo": 0.4,
+          "hi": 0.6,
+          "rate": {
+            "hits": 0,
+            "n": 1,
+            "rate": 0.0,
+            "ci95_lo": 0.0,
+            "ci95_hi": 0.7934506856227626
+          }
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.8,
+          "rate": {
+            "hits": 2,
+            "n": 2,
+            "rate": 1.0,
+            "ci95_lo": 0.34238022750665303,
+            "ci95_hi": 1.0
+          }
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.0,
+          "rate": {
+            "hits": 2,
+            "n": 2,
+            "rate": 1.0,
+            "ci95_lo": 0.34238022750665303,
+            "ci95_hi": 1.0
+          }
+        }
+      ]
+    }
+  ]
+}

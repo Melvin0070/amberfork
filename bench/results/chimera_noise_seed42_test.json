@@ -1,0 +1,341 @@
+{
+  "bench_schema_version": "0.5",
+  "protocol": "chimera",
+  "split": "test",
+  "coverage": {
+    "total": 20,
+    "evaluated": 20,
+    "dev": 8,
+    "test": 12,
+    "reasons": {},
+    "exclusions": []
+  },
+  "n_pairs": 12,
+  "cross_system": 0,
+  "params": {
+    "source": "bench/params.toml",
+    "sha256": "8ebd95ce8f3d50549017b4d381c8d0dc1f76264184ce92e5795895b383f36014",
+    "tau": 0.3,
+    "resync_k": 2,
+    "gap_open": 0.6,
+    "gap_ext": 0.3
+  },
+  "pairs": [
+    {
+      "name": "pair_00",
+      "task_key": "whowhen_hand_14",
+      "split": "test"
+    },
+    {
+      "name": "pair_01",
+      "task_key": "whowhen_hand_12",
+      "split": "test"
+    },
+    {
+      "name": "pair_02",
+      "task_key": "whowhen_hand_53",
+      "split": "test"
+    },
+    {
+      "name": "pair_03",
+      "task_key": "whowhen_hand_32",
+      "split": "dev"
+    },
+    {
+      "name": "pair_04",
+      "task_key": "whowhen_hand_13",
+      "split": "test"
+    },
+    {
+      "name": "pair_05",
+      "task_key": "whowhen_hand_43",
+      "split": "test"
+    },
+    {
+      "name": "pair_06",
+      "task_key": "whowhen_hand_49",
+      "split": "dev"
+    },
+    {
+      "name": "pair_07",
+      "task_key": "whowhen_hand_13",
+      "split": "test"
+    },
+    {
+      "name": "pair_08",
+      "task_key": "whowhen_hand_7",
+      "split": "test"
+    },
+    {
+      "name": "pair_09",
+      "task_key": "whowhen_hand_39",
+      "split": "dev"
+    },
+    {
+      "name": "pair_10",
+      "task_key": "whowhen_hand_49",
+      "split": "dev"
+    },
+    {
+      "name": "pair_11",
+      "task_key": "whowhen_hand_21",
+      "split": "test"
+    },
+    {
+      "name": "pair_12",
+      "task_key": "whowhen_hand_21",
+      "split": "test"
+    },
+    {
+      "name": "pair_13",
+      "task_key": "whowhen_hand_12",
+      "split": "test"
+    },
+    {
+      "name": "pair_14",
+      "task_key": "whowhen_hand_1",
+      "split": "dev"
+    },
+    {
+      "name": "pair_15",
+      "task_key": "whowhen_hand_49",
+      "split": "dev"
+    },
+    {
+      "name": "pair_16",
+      "task_key": "whowhen_hand_16",
+      "split": "dev"
+    },
+    {
+      "name": "pair_17",
+      "task_key": "whowhen_hand_53",
+      "split": "test"
+    },
+    {
+      "name": "pair_18",
+      "task_key": "whowhen_hand_1",
+      "split": "dev"
+    },
+    {
+      "name": "pair_19",
+      "task_key": "whowhen_hand_42",
+      "split": "test"
+    }
+  ],
+  "arms": [
+    {
+      "arm": "random",
+      "exact": {
+        "hits": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_lo": 2.7755575615628914e-17,
+        "ci95_hi": 0.24249400665524085
+      },
+      "w1": {
+        "hits": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_lo": 2.7755575615628914e-17,
+        "ci95_hi": 0.24249400665524085
+      },
+      "w3": {
+        "hits": 5,
+        "n": 12,
+        "rate": 0.4166666666666667,
+        "ci95_lo": 0.19326031365875665,
+        "ci95_hi": 0.6804886874504503
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_lo": 2.7755575615628914e-17,
+        "ci95_hi": 0.24249400665524085
+      }
+    },
+    {
+      "arm": "pos-lexical",
+      "exact": {
+        "hits": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_lo": 2.7755575615628914e-17,
+        "ci95_hi": 0.24249400665524085
+      },
+      "w1": {
+        "hits": 2,
+        "n": 12,
+        "rate": 0.16666666666666666,
+        "ci95_lo": 0.04696514218385378,
+        "ci95_hi": 0.4480308622529734
+      },
+      "w3": {
+        "hits": 4,
+        "n": 12,
+        "rate": 0.3333333333333333,
+        "ci95_lo": 0.13812009109121315,
+        "ci95_hi": 0.6093779111272004
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_lo": 2.7755575615628914e-17,
+        "ci95_hi": 0.24249400665524085
+      }
+    },
+    {
+      "arm": "nw-structural/resync",
+      "exact": {
+        "hits": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_lo": 2.7755575615628914e-17,
+        "ci95_hi": 0.24249400665524085
+      },
+      "w1": {
+        "hits": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_lo": 2.7755575615628914e-17,
+        "ci95_hi": 0.24249400665524085
+      },
+      "w3": {
+        "hits": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_lo": 2.7755575615628914e-17,
+        "ci95_hi": 0.24249400665524085
+      },
+      "no_pred": {
+        "hits": 4,
+        "n": 12,
+        "rate": 0.3333333333333333,
+        "ci95_lo": 0.13812009109121315,
+        "ci95_hi": 0.6093779111272004
+      },
+      "calibration": [
+        {
+          "lo": 0.0,
+          "hi": 0.2,
+          "rate": {
+            "hits": 0,
+            "n": 5,
+            "rate": 0.0,
+            "ci95_lo": 0.0,
+            "ci95_hi": 0.43448246478317476
+          }
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.4,
+          "rate": null
+        },
+        {
+          "lo": 0.4,
+          "hi": 0.6,
+          "rate": null
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.8,
+          "rate": null
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.0,
+          "rate": {
+            "hits": 0,
+            "n": 3,
+            "rate": 0.0,
+            "ci95_lo": 5.551115123125783e-17,
+            "ci95_hi": 0.5614970317550454
+          }
+        }
+      ]
+    },
+    {
+      "arm": "nw-lexical/resync",
+      "exact": {
+        "hits": 9,
+        "n": 12,
+        "rate": 0.75,
+        "ci95_lo": 0.46769466506643426,
+        "ci95_hi": 0.9110583316059453
+      },
+      "w1": {
+        "hits": 11,
+        "n": 12,
+        "rate": 0.9166666666666666,
+        "ci95_lo": 0.646120088858883,
+        "ci95_hi": 0.9851349055950829
+      },
+      "w3": {
+        "hits": 12,
+        "n": 12,
+        "rate": 1.0,
+        "ci95_lo": 0.7575059933447592,
+        "ci95_hi": 1.0
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_lo": 2.7755575615628914e-17,
+        "ci95_hi": 0.24249400665524085
+      },
+      "calibration": [
+        {
+          "lo": 0.0,
+          "hi": 0.2,
+          "rate": {
+            "hits": 0,
+            "n": 1,
+            "rate": 0.0,
+            "ci95_lo": 0.0,
+            "ci95_hi": 0.7934506856227626
+          }
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.4,
+          "rate": {
+            "hits": 3,
+            "n": 5,
+            "rate": 0.6,
+            "ci95_lo": 0.2307242812760128,
+            "ci95_hi": 0.882379225767352
+          }
+        },
+        {
+          "lo": 0.4,
+          "hi": 0.6,
+          "rate": {
+            "hits": 5,
+            "n": 5,
+            "rate": 1.0,
+            "ci95_lo": 0.5655175352168251,
+            "ci95_hi": 1.0
+          }
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.8,
+          "rate": {
+            "hits": 1,
+            "n": 1,
+            "rate": 1.0,
+            "ci95_lo": 0.20654931437723745,
+            "ci95_hi": 1.0
+          }
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.0,
+          "rate": null
+        }
+      ]
+    }
+  ]
+}

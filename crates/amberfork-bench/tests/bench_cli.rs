@@ -421,9 +421,34 @@ fn an_invalid_params_file_is_trouble_not_a_fallback() {
 }
 
 /// The canonical committed results document (the dev-split run on the real seed-42 noise
-/// set; the test split stays sealed until a release tag — rule 2).
+/// set; the test split stayed sealed until the v0.2.0 release tag — rule 2).
 fn committed_results() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bench/results/chimera_noise_seed42_dev.json")
+}
+
+/// A committed sealed-test-split results document (first reveal at the v0.2.0 release tag,
+/// per rule 2 — one run per release tag with frozen params; notebook 017).
+fn committed_test_results(seed: u32) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
+        "../../bench/results/chimera_noise_seed{seed}_test.json"
+    ))
+}
+
+#[test]
+fn report_reproduces_the_committed_test_split_results_offline() {
+    // The v0.2.0 test-split reveal is a published number like any other: each seed's
+    // document must re-render offline, and drift in either the document or the renderer
+    // goes red here before a stale table reaches a reader.
+    for seed in [42_u32, 43, 44] {
+        let output = bench()
+            .arg("report")
+            .arg("--results")
+            .arg(committed_test_results(seed))
+            .assert()
+            .success();
+        let stdout = String::from_utf8(output.get_output().stdout.clone()).expect("utf-8 stdout");
+        insta::assert_snapshot!(format!("report_committed_test_seed{seed}"), stdout);
+    }
 }
 
 #[test]

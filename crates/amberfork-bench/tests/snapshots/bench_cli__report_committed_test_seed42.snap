@@ -1,0 +1,22 @@
+---
+source: crates/amberfork-bench/tests/bench_cli.rs
+expression: stdout
+---
+coverage: 20/20 pairs evaluated · split=test (dev 8, test 12) · scored 12
+params: bench/params.toml sha256:8ebd95ce8f3d · tau 0.3 · resync_k 2 · gap 0.6+0.3
+
+| arm | exact | ±1 | ±3 | no-pred | n |
+|---|---|---|---|---|---|
+| random | 0.00 [0.00, 0.24] | 0.00 [0.00, 0.24] | 0.42 [0.19, 0.68] | 0.00 | 12 |
+| pos-lexical | 0.00 [0.00, 0.24] | 0.17 [0.05, 0.45] | 0.33 [0.14, 0.61] | 0.00 | 12 |
+| nw-structural/resync | 0.00 [0.00, 0.24] | 0.00 [0.00, 0.24] | 0.00 [0.00, 0.24] | 0.33 | 12 |
+| nw-lexical/resync | 0.75 [0.47, 0.91] | 0.92 [0.65, 0.99] | 1.00 [0.76, 1.00] | 0.00 | 12 |
+
+calibration: exact-hit rate by fork confidence (abstentions carry no confidence)
+| confidence | nw-structural/resync | nw-lexical/resync |
+|---|---|---|
+| [0.0, 0.2) | 0/5 · 0.00 [0.00, 0.43] | 0/1 · 0.00 [0.00, 0.79] |
+| [0.2, 0.4) | — | 3/5 · 0.60 [0.23, 0.88] |
+| [0.4, 0.6) | — | 5/5 · 1.00 [0.57, 1.00] |
+| [0.6, 0.8) | — | 1/1 · 1.00 [0.21, 1.00] |
+| [0.8, 1.0] | 0/3 · 0.00 [0.00, 0.56] | — |
