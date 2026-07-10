@@ -23,11 +23,15 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
 toml = { workspace = true }
+# The one networked seam in the workspace: `fetch` pulls raw upstream bench data. Blocking
+# client on purpose — the tokio quarantine (CLAUDE.md) keeps async out of engine/harness code.
+ureq = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
 insta = { workspace = true }
 predicates = { workspace = true }
+tempfile = { workspace = true }
 # Integration tests link dev-dependencies only; sha2 appears twice so bench_cli.rs can
 # recompute the committed file's hash instead of hardcoding it (a changelog edit must not
 # break the test).

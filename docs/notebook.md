@@ -612,3 +612,40 @@ same GAIA-sanitization + provenance, residue 0.
 **Also corrected.** The README's Who&When source link said `mingyin1/…`; BENCHMARK.md, the
 converter, and notebook 001 all standardize on the MIT source `ag2ai/Agents_Failure_Attribution`
 — aligned the README to match.
+
+## 015 · 2026-07-10 · Acquisition closes the Mode A′ pipeline: `fetch` at pinned commits (issue #7 slice 4)
+
+**What changed.** The step notebook 012 left open now exists: `amberfork-bench fetch` pulls the
+two raw sources `build-pairs` consumes — TapeAgents GAIA tapes (`ServiceNow/TapeAgents`,
+Apache-2.0, 8 files) and Who&When logs (`ag2ai/Agents_Failure_Attribution`, MIT, 184 files) —
+from GitHub at **pinned commits** into `bench/data/` (gitignored), in exactly the layout
+`build-pairs --tapes/--logs` reads. The whole Mode A′ path — acquire → construct → disclose →
+score — is now one binary, no Python and no hand-downloading in the loop. BENCHMARK.md's
+"`bench/fetch` script" line updated to name the real subcommand.
+
+**Design.** Reproducibility comes from the *pin*, not checksums: content addressed by
+`(repo, commit, path)` is immutable on GitHub, and the file list itself is read from the git
+tree at that same commit — so bumping a pin is a reviewed manifest edit, and a truncated tree
+listing or an empty prefix match is a hard error, never a silently partial cache. The network
+sits behind one blocking-`GET` seam (`ureq` — the tokio quarantine holds; a manifest, tree
+filter, path mapping, and skip-vs-download logic are all pure or fake-drivable and tested
+offline; CI never touches the network). Files write temp-then-rename so the skip-if-present
+resume check can trust that a present file is a whole file; upstream paths are component-checked
+so listing content can never write outside the cache. Licensing is in the contract: each source
+carries its license + a "local benchmarking only, never commit" notice printed before any bytes
+move, and the cache self-describes via `bench/data/provenance.json` (repo, commit, license,
+count per source). HAL traces stay out of the manifest deliberately: no in-tree adapter consumes
+them yet (encrypted-zip acquisition + an adapter are one future slice), and fetch serves only
+what `build-pairs` reads today.
+
+**Check.** 10 offline tests (manifest well-formedness, URL shapes incl. the literal `&` in
+`Who&When/`, tree filtering, truncation/empty-match refusal, traversal rejection, fake-driven
+download/skip/error paths, provenance record) + one `#[ignore]`d live test (fetches the 8 pinned
+tapes, strict-parses each through `tape::convert_file`). Operator path exercised for real:
+`fetch` landed 8 + 184 files; a re-run downloaded 0 (all cached); `build-pairs` on the fetched
+cache strict-parsed **all 192 real files with zero failures** and built **4 cross-system pairs
+(the 4 unsuccessful tapes are counted drops, 0 logs without a usable gold step)** — bit-matching
+the spike's `make_realpairs.py` n=4 from notebook 001. No committed benchmark number moved; the
+real pairs stay uncommitted. What remains on #7 is the closing slice: score the real pair set
+through the disclosure seam and write the honest Mode A′ table (windowed metrics of record,
+short-log caveat from notebook 002).

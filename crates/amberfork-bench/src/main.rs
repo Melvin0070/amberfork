@@ -29,6 +29,7 @@
 mod arms;
 mod build;
 mod calibration;
+mod fetch;
 mod hash;
 mod pairs;
 mod params;
@@ -64,6 +65,8 @@ enum Command {
     Report(ReportArgs),
     /// Construct a cross-system Mode A′ pair set from raw TapeAgents + Who&When data (issue #7).
     BuildPairs(BuildPairsArgs),
+    /// Fetch the pinned raw upstream data `build-pairs` consumes (issue #7).
+    Fetch(FetchArgs),
 }
 
 #[derive(Args)]
@@ -114,6 +117,15 @@ struct BuildPairsArgs {
     out: PathBuf,
 }
 
+#[derive(Args)]
+struct FetchArgs {
+    /// Directory to cache the fetched sources under (gitignored: the data is licensed for
+    /// local benchmarking, never for committing). A re-run skips files already present;
+    /// delete a source's subdirectory to refetch it.
+    #[arg(long, value_name = "DIR", default_value = "bench/data")]
+    out: PathBuf,
+}
+
 /// The `--split` choices — the two protocol sides plus `all` (the whole evaluated set, the
 /// walking-skeleton default; published tables come from `test`).
 #[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -147,6 +159,7 @@ fn main() -> ExitCode {
         Command::Run(args) => run(&args),
         Command::Report(args) => report(&args),
         Command::BuildPairs(args) => build_pairs(&args),
+        Command::Fetch(args) => fetch_data(&args),
     };
     outcome.unwrap_or_else(|err| {
         eprintln!("amberfork-bench: {err}");
@@ -310,6 +323,24 @@ fn build_pairs(args: &BuildPairsArgs) -> Result<ExitCode, Box<dyn std::error::Er
         stats.tapes_read,
         stats.logs_read,
         stats.logs_without_gold,
+    );
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+/// Acquire the raw Mode A′ sources (issue #7). The step before `build-pairs`: after it, the
+/// operator has everything the pair generator consumes, cached locally and never committed.
+fn fetch_data(args: &FetchArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let stats = fetch::fetch_all(&fetch::GithubClient, &args.out)?;
+    for stat in &stats {
+        eprintln!(
+            "amberfork-bench: {}: {} file(s) ({} downloaded, {} already cached)",
+            stat.name, stat.files, stat.downloaded, stat.skipped,
+        );
+    }
+    let out = args.out.display();
+    eprintln!(
+        "amberfork-bench: next: amberfork-bench build-pairs --tapes {out}/tapes \
+         --logs {out}/whowhen --out {out}/pairs_real",
     );
     Ok(ExitCode::from(EXIT_OK))
 }

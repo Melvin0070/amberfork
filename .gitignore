@@ -6,6 +6,10 @@ target/
 spike/data/
 spike/.venv/
 
+# `amberfork-bench fetch` cache: raw upstream bench data (GAIA lineage — local
+# benchmarking only, never committed; see BENCHMARK.md "Data & licensing").
+bench/data/
+
 # Python
 __pycache__/
 *.pyc

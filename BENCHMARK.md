@@ -103,7 +103,8 @@ overclaim. If Mode A can't be constructed for a benchmark, say so and report onl
   benchmarking, do not redistribute), TapeAgents (Apache-2.0, 8 full GAIA tapes, 4 successful —
   redistributable), `gaia-benchmark/submissions_public` (gated; per-task correctness incl.
   Magnetic-One's own passing rows; coarse free-form traces).
-- Do **not** vendor large datasets into the repo — `bench/fetch` script; cache locally.
+- Do **not** vendor large datasets into the repo — `amberfork-bench fetch` pulls the pinned
+  upstream sources into `bench/data/` (gitignored); cache locally.
 
 ## Threats to validity (put these in the writeup — the honesty is part of the impressiveness)
 1. Single-trajectory benchmark vs a two-run tool — the Mode A/B protocol is novel and arguable.
