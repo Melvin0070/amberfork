@@ -15,7 +15,10 @@ file is the human-readable summary of the same working agreement.
    build a crate ahead of the need it serves.
 4. **Verify before commit.** `python3 spike/test_smoke.py` today; `cargo fmt --all --check &&
    cargo clippy --all-targets -- -D warnings && cargo test --workspace` once the workspace exists.
-   CI runs exactly these. A red CI stops the line.
+   CI runs exactly these. A red CI stops the line. The fork-localization parity gate is inside
+   `cargo test --workspace` — it runs on the committed, GAIA-sanitized dev set in
+   `bench/fixtures/chimera_noise_seed42_dev/`, so an `amberfork-align` change that tanks parity is
+   a red CI, not a silent pass (see that dir's README to audit/regenerate the fixture).
 5. **Record decisions.** Every experiment/measurement gets a `docs/notebook.md` entry (append-only).
    Benchmark numbers follow `BENCHMARK.md`'s pre-registered protocol — no number outside it.
 6. **Commit small.** Conventional one-liners (`feat:`/`fix:`/`bench:`/`docs:`/`chore:`), one
@@ -32,7 +35,10 @@ file is the human-readable summary of the same working agreement.
 
 ## Layout
 
-- `crates/` — the Rust workspace (once it exists; see the crate map in `docs/design/`).
-- `spike/` — throwaway Python feasibility work. Findings port to Rust; the code never ships.
+- `crates/` — the Rust workspace (5 crates built in Phase 1; full planned roster in `docs/design/`).
+- `spike/` — Python, two kinds. Most is throwaway feasibility work (findings port to Rust, the
+  code never ships). The exception is the **maintained benchmark data pipeline** —
+  `convert_whowhen.py` → `sanitize_gaia.py` → `make_pairs.py` — which regenerates and
+  GAIA-sanitizes the committed fixtures; it is kept re-runnable and self-verifying.
 - `docs/notebook.md` — the engineering log. `docs/design/` — the locked architecture + positioning.
 - `BENCHMARK.md` — the pre-registered evaluation protocol. `DESIGN.md` — the visual system.
