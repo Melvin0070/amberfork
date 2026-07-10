@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- `amberfork-align`: static attribution — `diff()` now populates `DiffResult.attribution`
+  on forked diffs (`mode: static`): origin = the fork's observed step (the canonical
+  `fork_step_observed` rule), propagation = the observed steps downstream, confidence = the
+  fork's own; `counterfactual` stays `null` until re-execution exists. Additive `--json`
+  change — the field was already in the schema, previously always omitted; no schema bump.
+  The human render closes forked diffs with a one-line attribution footer (issue #12).
+
 ## [0.2.0] — 2026-07-10
 
 v0.2 — offline benchmark (milestone issues #6, #7, #11).

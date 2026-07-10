@@ -94,6 +94,11 @@ surface (README GIF, CI logs, SSH sessions). Same north star: sameness recedes, 
 - **Layout:** side-by-side A|B columns at ≥120 cols; unified single column with `A`/`B` gutter
   tags below that. Hard-wrap long content; never rely on horizontal scroll. Step indices, timings,
   costs: tabular-aligned.
+- **Attribution footer (forked diffs only):** the render closes with one plain line summarizing
+  `DiffResult.attribution` — mode, origin step, propagation, confidence (DR5's reading order,
+  flattened) — the forked counterpart of the converged footer, so every diff ends with a designed
+  answer line. Plain, never amber: it is a statement about the divergence, not the divergence;
+  confidence follows the same marginal-call rule as the fork tag.
 - **Machine output:** non-TTY drops ANSI but keeps identical structure; `--json` (the `DiffResult`
   schema) is the machine contract, never parsed styled text.
 
@@ -131,3 +136,4 @@ commoditized; this is a gateway, not a viewer product.)
 | 2026-07-05 | New components: move-typed chips, confidence meter, counterfactual row | Ratified into the system; full spec deferred to T40 (plan-design-review) |
 | 2026-07-07 | Terminal render is a first-class surface | v1 hero (GIF/CI/SSH); de-risks the Leptos bet; resolves Phase-1 GIF depending on Phase-2 UI (panel review) |
 | 2026-07-07 | Single-run view, scope-capped | Kills the dead-end one-trace empty state; a gateway to the diff, not a viewer product (panel review) |
+| 2026-07-10 | Terminal attribution footer | Forked diffs end with a plain one-line attribution summary (issue #12), symmetric with the converged footer; amber stays reserved for the fork and its path |

@@ -1,6 +1,5 @@
 ---
 source: crates/amberfork-cli/tests/render_cli.rs
-assertion_line: 43
 expression: stdout
 ---
   A  smoke_ref   ·  reference · 8 steps · pass
@@ -18,3 +17,5 @@ expression: stdout
                                  page fetched, blog post with estimates
   step 07  ✗  llm    reader      Blog says the city has grown to about 9,100,00…  [sync]
   step 08  ✗  llm    answer      The 2020 census population of Metropolis is 9,…  [sync]
+
+  attribution · static · origin step 06 · propagation steps 07–08 · conf 0.47

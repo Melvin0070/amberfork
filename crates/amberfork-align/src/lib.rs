@@ -15,6 +15,7 @@
 //! Sync + pure by design: no I/O, no async, no globals. Loading runs is `amberfork-ingest`'s
 //! job; this crate is a function from two runs to a diff.
 
+mod attribution;
 mod cost;
 mod diff;
 mod fork;

@@ -23,4 +23,6 @@ expression: stdout
   step 07  ✗  tool   payments.refund   {"status":"succeeded","txn":"re_20260708…  [model-move]
   step 08  ✗  tool   crm.set_status    {"ok":true}                                [sync]
   step 09  ✗  llm    answer            Hi Dana — unfortunately order 8841 falls…  [sync]
+
+  attribution · static · origin step 05 · propagation steps 06–09 · conf 0.68
   bundled sample pair · try your own runs:  amberfork diff <bad> --against <good>

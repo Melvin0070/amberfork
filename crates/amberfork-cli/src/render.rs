@@ -93,6 +93,17 @@ pub fn render(result: &DiffResult, reference: &Run, observed: &Run, opts: &Rende
         });
     }
 
+    // The forked counterpart of the converged footer: every diff ends with a designed answer
+    // line. Plain, not amber — it is a statement about the divergence, not the divergence.
+    if let Some(attribution) = &result.attribution {
+        rows.push(Row::blank());
+        rows.push(Row {
+            role: Role::Footer,
+            prefix: String::new(),
+            body: attribution_line(attribution, &layout),
+        });
+    }
+
     let mut out = String::new();
     for row in &rows {
         let _ = writeln!(out, "{}", row.paint(opts.color, opts.width));
@@ -363,13 +374,7 @@ fn fork_block(
         None => format!("{label}: (no aligned step)"),
     };
 
-    // Confidence per notebook 005: a zero-confidence fork is a designed weak-call state,
-    // stated in words, never rendered as a small number.
-    let tag = if fork.confidence <= f64::EPSILON {
-        "[FORK · marginal call]".to_string()
-    } else {
-        format!("[FORK · conf {:.2}]", fork.confidence)
-    };
+    let tag = format!("[FORK · {}]", conf_text(fork.confidence));
 
     let a_lines = wrap(
         &side_content(fork.a_step, reference, 'A'),
@@ -450,14 +455,53 @@ fn summarize(step: &Step) -> String {
 
 fn tag_text(result: &DiffResult, index: usize, mv: &amberfork_model::Move) -> String {
     match result.fork {
-        Some(fork) if fork.index == index => {
-            if fork.confidence <= f64::EPSILON {
-                "[FORK · marginal call]".to_string()
-            } else {
-                format!("[FORK · conf {:.2}]", fork.confidence)
-            }
-        }
+        Some(fork) if fork.index == index => format!("[FORK · {}]", conf_text(fork.confidence)),
         _ => tag_str(mv.kind),
+    }
+}
+
+/// Confidence per notebook 005: zero — the designed weak-call state (evidence ≤ τ) — is
+/// stated in words, never rendered as a small number.
+fn conf_text(confidence: f64) -> String {
+    if confidence <= f64::EPSILON {
+        "marginal call".to_string()
+    } else {
+        format!("conf {confidence:.2}")
+    }
+}
+
+/// The attribution footer: mode, origin, propagation, confidence — the reading order the
+/// attribution pane uses (DESIGN.md decisions log, DR5), flattened to one line.
+fn attribution_line(attribution: &amberfork_model::Attribution, layout: &Layout) -> String {
+    use amberfork_model::AttributionMode;
+    let mode = match attribution.mode {
+        AttributionMode::Static => "static",
+        AttributionMode::Counterfactual => "counterfactual",
+    };
+    let origin = attribution.origin_step.map_or_else(
+        || "origin unlocalized".to_string(),
+        |s| format!("origin step {s:0w$}", w = layout.idx_width),
+    );
+    format!(
+        "  attribution · {mode} · {origin} · propagation {} · {}",
+        steps_text(&attribution.propagation, layout.idx_width),
+        conf_text(attribution.confidence)
+    )
+}
+
+/// A step list in the gutter's zero-padded style: `none`, `step 03`, a contiguous
+/// `steps 03–07`, or a comma list when a future mode emits gaps.
+fn steps_text(steps: &[usize], idx_width: usize) -> String {
+    let pad = |s: &usize| format!("{s:0idx_width$}");
+    let contiguous = steps.windows(2).all(|w| w[1] == w[0] + 1);
+    match steps {
+        [] => "none".to_string(),
+        [only] => format!("step {}", pad(only)),
+        [first, .., last] if contiguous => format!("steps {}–{}", pad(first), pad(last)),
+        _ => format!(
+            "steps {}",
+            steps.iter().map(pad).collect::<Vec<_>>().join(", ")
+        ),
     }
 }
 
@@ -556,8 +600,8 @@ fn split_at_char(s: &str, chars: usize) -> (&str, &str) {
 mod tests {
     use super::*;
     use amberfork_model::{
-        DiffResult, FieldDiff, FieldDiffKind, Fork, Meta, Move, Outcome, Payload, Run, RunPair,
-        RunRef, SchemaVersion, Source, Step, StepKind,
+        Attribution, AttributionMode, DiffResult, FieldDiff, FieldDiffKind, Fork, Meta, Move,
+        Outcome, Payload, Run, RunPair, RunRef, SchemaVersion, Source, Step, StepKind,
     };
     use serde_json::{Map, json};
 
@@ -691,6 +735,15 @@ mod tests {
             after: Some(json!("blogspot page")),
             kind: FieldDiffKind::Changed,
         }];
+        // What the engine's static mode emits for this fork (amberfork-align issue #12).
+        res.attribution = Some(Attribution {
+            mode: AttributionMode::Static,
+            origin_step: Some(2),
+            propagation: vec![3],
+            counterfactual: None,
+            cause_label: None,
+            confidence,
+        });
         (a, b, res)
     }
 
@@ -726,7 +779,23 @@ mod tests {
             !out.contains('✗'),
             "no divergence markers on a converged diff"
         );
+        assert!(
+            !out.contains("attribution"),
+            "nothing to attribute on a converged diff"
+        );
         assert!(!out.contains('\x1b'), "Plain mode must emit no ANSI");
+    }
+
+    #[test]
+    fn forked_render_closes_with_the_attribution_line() {
+        let (a, b, res) = forked(0.47);
+        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+
+        let last = out.lines().last().expect("non-empty render");
+        assert_eq!(
+            last, "  attribution · static · origin step 02 · propagation step 03 · conf 0.47",
+            "every forked diff ends with a designed answer line, like converged does"
+        );
     }
 
     #[test]
@@ -775,6 +844,10 @@ mod tests {
         assert!(
             out.contains("[FORK · marginal call]"),
             "notebook 005: conf 0 is a designed weak-call state, got:\n{out}"
+        );
+        assert!(
+            out.contains("propagation step 03 · marginal call"),
+            "the attribution line follows the same weak-call rule, got:\n{out}"
         );
         assert!(
             !out.contains("conf 0.0"),

@@ -2,8 +2,8 @@
 //! must be all-sync with no fork** — for *any* run, not just the ones we thought of. Property
 //! violations here mean the aligner or cost model broke determinism or tie-breaking.
 
-use amberfork_align::{AlignParams, ForkParams, LexicalCost, align, find_fork};
-use amberfork_model::{MoveKind, Payload, Step, StepKind};
+use amberfork_align::{AlignParams, DiffParams, ForkParams, LexicalCost, align, diff, find_fork};
+use amberfork_model::{MoveKind, Payload, Run, SchemaVersion, Step, StepKind};
 use proptest::prelude::*;
 use serde_json::Map;
 
@@ -66,5 +66,19 @@ proptest! {
         prop_assert_eq!(find_fork(&moves, &ForkParams::default()), None);
         let strictest = ForkParams { tau: 0.0, ..ForkParams::default() };
         prop_assert_eq!(find_fork(&moves, &strictest), None);
+
+        // The same invariant through the public seam: a self-diff has no fork and therefore
+        // no regression to attribute — `None`, never a zero-confidence attribution.
+        let this = Run {
+            schema_version: SchemaVersion::current(),
+            id: "self".to_string(),
+            task: None,
+            outcome: None,
+            steps: run,
+            edges: None,
+        };
+        let result = diff(&this, &this, &LexicalCost, &DiffParams::default());
+        prop_assert_eq!(result.fork, None);
+        prop_assert!(result.attribution.is_none());
     }
 }
