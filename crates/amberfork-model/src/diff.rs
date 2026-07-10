@@ -140,7 +140,9 @@ pub enum FieldDiffKind {
 pub struct FieldDiff {
     /// Index into [`DiffResult::alignment`] identifying the aligned pair this diff refines.
     pub step: usize,
-    /// Path into the payload, e.g. `outputs.status` (or the empty string for a whole text body).
+    /// Path into the payload, rooted at the slot: `outputs.status` for an object key, or just
+    /// the slot name (`inputs`/`outputs`) when the whole payload is the diff unit (a text
+    /// body, a one-sided slot).
     pub path: String,
     /// Value on run `a`'s side; `None` when the field was [`FieldDiffKind::Added`].
     #[serde(default, skip_serializing_if = "Option::is_none")]

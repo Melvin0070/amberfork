@@ -3,13 +3,13 @@
 //! This is the function `amberfork diff <bad> --against <good>` ultimately calls: `<good>` is
 //! `reference` (side `a`, the "model"), `<bad>` is `observed` (side `b`, the "log"). It fills
 //! exactly what the alignment engine computes — run refs, the move-typed alignment, the fork,
-//! static attribution derived from both, passive-source meta — and leaves the rest honestly
-//! empty rather than approximated: `field_diffs` is a later pipeline stage (issue #13), and
-//! `warnings` belong to whoever loaded the runs (`amberfork-ingest` returns them; the CLI
-//! merges them into the result).
+//! field diffs inside the synced pairs, static attribution, passive-source meta — and leaves
+//! the rest honestly empty rather than approximated: `warnings` belong to whoever loaded the
+//! runs (`amberfork-ingest` returns them; the CLI merges them into the result).
 
 use crate::attribution::static_attribution;
 use crate::cost::CostModel;
+use crate::field_diff::field_diffs;
 use crate::fork::{ForkParams, find_fork};
 use crate::nw::{AlignParams, align};
 use amberfork_model::{DiffResult, Meta, Run, RunPair, RunRef, Source};
@@ -32,6 +32,7 @@ pub fn diff(
 ) -> DiffResult {
     let alignment = align(&reference.steps, &observed.steps, cost_model, &params.align);
     let fork = find_fork(&alignment, &params.fork);
+    let field_diffs = field_diffs(&reference.steps, &observed.steps, &alignment);
     let mut result = DiffResult {
         runs: RunPair {
             a: run_ref(reference),
@@ -39,7 +40,7 @@ pub fn diff(
         },
         alignment,
         fork,
-        field_diffs: Vec::new(),
+        field_diffs,
         attribution: None,
         warnings: Vec::new(),
         meta: Meta::current(Source::Passive),
@@ -127,6 +128,48 @@ mod tests {
         assert_eq!(result.runs.b.id, "bad");
         assert_eq!(result.runs.b.outcome, Some(Outcome::Fail));
         assert_eq!(result.runs.b.n_steps, 1);
+    }
+
+    #[test]
+    fn forked_diff_carries_field_diffs_at_the_fork() {
+        let good = run(
+            "good",
+            Outcome::Pass,
+            &[
+                ("plan", "search for census data"),
+                ("search", "census.gov top result"),
+                ("fetch", "census.gov page: population 8,443,000"),
+                ("answer", "population is 8,443,000"),
+            ],
+        );
+        let bad = run(
+            "bad",
+            Outcome::Fail,
+            &[
+                ("plan", "search for census data"),
+                ("search", "census.gov top result"),
+                ("fetch", "blogspot page: the city has grown to 9,100,000"),
+                ("answer", "population is 9,100,000"),
+            ],
+        );
+        let result = diff(&good, &bad, &LexicalCost, &DiffParams::default());
+        let fork = result.fork.expect("diverging tail must fork");
+
+        let at_fork: Vec<_> = result
+            .field_diffs
+            .iter()
+            .filter(|fd| fd.step == fork.index)
+            .collect();
+        assert!(
+            !at_fork.is_empty(),
+            "the fork block's red/green pane must have data to draw"
+        );
+        assert!(
+            at_fork
+                .iter()
+                .all(|fd| fd.path == "outputs" && fd.before.is_some() && fd.after.is_some()),
+            "text-payload fixtures diff as whole outputs bodies, got {at_fork:?}"
+        );
     }
 
     #[test]

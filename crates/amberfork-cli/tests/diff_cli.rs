@@ -69,6 +69,11 @@ fn forked_pair_exits_1_and_json_locates_the_gold_step() {
             .filter(|m| m.b_idx.is_some())
             .count()
     );
+    // The content-diff pane's data (issue #13): the fork pair carries field-level evidence.
+    assert!(
+        result.field_diffs.iter().any(|fd| fd.step == fork.index),
+        "--json must carry field diffs at the fork's alignment index"
+    );
 }
 
 #[test]

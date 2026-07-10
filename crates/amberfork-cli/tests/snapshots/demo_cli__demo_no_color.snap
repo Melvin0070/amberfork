@@ -18,6 +18,14 @@ expression: stdout
                                        superseded). Electronics may be returned
                                        within 14 days of delivery, for store
                                        credit only.
+              - inputs.doc: "policy/refunds_v3.md"
+              + inputs.doc: "archive/refunds_v1.md"
+              - outputs: "Refunds v3 (CURRENT, effective 2026-02-01).
+              Electronics: 30-day return window from delivery; refund
+              to the original payment method."
+              + outputs: "Refunds v1 (ARCHIVED 2024-11-30,
+              superseded). Electronics may be returned within 14 days
+              of delivery, for store credit only."
   step 06  ✗  llm    policy_checker    Order is 23 days old — past the 14-day l…  [sync]
   step 07  ✗  llm    planner           Policy says no. Draft a polite denial ci…  [sync]
   step 07  ✗  tool   payments.refund   {"status":"succeeded","txn":"re_20260708…  [model-move]

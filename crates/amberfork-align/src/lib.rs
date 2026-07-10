@@ -18,6 +18,7 @@
 mod attribution;
 mod cost;
 mod diff;
+mod field_diff;
 mod fork;
 mod nw;
 mod params;
