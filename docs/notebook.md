@@ -741,3 +741,45 @@ generalized to sealed pairs, and the published claim survives its first adversar
 "localizes within 3 steps" is now a **0.91 [0.78, 0.97] test-split number**, not a dev-only one.
 README updated to lead with the test result and demote dev to context. Next reveal happens at
 the next release tag, on a regenerated split, per rule 2.
+
+## 018 · 2026-07-11 · The cross-seed headline becomes a committed document (issue #14)
+
+**What prompted it.** Since the notebook-014 correction, the README *leads* with the pooled
+cross-seed number (test ±3 0.91 [0.78, 0.97], n=35), but `report` could only render per-seed
+slices — the aggregate lived in prose, computed by ad-hoc scripts at 014/017 time. A small
+honesty seam: the headline was asserted, not reproducible.
+
+**What changed.** `amberfork-bench aggregate --results <docs...> [--json-out]` pools results
+documents into one, through the same renderer as `run` and `report`. The pooling is **exact**,
+not approximate: every published rate already carries its `hits` and `n`, so the aggregate is
+`sum(hits)/sum(n)` per metric per arm — the number a single run over the union would have
+scored — with Wilson intervals recomputed at the pooled n (rule 6). Calibration bins pool the
+same way (fixed-width edges are code constants, identical across documents). Coverage sums and
+exclusions concatenate (rule 4); the split manifest concatenates with each record tagged by its
+source document (rule 1 — pair names like `pair_00` repeat across seed sets, so provenance must
+be explicit). The committed artifact is `bench/results/chimera_noise_multiseed_test.json`,
+which names its three source documents by the sha256 of their exact bytes — the same identity
+discipline `params` already had.
+
+**What refuses to pool** (the refusals are the feature): fewer than two documents, the same
+document twice (double-counting), an aggregate as input (sources-of-sources hides the real
+inputs), and any mismatch in protocol, split, params sha256, or arm set — a pooled table over
+mixed configurations would be exactly the dishonesty this closes.
+
+**Design decision: pool committed documents, don't re-run.** The test pairs are not committed
+(GAIA-derived), so a re-run-based aggregate could never reproduce from the repo alone; the
+per-seed test documents ARE committed, and they carry every count the pool needs. Corollary
+decision: results schema 0.6 adds the optional `sources`/`source` fields, and `load` accepts
+{0.5, 0.6} rather than forcing a regeneration — the sealed v0.2.0 test documents were produced
+once, at the tag (rule 2), and rewriting their bytes to bump a version string would betray
+exactly what "sealed" means.
+
+**Check.** The pooled table reproduces notebook 017 digit for digit (engine exact 17/35 = 0.49
+[0.33, 0.64] · ±1 0.71 · ±3 32/35 = 0.91 [0.78, 0.97]; calibration 0.08 → 0.57 → 0.60 → 1.00 →
+1.00, monotone). CI now rebuilds the committed aggregate from its committed sources and
+byte-compares it (`aggregate_reproduces_the_committed_multiseed_document_byte_for_byte`), and a
+snapshot pins its render, aggregate disclosure line first. No existing snapshot moved — the
+sealed per-seed artifacts and their renders are untouched. Full gate green (fmt / clippy `-D
+warnings` / workspace / spike). The dev-side n=25 aggregate stays prose-backed but is
+regenerable offline too (dev fixtures for all three seeds are committed; `run` × 3 then
+`aggregate`) — not committed, to keep the artifact count honest to what the README claims.

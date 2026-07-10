@@ -8,6 +8,18 @@
   fork's own; `counterfactual` stays `null` until re-execution exists. Additive `--json`
   change — the field was already in the schema, previously always omitted; no schema bump.
   The human render closes forked diffs with a one-line attribution footer (issue #12).
+- `amberfork-align`: field-diff producer — `diff()` now populates `DiffResult.field_diffs`
+  for every sync pair (payload slots compared on the wire representation, object keys
+  recursed with dotted paths in sorted order), so the content-diff (red/green) pane draws
+  from real data; the converged self-diff invariant guards the pass (issue #13).
+- `amberfork-bench aggregate`: pool results documents into one exact aggregate — hits and n
+  summed per metric per arm (calibration bins too), Wilson intervals recomputed at the
+  pooled n; refuses mismatched protocol/split/params, duplicates, and nested aggregates.
+  The README's cross-seed headline (test, n=35 across seeds 42/43/44) is now a committed,
+  `report`-reproducible document (`bench/results/chimera_noise_multiseed_test.json`) that
+  names its three source documents by sha256 and rebuilds from them byte-for-byte in CI.
+  Results schema 0.6 (adds `sources` + per-record `source` provenance); 0.5 documents still
+  load — the sealed v0.2.0 artifacts keep their exact reveal bytes (issue #14).
 
 ## [0.2.0] — 2026-07-10
 

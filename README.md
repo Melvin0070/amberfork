@@ -60,10 +60,13 @@ not exact, is the claim (notebooks 014, 017). The engine's fork confidence is ca
 unseen data: exact-hit rate climbs monotonically from 0.08 in the lowest-confidence bin to
 1.00 in the two highest.
 
-The committed, offline-reproducible slices: **seed 42's dev split** (the default `report`
-below; the CI gate additionally pins seeds 43/44 — `bench/fixtures/chimera_noise_seed*_dev/`)
-and the **three test-split documents** (`bench/results/chimera_noise_seed*_test.json`, each
-pinned by a snapshot test):
+Every number above renders from a committed document. The headline table IS
+`bench/results/chimera_noise_multiseed_test.json` — an exact pool (hits and n summed,
+Wilson intervals recomputed) of the **three sealed per-seed test documents**
+(`bench/results/chimera_noise_seed*_test.json`), each of which it names by sha256; a test
+rebuilds the aggregate from its committed sources byte-for-byte. **Seed 42's dev split** is
+the default `report` below (the CI gate additionally pins seeds 43/44 —
+`bench/fixtures/chimera_noise_seed*_dev/`):
 
 ```text
 params: bench/params.toml sha256:8ebd95ce8f3d · tau 0.3 · resync_k 2 · gap 0.6+0.3
@@ -78,8 +81,9 @@ steps where position and structure do not.
 Reproduce the tables offline — they render from the committed results documents, zero fetch:
 
 ```sh
+cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_multiseed_test.json   # the headline (test, n=35)
 cargo run -q -p amberfork-bench -- report    # seed-42 dev (the default)
-cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_seed42_test.json
+cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_seed42_test.json      # one seed's test slice
 ```
 
 The dev-split pairs are committed (GAIA-sanitized — see `bench/fixtures/`); the CI gate scores

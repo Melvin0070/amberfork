@@ -141,8 +141,13 @@ fn run_scores_the_synthetic_set_and_writes_the_results_json() {
 
     let text = std::fs::read_to_string(&json_path).expect("results JSON written");
     let results: serde_json::Value = serde_json::from_str(&text).expect("results JSON parses");
-    assert_eq!(results["bench_schema_version"], "0.5");
+    assert_eq!(results["bench_schema_version"], "0.6");
     assert_eq!(results["protocol"], "chimera");
+    assert_eq!(
+        results.get("sources"),
+        None,
+        "a single run is not an aggregate — no sources key at all, not an empty list"
+    );
     assert_eq!(results["split"], "all");
     assert_eq!(results["n_pairs"], 3);
     assert_eq!(results["cross_system"], 0, "no cross-system pairs here");
@@ -269,7 +274,7 @@ fn run_discloses_cross_system_pairs() {
 
     let text = std::fs::read_to_string(&json_path).expect("results JSON written");
     let results: serde_json::Value = serde_json::from_str(&text).expect("results JSON parses");
-    assert_eq!(results["bench_schema_version"], "0.5");
+    assert_eq!(results["bench_schema_version"], "0.6");
     // A set carrying cross-system pairs is Mode A′, not controlled-injection chimera — the
     // coarse protocol label follows the data, and the banner carries the detail.
     assert_eq!(results["protocol"], "mode-a-prime");
@@ -496,6 +501,125 @@ fn report_reproduces_the_committed_mode_a_prime_results_offline() {
     insta::assert_snapshot!("report_committed_mode_a_prime", stdout);
 }
 
+/// The repo root — `aggregate`'s committed artifact records its sources as repo-relative
+/// paths (the same convention as `params.source`), so the reproduction test must invoke the
+/// binary from the root with relative paths, exactly as the operator did.
+fn repo_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// The committed cross-seed aggregate (issue #14): the README's headline table (test split,
+/// n=35 across seeds 42/43/44), pooled from the three sealed per-seed documents.
+fn committed_multiseed_results() -> PathBuf {
+    repo_root().join("bench/results/chimera_noise_multiseed_test.json")
+}
+
+#[test]
+fn aggregate_reproduces_the_committed_multiseed_document_byte_for_byte() {
+    // The issue-#14 honesty seam, closed: the README's cross-seed headline must be
+    // computable from the repo alone — `aggregate` over the three committed per-seed test
+    // documents rebuilds the committed aggregate exactly, and its stdout is what `report`
+    // prints for the committed document (one renderer, no drift).
+    let json_path = Path::new(env!("CARGO_TARGET_TMPDIR")).join("multiseed.json");
+    let aggregate = bench()
+        .current_dir(repo_root())
+        .arg("aggregate")
+        .args([
+            "--results",
+            "bench/results/chimera_noise_seed42_test.json",
+            "bench/results/chimera_noise_seed43_test.json",
+            "bench/results/chimera_noise_seed44_test.json",
+        ])
+        .arg("--json-out")
+        .arg(&json_path)
+        .assert()
+        .success()
+        .stderr(predicate::str::contains(
+            "pooled 3 documents · chimera protocol · split=test · scored 35",
+        ));
+
+    let rebuilt = std::fs::read_to_string(&json_path).expect("aggregate JSON written");
+    let committed =
+        std::fs::read_to_string(committed_multiseed_results()).expect("committed doc reads");
+    assert_eq!(
+        rebuilt, committed,
+        "the committed cross-seed document must rebuild from its committed sources"
+    );
+
+    let report = bench()
+        .arg("report")
+        .arg("--results")
+        .arg(committed_multiseed_results())
+        .assert()
+        .success();
+    assert_eq!(
+        String::from_utf8(aggregate.get_output().stdout.clone()).expect("utf-8 stdout"),
+        String::from_utf8(report.get_output().stdout.clone()).expect("utf-8 stdout"),
+        "report must reproduce the aggregate's published artifact byte for byte"
+    );
+}
+
+#[test]
+fn report_reproduces_the_committed_multiseed_results_offline() {
+    // The published cross-seed table: the aggregate disclosure line leads (a reader must
+    // know the coverage below pools three runs before reading it), then the same coverage /
+    // params / table / calibration shape as every other document.
+    let output = bench()
+        .arg("report")
+        .arg("--results")
+        .arg(committed_multiseed_results())
+        .assert()
+        .success();
+    let stdout = String::from_utf8(output.get_output().stdout.clone()).expect("utf-8 stdout");
+    assert!(
+        stdout.starts_with("aggregate of 3 results documents"),
+        "an aggregate must introduce itself before any number"
+    );
+    insta::assert_snapshot!("report_committed_multiseed_test", stdout);
+}
+
+#[test]
+fn aggregate_refuses_mismatched_documents() {
+    // Two live runs over the same synthetic set, differing only in split selection ("all"
+    // vs "test") — identical tables, but pooling them would double-count every pair under a
+    // split label neither run carries. The refusal is the feature.
+    let all_doc = Path::new(env!("CARGO_TARGET_TMPDIR")).join("agg_all.json");
+    let test_doc = Path::new(env!("CARGO_TARGET_TMPDIR")).join("agg_test.json");
+    for (split, path) in [("all", &all_doc), ("test", &test_doc)] {
+        bench()
+            .arg("run")
+            .arg("--pairs")
+            .arg(fixtures_dir())
+            .arg("--params")
+            .arg(frozen_params())
+            .args(["--split", split])
+            .arg("--json-out")
+            .arg(path)
+            .assert()
+            .success();
+    }
+
+    bench()
+        .arg("aggregate")
+        .arg("--results")
+        .arg(&all_doc)
+        .arg(&test_doc)
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("split all vs test"));
+}
+
+#[test]
+fn aggregate_refuses_a_single_document() {
+    bench()
+        .arg("aggregate")
+        .arg("--results")
+        .arg(committed_results())
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("at least two"));
+}
+
 #[test]
 fn report_output_is_identical_to_the_run_that_wrote_the_document() {
     // One renderer, two modes: `run` prints the artifact it just computed, `report` prints
@@ -537,7 +661,9 @@ fn report_on_a_missing_results_file_is_trouble() {
 #[test]
 fn report_on_an_unsupported_schema_version_is_trouble() {
     // A renderer that silently draws a table from a document shaped by different rules
-    // would misrepresent it. The version gate speaks before any shape error can.
+    // would misrepresent it. The version gate speaks before any shape error can — and it
+    // names every version it DOES render: 0.6 (what this binary writes) and 0.5 (the sealed
+    // v0.2.0 artifacts, whose bytes must never be rewritten just to bump a version string).
     let path = Path::new(env!("CARGO_TARGET_TMPDIR")).join("foreign_version.json");
     std::fs::write(&path, r#"{ "bench_schema_version": "0.4" }"#).expect("write scratch doc");
 
@@ -547,7 +673,7 @@ fn report_on_an_unsupported_schema_version_is_trouble() {
         .arg(&path)
         .assert()
         .code(2)
-        .stderr(predicate::str::contains("0.4").and(predicate::str::contains("0.5")));
+        .stderr(predicate::str::contains("0.4").and(predicate::str::contains("0.5, 0.6")));
 }
 
 #[test]

@@ -26,6 +26,7 @@
 //! published artifact (coverage line + table, paste-ready); diagnostics and context go to
 //! stderr.
 
+mod aggregate;
 mod arms;
 mod build;
 mod calibration;
@@ -43,7 +44,7 @@ use pairs::{Pair, load_pairs};
 use results::{ArmResult, BenchResults, Coverage, ExclusionRecord, PairRecord, ParamsUsed};
 use split::Split;
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 const EXIT_OK: u8 = 0;
@@ -63,6 +64,8 @@ enum Command {
     Run(RunArgs),
     /// Re-render a committed results document — offline, zero fetch.
     Report(ReportArgs),
+    /// Pool results documents into one exact aggregate — offline, zero engine (issue #14).
+    Aggregate(AggregateArgs),
     /// Construct a cross-system Mode A′ pair set from raw TapeAgents + Who&When data (issue #7).
     BuildPairs(BuildPairsArgs),
     /// Fetch the pinned raw upstream data `build-pairs` consumes (issue #7).
@@ -99,6 +102,21 @@ struct ReportArgs {
         default_value = "bench/results/chimera_noise_seed42_dev.json"
     )]
     results: PathBuf,
+}
+
+#[derive(Args)]
+struct AggregateArgs {
+    /// Two or more results documents (what `run --json-out` writes) scoring the same
+    /// protocol, split, and frozen params — hits and n are summed per metric and the Wilson
+    /// intervals recomputed, so the output is the table one run over the union would have
+    /// published. Name paths repo-relative when writing a committable artifact: they are
+    /// recorded verbatim as the aggregate's sources.
+    #[arg(long = "results", value_name = "FILE", num_args = 1.., required = true)]
+    results: Vec<PathBuf>,
+
+    /// Also write the aggregate document as JSON.
+    #[arg(long, value_name = "FILE")]
+    json_out: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -158,6 +176,7 @@ fn main() -> ExitCode {
     let outcome = match cli.command {
         Command::Run(args) => run(&args),
         Command::Report(args) => report(&args),
+        Command::Aggregate(args) => aggregate_documents(&args),
         Command::BuildPairs(args) => build_pairs(&args),
         Command::Fetch(args) => fetch_data(&args),
     };
@@ -245,6 +264,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
                     name: exclusion.name.clone(),
                     reason: exclusion.reason.kind().to_string(),
                     file: exclusion.reason.file().display().to_string(),
+                    source: None,
                 })
                 .collect(),
         },
@@ -258,6 +278,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
             gap_open: params.align.gap_open,
             gap_ext: params.align.gap_ext,
         },
+        sources: Vec::new(),
         pairs: set
             .pairs
             .iter()
@@ -265,6 +286,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
                 name: pair.name.clone(),
                 task_key: pair.task_key.clone(),
                 split: pair.split.as_str().to_string(),
+                source: None,
             })
             .collect(),
         arms: arms::ALL
@@ -290,9 +312,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     };
 
     if let Some(path) = &args.json_out {
-        let json = serde_json::to_string_pretty(&results)?;
-        std::fs::write(path, json)
-            .map_err(|err| format!("write results {}: {err}", path.display()))?;
+        write_results(path, &results)?;
     }
 
     eprintln!(
@@ -301,6 +321,49 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     );
     println!("{}", results::render(&results));
     Ok(ExitCode::from(EXIT_OK))
+}
+
+/// The one serialization of a results document — `run` and `aggregate` both write through
+/// it, so an aggregate artifact is byte-comparable with the run documents it pools.
+fn write_results(path: &Path, results: &BenchResults) -> Result<(), Box<dyn std::error::Error>> {
+    let json = serde_json::to_string_pretty(results)?;
+    std::fs::write(path, json).map_err(|err| format!("write results {}: {err}", path.display()))?;
+    Ok(())
+}
+
+/// Pool committed results documents into one exact aggregate (issue #14): the cross-seed
+/// table, `report`-reproducible from the repo alone instead of asserted in prose. Loads and
+/// hashes each input, delegates the pooling and its refusals to [`aggregate::aggregate`],
+/// and publishes through the same renderer as `run` and `report`.
+fn aggregate_documents(args: &AggregateArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let mut sources = Vec::with_capacity(args.results.len());
+    for path in &args.results {
+        let text = std::fs::read_to_string(path)
+            .map_err(|err| format!("read results {}: {err}", path.display()))?;
+        sources.push(aggregate::SourceDoc {
+            file: path.display().to_string(),
+            sha256: sha256_hex(text.as_bytes()),
+            results: results::parse(&text, path)?,
+        });
+    }
+    let n_sources = sources.len();
+    let pooled = aggregate::aggregate(sources)?;
+
+    if let Some(path) = &args.json_out {
+        write_results(path, &pooled)?;
+    }
+
+    eprintln!(
+        "pooled {n_sources} documents · {} protocol · split={} · scored {}",
+        pooled.protocol, pooled.split, pooled.n_pairs,
+    );
+    println!("{}", results::render(&pooled));
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    format!("{:x}", Sha256::digest(bytes))
 }
 
 /// Construct a Mode A′ pair set (issue #7). A data-prep step, not a scoring run: it emits no

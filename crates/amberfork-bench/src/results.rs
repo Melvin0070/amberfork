@@ -12,9 +12,16 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
 
-/// The document version [`load`] vouches for. Bumped whenever the shape changes, so a
+/// The document version this binary writes. Bumped whenever the shape changes, so a
 /// renderer never draws a table from a document shaped by different rules.
-pub const SCHEMA_VERSION: &str = "0.5";
+pub const SCHEMA_VERSION: &str = "0.6";
+
+/// The versions [`load`] vouches for. A 0.5 document is a 0.6 document with no `sources`
+/// (and no per-record `source` tags) — the fields are additive and optional, so reading the
+/// committed 0.5 artifacts stays legal without rewriting them. Rewriting is not an option:
+/// the sealed test-split documents were produced once, at the v0.2.0 tag (protocol rule 2),
+/// and must keep the exact bytes of that reveal.
+const READABLE_VERSIONS: [&str; 2] = ["0.5", SCHEMA_VERSION];
 
 /// The results document `run --json-out` writes and `report` renders. Versioned
 /// independently of the trace schema so a committed copy stays readable as later slices
@@ -25,8 +32,11 @@ pub const SCHEMA_VERSION: &str = "0.5";
 /// the rule-7 reliability curve (fixed-width bins, exact-hit rate per bin). 0.5: `cross_system`
 /// — how many scored pairs align against a different-agent-system reference (Mode A′); when it
 /// is non-zero the protocol reads `mode-a-prime` and the table carries the cross-system
-/// disclosure (issue #7).
-#[derive(Serialize, Deserialize)]
+/// disclosure (issue #7). 0.6: `sources` — present exactly when the document is an exact
+/// aggregate of other results documents (`aggregate` pools hits and n per metric and
+/// recomputes the Wilson intervals); each pair and exclusion record then carries `source`
+/// naming the document it came from (issue #14).
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BenchResults {
     pub bench_schema_version: String,
     /// The evaluation protocol: `chimera` = controlled injection on real logs, `mode-a-prime`
@@ -43,15 +53,30 @@ pub struct BenchResults {
     #[serde(default)]
     pub cross_system: usize,
     pub params: ParamsUsed,
+    /// Non-empty exactly when this document is an aggregate: the results documents it pools,
+    /// each with the sha256 of its exact bytes — so the aggregate names its inputs the same
+    /// way the table names its params, and a reader can verify the pooling from the repo
+    /// alone. Empty for a single `run`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sources: Vec<SourceRecord>,
     /// The split manifest: every evaluated pair with its task key and assignment, whatever
     /// the selection — committed alongside results so the split is auditable (rule 1).
     pub pairs: Vec<PairRecord>,
     pub arms: Vec<ArmResult>,
 }
 
+/// One pooled input of an aggregate document: the file as named on the command line, the
+/// sha256 of its exact bytes, and how many pairs it scored (its share of the pooled n).
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SourceRecord {
+    pub file: String,
+    pub sha256: String,
+    pub n_pairs: usize,
+}
+
 /// Rule 4's accounting: every manifest found is either evaluated (and split-assigned) or
 /// excluded for a tabulated reason. `evaluated / total` is the coverage the table reports.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Coverage {
     pub total: usize,
     pub evaluated: usize,
@@ -67,25 +92,34 @@ pub struct Coverage {
 /// One excluded case in the results document: dir-relative file, kebab-case reason. The
 /// prose diagnostics stay on stderr — they may carry absolute paths and OS error text, which
 /// have no business in a committed artifact.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ExclusionRecord {
     pub name: String,
     pub reason: String,
     pub file: String,
+    /// In an aggregate document, the results document this record came from — pair and
+    /// exclusion names repeat across seed sets, so provenance must be explicit. Absent for
+    /// a single `run`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
 }
 
 /// One line of the split manifest.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PairRecord {
     pub name: String,
     pub task_key: String,
     pub split: String,
+    /// In an aggregate document, the results document this record came from (see
+    /// [`ExclusionRecord::source`]). Absent for a single `run`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
 }
 
 /// The engine parameters every arm ran with, carrying their identity (protocol rule 2):
 /// which file they came from and the sha256 of its exact bytes. The values are echoed too,
 /// so a results document is readable without chasing the file.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ParamsUsed {
     pub source: String,
     pub sha256: String,
@@ -95,7 +129,7 @@ pub struct ParamsUsed {
     pub gap_ext: f64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ArmResult {
     pub arm: String,
     #[serde(flatten)]
@@ -111,33 +145,46 @@ pub struct ArmResult {
 /// `bench_schema_version` is named as such rather than surfacing as a field-level parse
 /// error, because "this renderer does not speak that document" is the actual problem.
 pub fn load(path: &Path) -> Result<BenchResults, String> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|err| format!("read results {}: {err}", path.display()))?;
+    parse(&text, path)
+}
+
+/// [`load`] for text already in hand — the seam `aggregate` uses, because it needs the
+/// document's exact bytes for the source sha256 as well as the parsed shape.
+pub fn parse(text: &str, path: &Path) -> Result<BenchResults, String> {
     #[derive(Deserialize)]
     struct VersionOnly {
         bench_schema_version: String,
     }
 
-    let text = std::fs::read_to_string(path)
-        .map_err(|err| format!("read results {}: {err}", path.display()))?;
-    let version: VersionOnly = serde_json::from_str(&text)
+    let version: VersionOnly = serde_json::from_str(text)
         .map_err(|err| format!("results document {}: {err}", path.display()))?;
-    if version.bench_schema_version != SCHEMA_VERSION {
+    if !READABLE_VERSIONS.contains(&version.bench_schema_version.as_str()) {
         return Err(format!(
-            "results document {}: bench_schema_version {} is not the {SCHEMA_VERSION} this \
-             binary renders — regenerate it with `run --json-out`",
+            "results document {}: bench_schema_version {} is not one this binary renders \
+             ({}) — regenerate it with `run --json-out`",
             path.display(),
-            version.bench_schema_version
+            version.bench_schema_version,
+            READABLE_VERSIONS.join(", ")
         ));
     }
-    serde_json::from_str(&text).map_err(|err| format!("results document {}: {err}", path.display()))
+    serde_json::from_str(text).map_err(|err| format!("results document {}: {err}", path.display()))
 }
 
-/// The full published artifact: coverage line, params line, an optional cross-system
-/// disclosure, the arms table, the calibration table — the exact stdout of both `run` and
-/// `report`. The disclosure appears only for a Mode A′ set, so a same-system chimera table is
-/// byte-identical to what it was before the seam existed.
+/// The full published artifact: an optional aggregate disclosure, coverage line, params
+/// line, an optional cross-system disclosure, the arms table, the calibration table — the
+/// exact stdout of `run`, `aggregate`, and `report`. The disclosures appear only for the
+/// documents they describe, so a single-run chimera table is byte-identical to what it was
+/// before either seam existed.
 #[must_use]
 pub fn render(results: &BenchResults) -> String {
-    let mut header = vec![coverage_line(results), params_line(results)];
+    let mut header = Vec::new();
+    if let Some(line) = aggregate_line(results) {
+        header.push(line);
+    }
+    header.push(coverage_line(results));
+    header.push(params_line(results));
     if let Some(line) = cross_system_line(results) {
         header.push(line);
     }
@@ -147,6 +194,25 @@ pub fn render(results: &BenchResults) -> String {
         markdown_table(results),
         calibration_table(results)
     )
+}
+
+/// The aggregate disclosure (issue #14), present only for a pooled document — and FIRST,
+/// before any number: a reader must know the coverage below sums several runs before they
+/// can read it. Pooling method stated inline (hits and n summed, intervals recomputed) so
+/// the line cannot be mistaken for a mean of per-seed rates.
+fn aggregate_line(results: &BenchResults) -> Option<String> {
+    (!results.sources.is_empty()).then(|| {
+        let parts: Vec<String> = results
+            .sources
+            .iter()
+            .map(|source| format!("{} (n={})", source.file, source.n_pairs))
+            .collect();
+        format!(
+            "aggregate of {} results documents (hits and n pooled, intervals recomputed): {}",
+            results.sources.len(),
+            parts.join(" · ")
+        )
+    })
 }
 
 /// The cross-system disclosure (issue #7), present only when the scored set contains Mode A′

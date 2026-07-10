@@ -1,0 +1,23 @@
+---
+source: crates/amberfork-bench/tests/bench_cli.rs
+expression: stdout
+---
+aggregate of 3 results documents (hits and n pooled, intervals recomputed): bench/results/chimera_noise_seed42_test.json (n=12) · bench/results/chimera_noise_seed43_test.json (n=13) · bench/results/chimera_noise_seed44_test.json (n=10)
+coverage: 60/60 pairs evaluated · split=test (dev 25, test 35) · scored 35
+params: bench/params.toml sha256:8ebd95ce8f3d · tau 0.3 · resync_k 2 · gap 0.6+0.3
+
+| arm | exact | ±1 | ±3 | no-pred | n |
+|---|---|---|---|---|---|
+| random | 0.00 [0.00, 0.10] | 0.09 [0.03, 0.22] | 0.29 [0.16, 0.45] | 0.00 | 35 |
+| pos-lexical | 0.00 [0.00, 0.10] | 0.20 [0.10, 0.36] | 0.49 [0.33, 0.64] | 0.00 | 35 |
+| nw-structural/resync | 0.03 [0.01, 0.15] | 0.20 [0.10, 0.36] | 0.20 [0.10, 0.36] | 0.26 | 35 |
+| nw-lexical/resync | 0.49 [0.33, 0.64] | 0.71 [0.55, 0.84] | 0.91 [0.78, 0.97] | 0.00 | 35 |
+
+calibration: exact-hit rate by fork confidence (abstentions carry no confidence)
+| confidence | nw-structural/resync | nw-lexical/resync |
+|---|---|---|
+| [0.0, 0.2) | 0/14 · 0.00 [0.00, 0.22] | 1/12 · 0.08 [0.01, 0.35] |
+| [0.2, 0.4) | — | 4/7 · 0.57 [0.25, 0.84] |
+| [0.4, 0.6) | — | 6/10 · 0.60 [0.31, 0.83] |
+| [0.6, 0.8) | — | 4/4 · 1.00 [0.51, 1.00] |
+| [0.8, 1.0] | 1/12 · 0.08 [0.01, 0.35] | 2/2 · 1.00 [0.34, 1.00] |
