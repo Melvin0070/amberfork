@@ -1,0 +1,24 @@
+---
+source: crates/amberfork-bench/tests/bench_cli.rs
+assertion_line: 471
+expression: stdout
+---
+coverage: 4/4 pairs evaluated · split=all (dev 2, test 2) · scored 4
+params: bench/params.toml sha256:8ebd95ce8f3d · tau 0.3 · resync_k 2 · gap 0.6+0.3
+cross-system: 4/4 scored pairs align a failing run against a reference from a different agent system — cross-system references diverge from step 0, so ±1/±3 are the metric of record and step-exact is not claimed.
+
+| arm | exact | ±1 | ±3 | no-pred | n |
+|---|---|---|---|---|---|
+| random | 0.00 [0.00, 0.49] | 0.25 [0.05, 0.70] | 0.75 [0.30, 0.95] | 0.00 | 4 |
+| pos-lexical | 0.00 [0.00, 0.49] | 0.25 [0.05, 0.70] | 0.50 [0.15, 0.85] | 0.00 | 4 |
+| nw-structural/resync | 0.00 [0.00, 0.49] | 0.25 [0.05, 0.70] | 0.25 [0.05, 0.70] | 0.00 | 4 |
+| nw-lexical/resync | 0.00 [0.00, 0.49] | 0.25 [0.05, 0.70] | 0.50 [0.15, 0.85] | 0.00 | 4 |
+
+calibration: exact-hit rate by fork confidence (abstentions carry no confidence)
+| confidence | nw-structural/resync | nw-lexical/resync |
+|---|---|---|
+| [0.0, 0.2) | — | 0/1 · 0.00 [0.00, 0.79] |
+| [0.2, 0.4) | — | 0/1 · 0.00 [0.00, 0.79] |
+| [0.4, 0.6) | — | 0/1 · 0.00 [0.00, 0.79] |
+| [0.6, 0.8) | — | 0/1 · 0.00 [0.00, 0.79] |
+| [0.8, 1.0] | 0/4 · 0.00 [0.00, 0.49] | — |

@@ -296,8 +296,8 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
     }
 
     eprintln!(
-        "chimera protocol · split={} · {} scored of {} evaluated",
-        results.split, results.n_pairs, results.coverage.evaluated,
+        "{} protocol · split={} · {} scored of {} evaluated",
+        results.protocol, results.split, results.n_pairs, results.coverage.evaluated,
     );
     println!("{}", results::render(&results));
     Ok(ExitCode::from(EXIT_OK))

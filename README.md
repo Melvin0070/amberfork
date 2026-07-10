@@ -76,6 +76,30 @@ The dev-split pairs are committed (GAIA-sanitized — see `bench/fixtures/`); th
 them on every `amberfork-align` change. Regenerate the full sets from raw upstream data with the
 recipe in [`bench/fixtures/chimera_noise_seed42_dev/README.md`](bench/fixtures/chimera_noise_seed42_dev/README.md).
 
+### Mode A′ — real cross-system pairs (directional, n=4)
+
+The second protocol scores *natural* failures: a failing Who&When run against a passing
+reference from a **different agent system** (a ServiceNow TapeAgents tape) on the same GAIA
+task. The whole pipeline is in-tree, pinned, and reproducible:
+
+```sh
+cargo run -q -p amberfork-bench -- fetch    # pinned upstream data → bench/data/ (never committed)
+cargo run -q -p amberfork-bench -- build-pairs --tapes bench/data/tapes --logs bench/data/whowhen --out bench/data/pairs_real
+cargo run -q -p amberfork-bench -- run --pairs bench/data/pairs_real --split all
+```
+
+Public data yields exactly **4 pairs** (only 4 published tapes pass their task), and the honest
+result is a **null**: the engine reaches 0.50 ±3 while *random guessing reaches 0.75*, because
+these runs are 7–10 steps long (a ±3 window covers most of the run) and a reference from a
+different system legitimately diverges from step 0, making the annotated "decisive step" a weak
+gold target. Both limits were pre-registered in [`BENCHMARK.md`](BENCHMARK.md)'s
+threats-to-validity before the measurement (notebook 016). So Mode A′ ships as a disclosed
+limit, not a headline — the table (cross-system banner included) re-renders offline:
+
+```sh
+cargo run -q -p amberfork-bench -- report --results bench/results/mode_a_prime_realpairs_all.json
+```
+
 ## What exists today
 
 | Artifact | What it is |

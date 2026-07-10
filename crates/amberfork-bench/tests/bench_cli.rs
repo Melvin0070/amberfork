@@ -441,6 +441,36 @@ fn report_reproduces_the_committed_dev_results_offline() {
     insta::assert_snapshot!("report_committed_dev", stdout);
 }
 
+/// The committed Mode A′ results document (all 4 real cross-system pairs under the frozen
+/// params — the full published set; n=4 is everything the public tape data yields, so there
+/// is no held-back split to seal). Identifiers only: pair names and tape stems, no GAIA
+/// content (notebook 016).
+fn committed_mode_a_prime_results() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../bench/results/mode_a_prime_realpairs_all.json")
+}
+
+#[test]
+fn report_reproduces_the_committed_mode_a_prime_results_offline() {
+    // Same guarantee as the chimera document, plus the seam's promise: the re-rendered
+    // table must carry the cross-system disclosure and introduce itself as Mode A′ —
+    // a reader can never mistake the directional cross-system table for the controlled
+    // chimera protocol.
+    let output = bench()
+        .arg("report")
+        .arg("--results")
+        .arg(committed_mode_a_prime_results())
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("mode-a-prime protocol"));
+    let stdout = String::from_utf8(output.get_output().stdout.clone()).expect("utf-8 stdout");
+    assert!(
+        stdout.contains("cross-system: 4/4 scored pairs"),
+        "the committed table must disclose its cross-system nature"
+    );
+    insta::assert_snapshot!("report_committed_mode_a_prime", stdout);
+}
+
 #[test]
 fn report_output_is_identical_to_the_run_that_wrote_the_document() {
     // One renderer, two modes: `run` prints the artifact it just computed, `report` prints

@@ -649,3 +649,48 @@ the spike's `make_realpairs.py` n=4 from notebook 001. No committed benchmark nu
 real pairs stay uncommitted. What remains on #7 is the closing slice: score the real pair set
 through the disclosure seam and write the honest Mode A′ table (windowed metrics of record,
 short-log caveat from notebook 002).
+
+## 016 · 2026-07-10 · Mode A′ scored on real pairs: an honest null closes issue #7 (slice 5)
+
+**What changed.** The slice-1 disclosure seam met real data: `run` on the 4 fetched-and-built
+cross-system pairs under the frozen config, and the results document is now committed —
+`bench/results/mode_a_prime_realpairs_all.json` (identifiers only: pair names + tape stems, no
+GAIA content) with snapshot test `report_committed_mode_a_prime`, so the Mode A′ table
+re-renders offline, banner included, exactly like the chimera one. The run also surfaced an
+honesty bug, fixed test-first: `run`'s stderr diagnostic introduced *every* set as "chimera
+protocol" — hardcoded, contradicting the artifact's own `mode-a-prime` label. The line now
+follows the computed protocol and the end-to-end Mode A′ test pins it.
+
+**The number (frozen `8ebd95ce8f3d`, τ=0.3, n=4, `--split all`).** The stable hash assigns
+2 dev / 2 test; params have been frozen since notebook 007 and no tuning ever touched these
+pairs, so scoring the test-assigned side is rule-2-legal — disclosed regardless.
+- nw-lexical/resync (shipped): exact 0.00 · ±1 0.25 · **±3 0.50 [0.15, 0.85]**
+- pos-lexical ±3 0.50 · nw-structural/resync ±3 0.25 · **random ±3 0.75 [0.30, 0.95]**
+
+Read honestly: **the engine does not beat random here.** At n=4 the Wilson intervals all
+overlap heavily, so no arm separates from any other; what this slice delivers is the pipeline
+and the disclosed limit, not a capability claim. Calibration at n=4 is uninformative (0 exact
+hits spread across bins) — do not read the bins.
+
+**Why this is the expected result, not a surprise.** The lexical and random arms replicate the
+spike arm-for-arm (notebook 002 Q3, same 4 tape tasks: lexical/tf-idf ~50% ±3, random ~74% ±3)
+— the Rust engine and the throwaway Python agree on real data, which is the validation this
+slice actually adds. The mechanism was pre-registered as a threat before any measurement:
+(a) these runs are 7–10 steps, so a ±3 window covers most of the run and random is strong;
+(b) cross-system gold is murky — the annotated `mistake_step` is a weak target when a
+different system legitimately diverges from step 0 (BENCHMARK.md threats 1–2, notebook 001).
+
+**What it means going forward.** (1) Controlled-injection chimera stays the primary protocol;
+Mode A′ ships as a disclosed, reproducible limit — the demotion decision 3 pre-registered,
+now with its in-tree number. README gained a Mode A′ subsection saying exactly that. (2) The
+spike found embeddings were the *only* arm reaching 100% ±3 on these pairs — cross-system
+alignment is the one measured niche where embeddings beat lexical; if ONNX/T25 ever earns a
+slice, its dev evidence trail starts here. (3) A Mode A′ that could headline needs longer
+hand-crafted logs vs same-family references (HAL adapter + deliberate gold/metric design) —
+future work, not v0.2.
+
+**Check.** Full gate green (fmt / clippy `-D warnings` / workspace tests incl. the new
+snapshot and the protocol-label assertion; spike tests). Determinism: re-running `run` on the
+same cache reproduces the committed document **byte-for-byte**. Chimera artifacts untouched
+(their snapshot never moved). This closes #7 — seam (010), adapter (011), construction (012),
+acquisition (015), scored disclosure (here) — and with it the v0.2 milestone.

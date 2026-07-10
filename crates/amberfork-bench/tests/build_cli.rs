@@ -153,7 +153,10 @@ fn build_pairs_constructs_a_cross_system_set_that_flows_through_the_seam() {
         .stdout(predicate::str::contains(
             "cross-system: 1/1 scored pairs align a failing run against a reference from a \
              different agent system",
-        ));
+        ))
+        // The diagnostic line must agree with the artifact: a Mode A′ run may never
+        // introduce itself as the chimera protocol.
+        .stderr(predicate::str::contains("mode-a-prime protocol"));
 
     let results: serde_json::Value =
         serde_json::from_slice(&fs::read(&json_path).expect("results.json written"))
