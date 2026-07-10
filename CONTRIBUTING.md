@@ -13,7 +13,7 @@ file is the human-readable summary of the same working agreement.
    dated "Amendment" / "Current State" blocks win.
 3. **Build a vertical slice.** Keep `amberfork diff <bad> --against <good>` working end-to-end. Don't
    build a crate ahead of the need it serves.
-4. **Verify before commit.** `python3 spike/test_smoke.py` today; `cargo fmt --all --check &&
+4. **Verify before commit.** `python3 spike/test_smoke.py && python3 spike/test_sanitize.py` today; `cargo fmt --all --check &&
    cargo clippy --all-targets -- -D warnings && cargo test --workspace` once the workspace exists.
    CI runs exactly these. A red CI stops the line. The fork-localization parity gate is inside
    `cargo test --workspace` — it runs on the committed, GAIA-sanitized dev set in

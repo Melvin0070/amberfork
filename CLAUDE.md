@@ -32,7 +32,7 @@ cut line: **v0.1 = walking skeleton** (#1 model → #2 ingest → #3 align → #
 `docs/notebook.md` (append-only; every experiment gets an entry). Benchmark numbers are governed
 by BENCHMARK.md's pre-registered protocol — never publish a number outside it.
 
-**Verify before commit (non-negotiable):** `python3 spike/test_smoke.py` (offline, <10s). Once
+**Verify before commit (non-negotiable):** `python3 spike/test_smoke.py && python3 spike/test_sanitize.py` (offline, <10s). Once
 the Rust workspace exists: `cargo fmt --all --check && cargo clippy --all-targets -- -D warnings
 && cargo test --workspace`. CI runs exactly these; a red CI is a stop-the-line event. Commit or
 push only when the user asks. The quantitative fork-localization gate is now **CI-visible**
