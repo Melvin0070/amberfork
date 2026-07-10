@@ -215,6 +215,9 @@ pub enum WarningCode {
     UnmappedAttributes,
     /// A step carried no input/output content (metadata-only trace).
     ContentAbsent,
+    /// The trace declares a schema version this build does not treat as native; fields may be
+    /// read under the wrong contract. Surfaced, not fatal — the input seam stays permissive.
+    SchemaVersionMismatch,
 }
 
 /// Which execution path produced the inputs: passively aligning existing traces, or an

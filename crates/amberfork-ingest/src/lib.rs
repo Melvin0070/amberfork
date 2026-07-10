@@ -136,6 +136,16 @@ struct RawStep {
 impl RawRun {
     fn into_run(self) -> (Run, Vec<Warning>) {
         let mut warnings = Vec::new();
+        if !self.schema_version.is_current() {
+            warnings.push(Warning {
+                code: WarningCode::SchemaVersionMismatch,
+                msg: format!(
+                    "trace declares schema_version {:?}; this build is native to {} — fields may be read under the wrong contract",
+                    self.schema_version.0,
+                    SchemaVersion::CURRENT
+                ),
+            });
+        }
         if !self.extra.is_empty() {
             warnings.push(Warning {
                 code: WarningCode::UnmappedAttributes,

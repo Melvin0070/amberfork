@@ -86,6 +86,23 @@ fn run_level_unmapped_field_warns() {
 }
 
 #[test]
+fn foreign_schema_version_warns_but_still_loads() {
+    let json = r#"{
+      "schema_version": "9.9",
+      "id": "future",
+      "steps": [{ "idx": 0, "kind": "llm", "name": "a", "outputs": "x" }]
+    }"#;
+    let ingested = from_json_str(json).unwrap();
+    assert_eq!(ingested.run.steps.len(), 1, "permissive: still loads");
+    let mismatch = ingested
+        .warnings
+        .iter()
+        .find(|w| w.code == WarningCode::SchemaVersionMismatch)
+        .expect("a foreign schema_version must warn");
+    assert!(mismatch.msg.contains("9.9"), "got: {}", mismatch.msg);
+}
+
+#[test]
 fn malformed_json_is_a_parse_error() {
     let err = from_json_str("{ not json").unwrap_err();
     assert!(matches!(err, IngestError::Parse(_)));
