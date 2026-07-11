@@ -83,13 +83,32 @@ pub fn render(result: &DiffResult, reference: &Run, observed: &Run, opts: &Rende
 
     if result.fork.is_none() {
         rows.push(Row::blank());
+        // "identical" is a claim the alignment must earn: every move a sync at cost 0.
+        // Anything the resync rule merely absorbed (gap moves, costly syncs) converged
+        // without being identical, and the one line everyone reads must keep the two
+        // states apart (issue #19).
+        let absorbed = result
+            .alignment
+            .iter()
+            .filter(|mv| mv.kind != MoveKind::Sync || mv.cost > 0.0)
+            .count();
+        let body = if absorbed == 0 {
+            format!(
+                "  converged — identical through {} steps",
+                result.alignment.len()
+            )
+        } else {
+            format!(
+                "  converged — no fork ({absorbed} absorbed divergence{} across {}⇄{} steps)",
+                if absorbed == 1 { "" } else { "s" },
+                reference.steps.len(),
+                observed.steps.len(),
+            )
+        };
         rows.push(Row {
             role: Role::Footer,
             prefix: String::new(),
-            body: format!(
-                "  converged — identical through {} steps",
-                result.alignment.len()
-            ),
+            body,
         });
     }
 
@@ -784,6 +803,48 @@ mod tests {
             "nothing to attribute on a converged diff"
         );
         assert!(!out.contains('\x1b'), "Plain mode must emit no ANSI");
+    }
+
+    #[test]
+    fn converged_with_absorbed_divergence_does_not_claim_identical() {
+        // No fork, but the alignment holds a costly sync and a model move — the runs are
+        // not identical, and the one line everyone reads must not say they are (issue #19).
+        let a = run(
+            "good",
+            Outcome::Pass,
+            vec![
+                step(0, "plan", "search for census data"),
+                step(1, "web.search", "9 results, top census.gov"),
+                step(2, "answer", "population is 8,443,000"),
+                step(3, "log", "cache the answer"),
+            ],
+        );
+        let b = run(
+            "good_retry",
+            Outcome::Pass,
+            vec![
+                step(0, "plan", "search for census data"),
+                step(1, "web.search", "9 results, top census.gov"),
+                step(2, "answer", "population is about 8,443,000"),
+            ],
+        );
+        let alignment = vec![
+            Move::sync(0, 0, 0.0, 1.0),
+            Move::sync(1, 1, 0.0, 1.0),
+            Move::sync(2, 2, 0.55, 0.45),
+            Move::model(3, 0.6, 0.0),
+        ];
+        let res = result(&a, &b, alignment, None);
+        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+
+        assert!(
+            out.contains("converged — no fork (2 absorbed divergences across 4⇄3 steps)"),
+            "absorbed-divergence footer, got:\n{out}"
+        );
+        assert!(
+            !out.contains("identical"),
+            "'identical' is reserved for all-sync, all-cost-0 alignments, got:\n{out}"
+        );
     }
 
     #[test]

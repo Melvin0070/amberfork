@@ -892,3 +892,11 @@ the originals as `bench/results/chimera_noise_seed*_test_v0.4.0.json` +
 attribution/field-diff producers sit downstream of alignment, and the canonicalization
 change reordered serialization without changing any cost. A reveal that reproduces the seal
 is the protocol working: the number survives its second look untouched.
+
+**Correction to 020 (2026-07-11, found while fixing #19).** The 1000-step scale fixture did
+not have "one perturbed step": the probe script replicated the step list with shallow
+copies, so the single mutation hit one shared object appearing at three indices (244, 500,
+756). The honest count is 3 perturbed syncs + 1 deletion — the fixed footer's "4 absorbed
+divergences across 1000⇄999 steps" is the engine counting my fixture more accurately than I
+described it. No conclusion of 020 changes (the aligner absorbed correctly; the old summary
+line's "identical" was still false — just false four ways instead of two).
