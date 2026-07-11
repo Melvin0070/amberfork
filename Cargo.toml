@@ -34,6 +34,7 @@ assert_cmd = "2"
 predicates = "3"
 insta = "1"
 tempfile = "3"
+criterion = "0.8"
 # Internal crates share versions here too, so a path move is a one-line change. The
 # `version` field is what dependents publish against on crates.io (path is stripped at
 # package time) — bump it together with workspace.package.version at every release.

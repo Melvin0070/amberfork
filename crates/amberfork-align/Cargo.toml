@@ -18,3 +18,12 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+criterion = { workspace = true }
+
+# `test = false`: `cargo test` would otherwise execute this binary in the debug profile, where
+# the 1000-step size takes minutes. `cargo bench` (release profile) is its only runner; clippy
+# still lints it via --all-targets.
+[[bench]]
+name = "align_scale"
+test = false
+harness = false

@@ -900,3 +900,41 @@ copies, so the single mutation hit one shared object appearing at three indices 
 divergences across 1000⇄999 steps" is the engine counting my fixture more accurately than I
 described it. No conclusion of 020 changes (the aligner absorbed correctly; the old summary
 line's "identical" was still false — just false four ways instead of two).
+
+## 022 · 2026-07-11 · Scale baseline made reproducible: the O(n·m) curve on committed data (issue #16)
+
+**What prompted it.** #16 (cache LexicalCost tokenization) starts. Its guard clause says
+benchmark before optimizing, but the trigger numbers on the issue came from notebook 020's
+probe — private Claude Code transcripts through a throwaway scratchpad converter, neither
+re-runnable. Slice 1 turns that one-off datapoint into a harness anyone can re-run, so slice
+2 (the cache) has a pinned "before" and a permanent measuring stick.
+
+**Method.** New criterion bench `crates/amberfork-align/benches/align_scale.rs`
+(`cargo bench -p amberfork-align`). Long runs are stitched from the committed seed-42 dev
+fixture: each side's runs concatenated in filename order (234 real a-steps, 188 b-steps),
+cycled to the target length, steps deep-copied and re-indexed with `parent_idx` cleared
+(Rust `Clone` is an owned deep copy, so the 020 shallow-copy trap can't recur). Deterministic
+end to end — no randomness, no clock. Measures `diff()` (align + fork + field diffs +
+attribution), release profile, 10 flat samples per size. The bench target sets `test = false`:
+`cargo test` would otherwise execute it in the debug profile, where the top size takes minutes.
+
+**Baseline (M-series darwin, release, criterion means).**
+
+| steps per side | time | vs previous size |
+|---|---|---|
+| 125 | 195 ms | — |
+| 250 | 769 ms | 3.9× |
+| 500 | 3.05 s | 4.0× |
+| 1000 | 12.18 s | 4.0× |
+
+Each doubling costs 4.0× — the documented quadratic, now on committed data. Cross-check
+against the wild numbers of 020: 12.18s here vs 12.6s CLI at 1000-scale, 195ms vs 0.20s at
+~125-scale. The stitched-fixture harness reproduces the private-transcript curve, so the
+fixture content is representative where it matters (payload serialization + tokenization
+per cell).
+
+**Reading.** This is the "red" for #16's slice 2: the prepare-once `CostModel` seam must
+bend this curve, and by how much is now a measurement, not a claim. Caveat going in: the
+cache removes per-cell payload serialization and tokenization but not the gestalt DP itself,
+which is also per-cell — if gestalt dominates on 600-char-capped texts, the win will be
+modest, and the after-run gets reported either way.
