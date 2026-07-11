@@ -61,6 +61,8 @@ Mono-forward. All faces are free (OFL) so distribution stays a clean single bina
 - **The one beat:** on load and on scrub, the amber IGNITES at the fork and flows down the divergent path. Nothing else animates expressively.
 - **Easing:** enter ease-out · exit ease-in · move ease-in-out.
 - **Duration:** micro 50-100ms · short 150-250ms · medium 250-400ms (fork ignition) · long avoided.
+- **Reduced motion:** honor `prefers-reduced-motion` — the ignition beat degrades to the
+  static amber end-state; nothing else animates anyway.
 
 ## Rendering constraints (hard requirements)
 - DOM + SVG only for the DAG and content (NO canvas/wgpu): text must be selectable, copyable, and accessible (screen-reader). This is why wgpu was dropped during eng review.
@@ -143,3 +145,8 @@ commoditized; this is a gateway, not a viewer product.)
 | 2026-07-12 | `faint #55555C` restricted to decorative text | ~2.8:1 on bg fails WCAG 4.5:1; `muted #8A8A93` (~5.7:1) is the floor for readable text (DD4) |
 | 2026-07-12 | Fonts ship as latin-subset woff2 inside the ≤1MB gzipped UI bundle budget | Self-hosted offline promise and the eng-review bundle budget reconciled; metrics-compatible fallback, no layout shift (DD3a) |
 | 2026-07-12 | v0.5 web UI is dark-only (`color-scheme: dark`) | One polished theme for the hero surface; the light palette above ships as a follow-up issue (DD5) |
+| 2026-07-12 | v0.5 canvas = side-by-side runs on the shared spine | The web layout spec's own form ("a divergence visibly breaks the alignment") confirmed for v0.5 — the unified-column wireframe was a pane-composition study, not a canvas decision (cold design read) |
+| 2026-07-12 | Header verdict is the protagonist, never faint | `text` token, mono + tabular-nums, adjacent to pair identity, clickable → scrolls to the fork. Three strings: `⑂ forked at step N · conf 0.NN` / `identical through N steps` / `converged — M divergences absorbed` (mirrors the #19 CLI footer); marginal-confidence rendering inherits the terminal's marginal-call rule |
+| 2026-07-12 | Fork on screen from frame one | On load the fork row auto-scrolls into view (upper third) and ignition fires when visible; the fork pair is selected by default so DR5's reading order is the first render — no dead pane, no fold-hidden fork (cold design read) |
+| 2026-07-12 | Evidence-out: copy emits the terminal unified format | Copy affordance on the verdict line and the field-diff card; output is the grayscale-safe terminal format with the repro command appended (`amberfork diff bad.json --against good.json`) — pasted evidence is re-runnable. `#step-N` URL anchors make state survive refresh |
+| 2026-07-12 | Web canvas rules tightened (cold design read) | `✗` gutter glyph on every divergent row — DR2 covers the path, not just the fork; amber appears exactly twice (fork + divergent path): logo glyph and confidence fill are neutral, amber is never chrome; step-text floor is `muted` (`faint` = spine lines/ticks only); "glow" = the saturated stroke, no blur halo; disconnect detection = interval re-poll of the one content endpoint, banner in `warning #F5A623` |

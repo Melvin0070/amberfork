@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>amberfork v0.5 — pane composition variants</title>
-<!-- APPROVED: Variant A — two panes + header bar (plan-design-review DD3, 2026-07-12; ratified in DESIGN.md decisions log). Rail arrives with corpus features, scrubber docks with the record path. -->
+<!-- APPROVED for PANE COMPOSITION: Variant A — two panes + header bar (plan-design-review DD3, 2026-07-12; DESIGN.md decisions log). Rail arrives with corpus, scrubber with record. CANVAS FORM SUPERSEDED 2026-07-12 (cold design read): v0.5 ships side-by-side runs on the shared spine, not this unified column. Tokens corrected same day: step text = muted (faint is lines/ticks only), verdict = text token, logo glyph + confidence fill neutral (amber never chrome). -->
 <style>
   :root{--bg:#0A0A0B;--surface:#121214;--raised:#17171B;--hair:#26262B;--text:#E6E6E9;--muted:#8A8A93;--faint:#55555C;--amber:#FF7A1A;--red:#FF5C5C;--green:#46D39A}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -13,12 +13,12 @@
   /* shared pieces */
   .app{display:flex;flex-direction:column;height:520px}
   .hdr{display:flex;gap:16px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--hair);background:var(--surface);font-size:12px}
-  .hdr .logo{color:var(--text);font-weight:700}.hdr .logo span{color:var(--amber)}
+  .hdr .logo{color:var(--text);font-weight:700}.hdr .logo span{color:var(--muted)}
   .hdr .pair{color:var(--muted)}.hdr .pair b{color:var(--text);font-weight:500}
-  .hdr .meta{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+  .hdr .meta{margin-left:auto;color:var(--text);font-variant-numeric:tabular-nums}
   .cols{display:flex;flex:1;min-height:0}
   .rail{width:188px;border-right:1px solid var(--hair);background:var(--surface);padding:12px;font-size:12px}
-  .rail h3{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 8px}
+  .rail h3{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
   .rail .run{border:1px solid var(--hair);border-radius:4px;padding:8px;margin-bottom:8px}
   .rail .run .tag{font-size:10px;color:var(--muted)}
   .rail .run .name{color:var(--text);margin:2px 0;word-break:break-all}
@@ -26,29 +26,29 @@
   .rail .kv b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
   .canvas{flex:1;position:relative;background-image:radial-gradient(circle,#1c1c20 1px,transparent 1px);background-size:22px 22px;padding:18px 22px;overflow:hidden}
   .step{display:flex;gap:10px;padding:3px 6px;color:var(--muted);font-variant-numeric:tabular-nums;border-radius:4px}
-  .step .idx{width:56px;color:var(--faint)}
+  .step .idx{width:56px;color:var(--muted)}
   .step .kind{width:44px}
   .step .name{width:110px}
-  .step .sum{flex:1;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .step .st{width:70px;text-align:right;color:var(--faint)}
+  .step .sum{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .step .st{width:70px;text-align:right;color:var(--muted)}
   .fork{color:var(--amber);border:1px dashed var(--amber);background:rgba(255,122,26,.05)}
   .fork .idx,.fork .sum,.fork .st{color:var(--amber)}
   .div{color:var(--amber)}
   .div .idx,.div .sum,.div .st{color:var(--amber);opacity:.85}
   .selected{outline:1px solid var(--hair);background:var(--raised)}
   .attr{width:320px;border-left:1px solid var(--hair);background:var(--surface);padding:14px;font-size:12px;overflow:hidden}
-  .attr h3{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 10px}
+  .attr h3{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
   .attr .row{margin-bottom:10px;color:var(--muted)}
   .attr .row b{color:var(--text);font-weight:500}
   .chips{display:flex;gap:6px;margin:8px 0}
   .chip{border:1px solid var(--hair);border-radius:999px;padding:1px 8px;font-size:10px;color:var(--muted)}
   .conf{height:4px;background:var(--raised);border-radius:2px;margin:6px 0 2px}
-  .conf i{display:block;height:4px;width:86%;background:var(--amber);border-radius:2px}
+  .conf i{display:block;height:4px;width:86%;background:var(--muted);border-radius:2px}
   .cdiff{margin-top:14px;border-top:1px solid var(--hair);padding-top:10px}
   .cdiff .l{padding:2px 6px;border-radius:3px;white-space:pre}
   .cdiff .rm{color:var(--red);background:rgba(255,92,92,.08)}
   .cdiff .ad{color:var(--green);background:rgba(70,211,154,.08)}
-  .trunc{color:var(--faint);font-size:11px;margin-top:6px}
+  .trunc{color:var(--muted);font-size:11px;margin-top:6px}
   .strip{border-top:1px solid var(--hair);background:var(--surface);padding:7px 14px;color:var(--muted);font-size:12px;display:flex;gap:18px}
   .strip .amberdot{color:var(--amber)}
   .strip .right{margin-left:auto;color:var(--faint)}
