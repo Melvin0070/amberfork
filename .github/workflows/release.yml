@@ -1,0 +1,98 @@
+name: release
+
+# Two ways in, one build path:
+#   - push a `v*` tag        → build, smoke-test, package, and attach binaries to a GitHub release
+#   - workflow_dispatch      → the same build + smoke + package, uploaded only as workflow
+#                              artifacts — the pre-tag dry run, so the release path is verified
+#                              before a tag ever exists (tags are load-bearing: BENCHMARK.md
+#                              rule 2 ties the test-split reveal to them).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-14
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: build release binary
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add ${{ matrix.target }}
+          cargo build --release -p amberfork --target ${{ matrix.target }}
+
+      - name: smoke-test the built binary
+        # `demo` forks by design, so exit 1 is the pass condition (diff(1) semantics).
+        run: |
+          bin=target/${{ matrix.target }}/release/amberfork
+          "$bin" --version
+          "$bin" demo --no-color && exit 1 || test $? -eq 1
+
+      - name: package tarball + checksum
+        run: |
+          ref="${GITHUB_REF_NAME}"
+          [ "${GITHUB_REF_TYPE}" = "tag" ] || ref="dry-run"
+          name="amberfork-${ref}-${{ matrix.target }}"
+          mkdir "$name"
+          cp target/${{ matrix.target }}/release/amberfork LICENSE README.md "$name/"
+          tar czf "$name.tar.gz" "$name"
+          shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: amberfork-${{ matrix.target }}
+          path: |
+            amberfork-*.tar.gz
+            amberfork-*.tar.gz.sha256
+          if-no-files-found: error
+
+  release:
+    # Tag pushes only — a dispatch run stops at artifacts.
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: guard — tag must match the workspace version
+        run: |
+          crate_version=$(cargo metadata --no-deps --format-version 1 |
+            python3 -c "import json,sys; print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name'] == 'amberfork'))")
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$crate_version" != "$tag_version" ]; then
+            echo "tag v${tag_version} does not match workspace version ${crate_version} — refusing to release"
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: create GitHub release with binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --verify-tag \
+            --title "amberfork ${GITHUB_REF_NAME}" \
+            --generate-notes
