@@ -6,6 +6,8 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "Canonical Run/Step trajectory model and DiffResult schema for amberfork (the frozen contract every crate reads)."
+keywords.workspace = true
+categories = ["development-tools::debugging", "data-structures"]
 
 [lints]
 workspace = true

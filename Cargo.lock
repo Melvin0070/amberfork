@@ -18,6 +18,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "amberfork"
+version = "0.2.0"
+dependencies = [
+ "amberfork-align",
+ "amberfork-ingest",
+ "amberfork-model",
+ "assert_cmd",
+ "clap",
+ "insta",
+ "predicates",
+ "serde_json",
+ "terminal_size",
+]
+
+[[package]]
 name = "amberfork-align"
 version = "0.2.0"
 dependencies = [
@@ -43,21 +58,6 @@ dependencies = [
  "tempfile",
  "toml",
  "ureq",
-]
-
-[[package]]
-name = "amberfork-cli"
-version = "0.2.0"
-dependencies = [
- "amberfork-align",
- "amberfork-ingest",
- "amberfork-model",
- "assert_cmd",
- "clap",
- "insta",
- "predicates",
- "serde_json",
- "terminal_size",
 ]
 
 [[package]]

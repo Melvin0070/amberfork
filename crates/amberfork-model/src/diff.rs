@@ -1,7 +1,7 @@
 //! The `DiffResult` output schema — the public `--json` contract and the shape the UI reads.
 //!
 //! Where [`crate`]'s [`Run`](crate::Run) is the *input* seam, `DiffResult` is the *output*
-//! seam: what `amberfork-align` fills in and `amberfork-cli` / the Leptos UI render. It is transcribed
+//! seam: what `amberfork-align` fills in and the `amberfork` CLI / the Leptos UI render. It is transcribed
 //! from the design doc's result schema (`docs/design/design-run-diff-debugger.md`, "Result
 //! schema").
 //!

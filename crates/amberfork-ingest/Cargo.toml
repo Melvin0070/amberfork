@@ -6,6 +6,8 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "Forgiving loader from plain-JSON trace files into the canonical amberfork-model Run."
+keywords.workspace = true
+categories = ["development-tools::debugging", "parser-implementations"]
 
 [lints]
 workspace = true

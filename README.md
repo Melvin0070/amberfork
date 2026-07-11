@@ -11,14 +11,14 @@ exact step where they diverged, and shows what changed. Local, deterministic, no
 
 ```sh
 git clone https://github.com/Melvin0070/amberfork && cd amberfork
-cargo run --release -q -p amberfork-cli -- demo
+cargo run --release -q -p amberfork -- demo
 ```
 
 `demo` diffs a sample pair bundled inside the binary — no files, no setup, offline. Then
 point it at your own traces ([plain-JSON format](docs/trace-format.md)):
 
 ```sh
-cargo run --release -q -p amberfork-cli -- diff bad.json --against good.json   # exits 1 on a fork; --json for machines
+cargo run --release -q -p amberfork -- diff bad.json --against good.json   # exits 1 on a fork; --json for machines
 ```
 
 > **Status: pre-v1.** `diff` and `demo` work from source (the v0.1 walking skeleton); not yet

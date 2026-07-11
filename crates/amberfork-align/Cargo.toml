@@ -6,6 +6,8 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "Move-typed alignment engine: cost model, affine-gap aligner, resync fork rule."
+keywords.workspace = true
+categories = ["development-tools::debugging", "algorithms"]
 
 [lints]
 workspace = true

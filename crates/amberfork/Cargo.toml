@@ -1,17 +1,17 @@
 [package]
-name = "amberfork-cli"
+# The product crate carries the product name — `cargo install amberfork` — while the
+# libraries stay amberfork-* namespaced. The binary target is inferred from src/main.rs
+# and inherits this name.
+name = "amberfork"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "The amberfork command: diff two agent-run traces and render where they fork."
-
-# The crate is amberfork-cli (crate names stay namespaced), but the installed command is
-# the product name.
-[[bin]]
-name = "amberfork"
-path = "src/main.rs"
+readme = "README.md"
+keywords.workspace = true
+categories = ["command-line-utilities", "development-tools::debugging"]
 
 [lints]
 workspace = true
