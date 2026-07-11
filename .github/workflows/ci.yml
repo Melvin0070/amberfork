@@ -16,8 +16,8 @@ jobs:
           python-version: "3.12"
       - name: spike smoke (aligner sanity, offline)
         run: python3 spike/test_smoke.py
-      - name: sanitizer invariants (GAIA redaction, offline)
-        run: python3 spike/test_sanitize.py
+      # GAIA-sanitizer invariants moved into `cargo test` with the Rust port (issue #17):
+      # unit tests in amberfork-bench/src/sanitize.rs + the committed-fixture round trip.
       - name: rust checks (auto-armed once Cargo.toml exists)
         run: |
           if [ -f Cargo.toml ]; then

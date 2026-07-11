@@ -48,10 +48,14 @@ claim "first divergence ≈ decisive error" on natural failures (see BENCHMARK.m
 
 ### Sanitization (two-stage; re-runnable)
 
-`spike/sanitize_gaia.py` performs deterministic, one-way, alignment-preserving redaction:
-question text → `q<sha8><i>` placeholders, answers → `a<sha8><i>`, `task` → a hashed marker. It
-edits only `[A-Za-z0-9]` spans, so every whitespace character is preserved and a `--seed 42`
-regeneration reproduces bit-identical pair structure.
+`amberfork-bench sanitize` (`crates/amberfork-bench/src/sanitize.rs`; issue #17, the Rust port
+of the original `spike/sanitize_gaia.py` with byte parity proven in notebook 019) performs
+deterministic, one-way, alignment-preserving redaction: question text → `q<sha8><i>`
+placeholders, answers → `a<sha8><i>`, `task` → a hashed marker. It edits only `[A-Za-z0-9]`
+spans, so every whitespace character is preserved and a `--seed 42` regeneration reproduces
+bit-identical pair structure. Its invariants (space-count preservation, no residue,
+determinism, idempotence, the cross-log sweep) and a byte-exact round trip over every file in
+these directories run inside `cargo test --workspace`.
 
 - **canonical stage** (pre-`make_pairs`): redact each log against its own Q&A, so placeholders
   bake into the prefix before `reword()` adds noise. Sanitizing *after* generation would redact
@@ -73,12 +77,13 @@ carry hashed placeholders rather than natural text.
 # 1. fetch Who&When from GitHub (MIT), convert to canonical trace JSON
 python3 spike/convert_whowhen.py --src <Agents_Failure_Attribution checkout>
 # 2. GAIA-sanitize the canonical logs (stage 1)
-python3 spike/sanitize_gaia.py canonical --src spike/data/canonical --out spike/data/canonical_sanitized
+cargo run -p amberfork-bench -- sanitize canonical \
+    --src spike/data/canonical --out spike/data/canonical_sanitized
 # 3. generate the noise pairs from sanitized logs (repeat per seed: 42, 43, 44)
 python3 spike/make_pairs.py --canonical spike/data/canonical_sanitized --seed 42 \
     --out-noise spike/data/pairs_noise --out-clean spike/data/pairs_clean
 # 4. cross-log sweep (stage 2)
-python3 spike/sanitize_gaia.py pairs --pairs spike/data/pairs_noise \
+cargo run -p amberfork-bench -- sanitize pairs --pairs spike/data/pairs_noise \
     --canonical spike/data/canonical --out spike/data/pairs_noise
 # 5. the dev-split subset of each seed is the matching chimera_noise_seed<N>_dev/ dir,
 #    byte-identical. Seed 42 dev = pairs 03,06,09,10,14,15,16,18.

@@ -783,3 +783,44 @@ sealed per-seed artifacts and their renders are untouched. Full gate green (fmt 
 warnings` / workspace / spike). The dev-side n=25 aggregate stays prose-backed but is
 regenerable offline too (dev fixtures for all three seeds are committed; `run` × 3 then
 `aggregate`) — not committed, to keep the artifact count honest to what the README claims.
+
+## 019 · 2026-07-11 · The sanitizer moves inside the gate (issue #17)
+
+**What prompted it.** The 2026-07-10 audit's top finding: `spike/sanitize_gaia.py` was
+provenance-critical — it certifies the redistributed `bench/fixtures/` pairs against GAIA's
+no-resharing clause — yet lived in the "throwaway" spike dir, covered only by a Python test
+outside `cargo test`. The least-protected code in the repo gated the most licensing-sensitive
+artifact.
+
+**What changed.** The two-stage sanitizer is now `amberfork-bench sanitize canonical|pairs`
+(`crates/amberfork-bench/src/sanitize.rs`), a line-auditable port of the Python. **Byte parity
+is the port's contract**, because the provenance README promises byte-identical regeneration:
+that forced `pyjson.rs`, a writer byte-compatible with CPython's `json.dumps(obj, indent=1)`
+(1-space indent, `ensure_ascii` escapes incl. surrogate pairs, integers only — floats are a
+loud error), plus `serde_json`'s `preserve_order` feature workspace-wide so key order survives
+the parse→serialize round trip. Even Python's `or ""` truthiness on `ground_truth` is ported
+(and documented) rather than "fixed".
+
+**Parity, measured.** (1) Canonical stage over the full raw set: 184 logs, Python == Rust ==
+the historical on-disk artifact, byte-identical. (2) Pairs sweep on fresh `make_pairs` output,
+seeds 42/43/44: 60 files each, Python == Rust byte-identical. (3) The recipe run through the
+Rust stages reproduces **all 75 committed fixture files byte-for-byte**. The invariant suite
+(space-count preservation, no residue, determinism, idempotence, the cross-log sweep) now runs
+inside `cargo test`, alongside two new committed-artifact checks: a byte-exact parse→serialize
+round trip over every fixture file, and a structural "sanitizer signature" test (valid pairs,
+gold in range, task markers whose hash reappears as `q<sha8>` placeholders in step content).
+
+**Collateral finding — two latent map-order dependencies.** `preserve_order` flushed out code
+that *inherited* determinism from `serde_json`'s map being a `BTreeMap` instead of owning it:
+the align cost model's object-payload serialization (an engine invariant! now canonicalizes
+with explicitly sorted keys at every nesting level, nested-order test added) and ingest's
+`sorted_keys` warning helper (named the promise, delegated the sort; now sorts). One accepted
+render change: the CLI's one-line payload gist now shows keys in author order — the content
+diff pane still compares sorted (`field_diff` always sorted explicitly).
+
+**Retired.** `spike/sanitize_gaia.py` and `spike/test_sanitize.py` are deleted; the CI
+sanitizer step is gone (covered by `cargo test`); the verify command drops to
+`python3 spike/test_smoke.py` + the cargo gate. The fixtures README, CLAUDE.md, and
+CONTRIBUTING.md recipes now name the Rust stages. `make_pairs.py`/`convert_whowhen.py` stay
+Python: generation is spike-side, certification is not. Full gate green (fmt / clippy `-D
+warnings` / workspace / spike smoke).

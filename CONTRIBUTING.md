@@ -13,8 +13,8 @@ file is the human-readable summary of the same working agreement.
    dated "Amendment" / "Current State" blocks win.
 3. **Build a vertical slice.** Keep `amberfork diff <bad> --against <good>` working end-to-end. Don't
    build a crate ahead of the need it serves.
-4. **Verify before commit.** `python3 spike/test_smoke.py && python3 spike/test_sanitize.py` today; `cargo fmt --all --check &&
-   cargo clippy --all-targets -- -D warnings && cargo test --workspace` once the workspace exists.
+4. **Verify before commit.** `python3 spike/test_smoke.py && cargo fmt --all --check &&
+   cargo clippy --all-targets -- -D warnings && cargo test --workspace`.
    CI runs exactly these. A red CI stops the line. The fork-localization parity gate is inside
    `cargo test --workspace` — it runs on the committed, GAIA-sanitized dev set in
    `bench/fixtures/chimera_noise_seed42_dev/`, so an `amberfork-align` change that tanks parity is
@@ -38,7 +38,9 @@ file is the human-readable summary of the same working agreement.
 - `crates/` — the Rust workspace (5 crates built in Phase 1; full planned roster in `docs/design/`).
 - `spike/` — Python, two kinds. Most is throwaway feasibility work (findings port to Rust, the
   code never ships). The exception is the **maintained benchmark data pipeline** —
-  `convert_whowhen.py` → `sanitize_gaia.py` → `make_pairs.py` — which regenerates and
-  GAIA-sanitizes the committed fixtures; it is kept re-runnable and self-verifying.
+  `convert_whowhen.py` → `amberfork-bench sanitize canonical` → `make_pairs.py` →
+  `amberfork-bench sanitize pairs` — which regenerates and GAIA-sanitizes the committed
+  fixtures. The sanitizer stages are Rust (issue #17, inside the `cargo test` gate); the
+  generation scripts remain Python, re-runnable and self-verifying.
 - `docs/notebook.md` — the engineering log. `docs/design/` — the locked architecture + positioning.
 - `BENCHMARK.md` — the pre-registered evaluation protocol. `DESIGN.md` — the visual system.

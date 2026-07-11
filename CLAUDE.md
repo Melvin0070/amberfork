@@ -32,15 +32,17 @@ cut line: **v0.1 = walking skeleton** (#1 model → #2 ingest → #3 align → #
 `docs/notebook.md` (append-only; every experiment gets an entry). Benchmark numbers are governed
 by BENCHMARK.md's pre-registered protocol — never publish a number outside it.
 
-**Verify before commit (non-negotiable):** `python3 spike/test_smoke.py && python3 spike/test_sanitize.py` (offline, <10s). Once
-the Rust workspace exists: `cargo fmt --all --check && cargo clippy --all-targets -- -D warnings
-&& cargo test --workspace`. CI runs exactly these; a red CI is a stop-the-line event. Commit or
-push only when the user asks. The quantitative fork-localization gate is now **CI-visible**
-(issue #11, notebook 013): `chimera_parity` runs on the committed, GAIA-sanitized dev set in
+**Verify before commit (non-negotiable):** `python3 spike/test_smoke.py && cargo fmt --all
+--check && cargo clippy --all-targets -- -D warnings && cargo test --workspace`. CI runs
+exactly these; a red CI is a stop-the-line event. Commit or push only when the user asks. The
+quantitative fork-localization gate is **CI-visible** (issue #11, notebook 013):
+`chimera_parity` runs on the committed, GAIA-sanitized dev set in
 `bench/fixtures/chimera_noise_seed42_dev/` and `cargo test --workspace` covers it — an
-`amberfork-align` change that tanks parity is a red CI, no longer only caught by local discipline.
-To audit/regenerate the fixture from raw upstream data, follow the recipe in that dir's README
-(`convert_whowhen → sanitize_gaia canonical → make_pairs → sanitize_gaia pairs`, seed 42).
+`amberfork-align` change that tanks parity is a red CI, no longer only caught by local
+discipline. The GAIA sanitizer itself is Rust (`amberfork-bench sanitize`, issue #17; byte
+parity with the retired Python proven in notebook 019). To audit/regenerate the fixture from
+raw upstream data, follow the recipe in that dir's README (`convert_whowhen →
+amberfork-bench sanitize canonical → make_pairs → amberfork-bench sanitize pairs`, seed 42).
 
 **Engineering standards (build like a senior engineer):**
 - **Optimize for the artifact, not the effort.** When weighing a technical decision, give
