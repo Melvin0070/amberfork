@@ -37,12 +37,12 @@ minutes, not the person installing it (do not degrade the install path either).
 debugger content is prompt/arg/error text that must be selectable, copyable, and accessible). Any
 "wgpu" in the sections below is stale and superseded by this line.
 
-**Workspace: 14 crates + `ui/`** (full roster in "## Module / crate layout"): amberfork-model,
-amberfork-core, amberfork-store, amberfork-ingest, amberfork-embed, amberfork-align (moat), amberfork-bench (payoff),
-amberfork-cli, amberfork-replay, amberfork-record, amberfork-attrib (moat), amberfork-judge, amberfork-layout,
-amberfork-server, plus `ui/`. Full feature set kept: move-typed alignment, field-level diff,
-counterfactual-causal attribution, cluster-to-consensus (gated on a corpus), replay/record
-cassettes, and a factorized, local-capable judge (semantic naming only, never localization).
+**Workspace: phased — 5 crates shipped at v0.4.0, grown one slice at a time** (amended
+2026-07-11; the original "14 crates + `ui/`" roster is a *target-state capability map*, not the
+build plan — see Amendment 2026-07-11 for the shipped roster and where each planned crate went).
+Full feature set kept: move-typed alignment, field-level diff, counterfactual-causal attribution,
+cluster-to-consensus (gated on a corpus), replay/record cassettes, and a factorized,
+local-capable judge (semantic naming only, never localization).
 
 **Build order (full scope, strictly phased):**
 - **Phase 1 (the number + the magic):** model+schema+store (T1/T12/T24) → ingest (T2) → embed (T3)
@@ -107,6 +107,32 @@ authoritative; where the decision trail below conflicts, THIS wins.
   gold-quality (cross-system references diverge from step 0, algo logs are short). So Mode A′ is
   a **v0.2 co-primary target contingent on gold/metric design**, not a v1 headline — do not
   overclaim step-exact on it. (See BENCHMARK.md for the governing pre-registered protocol.)
+
+## Amendment 2026-07-11 — workspace roster reconciled to shipped reality (v0.4.0)
+
+The "14 crates + `ui/`" roster (Current State block above; detailed in "## Module / crate
+layout" below) described the full capability map from the 2026-07-03 completeness pass. Under
+the operating rule **"never build a crate ahead of the need it serves"** (CLAUDE.md), the
+shipped workspace consolidated as slices landed. As of v0.4.0 it is **5 crates**:
+
+- **amberfork-model** — canonical `Run`/`Step` + the versioned `DiffResult` contract (T1/T12).
+- **amberfork-ingest** — forgiving plain-JSON loader + Who&When and TapeAgents reference
+  adapters (T2; the normalizer layer grows here).
+- **amberfork-align** — the moat crate: `CostModel` trait (lexical default per Amendment
+  2026-07-08.B; the embed slot lives behind the trait), affine-gap NW, resync-k fork rule,
+  static attribution (issue #12), field-diff (issue #13). Absorbs the planned
+  `amberfork-core`, `amberfork-embed`, and the static half of `amberfork-attrib`.
+- **amberfork** — the CLI, shipped under the product name so `cargo install amberfork` is the
+  install line (planned as `amberfork-cli`).
+- **amberfork-bench** — chimera protocol + Mode A′ pipeline + GAIA sanitizer; `publish = false`.
+
+Nothing here cuts scope — the 2026-07-05 full-ambition decision stands; the remaining planned
+crates arrive **with the phase that needs them**: `amberfork-layout` + `amberfork-server` +
+`ui/` with the Phase-2 web UI (v0.5 target); `amberfork-record`/`amberfork-replay` with the
+capture path; `amberfork-store` when persistence is a real need (record path);
+counterfactual attribution earns its crate when re-execution exists; `amberfork-judge` is
+issue #10; cluster/consensus stays gated on a corpus (Phase 3). Where the roster lines above
+or "## Module / crate layout" below conflict with this list, THIS wins.
 
 ---
 

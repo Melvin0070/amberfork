@@ -2,9 +2,10 @@
 
 Local, all-Rust developer tool that diffs two AI-agent run trajectories, finds the fork
 point, and attributes the regression. Architecture is locked in
-`docs/design/design-run-diff-debugger.md` (hybrid passive+record execution model, 14-crate
-workspace, explainable semantic move-typed alignment + counterfactual-causal attribution,
-embedded Leptos SVG/DOM web UI). Positioning/personas: `docs/design/POSITIONING.md`.
+`docs/design/design-run-diff-debugger.md` (hybrid passive+record execution model, phased
+Cargo workspace — 5 crates at v0.4.0, new crates added with the slice that needs them (doc
+Amendment 2026-07-11), explainable semantic move-typed alignment + counterfactual-causal
+attribution, embedded Leptos SVG/DOM web UI). Positioning/personas: `docs/design/POSITIONING.md`.
 Benchmark protocol: `BENCHMARK.md`. Engineering notebook (spikes, measurements, dead ends):
 `docs/notebook.md`. Canonical plain-JSON trace input: `docs/trace-format.md`.
 
