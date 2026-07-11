@@ -1,20 +1,27 @@
-//! Terminal render of a [`DiffResult`] — DESIGN.md "Terminal rendering (first-class surface)".
+//! Terminal painter over the semantic [`ViewModel`] — DESIGN.md "Terminal rendering
+//! (first-class surface)".
 //!
-//! North star: *sameness recedes, divergence glows.* Sync steps are one dim line each; the
+//! One seam, two painters (issue #21): `amberfork-layout` computes WHAT a diff says — rows
+//! and their roles, summaries, the designed wording — and this module decides only how a
+//! terminal shows it: column arithmetic, truncation and wrapping, gutter glyphs, ANSI. The
+//! web painter draws its own geometry over the same view, and neither feeds styling back
+//! into the seam (the full `DiffResult → ViewModel → two painters` diagram lives on
+//! `amberfork_layout`'s crate doc).
+//!
+//! North star: *sameness recedes, divergence glows.* Spine rows are one dim line each; the
 //! fork carries a `⑂` gutter glyph and amber; every step downstream of the fork keeps a `✗`
 //! marker in the same single amber (DR4). Red/green appear only on the `-`/`+` field-diff
 //! lines inside the fork block, nowhere else. Structure — glyphs, markers, tags — carries the
 //! whole signal without color (DR2): a plain render is byte-identical to a colored one with
 //! the escapes stripped, which is a unit-tested invariant here.
 //!
-//! Confidence follows notebook 005: rendered as `conf 0.NN` in the fork tag, except
-//! `confidence == 0` — the designed weak-call state (evidence ≤ τ) — which renders as an
-//! explicit `marginal call`, never a small number.
-//!
-//! Pure by design: [`render`] is a function of the diff, the two runs, and [`RenderOpts`];
-//! TTY/env sniffing lives in [`resolve_color_mode`] so `main` decides once at the edge.
+//! Pure by design: [`render`] is a function of the view and [`RenderOpts`]; TTY/env sniffing
+//! lives in [`resolve_color_mode`] so `main` decides once at the edge.
 
-use amberfork_model::{DiffResult, FieldDiffKind, MoveKind, Payload, Run, Step};
+use amberfork_layout::{
+    ForkRow, Row as ViewRow, RowRole, RunHeader, StepRow, StepView, ViewModel, kind_label,
+    move_label, outcome_label,
+};
 use std::fmt::Write;
 
 /// How much color the output medium supports. Decided once at startup, then threaded through
@@ -31,7 +38,7 @@ pub enum ColorMode {
     Truecolor,
 }
 
-/// Inputs the renderer needs beyond the data itself.
+/// Inputs the painter needs beyond the view itself.
 #[derive(Debug, Clone, Copy)]
 pub struct RenderOpts {
     pub color: ColorMode,
@@ -40,86 +47,59 @@ pub struct RenderOpts {
     pub width: usize,
 }
 
-/// Render the human-readable diff. `reference` is side `a` (`--against`), `observed` is side
-/// `b` (the failing run). Returns the full output including the trailing newline.
-pub fn render(result: &DiffResult, reference: &Run, observed: &Run, opts: &RenderOpts) -> String {
-    let layout = Layout::compute(result, reference, observed, opts.width);
+/// Paint the human-readable diff from its semantic view. Returns the full output including
+/// the trailing newline.
+pub fn render(view: &ViewModel, opts: &RenderOpts) -> String {
+    let cols = Columns::compute(view, opts.width);
     let mut rows = Vec::new();
 
-    let id_width = result
-        .runs
-        .a
+    let id_width = view
+        .run_a
         .id
         .chars()
         .count()
-        .max(result.runs.b.id.chars().count());
-    rows.push(header_row(
-        'A',
-        &result.runs.a.id,
-        id_width,
-        "reference",
-        reference,
-    ));
-    rows.push(header_row(
-        'B',
-        &result.runs.b.id,
-        id_width,
-        "observed ",
-        observed,
-    ));
+        .max(view.run_b.id.chars().count());
+    let role_width = view
+        .run_a
+        .role
+        .label()
+        .chars()
+        .count()
+        .max(view.run_b.role.label().chars().count());
+    rows.push(header_row('A', &view.run_a, id_width, role_width));
+    rows.push(header_row('B', &view.run_b, id_width, role_width));
     rows.push(Row::blank());
 
-    for (i, mv) in result.alignment.iter().enumerate() {
-        match result.fork {
-            Some(fork) if i == fork.index => {
-                fork_block(&mut rows, result, reference, observed, &layout, i)
-            }
-            Some(fork) if i > fork.index => {
-                rows.push(move_row(mv, reference, observed, &layout, Role::Downstream))
-            }
-            _ => rows.push(move_row(mv, reference, observed, &layout, Role::Spine)),
+    for vrow in &view.rows {
+        match vrow {
+            ViewRow::Step(step_row) => rows.push(move_row(step_row, &cols)),
+            ViewRow::Fork(fork_row) => fork_block(&mut rows, fork_row, &cols),
         }
     }
 
-    if result.fork.is_none() {
+    if let Some(text) = view.verdict.converged_text() {
         rows.push(Row::blank());
-        // "identical" is a claim the alignment must earn: every move a sync at cost 0.
-        // Anything the resync rule merely absorbed (gap moves, costly syncs) converged
-        // without being identical, and the one line everyone reads must keep the two
-        // states apart (issue #19).
-        let absorbed = result
-            .alignment
-            .iter()
-            .filter(|mv| mv.kind != MoveKind::Sync || mv.cost > 0.0)
-            .count();
-        let body = if absorbed == 0 {
-            format!(
-                "  converged — identical through {} steps",
-                result.alignment.len()
-            )
-        } else {
-            format!(
-                "  converged — no fork ({absorbed} absorbed divergence{} across {}⇄{} steps)",
-                if absorbed == 1 { "" } else { "s" },
-                reference.steps.len(),
-                observed.steps.len(),
-            )
-        };
         rows.push(Row {
             role: Role::Footer,
             prefix: String::new(),
-            body,
+            body: format!("  {text}"),
         });
     }
 
     // The forked counterpart of the converged footer: every diff ends with a designed answer
     // line. Plain, not amber — it is a statement about the divergence, not the divergence.
-    if let Some(attribution) = &result.attribution {
+    if let Some(attribution) = &view.attribution {
         rows.push(Row::blank());
         rows.push(Row {
             role: Role::Footer,
             prefix: String::new(),
-            body: attribution_line(attribution, &layout),
+            body: format!(
+                "  attribution · {} · {} · propagation {} · {}",
+                attribution.mode,
+                attribution.origin,
+                attribution.propagation,
+                attribution.confidence
+            ),
         });
     }
 
@@ -259,9 +239,11 @@ impl Row {
     }
 }
 
-/// Column widths, computed once from the data so every row aligns (tabular discipline).
-struct Layout {
-    /// Digits used for zero-padded step indices.
+/// Column widths, computed once from the view so every row aligns (tabular discipline).
+/// This arithmetic is exactly what does NOT belong in the seam: it exists only because a
+/// terminal is a character grid.
+struct Columns {
+    /// Digits used for zero-padded step indices (the view's shared formatting voice).
     idx_width: usize,
     /// `⑂ step NN  ✗  ` — everything before the kind column.
     prefix_width: usize,
@@ -270,32 +252,27 @@ struct Layout {
     content_width: usize,
 }
 
-impl Layout {
-    fn compute(result: &DiffResult, reference: &Run, observed: &Run, width: usize) -> Self {
-        let max_idx = reference
-            .steps
-            .iter()
-            .chain(&observed.steps)
-            .map(|s| s.idx)
-            .max()
-            .unwrap_or(0);
-        let idx_width = decimal_digits(max_idx).max(2);
+impl Columns {
+    fn compute(view: &ViewModel, width: usize) -> Self {
+        let idx_width = view.idx_width;
         // "⑂ " + "step " + idx + "  " + marker + "  "
         let prefix_width = 2 + 5 + idx_width + 2 + 1 + 2;
         let kind_width = 5; // the longest canonical kind, "agent"/"other"
-        let name_width = reference
-            .steps
+        let name_width = view
+            .rows
             .iter()
-            .chain(&observed.steps)
+            .flat_map(|row| {
+                let step = row.step();
+                step.a.iter().chain(step.b.iter())
+            })
             .map(|s| s.name.chars().count())
             .max()
             .unwrap_or(0)
             .clamp(4, 16);
-        let tag_width = result
-            .alignment
+        let tag_width = view
+            .rows
             .iter()
-            .enumerate()
-            .map(|(i, mv)| tag_text(result, i, mv).chars().count())
+            .map(|row| tag(row).chars().count())
             .max()
             .unwrap_or(0);
         let fixed = prefix_width + kind_width + 2 + name_width + 2 + tag_width + 2;
@@ -319,8 +296,8 @@ impl Layout {
     }
 
     /// kind + name + content columns, padded; tag appended after the content column.
-    fn columns(&self, step: Option<&Step>, content: &str, tag: &str) -> String {
-        let kind = step.map_or("", |s| kind_str(s.kind));
+    fn columns(&self, step: Option<&StepView>, content: &str, tag: &str) -> String {
+        let kind = step.map_or("", |s| kind_label(s.kind));
         let name = step.map_or(String::new(), |s| truncate(&s.name, self.name_width));
         format!(
             "{kind:<kw$}  {name:<nw$}  {content:<cw$}  {tag}",
@@ -331,87 +308,63 @@ impl Layout {
     }
 }
 
-fn header_row(side: char, id: &str, id_width: usize, role_label: &str, run: &Run) -> Row {
+/// The row tag in this painter's framing: bracketed move labels, and the fork's verdict tag.
+fn tag(row: &ViewRow) -> String {
+    match row {
+        ViewRow::Step(step_row) => format!("[{}]", move_label(step_row.kind)),
+        ViewRow::Fork(fork_row) => format!("[FORK · {}]", fork_row.confidence),
+    }
+}
+
+fn header_row(side: char, run: &RunHeader, id_width: usize, role_width: usize) -> Row {
     let outcome = run
         .outcome
-        .map_or(String::new(), |o| format!(" · {}", outcome_str(o)));
+        .map_or(String::new(), |o| format!(" · {}", outcome_label(o)));
     Row {
         role: Role::Header,
         prefix: String::new(),
         body: format!(
-            "  {side}  {id:<id_width$}  ·  {role_label} · {n} steps{outcome}",
-            n = run.steps.len()
+            "  {side}  {id:<id_width$}  ·  {role:<role_width$} · {n} steps{outcome}",
+            id = run.id,
+            role = run.role.label(),
+            n = run.n_steps,
         ),
     }
 }
 
 /// A regular (non-fork) move row: dim spine upstream, amber-marked downstream.
-fn move_row(
-    mv: &amberfork_model::Move,
-    reference: &Run,
-    observed: &Run,
-    layout: &Layout,
-    role: Role,
-) -> Row {
-    // The observed (failing) run is the one being debugged, so its step fronts the line;
-    // a model move only exists on the reference side.
-    let step = pick_step(mv, reference, observed);
-    let marker = if role == Role::Downstream {
-        '✗'
-    } else {
-        '·'
+fn move_row(step_row: &StepRow, cols: &Columns) -> Row {
+    let step = step_row.step.front();
+    let (role, marker) = match step_row.role {
+        RowRole::Spine => (Role::Spine, '·'),
+        RowRole::Downstream => (Role::Downstream, '✗'),
     };
     Row {
         role,
-        prefix: layout.prefix(' ', display_idx(mv), marker),
-        body: layout.columns(
+        prefix: cols.prefix(' ', step_row.step.display_idx(), marker),
+        body: cols.columns(
             step,
-            &truncate(&step.map_or(String::new(), summarize), layout.content_width),
-            &tag_str(mv.kind),
+            &truncate(step.map_or("", |s| s.summary.as_str()), cols.content_width),
+            &format!("[{}]", move_label(step_row.kind)),
         ),
     }
 }
 
 /// The fork block: `⑂` gutter line with the A side, a continuation line with the B side, then
 /// any field-level `-`/`+` diffs — the only red/green in the whole output.
-fn fork_block(
-    rows: &mut Vec<Row>,
-    result: &DiffResult,
-    reference: &Run,
-    observed: &Run,
-    layout: &Layout,
-    index: usize,
-) {
-    let mv = &result.alignment[index];
-    let fork = result.fork.expect("fork_block is only called with a fork");
+fn fork_block(rows: &mut Vec<Row>, fork: &ForkRow, cols: &Columns) {
+    let tag = format!("[FORK · {}]", fork.confidence);
+    let a_lines = wrap(&format!("A: {}", fork.side_a), cols.content_width);
+    let b_lines = wrap(&format!("B: {}", fork.side_b), cols.content_width);
 
-    let side_content = |step: Option<usize>, run: &Run, label: char| match step {
-        Some(idx) => format!(
-            "{label}: {}",
-            run.steps.get(idx).map_or_else(String::new, summarize)
-        ),
-        None => format!("{label}: (no aligned step)"),
-    };
-
-    let tag = format!("[FORK · {}]", conf_text(fork.confidence));
-
-    let a_lines = wrap(
-        &side_content(fork.a_step, reference, 'A'),
-        layout.content_width,
-    );
-    let b_lines = wrap(
-        &side_content(fork.b_step, observed, 'B'),
-        layout.content_width,
-    );
-
-    let step = pick_step(mv, reference, observed);
+    let step = fork.step.front();
     rows.push(Row {
         role: Role::Fork,
-        prefix: layout.prefix('⑂', display_idx(mv), '✗'),
-        body: layout.columns(step, &a_lines[0], &tag),
+        prefix: cols.prefix('⑂', fork.step.display_idx(), '✗'),
+        body: cols.columns(step, &a_lines[0], &tag),
     });
     // Continuation lines land in the content column.
-    let cont_indent = layout.prefix_width + layout.kind_width + 2 + layout.name_width + 2;
+    let cont_indent = cols.prefix_width + cols.kind_width + 2 + cols.name_width + 2;
     for line in a_lines[1..].iter().chain(&b_lines) {
         rows.push(Row {
             role: Role::Fork,
@@ -421,143 +374,22 @@ fn fork_block(
     }
 
     // Field-level diff, indented to the kind column, hard-wrapped.
-    let field_width = |prefix_len: usize| layout.content_width.max(20).saturating_sub(prefix_len);
-    for fd in result.field_diffs.iter().filter(|fd| fd.step == index) {
-        let mut push_side = |sign: char, role: Role, value: &Option<serde_json::Value>| {
+    let field_width = |prefix_len: usize| cols.content_width.max(20).saturating_sub(prefix_len);
+    for fd in &fork.field_diffs {
+        let mut push_side = |sign: char, role: Role, value: &Option<String>| {
             let Some(value) = value else { return };
-            let text = format!("{sign} {}: {}", fd.path, compact_json(value));
-            for line in wrap(&text, field_width(2) + layout.name_width) {
+            let text = format!("{sign} {}: {value}", fd.path);
+            for line in wrap(&text, field_width(2) + cols.name_width) {
                 rows.push(Row {
                     role,
-                    prefix: " ".repeat(layout.prefix_width),
+                    prefix: " ".repeat(cols.prefix_width),
                     body: line,
                 });
             }
         };
-        if fd.kind != FieldDiffKind::Added {
-            push_side('-', Role::FieldRemoved, &fd.before);
-        }
-        if fd.kind != FieldDiffKind::Removed {
-            push_side('+', Role::FieldAdded, &fd.after);
-        }
+        push_side('-', Role::FieldRemoved, &fd.removed);
+        push_side('+', Role::FieldAdded, &fd.added);
     }
-}
-
-/// The step fronting a move's line: the observed side where it exists (that's the run being
-/// debugged), the reference side for model-only moves.
-fn pick_step<'r>(
-    mv: &amberfork_model::Move,
-    reference: &'r Run,
-    observed: &'r Run,
-) -> Option<&'r Step> {
-    match mv.kind {
-        MoveKind::Sync | MoveKind::Log => mv.b_idx.and_then(|i| observed.steps.get(i)),
-        MoveKind::Model => mv.a_idx.and_then(|i| reference.steps.get(i)),
-    }
-}
-
-/// The step index shown in the gutter, matching [`pick_step`]'s side choice.
-fn display_idx(mv: &amberfork_model::Move) -> Option<usize> {
-    mv.b_idx.or(mv.a_idx)
-}
-
-/// One-line gist of a step: its output (else input) text, first line only.
-fn summarize(step: &Step) -> String {
-    let payload = step.outputs.as_ref().or(step.inputs.as_ref());
-    match payload {
-        None => "(no content captured)".to_string(),
-        Some(Payload::Text(t)) => t.lines().next().unwrap_or("").to_string(),
-        Some(Payload::Object(map)) => compact_json(&serde_json::Value::Object(map.clone())),
-        Some(Payload::Other(v)) => compact_json(v),
-    }
-}
-
-fn tag_text(result: &DiffResult, index: usize, mv: &amberfork_model::Move) -> String {
-    match result.fork {
-        Some(fork) if fork.index == index => format!("[FORK · {}]", conf_text(fork.confidence)),
-        _ => tag_str(mv.kind),
-    }
-}
-
-/// Confidence per notebook 005: zero — the designed weak-call state (evidence ≤ τ) — is
-/// stated in words, never rendered as a small number.
-fn conf_text(confidence: f64) -> String {
-    if confidence <= f64::EPSILON {
-        "marginal call".to_string()
-    } else {
-        format!("conf {confidence:.2}")
-    }
-}
-
-/// The attribution footer: mode, origin, propagation, confidence — the reading order the
-/// attribution pane uses (DESIGN.md decisions log, DR5), flattened to one line.
-fn attribution_line(attribution: &amberfork_model::Attribution, layout: &Layout) -> String {
-    use amberfork_model::AttributionMode;
-    let mode = match attribution.mode {
-        AttributionMode::Static => "static",
-        AttributionMode::Counterfactual => "counterfactual",
-    };
-    let origin = attribution.origin_step.map_or_else(
-        || "origin unlocalized".to_string(),
-        |s| format!("origin step {s:0w$}", w = layout.idx_width),
-    );
-    format!(
-        "  attribution · {mode} · {origin} · propagation {} · {}",
-        steps_text(&attribution.propagation, layout.idx_width),
-        conf_text(attribution.confidence)
-    )
-}
-
-/// A step list in the gutter's zero-padded style: `none`, `step 03`, a contiguous
-/// `steps 03–07`, or a comma list when a future mode emits gaps.
-fn steps_text(steps: &[usize], idx_width: usize) -> String {
-    let pad = |s: &usize| format!("{s:0idx_width$}");
-    let contiguous = steps.windows(2).all(|w| w[1] == w[0] + 1);
-    match steps {
-        [] => "none".to_string(),
-        [only] => format!("step {}", pad(only)),
-        [first, .., last] if contiguous => format!("steps {}–{}", pad(first), pad(last)),
-        _ => format!(
-            "steps {}",
-            steps.iter().map(pad).collect::<Vec<_>>().join(", ")
-        ),
-    }
-}
-
-fn tag_str(kind: MoveKind) -> String {
-    match kind {
-        MoveKind::Sync => "[sync]",
-        MoveKind::Log => "[log-move]",
-        MoveKind::Model => "[model-move]",
-    }
-    .to_string()
-}
-
-fn kind_str(kind: amberfork_model::StepKind) -> &'static str {
-    use amberfork_model::StepKind;
-    match kind {
-        StepKind::Llm => "llm",
-        StepKind::Tool => "tool",
-        StepKind::Agent => "agent",
-        StepKind::Other => "other",
-    }
-}
-
-fn outcome_str(outcome: amberfork_model::Outcome) -> &'static str {
-    use amberfork_model::Outcome;
-    match outcome {
-        Outcome::Pass => "pass",
-        Outcome::Fail => "fail",
-        Outcome::Unknown => "unknown",
-    }
-}
-
-fn compact_json(value: &serde_json::Value) -> String {
-    serde_json::to_string(value).unwrap_or_else(|_| value.to_string())
-}
-
-fn decimal_digits(n: usize) -> usize {
-    if n == 0 { 1 } else { n.ilog10() as usize + 1 }
 }
 
 /// Truncate to `width` chars, ellipsis-terminated. Char-count based (documented
@@ -636,6 +468,11 @@ mod tests {
             color,
             width: WIDTH,
         }
+    }
+
+    /// The full pipeline under test: view computed from the diff, then painted.
+    fn paint(result: &DiffResult, reference: &Run, observed: &Run, opts: &RenderOpts) -> String {
+        render(&ViewModel::compute(result, reference, observed), opts)
     }
 
     fn step(idx: usize, name: &str, out: &str) -> Step {
@@ -820,7 +657,7 @@ mod tests {
     #[test]
     fn converged_renders_the_designed_state() {
         let (a, b, res) = converged();
-        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
 
         assert!(
             out.contains("converged — identical through 3 steps"),
@@ -841,7 +678,7 @@ mod tests {
     #[test]
     fn converged_with_absorbed_divergence_does_not_claim_identical() {
         let (a, b, res) = absorbed();
-        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
 
         assert!(
             out.contains("converged — no fork (2 absorbed divergences across 4⇄3 steps)"),
@@ -856,7 +693,7 @@ mod tests {
     #[test]
     fn forked_render_closes_with_the_attribution_line() {
         let (a, b, res) = forked(0.47);
-        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
 
         let last = out.lines().last().expect("non-empty render");
         assert_eq!(
@@ -868,7 +705,7 @@ mod tests {
     #[test]
     fn fork_line_carries_glyph_confidence_and_downstream_markers() {
         let (a, b, res) = forked(0.47);
-        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
         let lines: Vec<&str> = out.lines().collect();
 
         let fork_at = lines
@@ -906,7 +743,7 @@ mod tests {
     #[test]
     fn zero_confidence_renders_an_explicit_marginal_call() {
         let (a, b, res) = forked(0.0);
-        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
 
         assert!(
             out.contains("[FORK · marginal call]"),
@@ -925,7 +762,7 @@ mod tests {
     #[test]
     fn red_green_confined_to_field_diff_lines_and_amber_to_the_fork() {
         let (a, b, res) = forked(0.47);
-        let out = render(&res, &a, &b, &opts(ColorMode::Truecolor));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Truecolor));
         let fork_at = out
             .lines()
             .position(|l| l.contains('⑂'))
@@ -957,8 +794,8 @@ mod tests {
     #[test]
     fn structure_is_identical_across_color_modes() {
         let (a, b, res) = forked(0.47);
-        let colored = render(&res, &a, &b, &opts(ColorMode::Truecolor));
-        let plain = render(&res, &a, &b, &opts(ColorMode::Plain));
+        let colored = paint(&res, &a, &b, &opts(ColorMode::Truecolor));
+        let plain = paint(&res, &a, &b, &opts(ColorMode::Plain));
         assert_eq!(
             strip_ansi(&colored),
             plain,
@@ -969,7 +806,7 @@ mod tests {
     #[test]
     fn every_line_fits_the_requested_width() {
         let (a, b, res) = forked(0.47);
-        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
         for line in out.lines() {
             assert!(
                 line.chars().count() <= WIDTH,
@@ -995,7 +832,7 @@ mod tests {
     #[test]
     fn snapshot_forked_truecolor() {
         let (a, b, res) = forked(0.47);
-        let out = render(&res, &a, &b, &opts(ColorMode::Truecolor));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Truecolor));
         insta::assert_snapshot!("forked_truecolor", visible_ansi(&out));
     }
 
@@ -1007,20 +844,20 @@ mod tests {
             color: ColorMode::Plain,
             width: 60,
         };
-        insta::assert_snapshot!("forked_narrow_width_60", render(&res, &a, &b, &narrow));
+        insta::assert_snapshot!("forked_narrow_width_60", paint(&res, &a, &b, &narrow));
     }
 
     #[test]
     fn snapshot_converged_identical() {
         let (a, b, res) = converged();
-        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
         insta::assert_snapshot!("converged_identical", out);
     }
 
     #[test]
     fn snapshot_converged_absorbed_divergence() {
         let (a, b, res) = absorbed();
-        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
         insta::assert_snapshot!("converged_absorbed_divergence", out);
     }
 

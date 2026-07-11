@@ -1,0 +1,17 @@
+[package]
+name = "amberfork-layout"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "The semantic view-model between amberfork's DiffResult and its painters (CLI, web)."
+keywords.workspace = true
+categories = ["development-tools::debugging"]
+
+[lints]
+workspace = true
+
+[dependencies]
+amberfork-model = { workspace = true }
+serde_json = { workspace = true }

@@ -32,6 +32,7 @@ version = "0.4.0"
 dependencies = [
  "amberfork-align",
  "amberfork-ingest",
+ "amberfork-layout",
  "amberfork-model",
  "assert_cmd",
  "clap",
@@ -76,6 +77,14 @@ version = "0.4.0"
 dependencies = [
  "amberfork-model",
  "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "amberfork-layout"
+version = "0.4.0"
+dependencies = [
+ "amberfork-model",
  "serde_json",
 ]
 

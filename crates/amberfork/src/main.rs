@@ -15,6 +15,7 @@
 
 use amberfork_align::{DiffParams, LexicalCost, diff};
 use amberfork_ingest::{IngestError, Ingested};
+use amberfork_layout::ViewModel;
 use amberfork_model::Warning;
 use clap::{Args, Parser, Subcommand};
 use render::{RenderOpts, resolve_color_mode};
@@ -150,7 +151,9 @@ fn diff_and_report(
             color,
             width: width.max(60),
         };
-        print!("{}", render::render(&result, &good.run, &bad.run, &opts));
+        // The seam in one line: semantics from the layout crate, styling from the painter.
+        let view = ViewModel::compute(&result, &good.run, &bad.run);
+        print!("{}", render::render(&view, &opts));
         if let Some(footer) = footer {
             // Chrome, not result: dim so it never competes with the amber fork.
             println!("{}", color.dim(footer));
