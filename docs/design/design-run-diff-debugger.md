@@ -134,6 +134,39 @@ counterfactual attribution earns its crate when re-execution exists; `amberfork-
 issue #10; cluster/consensus stays gated on a corpus (Phase 3). Where the roster lines above
 or "## Module / crate layout" below conflict with this list, THIS wins.
 
+## Amendment 2026-07-12 — the layout seam shipped as the semantic view-model (issue #21)
+
+`amberfork-layout` (the 6th crate) landed with v0.5's first slice — and its seam is NOT the
+pixel-geometry `Layout` schema drawn in the 2026-07-03 completeness pass ("## Layout is a
+separate schema, not part of DiffResult", now marked superseded). The shared seam between the
+terminal painter and the web UI is the SEMANTIC view-model: extracting either painter-specific
+form — column arithmetic or pixel geometry — gives a seam the other consumer has to fake (eng
+review D3+D12, outside-voice finding 1 verified against render.rs).
+
+```text
+             DiffResult (+ the two Runs)     ── the frozen --json contract, presentation-free
+                        │
+                        ▼
+                amberfork-layout
+                        │
+                        ▼
+                    ViewModel        rows (spine / fork / downstream) carrying both sides of
+                        │            each aligned pair · step summaries · designed wording
+                        │            (confidence, verdict, absence) · DR5 attribution parts ·
+                        │            field-diff evidence
+            ┌───────────┴───────────┐
+            ▼                       ▼
+      CLI painter (render.rs)   web painter (ui/, Leptos — v0.5)
+      columns · glyphs · ANSI   SVG/DOM geometry
+```
+
+What survives from the G2 decision: `DiffResult` stays presentation-free. What changed:
+geometry (x/y, `fork_y`, edge paths) is each painter's own business, never shared state; the
+serializable view-model document + payload envelope the server sends the web painter arrives
+with issue #24 on top of this same `ViewModel`. The extraction was output-locked: it landed
+with zero churn across the committed CLI snapshot net (issue #21 slices 0–1, commits
+909aeea/95e8bba).
+
 ---
 
 # [HISTORICAL] Design: Run-Diff Debugger for AI Agents (local, framework-agnostic) — Validation-First
@@ -1001,7 +1034,19 @@ roster, schema seams, and task order. Where it conflicts with an earlier diagram
 Every crate now has an owner, a lane, a phase, and a defined seam. Canonical roster: see the
 corrected 14-crate table in "## Module / crate layout" above.
 
+> The `DiffResult ─▶ amberfork-layout ─▶ server ─▶ ui` tail of the diagram above still holds,
+> but the artifact `amberfork-layout` emits is the **semantic `ViewModel`**, not the geometry
+> `Layout` schema — see Amendment 2026-07-12 up top; the G2 section directly below is
+> superseded accordingly.
+
 ## Layout is a separate schema, not part of DiffResult (closes G2)
+
+> **[SUPERSEDED 2026-07-12 by issue #21]** — the seam shipped as the SEMANTIC view-model
+> (`amberfork_layout::ViewModel`: rows with spine/fork/downstream roles, both sides of each
+> aligned pair, the designed wording), not this pixel-geometry schema. Geometry is each
+> painter's own business (eng review D3+D12: either painter-specific form gives a seam the
+> other consumer fakes). What this section got right and which still governs: `DiffResult`
+> stays presentation-free. The serializable document + envelope arrive with issue #24.
 
 `DiffResult` stays **layout-free** — it is the portable `--json` contract and must not carry
 presentation geometry. `amberfork-layout` consumes `DiffResult` and emits a separate `Layout`:
@@ -1107,9 +1152,9 @@ column** in the corrected roster. One authoritative order:
 - [ ] **T22 (P1)** — amberfork-bench — real crate (lane H): Who&When/TRAIL fixture loader + random +
   shallow-positional baselines + scorer + `insta` results table. Files: `crates/amberfork-bench`,
   `bench/fetch`. Verify: `cargo run -p amberfork-bench` reproduces the table offline.
-- [ ] **T23 (P1)** — Layout seam — add the `Layout` schema to `amberfork-model`; `amberfork-layout` emits it
-  from `DiffResult`; `DiffResult` stays layout-free. Files: `crates/amberfork-model`, `crates/amberfork-layout`.
-  Verify: `DiffResult` `--json` carries no geometry; `Layout` round-trips.
+- [x] **T23 (P1)** — Layout seam — *shipped 2026-07-12 as the semantic view-model instead (issue #21,
+  Amendment 2026-07-12): `ViewModel` lives in `amberfork-layout` itself, no `Layout` schema in
+  `amberfork-model`, no geometry anywhere shared.* `DiffResult` stays layout-free — that part held.
 - [ ] **T24 (P1)** — model contracts — `SuccessPredicate`/`Verdict` + `Counterfactual` types frozen in
   `amberfork-model` at T1. Files: `crates/amberfork-model`. Verify: `attrib`, `record`, `cli --gate` all depend
   on the one type.
