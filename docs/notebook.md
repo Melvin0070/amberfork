@@ -865,3 +865,30 @@ text is the product surface here; the guide can't fix a dead end.
 ~60× the time, the documented O(n·m) tokenization cost measured in the wild. Tolerable at
 1000 steps, not at 5000 (projected minutes). #16's trigger ("a real long-run trace feels
 slow") isn't met yet; the curve is now on the issue so the trigger has numbers.
+
+## 021 · 2026-07-11 · v0.4.0: the reveal that changed nothing (issue #15)
+
+**What prompted it.** Tagging v0.4.0 (distribution + guide) triggers BENCHMARK.md rule 2's
+one-test-look-per-tag, and the engine HAS changed since the v0.2.0 seal: static attribution
+(#12), field-diff production (#13), and — the one that touches scoring — the notebook-019
+canonicalization of object-payload serialization in the cost model. The dev parity gate
+stayed green throughout, but dev is 25 pairs; the reveal is the test-side check of the same
+promise.
+
+**Provenance before scoring.** The regenerated pair sets (`spike/data/regen_noise_seed*`,
+produced by the committed recipe during the notebook-019 parity work) were verified
+byte-identical to the CI-pinned committed dev fixtures on every dev pair of all three seeds —
+the scored test pairs come from the exact recipe the fixtures certify.
+
+**Result: identical, to the digit.** Test split, frozen params (`bench/params.toml`
+sha256:8ebd95ce8f3d), seeds 42/43/44, n=35 pooled: every arm, every metric, every calibration
+bin matches the sealed v0.2.0 documents — full engine 0.49 exact / 0.71 ±1 / 0.91 ±3, best
+baseline ±3 0.49, the lot. The per-seed documents differ from the sealed ones in exactly one
+byte-range: `bench_schema_version` 0.5→0.6 (the #14 aggregate schema). Committed alongside
+the originals as `bench/results/chimera_noise_seed*_test_v0.4.0.json` +
+`chimera_noise_multiseed_test_v0.4.0.json` (rule 3: alongside, never swapped).
+
+**Reading.** The post-v0.2.0 changes are scoring-invariant on test as well as dev — the
+attribution/field-diff producers sit downstream of alignment, and the canonicalization
+change reordered serialization without changing any cost. A reveal that reproduces the seal
+is the protocol working: the number survives its second look untouched.

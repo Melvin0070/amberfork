@@ -10,8 +10,8 @@ exact step where they diverged, and shows what changed. Local, deterministic, no
 ## Try it (30 seconds)
 
 ```sh
-git clone https://github.com/Melvin0070/amberfork && cd amberfork
-cargo run --release -q -p amberfork -- demo
+cargo install amberfork      # or a prebuilt binary from the releases page, or build from source
+amberfork demo
 ```
 
 `demo` diffs a sample pair bundled inside the binary — no files, no setup, offline. Then
@@ -19,13 +19,12 @@ point it at your own traces ([plain-JSON format](docs/trace-format.md); worked e
 [the run-it-on-your-own-agent guide](docs/run-on-your-own-agent.md)):
 
 ```sh
-cargo run --release -q -p amberfork -- diff bad.json --against good.json   # exits 1 on a fork; --json for machines
+amberfork diff bad.json --against good.json   # exits 1 on a fork; --json for machines
 ```
 
-> **Status: pre-v1.** `diff` and `demo` work from source (the v0.1 walking skeleton); not yet
-> published to crates.io. The feasibility spike behind the core bet — semantic move-typed
-> alignment beats a positional diff at localizing the decisive step — is done; measurements
-> in [`docs/notebook.md`](docs/notebook.md).
+> **Status: pre-v1.** `diff` and `demo` are the working surface. The feasibility spike behind
+> the core bet — semantic move-typed alignment beats a positional diff at localizing the
+> decisive step — is done; measurements in [`docs/notebook.md`](docs/notebook.md).
 
 ## What v1 will do
 
@@ -75,9 +74,11 @@ params: bench/params.toml sha256:8ebd95ce8f3d · tau 0.3 · resync_k 2 · gap 0.
 ```
 
 Read it honestly: Wilson 95% intervals are wide at these n, and the test split is scored
-exactly once per release tag (protocol rule 2) — the next reveal comes with the next tag. The
-claim the numbers support is the *shape* — content-aware alignment localizes within a few
-steps where position and structure do not.
+exactly once per release tag (protocol rule 2) — the next reveal comes with the next tag.
+(The v0.4.0 reveal reproduced these numbers identically on every arm and metric —
+`bench/results/*_test_v0.4.0.json`, notebook 021.) The claim the numbers support is the
+*shape* — content-aware alignment localizes within a few steps where position and structure
+do not.
 
 Reproduce the tables offline — they render from the committed results documents, zero fetch:
 

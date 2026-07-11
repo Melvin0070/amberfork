@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-07-11
+
+v0.4 — distribution + run-it-yourself (milestone issue #15); also carries the untagged
+v0.3 work (attribution + field diff, issues #12–#14) and the Rust sanitizer port (#17).
+
+- Distribution: the CLI crate is now `amberfork` — `cargo install amberfork`; libraries stay
+  `amberfork-*` namespaced — with crates.io metadata across the workspace (bench stays
+  unpublished) verified by a workspace publish dry-run. A tag-triggered release workflow
+  builds, smoke-tests, and attaches macOS-arm64 + Linux-x86_64 binaries with sha256
+  checksums; its dispatch dry run was verified green before this tag existed (issue #15).
+- `docs/run-on-your-own-agent.md`: the end-user guide — install, convert your own agent's
+  logs (real, tested Claude Code transcript example), diff, read the fork, `--json`/exit
+  codes for CI, troubleshooting the failure modes a real sanity pass actually hit (issue #15).
+- Sanity pass on messy real-world traces (notebook 020): the self-align invariant, fork
+  localization, `--json` contract, and exit codes all hold; rough edges filed as #19
+  (converged line overclaims) and #20 (dead-end parse error); the O(n·m) cost curve measured
+  onto #16.
+- Benchmark: the rule-2 test-split reveal at this tag **reproduces the sealed v0.2.0 numbers
+  identically** on every arm and metric (per-seed documents differ only by the results-schema
+  version, 0.5→0.6) — the attribution/field-diff/canonicalization changes since v0.2.0 are
+  scoring-invariant. Committed alongside the sealed originals as
+  `bench/results/*_test_v0.4.0.json` (rule 3; notebook 021).
+- CI: actions bumped off deprecated Node 20 (issue #18).
+
 - `amberfork-align`: static attribution — `diff()` now populates `DiffResult.attribution`
   on forked diffs (`mode: static`): origin = the fork's observed step (the canonical
   `fork_step_observed` rule), propagation = the observed steps downstream, confidence = the
