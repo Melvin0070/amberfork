@@ -137,3 +137,9 @@ commoditized; this is a gateway, not a viewer product.)
 | 2026-07-07 | Terminal render is a first-class surface | v1 hero (GIF/CI/SSH); de-risks the Leptos bet; resolves Phase-1 GIF depending on Phase-2 UI (panel review) |
 | 2026-07-07 | Single-run view, scope-capped | Kills the dead-end one-trace empty state; a gateway to the diff, not a viewer product (panel review) |
 | 2026-07-10 | Terminal attribution footer | Forked diffs end with a plain one-line attribution summary (issue #12), symmetric with the converged footer; amber stays reserved for the fork and its path |
+| 2026-07-12 | v0.5 screen composition: two panes + header bar | The 3-pane + scrubber layout above is the END-STATE; v0.5 ships the subset with real content — rail arrives with corpus features, scrubber docks with the record path. Header carries pair identity + fork verdict (plan-design-review DD3, approved via wireframe) |
+| 2026-07-12 | New components ratified: header bar, truncation marker, app-shell loading/error states | v0.5 web UI additions (plan-design-review DD1/DD2; wasm-load failure is never a blank page) |
+| 2026-07-12 | Selection is never amber | Selected sync pair = raised surface + hairline outline; hover = surface tint; focus-visible = hairline ring. Amber stays exclusively divergence (DD2) |
+| 2026-07-12 | `faint #55555C` restricted to decorative text | ~2.8:1 on bg fails WCAG 4.5:1; `muted #8A8A93` (~5.7:1) is the floor for readable text (DD4) |
+| 2026-07-12 | Fonts ship as latin-subset woff2 inside the ≤1MB gzipped UI bundle budget | Self-hosted offline promise and the eng-review bundle budget reconciled; metrics-compatible fallback, no layout shift (DD3a) |
+| 2026-07-12 | v0.5 web UI is dark-only (`color-scheme: dark`) | One polished theme for the hero surface; the light palette above ships as a follow-up issue (DD5) |
