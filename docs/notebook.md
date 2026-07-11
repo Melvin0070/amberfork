@@ -938,3 +938,37 @@ bend this curve, and by how much is now a measurement, not a claim. Caveat going
 cache removes per-cell payload serialization and tokenization but not the gestalt DP itself,
 which is also per-cell — if gestalt dominates on 600-char-capped texts, the win will be
 modest, and the after-run gets reported either way.
+
+## 023 · 2026-07-11 · Prepare-once cost seam: the cache pays exactly its third (issue #16)
+
+**What changed.** `CostModel` split at the per-step precomputation seam:
+`prepare(step) -> Prepared` digests a step once, `cost_prepared` scores two digests, `cost`
+stays as a one-off convenience with a provided default. `align()` now prepares each side once
+(O(n+m)) and the O(n·m) matrix fill only scores. `LexicalCost::Prepared` is its token
+sequence; the three other implementors (`StructuralCost` bench arm, `BlindCost` gate control,
+`NameEq` test mock) carry trivial digests. Chosen over a memo table hidden inside
+`LexicalCost` because the seam is what every future model needs anyway: tf-idf prepares a
+term vector, an embedding model must embed per *step* — per cell would be absurd. The
+`cost.rs` deferral note this issue was born from is deleted.
+
+**Behavior invariance.** The full workspace suite passed untouched — chimera parity, the
+self-align invariant, the hand-computed ratio pins. Same costs, same alignments, same forks.
+
+**After (same harness as 022, criterion's own change report, p < 0.05 throughout).**
+
+| steps per side | before (022) | after | change |
+|---|---|---|---|
+| 125 | 195 ms | 134 ms | −31% |
+| 250 | 769 ms | 517 ms | −33% |
+| 500 | 3.05 s | 2.05 s | −33% |
+| 1000 | 12.18 s | 8.18 s | −33% |
+
+**Reading — honest version.** A uniform 1.5× constant factor; the curve is still 4.0× per
+doubling, quadratic as before. The issue title's O(n·m)→O(n+m) is achieved for tokenization,
+but tokenization plus payload serialization was only ~a third of per-cell time — the gestalt
+token DP is the other two-thirds, runs per cell, and this slice deliberately didn't touch it.
+The 5000-step projection drops from ~5 min to ~3.4 min: better, not solved. If a real trace
+at that scale ever shows up, the next lever is per-cell gestalt cost (intern tokens to
+integer ids during `prepare`, so the inner DP compares `u32`s instead of `String`s — the seam
+now exists to hold exactly that), same trigger discipline as #16 had: a real slow trace, not
+a schedule.

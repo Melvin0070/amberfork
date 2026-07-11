@@ -22,9 +22,29 @@ const TEXT_CAP: usize = 600;
 /// common. Implementations must be deterministic and symmetric — the aligner's output is part
 /// of the reproducibility promise, and the fork rule's `tau` thresholds compare against these
 /// values directly.
+///
+/// The trait is split at the per-step precomputation seam: [`prepare`](CostModel::prepare)
+/// digests one step into whatever form the model compares — [`LexicalCost`]'s token sequence,
+/// a future tf-idf model's term vector, an embedding — and
+/// [`cost_prepared`](CostModel::cost_prepared) scores two digests. The aligner prepares each
+/// run once (O(n+m)) and only scores inside the O(n·m) cost matrix, so per-step work never
+/// multiplies by the number of cells (issue #16).
 pub trait CostModel {
-    /// Cost of aligning `a` with `b`.
-    fn cost(&self, a: &Step, b: &Step) -> f64;
+    /// The per-step precomputation this model compares by.
+    type Prepared;
+
+    /// Digest one step into its comparable form.
+    fn prepare(&self, step: &Step) -> Self::Prepared;
+
+    /// Cost of aligning two prepared steps.
+    fn cost_prepared(&self, a: &Self::Prepared, b: &Self::Prepared) -> f64;
+
+    /// Cost of aligning `a` with `b`: prepare both, score once. A one-off convenience — code
+    /// that compares many pairs prepares each step once and calls
+    /// [`cost_prepared`](CostModel::cost_prepared).
+    fn cost(&self, a: &Step, b: &Step) -> f64 {
+        self.cost_prepared(&self.prepare(a), &self.prepare(b))
+    }
 }
 
 /// The v1 default cost model: `1 - gestalt_ratio` over the steps' token sequences.
@@ -34,18 +54,21 @@ pub trait CostModel {
 /// largely echo the previous step's outputs (spike 001 design, kept). The text is tokenized to
 /// lowercase ASCII-alphanumeric runs, the same vocabulary a future tf-idf model would use.
 ///
-/// Perf note: tokens are recomputed on every call, so a full alignment does O(n·m)
-/// tokenizations where O(n+m) would do. Deliberate at current scale (the gestalt DP dominates;
-/// the whole dev set diffs in ~2s unoptimized) — this is the first place to cache if very long
-/// runs ever feel slow.
+/// Its prepared form is the token sequence itself, so a full alignment tokenizes each step
+/// once (O(n+m)) and the O(n·m) cells spend only the gestalt ratio (issue #16; before/after
+/// curves in notebook 022/023).
 #[derive(Debug, Default, Clone, Copy)]
 pub struct LexicalCost;
 
 impl CostModel for LexicalCost {
-    fn cost(&self, a: &Step, b: &Step) -> f64 {
-        let text_a = step_text(a);
-        let text_b = step_text(b);
-        1.0 - gestalt_ratio(&tokens(&text_a), &tokens(&text_b))
+    type Prepared = Vec<String>;
+
+    fn prepare(&self, step: &Step) -> Self::Prepared {
+        tokens(&step_text(step))
+    }
+
+    fn cost_prepared(&self, a: &Self::Prepared, b: &Self::Prepared) -> f64 {
+        1.0 - gestalt_ratio(a, b)
     }
 }
 

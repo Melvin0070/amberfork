@@ -56,7 +56,13 @@ pub fn align(
     params: &AlignParams,
 ) -> Vec<Move> {
     let (n, m) = (a.len(), b.len());
-    let cost = Matrix::from_fn(n, m, |i, j| cost_model.cost(&a[i], &b[j]));
+    // Prepare each side once — O(n+m) per-step digests — so the O(n·m) fill below spends
+    // nothing on re-deriving per-step state (issue #16).
+    let a_prep: Vec<_> = a.iter().map(|s| cost_model.prepare(s)).collect();
+    let b_prep: Vec<_> = b.iter().map(|s| cost_model.prepare(s)).collect();
+    let cost = Matrix::from_fn(n, m, |i, j| {
+        cost_model.cost_prepared(&a_prep[i], &b_prep[j])
+    });
 
     // Three-state Gotoh DP over (n+1)×(m+1). `sync[i][j]` = best cost ending in a sync of
     // a[i-1]/b[j-1]; `gap_a` = ending in a gapped a-step (model move); `gap_b` = ending in a
@@ -215,8 +221,14 @@ mod tests {
     struct NameEq;
 
     impl CostModel for NameEq {
-        fn cost(&self, a: &Step, b: &Step) -> f64 {
-            if a.name == b.name { 0.0 } else { 1.0 }
+        type Prepared = String;
+
+        fn prepare(&self, step: &Step) -> String {
+            step.name.clone()
+        }
+
+        fn cost_prepared(&self, a: &String, b: &String) -> f64 {
+            if a == b { 0.0 } else { 1.0 }
         }
     }
 

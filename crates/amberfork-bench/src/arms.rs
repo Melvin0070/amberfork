@@ -20,7 +20,7 @@
 use crate::hash::fnv1a64;
 use crate::pairs::Pair;
 use amberfork_align::{CostModel, DiffParams, LexicalCost, diff};
-use amberfork_model::Step;
+use amberfork_model::{Step, StepKind};
 
 /// Base seed for the random arm. Arbitrary, committed, part of the frozen protocol.
 const RANDOM_ARM_SEED: u64 = 0xA6BE_12F0;
@@ -149,12 +149,14 @@ fn positional_first_mismatch(pair: &Pair, tau: f64) -> Option<usize> {
 struct StructuralCost;
 
 impl CostModel for StructuralCost {
-    fn cost(&self, a: &Step, b: &Step) -> f64 {
-        if a.kind == b.kind && a.name == b.name {
-            0.0
-        } else {
-            1.0
-        }
+    type Prepared = (StepKind, String);
+
+    fn prepare(&self, step: &Step) -> Self::Prepared {
+        (step.kind, step.name.clone())
+    }
+
+    fn cost_prepared(&self, a: &Self::Prepared, b: &Self::Prepared) -> f64 {
+        if a == b { 0.0 } else { 1.0 }
     }
 }
 

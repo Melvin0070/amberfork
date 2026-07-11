@@ -115,7 +115,11 @@ fn chimera_dev_localization_holds_baseline() {
 /// divergence anywhere, so it localizes no fork — the degenerate control that must miss every bar.
 struct BlindCost;
 impl CostModel for BlindCost {
-    fn cost(&self, _a: &Step, _b: &Step) -> f64 {
+    type Prepared = ();
+
+    fn prepare(&self, _step: &Step) {}
+
+    fn cost_prepared(&self, _a: &(), _b: &()) -> f64 {
         0.0
     }
 }
