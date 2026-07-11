@@ -15,7 +15,8 @@ cargo run --release -q -p amberfork -- demo
 ```
 
 `demo` diffs a sample pair bundled inside the binary — no files, no setup, offline. Then
-point it at your own traces ([plain-JSON format](docs/trace-format.md)):
+point it at your own traces ([plain-JSON format](docs/trace-format.md); worked example in
+[the run-it-on-your-own-agent guide](docs/run-on-your-own-agent.md)):
 
 ```sh
 cargo run --release -q -p amberfork -- diff bad.json --against good.json   # exits 1 on a fork; --json for machines
