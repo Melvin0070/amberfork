@@ -90,6 +90,17 @@ The north star is "sameness recedes, divergence glows": color is reserved for di
 Render with DOM/SVG (never canvas/wgpu) so text stays selectable and accessible.
 Do not deviate without explicit user approval. In QA mode, flag any code that doesn't match DESIGN.md.
 
+**frontend-design skill (autonomous, DESIGN.md-subordinate).** For ANY work that builds or
+restyles UI — `ui/` Leptos components, the web app shell, HTML mockups, README hero visuals —
+proactively invoke the `frontend-design` skill (vendored at `.claude/skills/frontend-design/`,
+Anthropic, Apache-2.0) WITHOUT waiting to be asked. It is the anti-slop execution layer: use
+its plan-then-critique process, typography discipline, CSS-specificity hygiene, copy-as-design
+voice, and quality floor (responsive, visible focus, reduced motion — which DD4 already
+mandates). Precedence is built into the skill itself ("where the brief pins down a visual
+direction, follow it exactly — the brief's own words always win"): **DESIGN.md is the brief
+and always wins.** The skill must never introduce a new palette, typeface, or signature
+element — amberfork's signature is the amber fork ignition, already chosen.
+
 ## Skill routing
 
 When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
@@ -104,6 +115,8 @@ Key routing rules:
 - QA/testing site behavior → invoke /qa or /qa-only
 - Code review/diff check → invoke /review
 - Visual polish → invoke /design-review
+- Building or styling web UI (ui/, app shell, HTML mockups) → invoke /frontend-design
+  proactively, no need to ask (autonomous; DESIGN.md wins all conflicts)
 - Ship/deploy/PR → invoke /ship or /land-and-deploy
 - Save progress → invoke /context-save
 - Resume context → invoke /context-restore
