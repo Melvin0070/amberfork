@@ -824,3 +824,44 @@ sanitizer step is gone (covered by `cargo test`); the verify command drops to
 CONTRIBUTING.md recipes now name the Rust stages. `make_pairs.py`/`convert_whowhen.py` stay
 Python: generation is spike-side, certification is not. Full gate green (fmt / clippy `-D
 warnings` / workspace / spike smoke).
+
+## 020 · 2026-07-11 · Sanity pass: the CLI meets a messy real-world trace (issue #15)
+
+**What prompted it.** v0.4 slice 1: before handing out install links (#15), point `amberfork
+diff` at a trace an external user would actually bring — not the chimera fixtures, not the
+demo pair. Source: this machine's own Claude Code session transcripts (multi-MB JSONL agent
+trajectories: giant tool payloads, embedded ANSI escapes, unicode, nested JSON-in-strings).
+A ~50-line throwaway Python converter (scratchpad, per spike discipline) mapped two real
+sessions to canonical v0.1: assistant text block → `llm` step, `tool_use` → `tool` step with
+the `tool_result` paired back by id into `outputs`, user text → `other`; thinking blocks and
+sidechains skipped. Conversion friction was minimal — the format's "at least one of
+inputs/outputs" and forgiving extras made the mapping obvious; this becomes the slice-3 guide
+example shape (a shareable one, not these private transcripts).
+
+**What held (measured, release build, M-series darwin).** (1) Self-align on a real 133-step
+run: converged, exit 0, 0.26s — the canonical invariant now confirmed on real data. (2) Real
+vs real (133×123 steps, different sessions, same project): exit 1, fork at step 2 with conf
+0.66 — the first genuine divergence — then honest model-moves and a later re-sync; 0.20s;
+embedded ANSI in step content renders escaped, never styles the terminal. (3) `--json` is
+valid JSON with `schema_version` under `meta`, alignment/fork exactly per contract. (4) Exit
+codes all correct: 2 on truncated JSON / non-canonical `kind` / raw-JSONL-by-mistake, 1 on a
+fork incl. the empty-run edge (0 steps vs 133 → fork at 0, conf 1.00). Serde's parse errors
+are precise (`unknown variant `message`, expected one of `llm`, `tool`, `agent`, `other`` with
+line/column).
+
+**What broke (filed).** (1) **The converged summary line overclaims.** A 1000-step pair with
+one perturbed step and one deletion (real content, stitched for scale) aligns correctly —
+sync·cost-0.56 at the perturbation, a `model` move for the deletion, immediate re-sync, no
+fork — and the per-step render shows the `[model-move]`. But the summary prints `converged —
+identical through 1000 steps`: *identical* is false (and "1000" counts side A while B has
+999). Converged-with-absorbed-divergence and identical are different claims; the one line
+everyone reads must not flatten them (honesty-in-artifacts rule). (2) **The likeliest first
+mistake gets a dead-end error.** Pointing the CLI at a raw exporter file (e.g. the `.jsonl`
+transcript itself) yields `missing field `schema_version` at line 1 column 82` — correct,
+but no pointer to `docs/trace-format.md` and no "this looks like JSONL" detection. The error
+text is the product surface here; the guide can't fix a dead end.
+
+**Scale datapoint (→ #16).** 133×123 real steps: 0.20s. 1000×999: 12.6s — ~60× the DP cells,
+~60× the time, the documented O(n·m) tokenization cost measured in the wild. Tolerable at
+1000 steps, not at 5000 (projected minutes). #16's trigger ("a real long-run trace feels
+slow") isn't met yet; the curve is now on the issue so the trigger has numbers.
