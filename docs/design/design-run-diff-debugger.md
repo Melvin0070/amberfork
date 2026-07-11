@@ -529,6 +529,10 @@ OTLP recv        tolerant parser)        over the matrix                │  (ab
 
 ## Module / crate layout (Cargo workspace)
 
+> **[SUPERSEDED by Amendment 2026-07-11]** — this diagram is the target-state capability
+> map. The shipped workspace is **5 crates** (model / ingest / align / amberfork / bench);
+> see the amendment for where each crate below went and which phase adds the rest.
+
 ```
 amberfork/                      LANE tokio? PHASE  role
 ├── crates/

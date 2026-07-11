@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>amberfork v0.5 — pane composition variants</title>
+<!-- APPROVED: Variant A — two panes + header bar (plan-design-review DD3, 2026-07-12; ratified in DESIGN.md decisions log). Rail arrives with corpus features, scrubber docks with the record path. -->
+<style>
+  :root{--bg:#0A0A0B;--surface:#121214;--raised:#17171B;--hair:#26262B;--text:#E6E6E9;--muted:#8A8A93;--faint:#55555C;--amber:#FF7A1A;--red:#FF5C5C;--green:#46D39A}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#000;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:24px;font-size:13px}
+  h1{font-size:15px;margin:0 0 4px;letter-spacing:-0.02em}
+  .note{color:var(--muted);margin-bottom:24px;font-size:12px}
+  .frame{border:1px solid var(--hair);margin-bottom:48px;background:var(--bg)}
+  .frame-label{background:var(--raised);border-bottom:1px solid var(--hair);padding:8px 12px;font-size:12px;color:var(--muted)}
+  .frame-label b{color:var(--text)}
+  /* shared pieces */
+  .app{display:flex;flex-direction:column;height:520px}
+  .hdr{display:flex;gap:16px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--hair);background:var(--surface);font-size:12px}
+  .hdr .logo{color:var(--text);font-weight:700}.hdr .logo span{color:var(--amber)}
+  .hdr .pair{color:var(--muted)}.hdr .pair b{color:var(--text);font-weight:500}
+  .hdr .meta{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+  .cols{display:flex;flex:1;min-height:0}
+  .rail{width:188px;border-right:1px solid var(--hair);background:var(--surface);padding:12px;font-size:12px}
+  .rail h3{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 8px}
+  .rail .run{border:1px solid var(--hair);border-radius:4px;padding:8px;margin-bottom:8px}
+  .rail .run .tag{font-size:10px;color:var(--muted)}
+  .rail .run .name{color:var(--text);margin:2px 0;word-break:break-all}
+  .rail .kv{display:flex;justify-content:space-between;color:var(--muted);margin-top:12px}
+  .rail .kv b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
+  .canvas{flex:1;position:relative;background-image:radial-gradient(circle,#1c1c20 1px,transparent 1px);background-size:22px 22px;padding:18px 22px;overflow:hidden}
+  .step{display:flex;gap:10px;padding:3px 6px;color:var(--muted);font-variant-numeric:tabular-nums;border-radius:4px}
+  .step .idx{width:56px;color:var(--faint)}
+  .step .kind{width:44px}
+  .step .name{width:110px}
+  .step .sum{flex:1;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .step .st{width:70px;text-align:right;color:var(--faint)}
+  .fork{color:var(--amber);border:1px dashed var(--amber);background:rgba(255,122,26,.05)}
+  .fork .idx,.fork .sum,.fork .st{color:var(--amber)}
+  .div{color:var(--amber)}
+  .div .idx,.div .sum,.div .st{color:var(--amber);opacity:.85}
+  .selected{outline:1px solid var(--hair);background:var(--raised)}
+  .attr{width:320px;border-left:1px solid var(--hair);background:var(--surface);padding:14px;font-size:12px;overflow:hidden}
+  .attr h3{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 10px}
+  .attr .row{margin-bottom:10px;color:var(--muted)}
+  .attr .row b{color:var(--text);font-weight:500}
+  .chips{display:flex;gap:6px;margin:8px 0}
+  .chip{border:1px solid var(--hair);border-radius:999px;padding:1px 8px;font-size:10px;color:var(--muted)}
+  .conf{height:4px;background:var(--raised);border-radius:2px;margin:6px 0 2px}
+  .conf i{display:block;height:4px;width:86%;background:var(--amber);border-radius:2px}
+  .cdiff{margin-top:14px;border-top:1px solid var(--hair);padding-top:10px}
+  .cdiff .l{padding:2px 6px;border-radius:3px;white-space:pre}
+  .cdiff .rm{color:var(--red);background:rgba(255,92,92,.08)}
+  .cdiff .ad{color:var(--green);background:rgba(70,211,154,.08)}
+  .trunc{color:var(--faint);font-size:11px;margin-top:6px}
+  .strip{border-top:1px solid var(--hair);background:var(--surface);padding:7px 14px;color:var(--muted);font-size:12px;display:flex;gap:18px}
+  .strip .amberdot{color:var(--amber)}
+  .strip .right{margin-left:auto;color:var(--faint)}
+</style></head><body>
+<h1>amberfork v0.5 — which panes ship? (DESIGN.md tokens, wireframe fidelity)</h1>
+<p class="note">Amber appears ONLY on the fork + divergent path. Red/green ONLY inside the content-diff section. Fork carries ⑂ label + dashed stroke (non-color cue). Fonts shown as system mono; production self-hosts Monaspace/General Sans.</p>
+
+<div class="frame"><div class="frame-label"><b>VARIANT A — two panes + header bar.</b> Pair identity lives in a slim header; canvas + attribution only. Rail deferred until a corpus exists; scrubber deferred until record exists.</div>
+<div class="app">
+  <div class="hdr"><span class="logo">amber<span>⑂</span>fork</span><span class="pair"><b>bad.json</b> vs <b>good.json</b></span><span class="meta">27 vs 25 steps · schema 0.1 · forked at step 11 · conf 0.86</span></div>
+  <div class="cols">
+    <div class="canvas">
+      <div class="step"><span class="idx">step 08</span><span class="kind">llm</span><span class="name">planner</span><span class="sum">"check refund policy for order"</span><span class="st">[sync]</span></div>
+      <div class="step"><span class="idx">step 09</span><span class="kind">llm</span><span class="name">planner</span><span class="sum">"summarize findings"</span><span class="st">[sync]</span></div>
+      <div class="step selected"><span class="idx">step 10</span><span class="kind">tool</span><span class="name">web.search</span><span class="sum">q="Q2 refunds policy"</span><span class="st">[sync]</span></div>
+      <div class="step fork"><span class="idx">⑂ step 11</span><span class="kind">tool</span><span class="name">lookup_order</span><span class="sum">A: order_id="8841" · B: name="J. Smith"</span><span class="st">[FORK]</span></div>
+      <div class="step div"><span class="idx">step 12</span><span class="kind">llm</span><span class="name">planner</span><span class="sum">paths diverge downstream</span><span class="st">[model]</span></div>
+      <div class="step div"><span class="idx">step 13</span><span class="kind">tool</span><span class="name">send_email</span><span class="sum">A only — absorbed retry in B</span><span class="st">[log]</span></div>
+    </div>
+    <div class="attr"><h3>Attribution</h3>
+      <div class="row">origin <b>step 11 · lookup_order</b></div>
+      <div class="chips"><span class="chip">sync ×10</span><span class="chip">model ×2</span><span class="chip">log ×1</span></div>
+      <div class="row">confidence <b>0.86</b><div class="conf"><i></i></div></div>
+      <div class="cdiff"><h3>Content diff — step 10 (selected)</h3>
+        <div class="l rm">- order_id: "8841"</div>
+        <div class="l ad">+ name: "J. Smith"</div>
+        <div class="trunc">… payload truncated at 4 KB — full text via CLI</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<div class="frame"><div class="frame-label"><b>VARIANT B — full three panes per DESIGN.md.</b> 188px rail carries the run pair + engine params now (corpus later); canvas + attribution unchanged. Grid matches the locked layout from day one.</div>
+<div class="app">
+  <div class="cols">
+    <div class="rail"><h3>Runs</h3>
+      <div class="run"><div class="tag">A · reference (good)</div><div class="name">good.json</div><div class="tag">25 steps</div></div>
+      <div class="run"><div class="tag">B · failing (bad)</div><div class="name">bad.json</div><div class="tag">27 steps</div></div>
+      <h3 style="margin-top:14px">Engine</h3>
+      <div class="kv"><span>resync k</span><b>2</b></div>
+      <div class="kv"><span>cost</span><b>lexical</b></div>
+      <div class="kv"><span>schema</span><b>0.1</b></div>
+    </div>
+    <div class="canvas">
+      <div class="step"><span class="idx">step 09</span><span class="kind">llm</span><span class="name">planner</span><span class="sum">"summarize findings"</span><span class="st">[sync]</span></div>
+      <div class="step"><span class="idx">step 10</span><span class="kind">tool</span><span class="name">web.search</span><span class="sum">q="Q2 refunds policy"</span><span class="st">[sync]</span></div>
+      <div class="step fork"><span class="idx">⑂ step 11</span><span class="kind">tool</span><span class="name">lookup_order</span><span class="sum">A: order_id="8841" · B: name="J. Smith"</span><span class="st">[FORK]</span></div>
+      <div class="step div"><span class="idx">step 12</span><span class="kind">llm</span><span class="name">planner</span><span class="sum">paths diverge downstream</span><span class="st">[model]</span></div>
+    </div>
+    <div class="attr"><h3>Attribution</h3>
+      <div class="row">origin <b>step 11 · lookup_order</b></div>
+      <div class="chips"><span class="chip">sync ×10</span><span class="chip">model ×2</span><span class="chip">log ×1</span></div>
+      <div class="row">confidence <b>0.86</b><div class="conf"><i></i></div></div>
+      <div class="cdiff"><h3>Content diff — step 11</h3>
+        <div class="l rm">- order_id: "8841"</div>
+        <div class="l ad">+ name: "J. Smith"</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<div class="frame"><div class="frame-label"><b>VARIANT C — two panes + bottom status strip.</b> Header-less; pair identity + fork verdict live in a terminal-style bottom strip (the scrubber's future dock). Closest kinship to the CLI.</div>
+<div class="app">
+  <div class="cols">
+    <div class="canvas">
+      <div class="step"><span class="idx">step 09</span><span class="kind">llm</span><span class="name">planner</span><span class="sum">"summarize findings"</span><span class="st">[sync]</span></div>
+      <div class="step"><span class="idx">step 10</span><span class="kind">tool</span><span class="name">web.search</span><span class="sum">q="Q2 refunds policy"</span><span class="st">[sync]</span></div>
+      <div class="step fork"><span class="idx">⑂ step 11</span><span class="kind">tool</span><span class="name">lookup_order</span><span class="sum">A: order_id="8841" · B: name="J. Smith"</span><span class="st">[FORK]</span></div>
+      <div class="step div"><span class="idx">step 12</span><span class="kind">llm</span><span class="name">planner</span><span class="sum">paths diverge downstream</span><span class="st">[model]</span></div>
+      <div class="step div"><span class="idx">step 13</span><span class="kind">tool</span><span class="name">send_email</span><span class="sum">A only — absorbed retry in B</span><span class="st">[log]</span></div>
+    </div>
+    <div class="attr"><h3>Attribution</h3>
+      <div class="row">origin <b>step 11 · lookup_order</b></div>
+      <div class="chips"><span class="chip">sync ×10</span><span class="chip">model ×2</span><span class="chip">log ×1</span></div>
+      <div class="row">confidence <b>0.86</b><div class="conf"><i></i></div></div>
+      <div class="cdiff"><h3>Content diff — step 11</h3>
+        <div class="l rm">- order_id: "8841"</div>
+        <div class="l ad">+ name: "J. Smith"</div>
+      </div>
+    </div>
+  </div>
+  <div class="strip"><span><span class="amberdot">⑂</span> forked at step 11 · conf 0.86</span><span>bad.json vs good.json</span><span>27 vs 25 steps</span><span class="right">amberfork v0.5 · 127.0.0.1:7423</span></div>
+</div></div>
+</body></html>
