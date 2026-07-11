@@ -98,6 +98,33 @@ fn self_diff_exits_0_and_json_reports_converged() {
 }
 
 #[test]
+fn jsonl_input_exits_2_and_stderr_names_the_shape_the_file_and_the_guide() {
+    // The likeliest first mistake (issue #20): pointing `diff` at a raw exporter transcript
+    // (JSONL) instead of a converted canonical trace. The first error message is the product
+    // surface for exactly that user — it must say which file, what shape it detected, and
+    // where the conversion guide lives, all without dirtying stdout.
+    let (_, good, _) = manifest();
+    let jsonl = Path::new(env!("CARGO_TARGET_TMPDIR")).join("raw_transcript.jsonl");
+    std::fs::write(
+        &jsonl,
+        "{\"role\": \"assistant\", \"content\": \"hi\"}\n{\"role\": \"tool\", \"name\": \"web.search\"}\n",
+    )
+    .unwrap();
+
+    amberfork()
+        .arg("diff")
+        .arg(&jsonl)
+        .arg("--against")
+        .arg(&good)
+        .assert()
+        .code(EXIT_TROUBLE)
+        .stdout(predicates::str::is_empty())
+        .stderr(predicates::str::contains("raw_transcript.jsonl"))
+        .stderr(predicates::str::contains("JSON-Lines"))
+        .stderr(predicates::str::contains("docs/run-on-your-own-agent.md"));
+}
+
+#[test]
 fn missing_file_exits_2_with_the_path_on_stderr_and_clean_stdout() {
     let (_, good, _) = manifest();
 

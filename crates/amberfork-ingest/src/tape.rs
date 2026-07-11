@@ -66,7 +66,8 @@ pub struct ConvertedTape {
 /// successful parse is forgiving: a missing task block, result, or node field degrades to an empty
 /// value, never an error.
 pub fn convert_str(raw_json: &str, stem: &str) -> Result<ConvertedTape, IngestError> {
-    let raw: RawTape = serde_json::from_str(raw_json).map_err(IngestError::Parse)?;
+    let raw: RawTape = serde_json::from_str(raw_json)
+        .map_err(|source| IngestError::Parse { path: None, source })?;
 
     let steps: Vec<Step> = raw
         .steps

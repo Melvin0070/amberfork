@@ -105,23 +105,69 @@ fn foreign_schema_version_warns_but_still_loads() {
 #[test]
 fn malformed_json_is_a_parse_error() {
     let err = from_json_str("{ not json").unwrap_err();
-    assert!(matches!(err, IngestError::Parse(_)));
+    assert!(matches!(err, IngestError::Parse { .. }));
     // The error chains its serde source rather than swallowing it.
     assert!(std::error::Error::source(&err).is_some());
 }
 
 #[test]
-fn non_canonical_kind_is_a_parse_error() {
+fn valid_json_that_is_not_a_trace_says_what_a_trace_needs() {
+    // The likeliest first mistake (issue #20): valid JSON from some exporter that isn't a
+    // canonical trace. The error must keep serde's field detail and stop being a dead end:
+    // say what a trace is, point to the format reference and the conversion guide.
+    let err = from_json_str(r#"{"hello": "world"}"#).unwrap_err();
+    assert!(matches!(err, IngestError::NotATrace { .. }));
+    let msg = err.to_string();
+    assert!(
+        msg.contains("missing field `schema_version`"),
+        "keeps serde's detail: {msg}"
+    );
+    assert!(
+        msg.contains("docs/trace-format.md"),
+        "points to the format reference: {msg}"
+    );
+    assert!(
+        msg.contains("docs/run-on-your-own-agent.md"),
+        "points to the conversion guide: {msg}"
+    );
+}
+
+#[test]
+fn json_lines_input_is_named_and_points_to_the_conversion_guide() {
+    // Raw exporter transcripts are JSONL — one JSON value per line. Serde's own error for
+    // this ("trailing characters") never names the shape; the classifier must (issue #20).
+    let jsonl = "{\"role\": \"assistant\", \"content\": \"hi\"}\n{\"role\": \"tool\", \"name\": \"web.search\"}\n";
+    let err = from_json_str(jsonl).unwrap_err();
+    assert!(matches!(err, IngestError::JsonLines { .. }));
+    let msg = err.to_string();
+    assert!(msg.contains("JSON-Lines"), "names the shape: {msg}");
+    assert!(
+        msg.contains("docs/run-on-your-own-agent.md"),
+        "points to the conversion guide: {msg}"
+    );
+}
+
+#[test]
+fn pretty_printed_wrong_shape_is_not_mistaken_for_json_lines() {
+    // A pretty-printed JSON document also spans many lines, but its first line (`{`) is not
+    // a complete JSON value — the JSONL heuristic must not fire.
+    let err = from_json_str("{\n  \"hello\": \"world\"\n}").unwrap_err();
+    assert!(matches!(err, IngestError::NotATrace { .. }));
+}
+
+#[test]
+fn non_canonical_kind_is_not_a_trace() {
     // `chain` is an OpenInference span kind, not one of the canonical four — the canonical
-    // loader rejects it rather than silently coercing.
+    // loader rejects it rather than silently coercing. Valid JSON with the wrong vocabulary
+    // classifies as NotATrace, so the user gets serde's unknown-variant detail plus the
+    // format pointer.
     let json = r#"{
       "schema_version": "0.1", "id": "k",
       "steps": [{ "idx": 0, "kind": "chain", "name": "a", "outputs": "x" }]
     }"#;
-    assert!(matches!(
-        from_json_str(json).unwrap_err(),
-        IngestError::Parse(_)
-    ));
+    let err = from_json_str(json).unwrap_err();
+    assert!(matches!(err, IngestError::NotATrace { .. }));
+    assert!(err.to_string().contains("chain"), "got: {err}");
 }
 
 #[test]
@@ -134,6 +180,21 @@ fn load_file_reads_a_trace_from_disk() {
     let ingested = load_file(&path).unwrap();
     assert_eq!(ingested.run.id, "minimal");
     assert_eq!(ingested.run.steps.len(), 1);
+}
+
+#[test]
+fn load_file_parse_errors_name_the_offending_file() {
+    // `amberfork diff` loads two files; an error that doesn't say which one failed is a
+    // dead end (issue #20). Io errors already carry their path — the parse family must too.
+    let path = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("raw_transcript.jsonl");
+    std::fs::write(&path, "{\"a\": 1}\n{\"a\": 2}\n").unwrap();
+
+    let err = load_file(&path).unwrap_err();
+    assert!(matches!(err, IngestError::JsonLines { .. }));
+    assert!(
+        err.to_string().contains("raw_transcript.jsonl"),
+        "names which input failed: {err}"
+    );
 }
 
 #[test]

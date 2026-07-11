@@ -92,7 +92,8 @@ pub struct Converted {
 /// past a successful parse is forgiving: a missing or malformed annotation yields [`GoldStep`]
 /// variants, never an error.
 pub fn convert_str(raw_json: &str, split: Split, stem: &str) -> Result<Converted, IngestError> {
-    let raw: RawLog = serde_json::from_str(raw_json).map_err(IngestError::Parse)?;
+    let raw: RawLog = serde_json::from_str(raw_json)
+        .map_err(|source| IngestError::Parse { path: None, source })?;
 
     let steps: Vec<Step> = raw
         .history
