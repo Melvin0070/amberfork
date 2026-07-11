@@ -1,0 +1,18 @@
+---
+source: crates/amberfork/src/render.rs
+assertion_line: 999
+expression: visible_ansi(&out)
+---
+␛[2m  A  good  ·  reference · 3 steps · pass␛[0m
+␛[2m  B  bad   ·  observed  · 4 steps · fail␛[0m
+
+␛[2m  step 00  ·  tool   plan        search for census data                           [sync]␛[0m
+␛[2m  step 01  ·  tool   web.search  9 results, top census.gov                        [sync]␛[0m
+␛[38;2;255;122;26m⑂ step 02  ✗  tool   web.fetch   A: census.gov page: population 8,443,000         [FORK · conf 0.47]␛[0m
+␛[38;2;255;122;26m                                 B: blogspot page: the city has grown to␛[0m
+␛[38;2;255;122;26m                                 9,100,000␛[0m
+␛[38;2;255;92;92m              - outputs: "census.gov page"␛[0m
+␛[38;2;70;211;154m              + outputs: "blogspot page"␛[0m
+␛[38;2;255;122;26m  step 03  ✗  ␛[0mtool   reader      blog says about 9,100,000 people                 [log-move]
+
+  attribution · static · origin step 02 · propagation step 03 · conf 0.47

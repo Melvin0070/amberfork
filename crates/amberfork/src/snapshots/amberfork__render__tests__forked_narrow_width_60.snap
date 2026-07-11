@@ -1,0 +1,20 @@
+---
+source: crates/amberfork/src/render.rs
+assertion_line: 1010
+expression: "render(&res, &a, &b, &narrow)"
+---
+  A  good  ·  reference · 3 steps · pass
+  B  bad   ·  observed  · 4 steps · fail
+
+  step 00  ·  tool   plan        search for census d…  [syn…
+  step 01  ·  tool   web.search  9 results, top cens…  [syn…
+⑂ step 02  ✗  tool   web.fetch   A: census.gov page:   [FOR…
+                                 population 8,443,000
+                                 B: blogspot page:
+                                 the city has grown
+                                 to 9,100,000
+              - outputs: "census.gov page"
+              + outputs: "blogspot page"
+  step 03  ✗  tool   reader      blog says about 9,1…  [log…
+
+  attribution · static · origin step 02 · propagation step …

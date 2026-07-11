@@ -1,0 +1,14 @@
+---
+source: crates/amberfork/src/render.rs
+assertion_line: 1024
+expression: out
+---
+  A  good        ·  reference · 4 steps · pass
+  B  good_retry  ·  observed  · 3 steps · pass
+
+  step 00  ·  tool   plan        search for census data                                 [sync]
+  step 01  ·  tool   web.search  9 results, top census.gov                              [sync]
+  step 02  ·  tool   answer      population is about 8,443,000                          [sync]
+  step 03  ·  tool   log         cache the answer                                       [model-move]
+
+  converged — no fork (2 absorbed divergences across 4⇄3 steps)

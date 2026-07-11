@@ -766,6 +766,39 @@ mod tests {
         (a, b, res)
     }
 
+    /// Converged-but-not-identical pair (issue #19): no fork, yet the alignment absorbed a
+    /// costly sync and a model move — the runs are not identical, and the one line everyone
+    /// reads must keep the two states apart.
+    fn absorbed() -> (Run, Run, DiffResult) {
+        let a = run(
+            "good",
+            Outcome::Pass,
+            vec![
+                step(0, "plan", "search for census data"),
+                step(1, "web.search", "9 results, top census.gov"),
+                step(2, "answer", "population is 8,443,000"),
+                step(3, "log", "cache the answer"),
+            ],
+        );
+        let b = run(
+            "good_retry",
+            Outcome::Pass,
+            vec![
+                step(0, "plan", "search for census data"),
+                step(1, "web.search", "9 results, top census.gov"),
+                step(2, "answer", "population is about 8,443,000"),
+            ],
+        );
+        let alignment = vec![
+            Move::sync(0, 0, 0.0, 1.0),
+            Move::sync(1, 1, 0.0, 1.0),
+            Move::sync(2, 2, 0.55, 0.45),
+            Move::model(3, 0.6, 0.0),
+        ];
+        let res = result(&a, &b, alignment, None);
+        (a, b, res)
+    }
+
     /// Remove ANSI SGR sequences (`ESC [ ... m`).
     fn strip_ansi(s: &str) -> String {
         let mut out = String::with_capacity(s.len());
@@ -807,34 +840,7 @@ mod tests {
 
     #[test]
     fn converged_with_absorbed_divergence_does_not_claim_identical() {
-        // No fork, but the alignment holds a costly sync and a model move — the runs are
-        // not identical, and the one line everyone reads must not say they are (issue #19).
-        let a = run(
-            "good",
-            Outcome::Pass,
-            vec![
-                step(0, "plan", "search for census data"),
-                step(1, "web.search", "9 results, top census.gov"),
-                step(2, "answer", "population is 8,443,000"),
-                step(3, "log", "cache the answer"),
-            ],
-        );
-        let b = run(
-            "good_retry",
-            Outcome::Pass,
-            vec![
-                step(0, "plan", "search for census data"),
-                step(1, "web.search", "9 results, top census.gov"),
-                step(2, "answer", "population is about 8,443,000"),
-            ],
-        );
-        let alignment = vec![
-            Move::sync(0, 0, 0.0, 1.0),
-            Move::sync(1, 1, 0.0, 1.0),
-            Move::sync(2, 2, 0.55, 0.45),
-            Move::model(3, 0.6, 0.0),
-        ];
-        let res = result(&a, &b, alignment, None);
+        let (a, b, res) = absorbed();
         let out = render(&res, &a, &b, &opts(ColorMode::Plain));
 
         assert!(
@@ -970,6 +976,52 @@ mod tests {
                 "line exceeds width {WIDTH}: {line}"
             );
         }
+    }
+
+    // ── Slice-0 snapshot net (issue #21) ─────────────────────────────────────────
+    // Four file snapshots that byte-lock the render ahead of the amberfork-layout
+    // extraction: the rewrite is output-locked, so it must land with zero churn in
+    // these files. They live at the unit level because two of the axes cannot be
+    // reached through the binary — piped stdout always resolves to Plain (no ANSI
+    // ever leaves a non-TTY), and width comes from the terminal, not a flag.
+
+    /// ESC made visible (`␛`, U+241B) so the truecolor snapshot stays readable in a
+    /// git diff. The character never appears in render output, so the substitution
+    /// is bijective — the snapshot still pins the exact escape bytes.
+    fn visible_ansi(s: &str) -> String {
+        s.replace('\x1b', "␛")
+    }
+
+    #[test]
+    fn snapshot_forked_truecolor() {
+        let (a, b, res) = forked(0.47);
+        let out = render(&res, &a, &b, &opts(ColorMode::Truecolor));
+        insta::assert_snapshot!("forked_truecolor", visible_ansi(&out));
+    }
+
+    #[test]
+    fn snapshot_forked_narrow_width() {
+        // 60 is the floor `main` enforces on detected terminal widths.
+        let (a, b, res) = forked(0.47);
+        let narrow = RenderOpts {
+            color: ColorMode::Plain,
+            width: 60,
+        };
+        insta::assert_snapshot!("forked_narrow_width_60", render(&res, &a, &b, &narrow));
+    }
+
+    #[test]
+    fn snapshot_converged_identical() {
+        let (a, b, res) = converged();
+        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        insta::assert_snapshot!("converged_identical", out);
+    }
+
+    #[test]
+    fn snapshot_converged_absorbed_divergence() {
+        let (a, b, res) = absorbed();
+        let out = render(&res, &a, &b, &opts(ColorMode::Plain));
+        insta::assert_snapshot!("converged_absorbed_divergence", out);
     }
 
     #[test]
