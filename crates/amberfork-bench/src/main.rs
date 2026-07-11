@@ -34,7 +34,9 @@ mod fetch;
 mod hash;
 mod pairs;
 mod params;
+mod pyjson;
 mod results;
+mod sanitize;
 mod score;
 mod split;
 
@@ -70,6 +72,8 @@ enum Command {
     BuildPairs(BuildPairsArgs),
     /// Fetch the pinned raw upstream data `build-pairs` consumes (issue #7).
     Fetch(FetchArgs),
+    /// GAIA-sanitize Who&When-derived logs/pairs for redistribution (issues #11/#17).
+    Sanitize(SanitizeArgs),
 }
 
 #[derive(Args)]
@@ -144,6 +148,63 @@ struct FetchArgs {
     out: PathBuf,
 }
 
+#[derive(Args)]
+struct SanitizeArgs {
+    #[command(subcommand)]
+    mode: SanitizeMode,
+}
+
+/// The two redaction stages (see [`sanitize`]): `canonical` before pair generation so
+/// placeholders bake into the prefix, `pairs` after it to catch cross-log leaks.
+#[derive(Subcommand)]
+enum SanitizeMode {
+    /// Redact each canonical log against its own question+answer (stage 1, pre-make_pairs).
+    Canonical(SanitizeCanonicalArgs),
+    /// Sweep generated pairs against both source logs' question+answer (stage 2).
+    Pairs(SanitizePairsArgs),
+}
+
+#[derive(Args)]
+struct SanitizeCanonicalArgs {
+    /// Directory of canonical trace logs plus their index.json (real questions — gated,
+    /// never committed). The default resolves from the repo root.
+    #[arg(long, value_name = "DIR", default_value = "spike/data/canonical")]
+    src: PathBuf,
+
+    /// Directory the sanitized logs and hash-redacted index are written to.
+    #[arg(
+        long,
+        value_name = "DIR",
+        default_value = "spike/data/canonical_sanitized"
+    )]
+    out: PathBuf,
+
+    /// Runs of at least this many consecutive question tokens are redacted (notebook 013).
+    #[arg(long, default_value_t = sanitize::DEFAULT_NGRAM)]
+    ngram: usize,
+}
+
+#[derive(Args)]
+struct SanitizePairsArgs {
+    /// Directory of pair_*.json manifests plus their run files (the spike/make_pairs.py
+    /// format).
+    #[arg(long, value_name = "DIR")]
+    pairs: PathBuf,
+
+    /// The RAW canonical directory the manifests' meta.x/meta.y source questions are read
+    /// from. The default resolves from the repo root.
+    #[arg(long, value_name = "DIR", default_value = "spike/data/canonical")]
+    canonical: PathBuf,
+
+    /// Directory the swept pairs are written to; may equal --pairs for an in-place sweep.
+    #[arg(long, value_name = "DIR")]
+    out: PathBuf,
+
+    /// Runs of at least this many consecutive question tokens are redacted (notebook 013).
+    #[arg(long, default_value_t = sanitize::DEFAULT_NGRAM)]
+    ngram: usize,
+}
+
 /// The `--split` choices — the two protocol sides plus `all` (the whole evaluated set, the
 /// walking-skeleton default; published tables come from `test`).
 #[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -179,6 +240,7 @@ fn main() -> ExitCode {
         Command::Aggregate(args) => aggregate_documents(&args),
         Command::BuildPairs(args) => build_pairs(&args),
         Command::Fetch(args) => fetch_data(&args),
+        Command::Sanitize(args) => sanitize_data(&args),
     };
     outcome.unwrap_or_else(|err| {
         eprintln!("amberfork-bench: {err}");
@@ -404,6 +466,37 @@ fn fetch_data(args: &FetchArgs) -> Result<ExitCode, Box<dyn std::error::Error>> 
     eprintln!(
         "amberfork-bench: next: amberfork-bench build-pairs --tapes {out}/tapes \
          --logs {out}/whowhen --out {out}/pairs_real",
+    );
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+/// GAIA-sanitize logs or pairs for redistribution (issues #11/#17). A provenance step, not a
+/// scoring run: output goes where the operator pointed it, the receipt goes to stderr. A
+/// verify failure — any post-condition violation on the written output — is trouble (exit 2):
+/// the artifact exists but must not be redistributed.
+fn sanitize_data(args: &SanitizeArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    match &args.mode {
+        SanitizeMode::Canonical(mode) => {
+            let files = sanitize::sanitize_canonical(&mode.src, &mode.out, mode.ngram)?;
+            eprintln!(
+                "amberfork-bench: sanitized {files} canonical log(s) -> {} (ngram={})",
+                mode.out.display(),
+                mode.ngram,
+            );
+        }
+        SanitizeMode::Pairs(mode) => {
+            let files =
+                sanitize::sanitize_pairs(&mode.pairs, &mode.canonical, &mode.out, mode.ngram)?;
+            eprintln!(
+                "amberfork-bench: swept {files} pair(s) -> {} (ngram={})",
+                mode.out.display(),
+                mode.ngram,
+            );
+        }
+    }
+    eprintln!(
+        "amberfork-bench: verify OK — space counts preserved; \
+         no surviving question n-gram or answer residue",
     );
     Ok(ExitCode::from(EXIT_OK))
 }

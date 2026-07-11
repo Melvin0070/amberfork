@@ -212,8 +212,11 @@ impl RawStep {
     }
 }
 
-/// Comma-joined keys of a map, in sorted order (the backing map is a `BTreeMap`, so warning
-/// text is deterministic).
+/// Comma-joined keys of a map, explicitly sorted so warning text is deterministic — the
+/// workspace's `serde_json` map preserves insertion order (issue #17), so the sort cannot be
+/// inherited from the map type.
 fn sorted_keys(map: &Map<String, Value>) -> String {
-    map.keys().cloned().collect::<Vec<_>>().join(", ")
+    let mut keys: Vec<&str> = map.keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    keys.join(", ")
 }

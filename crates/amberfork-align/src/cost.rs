@@ -12,6 +12,7 @@
 //! bit-parity with Python.
 
 use amberfork_model::{Payload, Step};
+use serde_json::Value;
 
 /// Cap on the step text used for similarity, in characters. Long tool dumps otherwise dominate
 /// both the signal and the runtime (spike constant, kept as-is).
@@ -49,20 +50,62 @@ impl CostModel for LexicalCost {
 }
 
 /// The text a step is compared by: `"{name}: {outputs}"`, capped at [`TEXT_CAP`] characters.
-/// Structured payloads serialize with sorted keys (`serde_json`'s map is a `BTreeMap`), so the
-/// text — and every cost derived from it — is deterministic.
+/// Structured payloads serialize through [`sorted_json`], so the text — and every cost derived
+/// from it — is deterministic regardless of a payload's key order. That property is
+/// established HERE, deliberately: the workspace's `serde_json` preserves insertion order (the
+/// issue-#17 byte-parity requirement), so an engine invariant must not lean on the map type.
 fn step_text(step: &Step) -> String {
     let out = match &step.outputs {
         None => String::new(),
         Some(Payload::Text(s)) => s.clone(),
-        // Sorted-key JSON; infallible for values that came in as JSON.
-        Some(Payload::Object(map)) => serde_json::to_string(map).unwrap_or_default(),
-        Some(Payload::Other(value)) => value.to_string(),
+        Some(Payload::Object(map)) => {
+            let mut buf = String::new();
+            sorted_json(&mut buf, &Value::Object(map.clone()));
+            buf
+        }
+        Some(Payload::Other(value)) => {
+            let mut buf = String::new();
+            sorted_json(&mut buf, value);
+            buf
+        }
     };
     format!("{}: {}", step.name, out)
         .chars()
         .take(TEXT_CAP)
         .collect()
+}
+
+/// Compact JSON with keys sorted at every nesting level — the canonical comparable form of a
+/// structured payload. Non-object leaves render through `serde_json` (`Value`'s `Display`),
+/// so string escaping and number formatting stay standard.
+fn sorted_json(out: &mut String, value: &Value) {
+    match value {
+        Value::Object(map) => {
+            let mut keys: Vec<&String> = map.keys().collect();
+            keys.sort();
+            out.push('{');
+            for (i, key) in keys.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                out.push_str(&Value::String((*key).clone()).to_string());
+                out.push(':');
+                sorted_json(out, &map[key.as_str()]);
+            }
+            out.push('}');
+        }
+        Value::Array(items) => {
+            out.push('[');
+            for (i, item) in items.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                sorted_json(out, item);
+            }
+            out.push(']');
+        }
+        leaf => out.push_str(&leaf.to_string()),
+    }
 }
 
 /// Lowercase ASCII-alphanumeric runs of `text`; everything else is a separator.
@@ -209,11 +252,21 @@ mod tests {
 
     #[test]
     fn object_payloads_compare_deterministically() {
-        // Same object regardless of insertion order: serde_json's map sorts keys.
+        // Same object regardless of insertion order — at every nesting level. The workspace's
+        // serde_json preserves insertion order (issue #17), so this invariant is the cost
+        // model's own sorted serialization, not the map type's.
+        let mut inner1 = Map::new();
+        inner1.insert("page".into(), Value::from(1));
+        inner1.insert("lang".into(), Value::from("en"));
+        let mut inner2 = Map::new();
+        inner2.insert("lang".into(), Value::from("en"));
+        inner2.insert("page".into(), Value::from(1));
         let mut m1 = Map::new();
         m1.insert("status".into(), Value::from("ok"));
         m1.insert("count".into(), Value::from(9));
+        m1.insert("meta".into(), Value::Object(inner1));
         let mut m2 = Map::new();
+        m2.insert("meta".into(), Value::Object(inner2));
         m2.insert("count".into(), Value::from(9));
         m2.insert("status".into(), Value::from("ok"));
         let a = step("web.search", Some(Payload::Object(m1)));

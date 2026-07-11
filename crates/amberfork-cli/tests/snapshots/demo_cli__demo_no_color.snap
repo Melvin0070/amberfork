@@ -1,5 +1,6 @@
 ---
 source: crates/amberfork-cli/tests/demo_cli.rs
+assertion_line: 98
 expression: stdout
 ---
   A  refund-good  ·  reference · 10 steps · pass
@@ -7,7 +8,7 @@ expression: stdout
 
   step 00  ·  llm    planner           Plan: look up order 8841, find the refun…  [sync]
   step 01  ·  tool   crm.lookup_order  {"error":"rate_limited","retry_after_ms"…  [log-move]
-  step 02  ·  tool   crm.lookup_order  {"category":"electronics","delivered":"2…  [sync]
+  step 02  ·  tool   crm.lookup_order  {"status":"delivered","delivered":"2026-…  [sync]
   step 03  ·  llm    planner           Order 8841: electronics, $129.00, delive…  [sync]
   step 04  ·  tool   kb.search         {"hits":["policy/refunds_v3.md","archive…  [sync]
 ⑂ step 05  ✗  tool   kb.fetch          A: Refunds v3 (CURRENT, effective          [FORK · conf 0.68]
