@@ -30,14 +30,43 @@
 //! truncation, wrapping, gutter glyphs, and ANSI are the CLI painter's business; pixel
 //! geometry is the web painter's. This crate has zero terminal dependencies, and styling
 //! decisions never feed back into it.
+//!
+//! For the web painter the view crosses a wire: [`Document`] is the serializable form the
+//! server ships (issue #24) — the same [`ViewModel`] plus a [`DOCUMENT_VERSION`] stamp.
 
 use amberfork_model::{
     Attribution, AttributionMode, DiffResult, FieldDiffKind, MoveKind, Outcome, Payload, Run, Step,
     StepKind, Warning,
 };
+use serde::{Deserialize, Serialize};
+
+/// The document version this build emits. A bare wire-hygiene marker (issue #24): the web UI
+/// and the server ship in one binary, lockstep by construction, so there is no read-gate —
+/// bump it when the document's shape changes so a stale payload is at least identifiable.
+pub const DOCUMENT_VERSION: &str = "0.1";
+
+/// The wire form of the seam: what `amberfork serve` ships to the web painter. The body is
+/// the SAME [`ViewModel`] the terminal paints — the document only adds wire hygiene on top.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Document {
+    /// Always [`DOCUMENT_VERSION`] when built by this crate.
+    pub schema_version: String,
+    pub view: ViewModel,
+}
+
+impl Document {
+    /// Wrap a view for the wire, stamping the current document version.
+    #[must_use]
+    pub fn new(view: ViewModel) -> Self {
+        Self {
+            schema_version: DOCUMENT_VERSION.to_string(),
+            view,
+        }
+    }
+}
 
 /// The full semantic view of one diff: everything a painter needs, nothing it must compute.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ViewModel {
     pub run_a: RunHeader,
     pub run_b: RunHeader,
@@ -47,6 +76,7 @@ pub struct ViewModel {
     pub idx_width: usize,
     pub rows: Vec<Row>,
     pub verdict: Verdict,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attribution: Option<AttributionView>,
     /// Pass-through of the result's warnings so a painter never reaches back into
     /// [`DiffResult`]: the CLI keeps warnings on stderr, the web UI surfaces them inline.
@@ -54,17 +84,19 @@ pub struct ViewModel {
 }
 
 /// A run's identity as every surface introduces it (terminal header lines, web header bar).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RunHeader {
     pub id: String,
     pub role: RunRole,
     pub n_steps: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outcome: Option<Outcome>,
 }
 
 /// Which seat a run occupies in the diff — the `DiffResult` contract's side convention:
 /// `a` is always the reference, `b` the observed/failing run.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum RunRole {
     Reference,
     Observed,
@@ -81,7 +113,8 @@ impl RunRole {
 }
 
 /// One alignment move as a display row.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Row {
     /// A regular move: spine before the fork, divergent path after it.
     Step(StepRow),
@@ -101,7 +134,8 @@ impl Row {
 
 /// Where a non-fork row stands relative to the fork — the role that drives every painter's
 /// styling (sameness recedes, divergence glows).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum RowRole {
     /// Before the fork, or every row of a converged diff. The eye skates over it.
     Spine,
@@ -109,7 +143,7 @@ pub enum RowRole {
     Downstream,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StepRow {
     pub role: RowRole,
     /// The move's alignment kind; painters frame it as the row tag (the CLI brackets it).
@@ -118,7 +152,7 @@ pub struct StepRow {
 }
 
 /// The fork row: the first move of the block the alignment never recovers from.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ForkRow {
     pub step: AlignedStep,
     /// Reference-side content at the fork, resolved to the designed absence wording
@@ -135,11 +169,15 @@ pub struct ForkRow {
 /// The two sides of one alignment move, resolved for display. Indices are kept separate
 /// from the resolved views: a gap move has an index on one side only, and a painter still
 /// shows the index even where (malformed hand-built input) it resolves to no step.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AlignedStep {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub a_idx: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub b_idx: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub a: Option<StepView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub b: Option<StepView>,
 }
 
@@ -157,7 +195,7 @@ impl AlignedStep {
 }
 
 /// One side's step, resolved to what surfaces display.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StepView {
     pub kind: StepKind,
     pub name: String,
@@ -169,15 +207,18 @@ pub struct StepView {
 /// One field-level difference at the fork, values already in display form (compact JSON).
 /// `removed`/`added` are what a painter shows on the `-`/`+` side; an added field has no
 /// `removed`, a removed field no `added`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FieldDiffView {
     pub path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub removed: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub added: Option<String>,
 }
 
 /// The one-line answer every diff ends with.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Verdict {
     /// Every move a sync at cost 0 — a claim the alignment must earn (issue #19).
     Identical {
@@ -216,9 +257,11 @@ impl Verdict {
 /// The attribution answer in DR5's reading order — mode, origin, propagation, confidence —
 /// each part already in its designed wording. The terminal flattens the parts to one line;
 /// the web attribution pane renders them as separate elements.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AttributionView {
-    pub mode: &'static str,
+    /// `static` or `counterfactual` — owned, not `&'static str`, because the view must
+    /// deserialize on the web side of the wire.
+    pub mode: String,
     /// `origin step 02` (gutter-padded) or `origin unlocalized`.
     pub origin: String,
     /// `step 03`, a contiguous `steps 03–07`, a comma list, or `none`.
@@ -403,7 +446,8 @@ fn attribution_view(attribution: &Attribution, idx_width: usize) -> AttributionV
     let mode = match attribution.mode {
         AttributionMode::Static => "static",
         AttributionMode::Counterfactual => "counterfactual",
-    };
+    }
+    .to_string();
     let origin = attribution.origin_step.map_or_else(
         || "origin unlocalized".to_string(),
         |s| format!("origin step {s:0w$}", w = idx_width),
@@ -608,7 +652,7 @@ mod tests {
         assert_eq!(
             view.attribution,
             Some(AttributionView {
-                mode: "static",
+                mode: "static".to_string(),
                 origin: "origin step 02".to_string(),
                 propagation: "step 03".to_string(),
                 confidence: "conf 0.47".to_string(),
@@ -716,6 +760,71 @@ mod tests {
         res.attribution.as_mut().unwrap().propagation = vec![3, 4, 5];
         let view = ViewModel::compute(&res, &a, &b);
         assert_eq!(view.attribution.unwrap().propagation, "steps 03–05");
+    }
+
+    #[test]
+    fn document_roundtrips_through_json() {
+        let (a, b, res) = forked(0.47);
+        let doc = Document::new(ViewModel::compute(&res, &a, &b));
+        assert_eq!(doc.schema_version, DOCUMENT_VERSION);
+
+        let json = serde_json::to_string(&doc).unwrap();
+        let back: Document = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, doc);
+    }
+
+    #[test]
+    fn roundtripped_roles_match_the_fork() {
+        let (a, b, res) = forked(0.47);
+        let doc = Document::new(ViewModel::compute(&res, &a, &b));
+        let back: Document = serde_json::from_str(&serde_json::to_string(&doc).unwrap()).unwrap();
+
+        let fork_index = res.fork.unwrap().index;
+        for (i, row) in back.view.rows.iter().enumerate() {
+            match row {
+                Row::Fork(_) => assert_eq!(i, fork_index),
+                Row::Step(s) if i < fork_index => assert_eq!(s.role, RowRole::Spine),
+                Row::Step(s) => assert_eq!(s.role, RowRole::Downstream),
+            }
+        }
+    }
+
+    #[test]
+    fn converged_verdicts_survive_the_wire() {
+        let steps = || vec![step(0, "plan", "x"), step(1, "answer", "y")];
+        let a = run("good", Outcome::Pass, steps());
+        let b = run("good_again", Outcome::Pass, steps());
+        let alignment = vec![Move::sync(0, 0, 0.0, 1.0), Move::sync(1, 1, 0.0, 1.0)];
+        let doc = Document::new(ViewModel::compute(&result(&a, &b, alignment, None), &a, &b));
+        let back: Document = serde_json::from_str(&serde_json::to_string(&doc).unwrap()).unwrap();
+        assert_eq!(back.view.verdict, Verdict::Identical { steps: 2 });
+        assert_eq!(
+            back.view.verdict.converged_text().unwrap(),
+            "converged — identical through 2 steps"
+        );
+
+        // The absorbed distinction (issue #19) must survive the wire too — the web surface
+        // may never flatten "converged with absorbed divergence" into "identical".
+        let b = run("good_retry", Outcome::Pass, vec![step(0, "plan", "x")]);
+        let alignment = vec![Move::sync(0, 0, 0.0, 1.0), Move::model(1, 0.6, 0.0)];
+        let doc = Document::new(ViewModel::compute(&result(&a, &b, alignment, None), &a, &b));
+        let back: Document = serde_json::from_str(&serde_json::to_string(&doc).unwrap()).unwrap();
+        assert_eq!(
+            back.view.verdict,
+            Verdict::Absorbed {
+                absorbed: 1,
+                a_steps: 2,
+                b_steps: 1,
+            }
+        );
+        assert!(
+            !back
+                .view
+                .verdict
+                .converged_text()
+                .unwrap()
+                .contains("identical")
+        );
     }
 
     #[test]
