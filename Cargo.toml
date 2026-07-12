@@ -9,6 +9,10 @@ members = [
     "crates/amberfork",
     "crates/amberfork-bench",
 ]
+# The web UI is its own workspace root (design doc D4): it targets wasm32 and builds with
+# trunk, so it stays out of the engine workspace and off the wasm-free verify ritual. It
+# depends on amberfork-layout by path for the Document contract, nothing more.
+exclude = ["ui"]
 
 [workspace.package]
 version = "0.4.0"

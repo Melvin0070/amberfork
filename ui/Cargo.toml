@@ -1,0 +1,40 @@
+[package]
+name = "amberfork-ui"
+version = "0.4.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/Melvin0070/amberfork"
+description = "amberfork's embedded web UI — the Leptos SVG/DOM fork view, built to wasm and served by amberfork-server."
+publish = false
+
+# ui/ is its own workspace root, deliberately OUTSIDE the cargo workspace (design doc D4):
+# it targets wasm32 and builds with trunk. An empty [workspace] table declares this
+# directory a standalone root so cargo never folds it into the parent workspace it sits
+# beside; the parent excludes it in turn.
+[workspace]
+
+[dependencies]
+# Contracts first: the UI renders the SAME Document the server ships (amberfork-layout,
+# issue #24) — the schema is never re-declared per consumer. layout is pure serde over
+# amberfork-model (no tokio, no net, no fs), so it compiles clean to wasm32.
+amberfork-layout = { path = "../crates/amberfork-layout" }
+leptos = { version = "0.8", default-features = false }
+# csr-only browser glue — kept out of the ssr (test) build entirely via `dep:` gating.
+gloo-net = { version = "0.6", optional = true, default-features = false, features = [
+    "http",
+    "json",
+] }
+console_error_panic_hook = { version = "0.1", optional = true }
+
+[features]
+# ssr is default so the render tests run under a plain host `cargo test` (D16); trunk builds
+# the browser bundle with `--no-default-features --features csr` (see index.html). The two
+# are mutually exclusive by Leptos's design — one reactive backend per build.
+default = ["ssr"]
+csr = ["leptos/csr", "dep:gloo-net", "dep:console_error_panic_hook"]
+ssr = ["leptos/ssr"]
+
+# Mirror the workspace's deny-by-default posture (the parent's [workspace.lints] can't reach
+# an excluded crate, so it is restated here); the ui CI job runs clippy with -D warnings.
+[lints.clippy]
+all = { level = "warn", priority = -1 }

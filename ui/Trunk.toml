@@ -1,0 +1,8 @@
+# Trunk drives the wasm build; cargo features are pinned on the rust asset in index.html
+# (csr, no-default-features) so this file only needs the entrypoint and a loopback dev serve.
+[build]
+target = "index.html"
+
+[serve]
+address = "127.0.0.1"
+port = 8080

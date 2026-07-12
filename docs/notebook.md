@@ -1008,3 +1008,49 @@ exist yet: a dev build has no bundle by design, so it lands with #28's release s
 the real artifact. Serving behavior is covered at the lib layer (11 integration tests over a
 bound listener, raw-TCP client); the CLI layer pins startup order and error wording only.
 Port-in-use is lib-tested, not CLI-tested (unreachable in a dev build — bundle check first).
+
+## 025 · 2026-07-13 · The web painter lands: `ui/`, toolchain + header (issue #26 slice 0)
+
+**What changed.** New `amberfork-ui` crate (Leptos 0.8.20) outside the cargo workspace — the
+first slice of the browser hero. It fetches the real `Document` from `/api/document` and
+renders the header for real: neutral `amber⑂fork` logo, pair identity with roles, the verdict
+as the protagonist (`⑂ forked at step 11 · conf 0.86` / `converged — identical through N
+steps`), and the step-count/schema meta. Body below is a labelled-but-empty canvas region;
+the spine and the amber fork itself are slice 1. Verify path: 4 host-side SSR string-render
+tests + fmt + clippy on **both** Leptos backends + `trunk build`.
+
+**Decisions that will outlive the code.**
+- *Contracts first: the UI path-deps `amberfork-layout` for the `Document`, never a mirrored
+  DTO.* Confirmed layout → model → serde is pure (no tokio/net/fs), so it compiles clean to
+  wasm32 — the browser deserializes into the exact server type, so a schema mismatch is
+  impossible by construction. The one duplicated string is the route path `/api/document`
+  (a URL, not the schema); depending on `amberfork-server` would drag tokio/axum into wasm.
+- *`ssr` is the default feature, `csr` is trunk-only.* Leptos's two reactive backends are
+  mutually exclusive, so the split IS the test story: `cargo test` renders components to
+  strings host-side with zero flags (D16's "plain cargo test"); `index.html` pins
+  `--features csr --no-default-features` for the wasm build. The render is a pure function of
+  the document (lib.rs); the fetch is the one impure edge, quarantined to the `csr` binary —
+  the same sync-core / IO-edge discipline the engine crates follow.
+- *The header carries ZERO amber (founder-confirmed).* Reading "amber exactly twice (fork +
+  path)" and "verdict is the protagonist, never faint" together: the verdict earns prominence
+  through the `text` token, mono, and position adjacent to the pair — not color. Amber stays
+  saved for the canvas ignition. `faint` is decorative-only here (the `vs` separator); role
+  labels are `muted` (the readable-text floor, DD4).
+- *Never a blank page (D20) is static, not wasm.* The loading / `<noscript>` / wasm-error
+  states live in `index.html` so they exist before wasm boots; the csr entry removes the boot
+  node once it's alive, and a global error handler flips loading→error if boot never runs.
+  The SSR test asserts on `include_str!("../index.html")` — the shell is a file, not a view.
+- *`ui/` is its own workspace root, excluded from the parent (D4).* The wasm-free verify
+  ritual is preserved by construction: the root's `--workspace` commands can't reach an
+  excluded crate. `ui/` gets its own CI job (fmt + clippy ssr/csr + test + trunk build).
+
+**Learned the hard way / measured.** Leptos 0.8 SSR string render = `Owner::new().with(|| view!
+{…}.to_html())` — no DOM, no browser (guessed from the reactive-owner model; the compiler
+agreed first try). `trunk build` auto-fetched wasm-bindgen 0.2.126 to match the lockfile.
+Bundle so far: **477 KB gzipped** (debug, no `wasm-opt`) against the ≤1 MB budget — headroom
+for release `-Oz` + latin-subset woff2 fonts (both slice 4).
+
+**Coverage honesty.** The actual browser render (wasm mount → shell → fetch → header) is NOT
+yet exercised — it's the manual `/qa` step the issue scopes pre-release, and the end-to-end
+`serve`-through-a-real-bundle path lands with #28. This slice is verified host-side (SSR +
+clippy on the shipping wasm build) and by a real `trunk build`; the pixels are unverified.

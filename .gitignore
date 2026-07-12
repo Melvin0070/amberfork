@@ -20,6 +20,10 @@ __pycache__/
 crates/amberfork-server/ui-dist/*
 !crates/amberfork-server/ui-dist/.gitkeep
 
+# The web UI's own trunk build output (ui/, issue #26). The engine workspace's `target/`
+# glob above already covers ui/target/; this is trunk's wasm bundle dir.
+ui/dist/
+
 # Local tool state
 .gstack/
 .claude/settings.local.json

@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>amberfork</title>
+
+    <!-- Trunk compiles the csr binary to wasm. Features are pinned here (not in Cargo's
+         defaults) so a plain host `cargo test` stays on ssr while the browser build is csr;
+         the two Leptos backends are mutually exclusive. -->
+    <link
+      data-trunk
+      rel="rust"
+      data-bin="amberfork-ui"
+      data-cargo-features="csr"
+      data-cargo-no-default-features
+    />
+
+    <style>
+      /* DESIGN.md tokens — dark is the primary theme (DD5). Fonts are the metrics-compatible
+         fallbacks; the latin-subset Monaspace/General Sans woff2 land in a later slice with
+         no layout shift. */
+      :root {
+        color-scheme: dark;
+        --bg: #0a0a0b;
+        --surface: #121214;
+        --raised: #17171b;
+        --hair: #26262b;
+        --text: #e6e6e9;
+        --muted: #8a8a93;
+        --faint: #55555c;
+        --amber: #ff7a1a;
+        --warning: #f5a623;
+        --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 0.875rem;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* --- The app shell: never a blank page before wasm mounts (D20). The boot node is
+             removed by the csr entry once the app is alive; if it survives, boot failed and
+             the error state below is revealed in its place. --- */
+      .boot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 100vh;
+        padding: 2rem;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .boot-glyph {
+        font-family: var(--mono);
+        font-size: 1.5rem;
+        color: var(--faint);
+      }
+
+      .boot p {
+        max-width: 34rem;
+      }
+
+      .boot-hint {
+        color: var(--muted);
+        font-size: 0.8125rem;
+      }
+
+      .boot code {
+        font-family: var(--mono);
+        color: var(--text);
+      }
+
+      .boot--error .boot-glyph {
+        color: var(--warning);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .boot-glyph {
+          animation: boot-pulse 1.6s ease-in-out infinite;
+        }
+      }
+
+      @keyframes boot-pulse {
+        0%,
+        100% {
+          opacity: 0.55;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* --- Header bar. Mono, compact, quiet: the verdict is the protagonist through the
+             `text` token and its position, not color. Zero amber in the header frame. --- */
+      .hdr {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+        padding: 0.5rem 0.875rem;
+        border-bottom: 1px solid var(--hair);
+        background: var(--surface);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+      }
+
+      .logo {
+        color: var(--text);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .logo-glyph {
+        color: var(--muted); /* never amber — amber is spent only in the canvas */
+      }
+
+      .pair {
+        color: var(--text);
+      }
+
+      .pair b {
+        font-weight: 600;
+      }
+
+      .role {
+        color: var(--muted);
+      }
+
+      .vs {
+        color: var(--faint);
+      }
+
+      .verdict {
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+        text-decoration: none;
+      }
+
+      .verdict--fork:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      .verdict:focus-visible {
+        outline: 1px solid var(--hair);
+        outline-offset: 2px;
+        border-radius: 2px;
+      }
+
+      .meta {
+        margin-left: auto;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .canvas {
+        min-height: 12rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="boot">
+      <div class="boot" role="status" aria-live="polite">
+        <span class="boot-glyph" aria-hidden="true">⑂</span>
+        <p>Loading the fork…</p>
+      </div>
+      <div class="boot boot--error" role="alert" hidden>
+        <span class="boot-glyph" aria-hidden="true">⑂</span>
+        <p>amberfork couldn't start in this browser.</p>
+        <p class="boot-hint">
+          The local view needs WebAssembly. Read the diff in your terminal, or restart with
+          <code>amberfork serve &lt;bad&gt; --against &lt;good&gt;</code>.
+        </p>
+      </div>
+    </div>
+
+    <noscript>
+      <div class="boot">
+        <p>amberfork's local view needs JavaScript and WebAssembly.</p>
+        <p class="boot-hint">
+          The full diff is already in your terminal — run <code>amberfork diff &lt;bad&gt; --against &lt;good&gt;</code>.
+        </p>
+      </div>
+    </noscript>
+
+    <script>
+      // If wasm never boots, the csr entry never runs and #boot survives; flip it from
+      // loading to the error state so the page never sits on a dead spinner. The mounted
+      // app removes #boot wholesale, so a surviving node is the honest signal of failure.
+      (function () {
+        function showBootError() {
+          var boot = document.getElementById("boot");
+          if (!boot) return; // app mounted — nothing to do
+          var loading = boot.querySelector(".boot:not(.boot--error)");
+          var error = boot.querySelector(".boot--error");
+          if (loading) loading.hidden = true;
+          if (error) error.hidden = false;
+        }
+        addEventListener("error", showBootError);
+        addEventListener("unhandledrejection", showBootError);
+      })();
+    </script>
+  </body>
+</html>

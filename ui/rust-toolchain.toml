@@ -1,0 +1,6 @@
+# The web UI builds to wasm and runs its own CI job (design doc D4); this pin is what keeps
+# the workspace verify ritual wasm-free — the engine crates never install this target.
+[toolchain]
+channel = "stable"
+targets = ["wasm32-unknown-unknown"]
+components = ["rustfmt", "clippy"]

@@ -1,0 +1,51 @@
+name: ui
+
+# The web UI lives outside the cargo workspace (design doc D4) and builds to wasm, so it gets
+# its own job — the main `ci` workflow's verify ritual stays wasm-free (its `--workspace`
+# commands never reach the excluded ui/ crate). Contract drift matters here too: the UI
+# renders amberfork-layout's Document, so this runs on every push/PR, not only ui/ changes.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install rust (stable + wasm32 + fmt/clippy)
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup target add --toolchain stable wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ui
+
+      - name: fmt
+        run: cargo fmt --all --check
+
+      # clippy runs on BOTH Leptos backends: ssr is the host string-render build the tests
+      # use, csr is the wasm bundle that actually ships. A warning in either stops the line.
+      - name: clippy (ssr, host)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: clippy (csr, wasm)
+        run: cargo clippy --no-default-features --features csr --target wasm32-unknown-unknown -- -D warnings
+
+      - name: test (ssr string-render, host)
+        run: cargo test
+
+      # Prebuilt binary — fast and version-pinned; trunk fetches the matching wasm-bindgen.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: trunk
+
+      - name: build the wasm bundle
+        run: trunk build
