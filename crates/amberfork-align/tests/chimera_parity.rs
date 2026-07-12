@@ -68,7 +68,8 @@ fn score_exact(dir: &Path, manifests: &[PathBuf], cost: &impl CostModel) -> (usi
         let reference = load_run(&dir.join(manifest["reference"].as_str().unwrap()));
         let failing = load_run(&dir.join(manifest["failing"].as_str().unwrap()));
 
-        let result = diff(&reference, &failing, cost, &DiffParams::default());
+        let result =
+            diff(&reference, &failing, cost, &DiffParams::default()).expect("under the size guard");
         if result.fork_step_observed() == Some(gold) {
             exact += 1;
         } else {
@@ -147,7 +148,8 @@ fn default_params_match_frozen_config() {
         p.align,
         AlignParams {
             gap_open: 0.6,
-            gap_ext: 0.3
+            gap_ext: 0.3,
+            max_steps: 2000
         }
     );
     assert_eq!(

@@ -31,6 +31,10 @@ pub enum ParamError {
     GapExtNotPositive(f64),
     /// `gap_ext` must not exceed `gap_open` (the affine-gap premise).
     GapExtExceedsOpen { gap_open: f64, gap_ext: f64 },
+    /// A run is longer than `max_steps`, the guard on the aligner's O(n·m) allocation
+    /// (issue #23). Raised by the engine at `align()` time, not at validation time, because
+    /// it depends on the input, not the params alone.
+    StepsExceedMax { steps: usize, max: usize },
 }
 
 impl fmt::Display for ParamError {
@@ -55,6 +59,11 @@ impl fmt::Display for ParamError {
                 f,
                 "gap_ext ({gap_ext}) must not exceed gap_open ({gap_open}): extending a gap \
                  costing more than opening one breaks the affine premise"
+            ),
+            Self::StepsExceedMax { steps, max } => write!(
+                f,
+                "trace has {steps} steps, over the {max}-step alignment guard (memory and \
+                 time grow with steps²); pass --max-steps {steps} to proceed anyway"
             ),
         }
     }
@@ -183,6 +192,7 @@ mod tests {
         let params = AlignParams {
             gap_open: 0.3,
             gap_ext: 0.6,
+            ..AlignParams::default()
         };
         assert_eq!(
             params.validated(),
@@ -218,6 +228,20 @@ mod tests {
             bad_align.validated(),
             Err(ParamError::GapOpenNotPositive(_))
         ));
+    }
+
+    #[test]
+    fn size_guard_error_names_the_override_flag() {
+        let msg = ParamError::StepsExceedMax {
+            steps: 6000,
+            max: 2000,
+        }
+        .to_string();
+        assert!(msg.contains("6000") && msg.contains("2000"), "got: {msg}");
+        assert!(
+            msg.contains("--max-steps"),
+            "the escape hatch must be discoverable from the refusal itself: {msg}"
+        );
     }
 
     #[test]

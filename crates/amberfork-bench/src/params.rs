@@ -131,6 +131,11 @@ pub fn load(path: &Path) -> Result<FrozenParams, ParamsError> {
         align: AlignParams {
             gap_open: file.align.gap_open,
             gap_ext: file.align.gap_ext,
+            // Deliberately NOT part of the frozen schema (issue #23): the size guard is an
+            // operational ceiling, not a scoring parameter — it can only refuse an input,
+            // never move a number — so the harness pins the shipped default instead of
+            // widening the sha-pinned format.
+            max_steps: AlignParams::DEFAULT_MAX_STEPS,
         },
         fork: ForkParams {
             tau: file.fork.tau,

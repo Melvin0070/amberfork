@@ -90,15 +90,14 @@ impl Arm {
                     confidence: None,
                 })
             }
-            Self::NwStructural => aligned_prediction(diff(
-                &pair.reference,
-                &pair.failing,
-                &StructuralCost,
-                params,
-            )),
-            Self::NwLexical => {
-                aligned_prediction(diff(&pair.reference, &pair.failing, &LexicalCost, params))
-            }
+            Self::NwStructural => aligned_prediction(
+                diff(&pair.reference, &pair.failing, &StructuralCost, params)
+                    .expect("bench pairs stay within the default size guard"),
+            ),
+            Self::NwLexical => aligned_prediction(
+                diff(&pair.reference, &pair.failing, &LexicalCost, params)
+                    .expect("bench pairs stay within the default size guard"),
+            ),
         }
     }
 }

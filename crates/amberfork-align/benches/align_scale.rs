@@ -99,7 +99,10 @@ fn bench_diff_scale(c: &mut Criterion) {
         let reference = stitched_run("stitched-a", &a_source, n);
         let observed = stitched_run("stitched-b", &b_source, n);
         group.bench_with_input(BenchmarkId::from_parameter(n), &n, |bencher, _| {
-            bencher.iter(|| diff(&reference, &observed, &LexicalCost, &DiffParams::default()));
+            bencher.iter(|| {
+                diff(&reference, &observed, &LexicalCost, &DiffParams::default())
+                    .expect("under the size guard")
+            });
         });
     }
     group.finish();

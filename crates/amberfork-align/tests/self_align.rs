@@ -47,7 +47,8 @@ fn arb_run() -> impl Strategy<Value = Vec<Step>> {
 proptest! {
     #[test]
     fn self_alignment_is_all_sync_with_no_fork(run in arb_run()) {
-        let moves = align(&run, &run, &LexicalCost, &AlignParams::default());
+        let moves =
+            align(&run, &run, &LexicalCost, &AlignParams::default()).expect("under the size guard");
 
         prop_assert_eq!(moves.len(), run.len());
         for (i, m) in moves.iter().enumerate() {
@@ -64,7 +65,8 @@ proptest! {
         // The same invariant through the public seam: a self-diff has no fork and therefore
         // no regression to attribute — `None`, never a zero-confidence attribution.
         let this = test_support::run("self", run).build();
-        let result = diff(&this, &this, &LexicalCost, &DiffParams::default());
+        let result =
+            diff(&this, &this, &LexicalCost, &DiffParams::default()).expect("under the size guard");
         prop_assert_eq!(result.fork, None);
         prop_assert!(result.attribution.is_none());
     }

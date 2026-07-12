@@ -30,7 +30,8 @@ fn smoke_pair_forks_at_gold_step() {
     let reference = load_run(&dir.join(manifest["reference"].as_str().unwrap()));
     let failing = load_run(&dir.join(manifest["failing"].as_str().unwrap()));
 
-    let result = diff(&reference, &failing, &LexicalCost, &DiffParams::default());
+    let result = diff(&reference, &failing, &LexicalCost, &DiffParams::default())
+        .expect("under the size guard");
     let fork = result
         .fork
         .expect("smoke pair must fork — it encodes a real divergence");
@@ -52,7 +53,8 @@ fn smoke_runs_self_align_clean() {
     // Same data, converged case: each run against itself.
     for file in ["run_a.json", "run_b.json"] {
         let run = load_run(&fixture_dir().join(file));
-        let result = diff(&run, &run, &LexicalCost, &DiffParams::default());
+        let result =
+            diff(&run, &run, &LexicalCost, &DiffParams::default()).expect("under the size guard");
         assert_eq!(result.fork, None, "{file} vs itself must converge");
     }
 }

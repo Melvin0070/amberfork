@@ -12,6 +12,7 @@ use crate::cost::CostModel;
 use crate::field_diff::field_diffs;
 use crate::fork::{ForkParams, find_fork};
 use crate::nw::{AlignParams, align};
+use crate::params::ParamError;
 use amberfork_model::{DiffResult, Meta, Run, RunPair, RunRef, Source};
 
 /// Everything tunable about a diff, one level up: the aligner's gap penalties and the fork
@@ -23,14 +24,17 @@ pub struct DiffParams {
 }
 
 /// Diff `observed` against `reference`: align, locate the fork, assemble the result.
-#[must_use]
+///
+/// # Errors
+/// [`ParamError::StepsExceedMax`] when either run is longer than the size guard
+/// ([`AlignParams::max_steps`]) — see [`crate::align`].
 pub fn diff(
     reference: &Run,
     observed: &Run,
     cost_model: &impl CostModel,
     params: &DiffParams,
-) -> DiffResult {
-    let alignment = align(&reference.steps, &observed.steps, cost_model, &params.align);
+) -> Result<DiffResult, ParamError> {
+    let alignment = align(&reference.steps, &observed.steps, cost_model, &params.align)?;
     let fork = find_fork(&alignment, &params.fork);
     let field_diffs = field_diffs(&reference.steps, &observed.steps, &alignment);
     let mut result = DiffResult {
@@ -48,7 +52,7 @@ pub fn diff(
     // Attribution reads the assembled result (it reuses `fork_step_observed`), so it is the
     // one field filled in a second pass.
     result.attribution = static_attribution(&result);
-    result
+    Ok(result)
 }
 
 fn run_ref(run: &Run) -> RunRef {
@@ -79,13 +83,30 @@ mod tests {
     }
 
     #[test]
+    fn size_guard_propagates_through_the_public_seam() {
+        let good = run("good", Outcome::Pass, &[("plan", "x"), ("act", "y")]);
+        let params = DiffParams {
+            align: AlignParams {
+                max_steps: 1,
+                ..AlignParams::default()
+            },
+            ..DiffParams::default()
+        };
+        assert_eq!(
+            diff(&good, &good, &LexicalCost, &params).unwrap_err(),
+            crate::ParamError::StepsExceedMax { steps: 2, max: 1 }
+        );
+    }
+
+    #[test]
     fn converged_diff_has_no_fork_and_honest_empties() {
         let good = run(
             "good",
             Outcome::Pass,
             &[("plan", "search then verify"), ("search", "9 results")],
         );
-        let result = diff(&good, &good, &LexicalCost, &DiffParams::default());
+        let result =
+            diff(&good, &good, &LexicalCost, &DiffParams::default()).expect("under the size guard");
 
         assert!(result.fork.is_none(), "self-diff is the converged state");
         assert!(result.alignment.iter().all(|m| m.kind == MoveKind::Sync));
@@ -100,7 +121,8 @@ mod tests {
     fn run_refs_carry_identity_without_the_trajectory() {
         let good = run("good", Outcome::Pass, &[("plan", "x"), ("act", "y")]);
         let bad = run("bad", Outcome::Fail, &[("plan", "x")]);
-        let result = diff(&good, &bad, &LexicalCost, &DiffParams::default());
+        let result =
+            diff(&good, &bad, &LexicalCost, &DiffParams::default()).expect("under the size guard");
 
         assert_eq!(result.runs.a.id, "good");
         assert_eq!(result.runs.a.outcome, Some(Outcome::Pass));
@@ -132,7 +154,8 @@ mod tests {
                 ("answer", "population is 9,100,000"),
             ],
         );
-        let result = diff(&good, &bad, &LexicalCost, &DiffParams::default());
+        let result =
+            diff(&good, &bad, &LexicalCost, &DiffParams::default()).expect("under the size guard");
         let fork = result.fork.expect("diverging tail must fork");
 
         let at_fork: Vec<_> = result
@@ -174,7 +197,8 @@ mod tests {
                 ("answer", "population is 9,100,000"),
             ],
         );
-        let result = diff(&good, &bad, &LexicalCost, &DiffParams::default());
+        let result =
+            diff(&good, &bad, &LexicalCost, &DiffParams::default()).expect("under the size guard");
         let fork = result.fork.expect("diverging tail must fork");
         assert_eq!(fork.b_step, Some(2), "fork at the bad fetch");
         assert!(fork.confidence > 0.0);
@@ -202,7 +226,8 @@ mod tests {
                 ("answer", "population is 9,100,000"),
             ],
         );
-        let result = diff(&good, &bad, &LexicalCost, &DiffParams::default());
+        let result =
+            diff(&good, &bad, &LexicalCost, &DiffParams::default()).expect("under the size guard");
         let fork = result.fork.expect("diverging tail must fork");
         let attribution = result
             .attribution

@@ -131,7 +131,15 @@ fn diff_and_report(
     let params = DiffParams::default()
         .validated()
         .expect("dev-calibrated defaults satisfy their own invariants");
-    let mut result = diff(&good.run, &bad.run, &LexicalCost, &params);
+    // The engine's own refusals (today: the size guard) are trouble, not a diff verdict —
+    // same exit and stderr shape as an unreadable input.
+    let mut result = match diff(&good.run, &bad.run, &LexicalCost, &params) {
+        Ok(result) => result,
+        Err(err) => {
+            eprintln!("amberfork: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
     result.warnings = merged_warnings(good.warnings, bad.warnings);
 
     if output.json {

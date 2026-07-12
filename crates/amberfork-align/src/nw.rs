@@ -17,6 +17,7 @@
 //! invariant the fork rule builds on.
 
 use crate::cost::CostModel;
+use crate::params::ParamError;
 use amberfork_model::{Move, Step};
 
 /// Affine-gap penalties, on the same scale as [`CostModel`] costs (`[0, 1]` per step).
@@ -27,6 +28,17 @@ pub struct AlignParams {
     pub gap_open: f64,
     /// Cost of each further step extending an open gap run.
     pub gap_ext: f64,
+    /// Ceiling on either run's step count before [`align`] refuses to allocate its O(n·m)
+    /// matrices (issue #23). A guard, not a wall: every boundary that accepts user traces
+    /// must expose an override (the CLI's `--max-steps`).
+    pub max_steps: usize,
+}
+
+impl AlignParams {
+    /// Default [`Self::max_steps`]. At 2000×2000 the aligner sits near 100 MB and around a
+    /// minute (notebook 022's measured curve) — the largest real traces seen so far stay
+    /// under half of it; 5000 projects to ~3.4 min and ~600 MB, where "slow" reads as hung.
+    pub const DEFAULT_MAX_STEPS: usize = 2000;
 }
 
 impl Default for AlignParams {
@@ -34,6 +46,7 @@ impl Default for AlignParams {
         Self {
             gap_open: 0.6,
             gap_ext: 0.3,
+            max_steps: Self::DEFAULT_MAX_STEPS,
         }
     }
 }
@@ -49,13 +62,25 @@ impl Default for AlignParams {
 /// paid (open or extend), and its `confidence` is the *minimum* cost between the gapped step
 /// and any step on the other side — “even the closest counterpart looks this different” — or
 /// `1.0` when the other side is empty.
+///
+/// # Errors
+/// [`ParamError::StepsExceedMax`] when either side is longer than
+/// [`AlignParams::max_steps`] — refused here, in the engine itself, so no boundary can
+/// forget the guard and walk into the O(n·m) allocation below.
 pub fn align(
     a: &[Step],
     b: &[Step],
     cost_model: &impl CostModel,
     params: &AlignParams,
-) -> Vec<Move> {
+) -> Result<Vec<Move>, ParamError> {
     let (n, m) = (a.len(), b.len());
+    let steps = n.max(m);
+    if steps > params.max_steps {
+        return Err(ParamError::StepsExceedMax {
+            steps,
+            max: params.max_steps,
+        });
+    }
     // Prepare each side once — O(n+m) per-step digests — so the O(n·m) fill below spends
     // nothing on re-deriving per-step state (issue #16).
     let a_prep: Vec<_> = a.iter().map(|s| cost_model.prepare(s)).collect();
@@ -151,7 +176,7 @@ pub fn align(
         }
     }
     moves.reverse();
-    moves
+    Ok(moves)
 }
 
 /// The three DP states of the Gotoh alignment.
@@ -253,9 +278,40 @@ mod tests {
     }
 
     #[test]
+    fn over_limit_side_is_refused_before_allocation() {
+        let params = AlignParams {
+            max_steps: 3,
+            ..AlignParams::default()
+        };
+        let a = run_of(&["plan", "search"]);
+        let b = run_of(&["plan", "search", "fetch", "answer"]);
+        // The longer side trips the guard, whichever side it is.
+        assert_eq!(
+            align(&a, &b, &NameEq, &params).unwrap_err(),
+            ParamError::StepsExceedMax { steps: 4, max: 3 }
+        );
+        assert_eq!(
+            align(&b, &a, &NameEq, &params).unwrap_err(),
+            ParamError::StepsExceedMax { steps: 4, max: 3 }
+        );
+    }
+
+    #[test]
+    fn exactly_at_limit_alignment_passes() {
+        let params = AlignParams {
+            max_steps: 3,
+            ..AlignParams::default()
+        };
+        let run = run_of(&["plan", "search", "answer"]);
+        let moves = align(&run, &run, &NameEq, &params).expect("at the limit is within it");
+        assert_eq!(moves.len(), 3);
+    }
+
+    #[test]
     fn identical_runs_align_all_sync() {
         let run = run_of(&["plan", "search", "fetch", "answer"]);
-        let moves = align(&run, &run, &LexicalCost, &AlignParams::default());
+        let moves =
+            align(&run, &run, &LexicalCost, &AlignParams::default()).expect("under the size guard");
         assert_eq!(moves.len(), 4);
         for (i, m) in moves.iter().enumerate() {
             assert_eq!(m.kind, MoveKind::Sync);
@@ -270,7 +326,7 @@ mod tests {
     fn extra_observed_step_is_a_log_move() {
         let a = run_of(&["plan", "search", "answer"]);
         let b = run_of(&["plan", "retry", "search", "answer"]);
-        let moves = align(&a, &b, &NameEq, &AlignParams::default());
+        let moves = align(&a, &b, &NameEq, &AlignParams::default()).expect("under the size guard");
         let kinds: Vec<MoveKind> = moves.iter().map(|m| m.kind).collect();
         assert_eq!(
             kinds,
@@ -290,7 +346,7 @@ mod tests {
     fn missing_observed_step_is_a_model_move() {
         let a = run_of(&["plan", "verify", "answer"]);
         let b = run_of(&["plan", "answer"]);
-        let moves = align(&a, &b, &NameEq, &AlignParams::default());
+        let moves = align(&a, &b, &NameEq, &AlignParams::default()).expect("under the size guard");
         let kinds: Vec<MoveKind> = moves.iter().map(|m| m.kind).collect();
         assert_eq!(kinds, [MoveKind::Sync, MoveKind::Model, MoveKind::Sync]);
         assert_eq!(moves[1].a_idx, Some(1));
@@ -302,7 +358,7 @@ mod tests {
         let a = run_of(&["start", "finish"]);
         let b = run_of(&["start", "junk1", "junk2", "finish"]);
         let params = AlignParams::default();
-        let moves = align(&a, &b, &NameEq, &params);
+        let moves = align(&a, &b, &NameEq, &params).expect("under the size guard");
         let kinds: Vec<MoveKind> = moves.iter().map(|m| m.kind).collect();
         assert_eq!(
             kinds,
@@ -320,7 +376,7 @@ mod tests {
         let none: Vec<Step> = Vec::new();
         let params = AlignParams::default();
 
-        let all_log = align(&none, &some, &NameEq, &params);
+        let all_log = align(&none, &some, &NameEq, &params).expect("under the size guard");
         assert_eq!(
             all_log.iter().map(|m| m.kind).collect::<Vec<_>>(),
             [MoveKind::Log, MoveKind::Log]
@@ -328,13 +384,17 @@ mod tests {
         // No other side at all: fully confident these are unmatched.
         assert!(all_log.iter().all(|m| m.confidence == 1.0));
 
-        let all_model = align(&some, &none, &NameEq, &params);
+        let all_model = align(&some, &none, &NameEq, &params).expect("under the size guard");
         assert_eq!(
             all_model.iter().map(|m| m.kind).collect::<Vec<_>>(),
             [MoveKind::Model, MoveKind::Model]
         );
 
-        assert!(align(&none, &none, &NameEq, &params).is_empty());
+        assert!(
+            align(&none, &none, &NameEq, &params)
+                .expect("under the size guard")
+                .is_empty()
+        );
     }
 
     #[test]
@@ -346,7 +406,8 @@ mod tests {
             step(0, "search", "query census population figures"),
             step(1, "search", "query census population figures again"),
         ];
-        let moves = align(&a, &b, &LexicalCost, &AlignParams::default());
+        let moves =
+            align(&a, &b, &LexicalCost, &AlignParams::default()).expect("under the size guard");
         assert_eq!(
             moves.iter().map(|m| m.kind).collect::<Vec<_>>(),
             [MoveKind::Sync, MoveKind::Log]
