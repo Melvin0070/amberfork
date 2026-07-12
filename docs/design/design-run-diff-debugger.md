@@ -167,6 +167,40 @@ with issue #24 on top of this same `ViewModel`. The extraction was output-locked
 with zero churn across the committed CLI snapshot net (issue #21 slices 0–1, commits
 909aeea/95e8bba).
 
+## Amendment 2026-07-13 — the serving edge shipped (issue #25)
+
+`amberfork-server` (the 7th crate) landed with v0.5's serving slice: a loopback-only axum
+server over the layout `Document`, plus `amberfork serve <bad> --against <good>` as a sibling
+subcommand of `diff` (a long-running server has different lifecycle semantics than diff's
+exit-code contract). The D-decisions it implements: **D12** — ONE content endpoint
+(`/api/document`), the versioned view-model whole, ETag/304 for the UI's re-poll; **D6** —
+`127.0.0.1` is the only bind expression in the crate (no widen flag exists) and a Host-header
+allowlist guards every route against DNS rebinding (the vite/Jupyter CVE class); **D7/D13** —
+the single embedded UI bundle lives in the server crate (`ui-dist/`, gitignored, built by the
+release workflow, carried onto crates.io by the crate's `include` allowlist); tokio stays
+quarantined here and at the CLI's one `block_on` edge.
+
+```text
+      DiffResult (+ the two Runs)
+                │
+                ▼
+        amberfork-layout ──▶ ViewModel ──▶ Document (schema_version, payload envelope, #24)
+                                │               │
+                                ▼               ▼
+                        CLI painter        amberfork-server (#25)
+                        (render.rs)        GET /api/document · SPA fallback over the
+                                           embedded bundle · loopback + Host guard
+                                                │
+                                                ▼
+                                           browser (ui/, Leptos — #26/#27)
+```
+
+The startup order is part of the contract: ingest's typed errors, then the engine, then the
+server's own checks (bundle present, port free) — all in the terminal before any port binds;
+the verdict headline prints before any browser opens (`ViewModel::headline()`, the same
+string #26's web header renders). Where "## Module / crate layout" below describes
+`amberfork-server` aspirationally (result API + WASM serving), THIS describes what shipped.
+
 ---
 
 # [HISTORICAL] Design: Run-Diff Debugger for AI Agents (local, framework-agnostic) — Validation-First

@@ -464,6 +464,34 @@ impl ViewModel {
             warnings: result.warnings.clone(),
         }
     }
+
+    /// The one-line verdict headline every surface opens with: `serve`'s terminal handoff
+    /// and the web header print the SAME string (issue #25 amendment), so it lives here
+    /// with the rest of the designed wording, not in a painter.
+    ///
+    /// Forked: `⑂ forked at step 02 · conf 0.86` — index padded like the gutter, confidence
+    /// in the fork row's designed wording (so `marginal call` composes for free).
+    /// Converged: exactly [`Verdict::converged_text`].
+    pub fn headline(&self) -> String {
+        if let Some(text) = self.verdict.converged_text() {
+            return text;
+        }
+        // Forked: compute() emits exactly one fork row alongside a Forked verdict; the
+        // bare-claim fallback keeps this total for hand-built views (never panics).
+        let fork = self.rows.iter().find_map(|row| match row {
+            Row::Fork(fork) => Some(fork),
+            Row::Step(_) => None,
+        });
+        let Some(fork) = fork else {
+            return "⑂ forked".to_string();
+        };
+        let idx = match fork.step.display_idx() {
+            Some(i) => format!("{i:0w$}", w = self.idx_width),
+            // The gutter's absence convention (a fork row with no index on either side).
+            None => "·".repeat(self.idx_width),
+        };
+        format!("⑂ forked at step {idx} · {}", fork.confidence)
+    }
 }
 
 /// The canonical step-kind vocabulary every surface prints.
@@ -806,6 +834,31 @@ mod tests {
             "converged — identical through 2 steps"
         );
         assert!(view.attribution.is_none());
+    }
+
+    #[test]
+    fn headline_forked_names_the_step_and_confidence() {
+        let (a, b, res) = forked(0.86);
+        let view = ViewModel::compute(&res, &a, &b);
+        assert_eq!(view.headline(), "⑂ forked at step 02 · conf 0.86");
+    }
+
+    #[test]
+    fn headline_composes_the_designed_weak_call_wording() {
+        let (a, b, res) = forked(0.0);
+        let view = ViewModel::compute(&res, &a, &b);
+        assert_eq!(view.headline(), "⑂ forked at step 02 · marginal call");
+    }
+
+    #[test]
+    fn headline_converged_is_exactly_the_converged_text() {
+        let steps = || vec![step(0, "plan", "x"), step(1, "answer", "y")];
+        let a = run("good", Outcome::Pass, steps());
+        let b = run("good_again", Outcome::Pass, steps());
+        let alignment = vec![Move::sync(0, 0, 0.0, 1.0), Move::sync(1, 1, 0.0, 1.0)];
+        let view = ViewModel::compute(&result(&a, &b, alignment, None), &a, &b);
+        assert_eq!(view.headline(), "converged — identical through 2 steps");
+        assert_eq!(Some(view.headline()), view.verdict.converged_text());
     }
 
     #[test]

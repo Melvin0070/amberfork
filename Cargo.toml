@@ -41,6 +41,7 @@ axum = "0.8"
 mime_guess = "2"
 rust-embed = "8"
 tokio = { version = "1", features = ["net"] }
+webbrowser = "1"
 insta = "1"
 tempfile = "3"
 criterion = "0.8"
@@ -51,6 +52,7 @@ amberfork-model = { path = "crates/amberfork-model", version = "0.4.0" }
 amberfork-align = { path = "crates/amberfork-align", version = "0.4.0" }
 amberfork-ingest = { path = "crates/amberfork-ingest", version = "0.4.0" }
 amberfork-layout = { path = "crates/amberfork-layout", version = "0.4.0" }
+amberfork-server = { path = "crates/amberfork-server", version = "0.4.0" }
 
 # Deny-by-default lints applied workspace-wide. CI runs `clippy --all-targets -- -D warnings`;
 # keeping the intent here documents that a warning is a stop-the-line event.

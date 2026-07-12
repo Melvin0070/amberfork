@@ -21,9 +21,13 @@ amberfork-align = { workspace = true }
 amberfork-ingest = { workspace = true }
 amberfork-layout = { workspace = true }
 amberfork-model = { workspace = true }
+amberfork-server = { workspace = true }
 clap = { workspace = true }
 serde_json = { workspace = true }
 terminal_size = { workspace = true }
+# The runtime lives at the ONE async edge (`serve`); engine paths never touch it.
+tokio = { workspace = true, features = ["rt"] }
+webbrowser = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

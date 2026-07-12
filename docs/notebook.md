@@ -972,3 +972,39 @@ at that scale ever shows up, the next lever is per-cell gestalt cost (intern tok
 integer ids during `prepare`, so the inner DP compares `u32`s instead of `String`s — the seam
 now exists to hold exactly that), same trigger discipline as #16 had: a real slow trace, not
 a schedule.
+
+## 024 · 2026-07-13 · The serving edge: amberfork serve, born loopback-only (issue #25)
+
+**What changed.** `amberfork-server` (7th crate) in three slices: (0) loopback server over
+the layout `Document` — one content endpoint (`/api/document`, D12), serialized+hashed once
+at bind, ETag/304 for the UI's disconnect re-poll, Host-header allowlist on the whole router
+(D6); (1) rust-embed bundle + SPA fallback + crates.io packaging (D7/D13); (2)
+`amberfork serve <bad> --against <good> [--port] [--open]` with the pinned terminal handoff —
+`ViewModel::headline()` lives in layout so serve's terminal line and #26's web header print
+the same string. tokio enters exactly twice: the server crate and the CLI's one `block_on`.
+
+**Decisions that will outlive the code.**
+- *The guard wraps the router, not routes.* The Host check is a `.layer` on everything, so
+  slice 1's SPA fallback was born behind it — verified by a foreign-Host-on-unknown-route
+  test that survived the fallback landing unchanged.
+- *`/api/*` never falls back to index.html.* A typo'd endpoint 404s loud instead of handing
+  `fetch()` HTML to parse.
+- *Bundle check precedes bind; ingest precedes both.* Pinned by a PAIR of CLI tests: same
+  invocation, unreadable trace → typed ingest error; valid pair → bundle-missing message.
+  Order proven by which error you get, with stdout empty in both.
+- *The missing-bundle test uses a committed empty fixture, not the real `ui-dist/`* —
+  asserting on the real one starts lying the day someone builds the UI locally.
+- *Port default is `:0`* (OS-assigned, can't collide); `--port` pins one and busy is a typed
+  error naming the port — reconciles the doc's "pick a free port" with "port-in-use → clear
+  error" without a port hunt.
+
+**Learned the hard way.** rust-embed 8's `Metadata` has no `mimetype()` (guessed API — the
+compiler said no); MIME comes from `mime_guess` directly. Axum handlers need `A: 'static` on
+the embed generic. `include = ["src/**", "ui-dist/**"]` genuinely overrides gitignore at
+package time — proven with `cargo package --list`, not assumed.
+
+**Coverage honesty.** The happy-path e2e (spawn `serve`, GET through a real bundle) does not
+exist yet: a dev build has no bundle by design, so it lands with #28's release smoke against
+the real artifact. Serving behavior is covered at the lib layer (11 integration tests over a
+bound listener, raw-TCP client); the CLI layer pins startup order and error wording only.
+Port-in-use is lib-tested, not CLI-tested (unreachable in a dev build — bundle check first).

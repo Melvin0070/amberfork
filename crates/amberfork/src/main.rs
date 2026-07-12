@@ -8,15 +8,22 @@
 //! `amberfork demo` is the same pipeline on a pair embedded in the binary at compile time —
 //! the zero-setup first contact: no files, no network, no particular working directory.
 //!
+//! `amberfork serve <bad> --against <good>` runs the same engine, then hands the fork to the
+//! browser: a loopback-only server (amberfork-server) over the layout `Document`. It is a
+//! sibling of `diff`, not a flag on it — a long-running server has different lifecycle
+//! semantics than diff's exit-code contract.
+//!
 //! Exit codes follow the `diff(1)` precedent: **0** converged, **1** forked, **2** trouble
 //! (unreadable input, bad usage — clap's own usage errors also exit 2). Errors go to stderr;
 //! stdout carries only the result. `demo` keeps the same exit semantics: its pair forks by
-//! design, so it exits 1.
+//! design, so it exits 1. `serve` exits 2 on any startup failure (before the port binds) and
+//! otherwise runs until interrupted.
 
 use amberfork_align::{AlignParams, DiffParams, LexicalCost, diff};
 use amberfork_ingest::{IngestError, Ingested};
-use amberfork_layout::ViewModel;
-use amberfork_model::Warning;
+use amberfork_layout::{Document, ViewModel};
+use amberfork_model::{DiffResult, Warning};
+use amberfork_server::Server;
 use clap::{Args, Parser, Subcommand};
 use render::{RenderOpts, resolve_color_mode};
 use std::io::IsTerminal;
@@ -54,6 +61,9 @@ enum Command {
 
     /// Diff a bundled sample pair — see the fork with zero setup, no files needed.
     Demo(DemoArgs),
+
+    /// Serve the fork in a local web view (127.0.0.1 only) — Ctrl-C to stop.
+    Serve(ServeArgs),
 }
 
 #[derive(Args)]
@@ -81,6 +91,31 @@ struct DemoArgs {
     output: OutputArgs,
 }
 
+#[derive(Args)]
+struct ServeArgs {
+    /// The failing/observed run trace (side `b` of the result).
+    #[arg(value_name = "BAD")]
+    bad: PathBuf,
+
+    /// The known-good reference run trace (side `a` of the result).
+    #[arg(long, value_name = "GOOD")]
+    against: PathBuf,
+
+    /// Refuse runs longer than this many steps — same escape hatch as `diff` (alignment
+    /// memory and time grow with steps²).
+    #[arg(long, value_name = "N", default_value_t = AlignParams::DEFAULT_MAX_STEPS)]
+    max_steps: usize,
+
+    /// Pin the port. Default is an OS-assigned free port; a busy pinned port is an error,
+    /// not a hunt for the next one.
+    #[arg(long, value_name = "PORT")]
+    port: Option<u16>,
+
+    /// Open the browser once the server is up.
+    #[arg(long)]
+    open: bool,
+}
+
 /// Output flags shared by every result-emitting subcommand, so `--json`/`--no-color` mean the
 /// same thing everywhere.
 #[derive(Args)]
@@ -102,6 +137,10 @@ fn main() -> ExitCode {
             ExitCode::from(EXIT_TROUBLE)
         }),
         Command::Demo(args) => run_demo(&args),
+        Command::Serve(args) => run_serve(&args).unwrap_or_else(|err| {
+            eprintln!("amberfork: {err}");
+            ExitCode::from(EXIT_TROUBLE)
+        }),
     }
 }
 
@@ -133,7 +172,94 @@ fn run_demo(args: &DemoArgs) -> ExitCode {
     )
 }
 
-/// The shared back half of every subcommand: run the engine on a loaded pair, emit the result
+/// The startup order is the contract (issue #25): ingest fails first with its typed errors,
+/// then the engine, then the server's own checks (bundle, port) — all in the terminal,
+/// before any port is bound. Only a running server produces stdout.
+fn run_serve(args: &ServeArgs) -> Result<ExitCode, IngestError> {
+    let good = amberfork_ingest::load_file(&args.against)?;
+    let bad = amberfork_ingest::load_file(&args.bad)?;
+    let mut result = match run_engine(&good, &bad, args.max_steps) {
+        Ok(result) => result,
+        Err(code) => return Ok(code),
+    };
+    result.warnings = merged_warnings(good.warnings, bad.warnings);
+    let document = Document::new(ViewModel::compute(&result, &good.run, &bad.run));
+    Ok(serve_document(&document, args))
+}
+
+/// The ONE async edge in this crate: a current-thread runtime wrapping the server's
+/// lifetime, so the engine path above it stays sync (design doc: tokio is quarantined to
+/// I/O edges).
+fn serve_document(document: &Document, args: &ServeArgs) -> ExitCode {
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .build()
+    {
+        Ok(runtime) => runtime,
+        Err(err) => {
+            eprintln!("amberfork: cannot start the async runtime: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
+    runtime.block_on(async {
+        let server = match Server::bind(document, args.port.unwrap_or(0)).await {
+            Ok(server) => server,
+            Err(err) => {
+                eprintln!("amberfork: {err}");
+                return ExitCode::from(EXIT_TROUBLE);
+            }
+        };
+        // The pinned handoff (#25 amendment): the verdict lands in the terminal BEFORE any
+        // browser opens — the web view elaborates the answer, it never gates it.
+        let url = format!("http://{}", server.local_addr());
+        println!("{}", document.view.headline());
+        println!(
+            "serving {} vs {} → {url}  (Ctrl-C to stop)",
+            args.bad.display(),
+            args.against.display()
+        );
+        for warning in &document.view.warnings {
+            eprintln!("amberfork: warning: {}", warning.msg);
+        }
+        if args.open
+            && let Err(err) = webbrowser::open(&url)
+        {
+            // The browser is convenience; the server it points at must outlive its absence.
+            eprintln!("amberfork: warning: cannot open a browser: {err}");
+        }
+        match server.serve().await {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(err) => {
+                eprintln!("amberfork: {err}");
+                ExitCode::from(EXIT_TROUBLE)
+            }
+        }
+    })
+}
+
+/// Params + engine, shared by every subcommand. The single decision point for engine params:
+/// anything user-supplied (--max-steps today, future --tau style flags) routes through
+/// validated() here, and both param and engine refusals (today: the size guard) map to exit
+/// 2 with the same stderr shape as an unreadable input — the engine itself never asserts.
+fn run_engine(good: &Ingested, bad: &Ingested, max_steps: usize) -> Result<DiffResult, ExitCode> {
+    let params = DiffParams {
+        align: AlignParams {
+            max_steps,
+            ..AlignParams::default()
+        },
+        ..DiffParams::default()
+    };
+    let params = params.validated().map_err(|err| {
+        eprintln!("amberfork: {err}");
+        ExitCode::from(EXIT_TROUBLE)
+    })?;
+    diff(&good.run, &bad.run, &LexicalCost, &params).map_err(|err| {
+        eprintln!("amberfork: {err}");
+        ExitCode::from(EXIT_TROUBLE)
+    })
+}
+
+/// The shared back half of `diff`/`demo`: run the engine on a loaded pair, emit the result
 /// (render or `--json`), and map it to the `diff(1)` exit code. `footer` is an optional
 /// trailing line for the human render only — `--json` stays the pure machine contract.
 fn diff_and_report(
@@ -143,31 +269,9 @@ fn diff_and_report(
     output: &OutputArgs,
     footer: Option<&str>,
 ) -> ExitCode {
-    // The single decision point for engine params: anything user-supplied (--max-steps
-    // today, future --tau style flags) routes through validated() here and maps ParamError
-    // to exit 2 — the engine itself never asserts.
-    let params = DiffParams {
-        align: AlignParams {
-            max_steps,
-            ..AlignParams::default()
-        },
-        ..DiffParams::default()
-    };
-    let params = match params.validated() {
-        Ok(params) => params,
-        Err(err) => {
-            eprintln!("amberfork: {err}");
-            return ExitCode::from(EXIT_TROUBLE);
-        }
-    };
-    // The engine's own refusals (today: the size guard) are trouble, not a diff verdict —
-    // same exit and stderr shape as an unreadable input.
-    let mut result = match diff(&good.run, &bad.run, &LexicalCost, &params) {
+    let mut result = match run_engine(&good, &bad, max_steps) {
         Ok(result) => result,
-        Err(err) => {
-            eprintln!("amberfork: {err}");
-            return ExitCode::from(EXIT_TROUBLE);
-        }
+        Err(code) => return code,
     };
     result.warnings = merged_warnings(good.warnings, bad.warnings);
 
