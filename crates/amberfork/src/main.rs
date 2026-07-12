@@ -13,7 +13,7 @@
 //! stdout carries only the result. `demo` keeps the same exit semantics: its pair forks by
 //! design, so it exits 1.
 
-use amberfork_align::{DiffParams, LexicalCost, diff};
+use amberfork_align::{AlignParams, DiffParams, LexicalCost, diff};
 use amberfork_ingest::{IngestError, Ingested};
 use amberfork_layout::ViewModel;
 use amberfork_model::Warning;
@@ -66,6 +66,11 @@ struct DiffArgs {
     #[arg(long, value_name = "GOOD")]
     against: PathBuf,
 
+    /// Refuse runs longer than this many steps — alignment memory and time grow with steps²,
+    /// so bigger traces are a choice, not a surprise. Raise it to align them anyway.
+    #[arg(long, value_name = "N", default_value_t = AlignParams::DEFAULT_MAX_STEPS)]
+    max_steps: usize,
+
     #[command(flatten)]
     output: OutputArgs,
 }
@@ -103,7 +108,13 @@ fn main() -> ExitCode {
 fn run_diff(args: &DiffArgs) -> Result<ExitCode, IngestError> {
     let good = amberfork_ingest::load_file(&args.against)?;
     let bad = amberfork_ingest::load_file(&args.bad)?;
-    Ok(diff_and_report(good, bad, &args.output, None))
+    Ok(diff_and_report(
+        good,
+        bad,
+        args.max_steps,
+        &args.output,
+        None,
+    ))
 }
 
 fn run_demo(args: &DemoArgs) -> ExitCode {
@@ -113,7 +124,13 @@ fn run_demo(args: &DemoArgs) -> ExitCode {
         .expect("embedded demo trace good.json parses (locked by demo_cli tests)");
     let bad = amberfork_ingest::from_json_str(DEMO_BAD)
         .expect("embedded demo trace bad.json parses (locked by demo_cli tests)");
-    diff_and_report(good, bad, &args.output, Some(DEMO_HINT))
+    diff_and_report(
+        good,
+        bad,
+        AlignParams::DEFAULT_MAX_STEPS,
+        &args.output,
+        Some(DEMO_HINT),
+    )
 }
 
 /// The shared back half of every subcommand: run the engine on a loaded pair, emit the result
@@ -122,15 +139,27 @@ fn run_demo(args: &DemoArgs) -> ExitCode {
 fn diff_and_report(
     good: Ingested,
     bad: Ingested,
+    max_steps: usize,
     output: &OutputArgs,
     footer: Option<&str>,
 ) -> ExitCode {
-    // The single decision point for engine params: anything user-supplied (future --tau
-    // style flags) routes through validated() here and maps ParamError to exit 2 — the
-    // engine itself never asserts. Defaults are valid by unit test in amberfork-align.
-    let params = DiffParams::default()
-        .validated()
-        .expect("dev-calibrated defaults satisfy their own invariants");
+    // The single decision point for engine params: anything user-supplied (--max-steps
+    // today, future --tau style flags) routes through validated() here and maps ParamError
+    // to exit 2 — the engine itself never asserts.
+    let params = DiffParams {
+        align: AlignParams {
+            max_steps,
+            ..AlignParams::default()
+        },
+        ..DiffParams::default()
+    };
+    let params = match params.validated() {
+        Ok(params) => params,
+        Err(err) => {
+            eprintln!("amberfork: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
     // The engine's own refusals (today: the size guard) are trouble, not a diff verdict —
     // same exit and stderr shape as an unreadable input.
     let mut result = match diff(&good.run, &bad.run, &LexicalCost, &params) {

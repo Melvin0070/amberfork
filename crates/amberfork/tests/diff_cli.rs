@@ -124,6 +124,55 @@ fn jsonl_input_exits_2_and_stderr_names_the_shape_the_file_and_the_guide() {
         .stderr(predicates::str::contains("docs/run-on-your-own-agent.md"));
 }
 
+/// Step count of the longer smoke-fixture side — the number the size-guard tests pivot on.
+fn longest_side() -> usize {
+    let (bad, good, _) = manifest();
+    [bad, good]
+        .iter()
+        .map(|path| {
+            let run: serde_json::Value =
+                serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+            run["steps"].as_array().expect("canonical trace").len()
+        })
+        .max()
+        .expect("two sides")
+}
+
+#[test]
+fn lowered_max_steps_exits_2_and_stderr_names_the_escape_hatch() {
+    let (bad, good, _) = manifest();
+
+    amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--max-steps")
+        .arg((longest_side() - 1).to_string())
+        .assert()
+        .code(EXIT_TROUBLE)
+        .stdout(predicates::str::is_empty())
+        .stderr(predicates::str::contains("alignment guard"))
+        .stderr(predicates::str::contains("--max-steps"));
+}
+
+#[test]
+fn max_steps_exactly_at_the_trace_length_is_honored() {
+    // The override controls the ceiling: at the longer side's exact length the same pair
+    // aligns normally (the smoke pair forks, so exit 1 — not the guard's exit 2).
+    let (bad, good, _) = manifest();
+
+    amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--max-steps")
+        .arg(longest_side().to_string())
+        .assert()
+        .code(EXIT_FORKED);
+}
+
 #[test]
 fn missing_file_exits_2_with_the_path_on_stderr_and_clean_stdout() {
     let (_, good, _) = manifest();

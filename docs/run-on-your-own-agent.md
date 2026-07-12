@@ -218,9 +218,11 @@ invalid input). `amberfork diff` in CI gates on a reference run for free.
   converter is passing framework step kinds through. Map them onto the canonical four.
 - **A 0-step run "forks at step 0"** — technically true, practically a converter bug:
   check that your script actually emitted steps.
-- **Long runs feel slow** — alignment cost grows with the product of the two runs'
-  lengths; ~1000×1000 steps takes ~13 s today. Known, measured, tracked
-  ([#16](https://github.com/Melvin0070/amberfork/issues/16)).
+- **`trace has N steps, over the 2000-step alignment guard`** — alignment memory and time
+  grow with the product of the two runs' lengths (~1000×1000 steps ≈ 13 s today; measured,
+  tracked in [#16](https://github.com/Melvin0070/amberfork/issues/16)), so oversized traces
+  are refused up front rather than looking hung. When the wait is a choice, raise the
+  ceiling: `--max-steps <N>`.
 - **OTel GenAI / OpenInference exports** — direct ingestion is on the roadmap, not built.
   Today the plain-JSON format is the way in; the mappings sketched in
   [`trace-format.md`](trace-format.md) make the conversion mechanical.
