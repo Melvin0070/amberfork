@@ -5,6 +5,7 @@ members = [
     "crates/amberfork-ingest",
     "crates/amberfork-align",
     "crates/amberfork-layout",
+    "crates/amberfork-server",
     "crates/amberfork",
     "crates/amberfork-bench",
 ]
@@ -33,6 +34,11 @@ terminal_size = "0.4"
 ureq = "3"
 assert_cmd = "2"
 predicates = "3"
+# The serving edge (issue #25). tokio stays quarantined to I/O-edge crates (design doc:
+# engine crates are sync + pure); the lib needs only `net` — test/binary runtimes opt into
+# `macros`/`rt` at their own dependency site.
+axum = "0.8"
+tokio = { version = "1", features = ["net"] }
 insta = "1"
 tempfile = "3"
 criterion = "0.8"

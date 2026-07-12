@@ -1,0 +1,27 @@
+[package]
+name = "amberfork-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Loopback-only local server for amberfork's web UI — serves the layout Document to the browser."
+keywords.workspace = true
+categories = ["development-tools::debugging"]
+
+[lints]
+workspace = true
+
+[dependencies]
+amberfork-layout = { workspace = true }
+axum = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+# The fixture Document is produced by the real engine pipeline (align -> layout), not
+# hand-assembled rows — the round-trip test should break if the wire contract drifts.
+amberfork-align = { workspace = true }
+amberfork-model = { workspace = true, features = ["test-support"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
