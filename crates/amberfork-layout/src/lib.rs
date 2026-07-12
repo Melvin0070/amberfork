@@ -32,7 +32,12 @@
 //! decisions never feed back into it.
 //!
 //! For the web painter the view crosses a wire: [`Document`] is the serializable form the
-//! server ships (issue #24) — the same [`ViewModel`] plus a [`DOCUMENT_VERSION`] stamp.
+//! server ships (issue #24) — the same [`ViewModel`] plus a [`DOCUMENT_VERSION`] stamp and
+//! the payload envelope: building the document cuts every payload-derived slot at
+//! [`SLOT_TEXT_LIMIT`] bytes with an explicit [`SlotText::truncated`] mark the UI must
+//! render visibly.
+
+use std::fmt;
 
 use amberfork_model::{
     Attribution, AttributionMode, DiffResult, FieldDiffKind, MoveKind, Outcome, Payload, Run, Step,
@@ -55,14 +60,110 @@ pub struct Document {
 }
 
 impl Document {
-    /// Wrap a view for the wire, stamping the current document version.
+    /// Wrap a view for the wire: stamp the current document version and enforce the payload
+    /// envelope. There is deliberately no other way to build a [`Document`], so an
+    /// over-limit payload can never reach the browser unmarked (issue #24).
     #[must_use]
-    pub fn new(view: ViewModel) -> Self {
+    pub fn new(mut view: ViewModel) -> Self {
+        envelope(&mut view);
         Self {
             schema_version: DOCUMENT_VERSION.to_string(),
             view,
         }
     }
+}
+
+/// The payload envelope's per-slot byte limit. The threat is multi-MB field-diff payloads
+/// (eng review D12+D17): a slot is one display line, so 4 KiB loses nothing any pane shows
+/// unexpanded (expand-on-demand is issue #30's job) while keeping a worst-case document of
+/// hundreds of rows around a megabyte. Bytes, not chars, because the guard protects wire
+/// size; the cut backs off to a UTF-8 char boundary.
+pub const SLOT_TEXT_LIMIT: usize = 4096;
+
+/// Cut every payload-derived slot in the view down to [`SLOT_TEXT_LIMIT`], marking the cut.
+fn envelope(view: &mut ViewModel) {
+    for row in &mut view.rows {
+        match row {
+            Row::Step(step_row) => envelope_step(&mut step_row.step),
+            Row::Fork(fork) => {
+                envelope_step(&mut fork.step);
+                fork.side_a.truncate_to(SLOT_TEXT_LIMIT);
+                fork.side_b.truncate_to(SLOT_TEXT_LIMIT);
+                for fd in &mut fork.field_diffs {
+                    if let Some(removed) = &mut fd.removed {
+                        removed.truncate_to(SLOT_TEXT_LIMIT);
+                    }
+                    if let Some(added) = &mut fd.added {
+                        added.truncate_to(SLOT_TEXT_LIMIT);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn envelope_step(step: &mut AlignedStep) {
+    for side in [&mut step.a, &mut step.b].into_iter().flatten() {
+        side.summary.truncate_to(SLOT_TEXT_LIMIT);
+    }
+}
+
+/// One payload-derived text slot. [`ViewModel::compute`] always produces the full text;
+/// only the payload envelope in [`Document::new`] sets `truncated` — so the CLI painter,
+/// which reads the view directly, never sees a cut slot. Generated wording (verdicts,
+/// confidence, attribution, warnings) is bounded by construction and stays plain `String`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SlotText {
+    pub text: String,
+    /// Whether the envelope cut this slot at [`SLOT_TEXT_LIMIT`]. A UI must render the
+    /// mark visibly — a silently shortened payload reads as the payload.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub truncated: bool,
+}
+
+impl SlotText {
+    /// A full, unmarked slot — the only form [`ViewModel::compute`] emits.
+    pub fn new(text: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            truncated: false,
+        }
+    }
+
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.text
+    }
+
+    /// Cut to the largest char boundary within `limit` bytes and mark the cut.
+    fn truncate_to(&mut self, limit: usize) {
+        if self.text.len() <= limit {
+            return;
+        }
+        let cut = (0..=limit)
+            .rev()
+            .find(|&i| self.text.is_char_boundary(i))
+            .unwrap_or(0);
+        self.text.truncate(cut);
+        self.truncated = true;
+    }
+}
+
+impl fmt::Display for SlotText {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.text)
+    }
+}
+
+/// Content comparison — the mark is provenance, not content.
+impl PartialEq<&str> for SlotText {
+    fn eq(&self, other: &&str) -> bool {
+        self.text == *other
+    }
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 /// The full semantic view of one diff: everything a painter needs, nothing it must compute.
@@ -157,9 +258,9 @@ pub struct ForkRow {
     pub step: AlignedStep,
     /// Reference-side content at the fork, resolved to the designed absence wording
     /// (`(no aligned step)`) when the fork has no step on that side.
-    pub side_a: String,
+    pub side_a: SlotText,
     /// Observed-side counterpart of `side_a`.
-    pub side_b: String,
+    pub side_b: SlotText,
     /// Designed confidence wording: `conf 0.NN`, or `marginal call` at zero (notebook 005).
     pub confidence: String,
     /// The only red/green in any surface: field-level `-`/`+` evidence at the fork.
@@ -201,7 +302,7 @@ pub struct StepView {
     pub name: String,
     /// One-line gist: first line of the step's output (else input) text, compact JSON for
     /// structured payloads, or the designed `(no content captured)`.
-    pub summary: String,
+    pub summary: SlotText,
 }
 
 /// One field-level difference at the fork, values already in display form (compact JSON).
@@ -211,9 +312,9 @@ pub struct StepView {
 pub struct FieldDiffView {
     pub path: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub removed: Option<String>,
+    pub removed: Option<SlotText>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub added: Option<String>,
+    pub added: Option<SlotText>,
 }
 
 /// The one-line answer every diff ends with.
@@ -409,17 +510,17 @@ fn step_view(run: &Run, idx: Option<usize>) -> Option<StepView> {
     idx.and_then(|i| run.steps.get(i)).map(|s| StepView {
         kind: s.kind,
         name: s.name.clone(),
-        summary: summarize(s),
+        summary: SlotText::new(summarize(s)),
     })
 }
 
 /// Fork-side content: the step's summary, empty where an index resolves to no step, the
 /// designed absence wording where the fork has no step on that side at all.
-fn side_content(run: &Run, step: Option<usize>) -> String {
-    match step {
+fn side_content(run: &Run, step: Option<usize>) -> SlotText {
+    SlotText::new(match step {
         Some(idx) => run.steps.get(idx).map_or_else(String::new, summarize),
         None => "(no aligned step)".to_string(),
-    }
+    })
 }
 
 /// The field-level evidence attached to the fork's alignment index, values in display form.
@@ -432,11 +533,11 @@ fn field_diff_views(result: &DiffResult, index: usize) -> Vec<FieldDiffView> {
             path: fd.path.clone(),
             removed: match fd.kind {
                 FieldDiffKind::Added => None,
-                _ => fd.before.as_ref().map(compact_json),
+                _ => fd.before.as_ref().map(|v| SlotText::new(compact_json(v))),
             },
             added: match fd.kind {
                 FieldDiffKind::Removed => None,
-                _ => fd.after.as_ref().map(compact_json),
+                _ => fd.after.as_ref().map(|v| SlotText::new(compact_json(v))),
             },
         })
         .collect()
@@ -634,8 +735,8 @@ mod tests {
             fork.field_diffs,
             [FieldDiffView {
                 path: "outputs".to_string(),
-                removed: Some("\"census.gov page\"".to_string()),
-                added: Some("\"blogspot page\"".to_string()),
+                removed: Some(SlotText::new("\"census.gov page\"")),
+                added: Some(SlotText::new("\"blogspot page\"")),
             }]
         );
         // The observed run fronts the row; both sides stay available for the web columns.
@@ -825,6 +926,86 @@ mod tests {
                 .unwrap()
                 .contains("identical")
         );
+    }
+
+    #[test]
+    fn envelope_truncates_and_marks_over_limit_slots() {
+        let huge = "x".repeat(SLOT_TEXT_LIMIT + 100);
+        let a = run("good", Outcome::Pass, vec![step(0, "fetch", &huge)]);
+        let b = run("bad", Outcome::Fail, vec![step(0, "fetch", "small")]);
+        let fork = Fork {
+            index: 0,
+            a_step: Some(0),
+            b_step: Some(0),
+            confidence: 0.9,
+        };
+        let mut res = result(&a, &b, vec![Move::sync(0, 0, 0.9, 0.1)], Some(fork));
+        res.field_diffs = vec![FieldDiff {
+            step: 0,
+            path: "outputs".to_string(),
+            before: Some(json!(huge.clone())),
+            after: Some(json!("small")),
+            kind: FieldDiffKind::Changed,
+        }];
+        let doc = Document::new(ViewModel::compute(&res, &a, &b));
+
+        let Some(Row::Fork(fork)) = doc.view.rows.first() else {
+            panic!("one fork row");
+        };
+        // The same over-limit payload feeds side_a and the a-side summary; both arrive cut.
+        for slot in [&fork.side_a, &fork.step.a.as_ref().unwrap().summary] {
+            assert!(slot.truncated);
+            assert_eq!(slot.text.len(), SLOT_TEXT_LIMIT);
+            assert!(huge.starts_with(&slot.text));
+        }
+        assert!(!fork.side_b.truncated);
+        let removed = fork.field_diffs[0].removed.as_ref().unwrap();
+        assert!(removed.truncated);
+        assert!(removed.text.len() <= SLOT_TEXT_LIMIT);
+        assert!(!fork.field_diffs[0].added.as_ref().unwrap().truncated);
+
+        // The marker itself survives the wire.
+        let back: Document = serde_json::from_str(&serde_json::to_string(&doc).unwrap()).unwrap();
+        assert_eq!(back, doc);
+    }
+
+    #[test]
+    fn envelope_backs_off_to_a_char_boundary() {
+        // Two ASCII bytes then 4-byte chars: byte SLOT_TEXT_LIMIT lands mid-char, so the
+        // cut must back off to the last boundary below it instead of panicking.
+        let text = format!("ab{}", "🌲".repeat(SLOT_TEXT_LIMIT / 4));
+        let a = run("good", Outcome::Pass, vec![step(0, "fetch", &text)]);
+        let b = run("bad", Outcome::Fail, vec![step(0, "fetch", "small")]);
+        let fork = Fork {
+            index: 0,
+            a_step: Some(0),
+            b_step: Some(0),
+            confidence: 0.9,
+        };
+        let res = result(&a, &b, vec![Move::sync(0, 0, 0.9, 0.1)], Some(fork));
+        let doc = Document::new(ViewModel::compute(&res, &a, &b));
+
+        let Some(Row::Fork(fork)) = doc.view.rows.first() else {
+            panic!("one fork row");
+        };
+        assert!(fork.side_a.truncated);
+        assert_eq!(fork.side_a.text.len(), SLOT_TEXT_LIMIT - 2);
+        assert!(text.starts_with(&fork.side_a.text));
+    }
+
+    #[test]
+    fn under_limit_slots_pass_through_unmarked() {
+        let (a, b, res) = forked(0.47);
+        let doc = Document::new(ViewModel::compute(&res, &a, &b));
+
+        // Nothing in the standard fixture is near the limit: no slot is marked, and the
+        // lean wire never mentions the marker at all.
+        let json = serde_json::to_string(&doc).unwrap();
+        assert!(!json.contains("truncated"));
+        let Some(Row::Fork(fork)) = doc.view.rows.get(2) else {
+            panic!("row 2 is the fork");
+        };
+        assert_eq!(fork.side_a, "census.gov page: population 8,443,000");
     }
 
     #[test]

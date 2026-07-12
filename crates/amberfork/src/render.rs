@@ -19,8 +19,8 @@
 //! lives in [`resolve_color_mode`] so `main` decides once at the edge.
 
 use amberfork_layout::{
-    ForkRow, Row as ViewRow, RowRole, RunHeader, StepRow, StepView, ViewModel, kind_label,
-    move_label, outcome_label,
+    ForkRow, Row as ViewRow, RowRole, RunHeader, SlotText, StepRow, StepView, ViewModel,
+    kind_label, move_label, outcome_label,
 };
 use std::fmt::Write;
 
@@ -376,7 +376,7 @@ fn fork_block(rows: &mut Vec<Row>, fork: &ForkRow, cols: &Columns) {
     // Field-level diff, indented to the kind column, hard-wrapped.
     let field_width = |prefix_len: usize| cols.content_width.max(20).saturating_sub(prefix_len);
     for fd in &fork.field_diffs {
-        let mut push_side = |sign: char, role: Role, value: &Option<String>| {
+        let mut push_side = |sign: char, role: Role, value: &Option<SlotText>| {
             let Some(value) = value else { return };
             let text = format!("{sign} {}: {value}", fd.path);
             for line in wrap(&text, field_width(2) + cols.name_width) {
