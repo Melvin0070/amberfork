@@ -3,9 +3,8 @@
 //! violations here mean the aligner or cost model broke determinism or tie-breaking.
 
 use amberfork_align::{AlignParams, DiffParams, ForkParams, LexicalCost, align, diff, find_fork};
-use amberfork_model::{MoveKind, Payload, Run, SchemaVersion, Step, StepKind};
+use amberfork_model::{MoveKind, Payload, Step, StepKind, test_support};
 use proptest::prelude::*;
-use serde_json::Map;
 
 /// Arbitrary-ish steps: pooled names (realistic — agents reuse tool names), free-form unicode
 /// outputs (stresses the tokenizer), and occasional content-less steps.
@@ -27,16 +26,11 @@ fn arb_step(idx: usize) -> impl Strategy<Value = Step> {
         1 => Just(None),
         4 => any::<String>().prop_map(|s| Some(Payload::Text(s))),
     ];
-    (kind, name, outputs).prop_map(move |(kind, name, outputs)| Step {
-        idx,
-        kind,
-        name,
-        inputs: None,
-        outputs,
-        attrs: Map::new(),
-        t_start: None,
-        t_end: None,
-        parent_idx: None,
+    (kind, name, outputs).prop_map(move |(kind, name, outputs)| {
+        test_support::step(idx, name)
+            .kind(kind)
+            .outputs(outputs)
+            .build()
     })
 }
 
@@ -69,14 +63,7 @@ proptest! {
 
         // The same invariant through the public seam: a self-diff has no fork and therefore
         // no regression to attribute — `None`, never a zero-confidence attribution.
-        let this = Run {
-            schema_version: SchemaVersion::current(),
-            id: "self".to_string(),
-            task: None,
-            outcome: None,
-            steps: run,
-            edges: None,
-        };
+        let this = test_support::run("self", run).build();
         let result = diff(&this, &this, &LexicalCost, &DiffParams::default());
         prop_assert_eq!(result.fork, None);
         prop_assert!(result.attribution.is_none());

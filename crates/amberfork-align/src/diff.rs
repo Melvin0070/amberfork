@@ -64,38 +64,18 @@ fn run_ref(run: &Run) -> RunRef {
 mod tests {
     use super::*;
     use crate::cost::LexicalCost;
-    use amberfork_model::{
-        AttributionMode, MoveKind, Outcome, Payload, SchemaVersion, Step, StepKind,
-    };
-    use serde_json::Map;
-
-    fn step(idx: usize, name: &str, out: &str) -> Step {
-        Step {
-            idx,
-            kind: StepKind::Tool,
-            name: name.to_string(),
-            inputs: None,
-            outputs: Some(Payload::Text(out.to_string())),
-            attrs: Map::new(),
-            t_start: None,
-            t_end: None,
-            parent_idx: None,
-        }
-    }
+    use amberfork_model::{AttributionMode, MoveKind, Outcome, test_support};
 
     fn run(id: &str, outcome: Outcome, names_outs: &[(&str, &str)]) -> Run {
-        Run {
-            schema_version: SchemaVersion::current(),
-            id: id.to_string(),
-            task: Some("find the census figure".to_string()),
-            outcome: Some(outcome),
-            steps: names_outs
-                .iter()
-                .enumerate()
-                .map(|(i, (n, o))| step(i, n, o))
-                .collect(),
-            edges: None,
-        }
+        let steps = names_outs
+            .iter()
+            .enumerate()
+            .map(|(i, (n, o))| test_support::step(i, *n).text_output(*o).build())
+            .collect();
+        test_support::run(id, steps)
+            .task("find the census figure")
+            .outcome(outcome)
+            .build()
     }
 
     #[test]

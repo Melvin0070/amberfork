@@ -143,21 +143,15 @@ fn payload_value(payload: &Payload) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use amberfork_model::StepKind;
-    use serde_json::{Map, json};
+    use amberfork_model::test_support;
+    use serde_json::json;
 
+    /// One shared name across all fixtures — field diffing reads only the payloads.
     fn step(idx: usize, inputs: Option<Payload>, outputs: Option<Payload>) -> Step {
-        Step {
-            idx,
-            kind: StepKind::Tool,
-            name: "tool".to_string(),
-            inputs,
-            outputs,
-            attrs: Map::new(),
-            t_start: None,
-            t_end: None,
-            parent_idx: None,
-        }
+        test_support::step(idx, "tool")
+            .inputs(inputs)
+            .outputs(outputs)
+            .build()
     }
 
     fn text(s: &str) -> Option<Payload> {

@@ -213,8 +213,7 @@ impl Matrix {
 mod tests {
     use super::*;
     use crate::cost::LexicalCost;
-    use amberfork_model::{MoveKind, Payload, StepKind};
-    use serde_json::Map;
+    use amberfork_model::{MoveKind, test_support};
 
     /// A trivially hand-checkable cost model: 0 if names match, 1 otherwise. Exercising the
     /// trait seam with a mock is the point — the aligner must not care what costs mean.
@@ -233,17 +232,7 @@ mod tests {
     }
 
     fn step(idx: usize, name: &str, out: &str) -> Step {
-        Step {
-            idx,
-            kind: StepKind::Tool,
-            name: name.to_string(),
-            inputs: None,
-            outputs: Some(Payload::Text(out.to_string())),
-            attrs: Map::new(),
-            t_start: None,
-            t_end: None,
-            parent_idx: None,
-        }
+        test_support::step(idx, name).text_output(out).build()
     }
 
     fn run_of(names: &[&str]) -> Vec<Step> {

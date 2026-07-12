@@ -19,6 +19,8 @@ serde_json = { workspace = true }
 [dev-dependencies]
 proptest = { workspace = true }
 criterion = { workspace = true }
+# Fixture builders only; the normal dependency above stays featureless so nothing ships.
+amberfork-model = { workspace = true, features = ["test-support"] }
 
 # `test = false`: `cargo test` would otherwise execute this binary in the debug profile, where
 # the 1000-step size takes minutes. `cargo bench` (release profile) is its only runner; clippy

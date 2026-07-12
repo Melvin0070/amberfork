@@ -15,3 +15,7 @@ workspace = true
 [dependencies]
 amberfork-model = { workspace = true }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+# Fixture builders only; the normal dependency above stays featureless so nothing ships.
+amberfork-model = { workspace = true, features = ["test-support"] }

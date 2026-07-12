@@ -29,3 +29,5 @@ terminal_size = { workspace = true }
 assert_cmd = { workspace = true }
 predicates = { workspace = true }
 insta = { workspace = true }
+# Fixture builders only; the normal dependency above stays featureless so nothing ships.
+amberfork-model = { workspace = true, features = ["test-support"] }

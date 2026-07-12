@@ -455,37 +455,20 @@ fn decimal_digits(n: usize) -> usize {
 mod tests {
     use super::*;
     use amberfork_model::{
-        Attribution, DiffResult, FieldDiff, Fork, Meta, Move, RunPair, RunRef, SchemaVersion,
-        Source, Warning, WarningCode,
+        Attribution, DiffResult, FieldDiff, Fork, Meta, Move, RunPair, RunRef, Source, Warning,
+        WarningCode, test_support,
     };
-    use serde_json::{Map, json};
+    use serde_json::json;
 
-    // Local builders, duplicated from render.rs's tests for now — issue #22 extracts the
-    // shared Step/Run test-builder both crates will use.
+    // Field lists live in amberfork-model's test-support builders (issue #22); these one-line
+    // adapters keep call sites in the shape the assertions read.
 
     fn step(idx: usize, name: &str, out: &str) -> Step {
-        Step {
-            idx,
-            kind: StepKind::Tool,
-            name: name.to_string(),
-            inputs: None,
-            outputs: Some(Payload::Text(out.to_string())),
-            attrs: Map::new(),
-            t_start: None,
-            t_end: None,
-            parent_idx: None,
-        }
+        test_support::step(idx, name).text_output(out).build()
     }
 
     fn run(id: &str, outcome: Outcome, steps: Vec<Step>) -> Run {
-        Run {
-            schema_version: SchemaVersion::current(),
-            id: id.to_string(),
-            task: None,
-            outcome: Some(outcome),
-            steps,
-            edges: None,
-        }
+        test_support::run(id, steps).outcome(outcome).build()
     }
 
     fn result(a: &Run, b: &Run, alignment: Vec<Move>, fork: Option<Fork>) -> DiffResult {

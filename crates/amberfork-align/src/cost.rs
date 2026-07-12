@@ -209,26 +209,12 @@ fn longest_match(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use amberfork_model::StepKind;
+    use amberfork_model::test_support::step;
     use serde_json::{Map, Value};
 
-    /// Minimal step with the two fields the cost model reads.
-    fn step(name: &str, outputs: Option<Payload>) -> Step {
-        Step {
-            idx: 0,
-            kind: StepKind::Tool,
-            name: name.to_string(),
-            inputs: None,
-            outputs,
-            attrs: Map::new(),
-            t_start: None,
-            t_end: None,
-            parent_idx: None,
-        }
-    }
-
+    /// Idx is pinned to 0 everywhere here: the cost model reads only `name` and content.
     fn text_step(name: &str, outputs: &str) -> Step {
-        step(name, Some(Payload::Text(outputs.to_string())))
+        step(0, name).text_output(outputs).build()
     }
 
     #[test]
@@ -292,8 +278,8 @@ mod tests {
         m2.insert("meta".into(), Value::Object(inner2));
         m2.insert("count".into(), Value::from(9));
         m2.insert("status".into(), Value::from("ok"));
-        let a = step("web.search", Some(Payload::Object(m1)));
-        let b = step("web.search", Some(Payload::Object(m2)));
+        let a = step(0, "web.search").outputs(Payload::Object(m1)).build();
+        let b = step(0, "web.search").outputs(Payload::Object(m2)).build();
         assert_eq!(LexicalCost.cost(&a, &b), 0.0);
     }
 
@@ -308,9 +294,9 @@ mod tests {
 
     #[test]
     fn contentless_steps_compare_by_name() {
-        let a = step("fetch", None);
+        let a = step(0, "fetch").build();
         assert_eq!(LexicalCost.cost(&a, &a.clone()), 0.0);
-        let b = step("q7", None);
+        let b = step(0, "q7").build();
         assert_eq!(LexicalCost.cost(&a, &b), 1.0);
     }
 

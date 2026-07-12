@@ -181,36 +181,22 @@ fn bounded(draw: u64, len: usize) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use amberfork_model::{Run, SchemaVersion, StepKind};
-    use serde_json::Map;
+    use amberfork_model::{Run, StepKind, test_support};
 
     fn step(idx: usize, kind: StepKind, name: &str, out: &str) -> Step {
-        Step {
-            idx,
-            kind,
-            name: name.to_string(),
-            inputs: None,
-            outputs: Some(amberfork_model::Payload::Text(out.to_string())),
-            attrs: Map::new(),
-            t_start: None,
-            t_end: None,
-            parent_idx: None,
-        }
+        test_support::step(idx, name)
+            .kind(kind)
+            .text_output(out)
+            .build()
     }
 
     fn run(id: &str, names_outs: &[(&str, &str)]) -> Run {
-        Run {
-            schema_version: SchemaVersion::current(),
-            id: id.to_string(),
-            task: None,
-            outcome: None,
-            steps: names_outs
-                .iter()
-                .enumerate()
-                .map(|(i, (n, o))| step(i, StepKind::Tool, n, o))
-                .collect(),
-            edges: None,
-        }
+        let steps = names_outs
+            .iter()
+            .enumerate()
+            .map(|(i, (n, o))| step(i, StepKind::Tool, n, o))
+            .collect();
+        test_support::run(id, steps).build()
     }
 
     fn pair(name: &str, reference: Run, failing: Run) -> Pair {

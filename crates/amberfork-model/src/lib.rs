@@ -26,6 +26,11 @@ pub use diff::{
     Move, MoveKind, Recovery, RunPair, RunRef, Source, Warning, WarningCode,
 };
 
+// Test-only fixture builders; the `test-support` feature is enabled exclusively from
+// `[dev-dependencies]` across the workspace, so this module never ships in a normal build.
+#[cfg(any(test, feature = "test-support"))]
+pub mod test_support;
+
 /// Version of the trace-format / model contract. Breaking changes (renames, removals,
 /// semantic shifts) bump it; additive optional fields do not. Kept as a newtype so the
 /// version is a first-class, self-documenting value across the workspace rather than a
