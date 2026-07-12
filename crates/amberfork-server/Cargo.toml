@@ -8,6 +8,11 @@ rust-version.workspace = true
 description = "Loopback-only local server for amberfork's web UI — serves the layout Document to the browser."
 keywords.workspace = true
 categories = ["development-tools::debugging"]
+# Packaging allowlist (D13): the built web bundle in ui-dist/ is .gitignored (produced by
+# the release workflow, #26/#28), and `include` is what overrides gitignore at `cargo
+# package` time so the published crate still carries it. Dev checkouts have an empty
+# ui-dist/ — `Server::bind` refuses with a clear message instead of serving nothing.
+include = ["src/**", "ui-dist/**"]
 
 [lints]
 workspace = true
@@ -15,6 +20,8 @@ workspace = true
 [dependencies]
 amberfork-layout = { workspace = true }
 axum = { workspace = true }
+mime_guess = { workspace = true }
+rust-embed = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
 tokio = { workspace = true }

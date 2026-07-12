@@ -14,6 +14,12 @@ bench/data/
 __pycache__/
 *.pyc
 
+# Built web UI bundle (issue #25, D13): produced by the release workflow (#26/#28), never
+# committed — the crates.io package carries it via the crate's Cargo.toml `include` list.
+# `.gitkeep` stays tracked because rust-embed needs the folder to exist at compile time.
+crates/amberfork-server/ui-dist/*
+!crates/amberfork-server/ui-dist/.gitkeep
+
 # Local tool state
 .gstack/
 .claude/settings.local.json

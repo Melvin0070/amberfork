@@ -38,6 +38,8 @@ predicates = "3"
 # engine crates are sync + pure); the lib needs only `net` — test/binary runtimes opt into
 # `macros`/`rt` at their own dependency site.
 axum = "0.8"
+mime_guess = "2"
+rust-embed = "8"
 tokio = { version = "1", features = ["net"] }
 insta = "1"
 tempfile = "3"

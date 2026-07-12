@@ -10,11 +10,13 @@ use amberfork_layout::Document;
 use axum::Router;
 use axum::body::Bytes;
 use axum::extract::{Request, State};
-use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
+use axum::http::{HeaderMap, HeaderValue, StatusCode, Uri, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
+use rust_embed::{EmbeddedFile, RustEmbed};
 use sha2::{Digest, Sha256};
+use std::borrow::Cow;
 use std::fmt;
 use std::io;
 use std::net::{Ipv4Addr, SocketAddr};
@@ -23,6 +25,16 @@ use tokio::net::TcpListener;
 
 /// The one content endpoint (D12): the versioned view-model document, whole.
 pub const DOCUMENT_ROUTE: &str = "/api/document";
+
+/// The app shell every SPA route lands on; its presence is what makes a bundle a bundle.
+const INDEX_HTML: &str = "index.html";
+
+/// The web UI bundle (D7: one embed site, owned by this crate — D13). Empty in a dev
+/// checkout — the contents are .gitignored, built by the release workflow (#26/#28), and
+/// carried into the crates.io package by this crate's `include` list.
+#[derive(RustEmbed)]
+#[folder = "ui-dist"]
+struct UiAssets;
 
 /// The document snapshot on the wire: serialized once, hashed once, shared by every request.
 struct Content {
@@ -46,6 +58,8 @@ pub enum ServeError {
     Bind { addr: SocketAddr, source: io::Error },
     /// The accept loop died after a successful bind.
     Serve(io::Error),
+    /// The embedded web bundle has no `index.html` — a dev build without built UI assets.
+    BundleMissing,
 }
 
 impl fmt::Display for ServeError {
@@ -53,6 +67,12 @@ impl fmt::Display for ServeError {
         match self {
             Self::Bind { addr, source } => write!(f, "cannot bind {addr}: {source}"),
             Self::Serve(source) => write!(f, "server stopped: {source}"),
+            Self::BundleMissing => write!(
+                f,
+                "web UI bundle missing — this build has no index.html embedded; build the \
+                 web UI into crates/amberfork-server/ui-dist/ first (release artifacts ship \
+                 with it built in)"
+            ),
         }
     }
 }
@@ -61,6 +81,7 @@ impl std::error::Error for ServeError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Bind { source, .. } | Self::Serve(source) => Some(source),
+            Self::BundleMissing => None,
         }
     }
 }
@@ -75,6 +96,23 @@ impl Server {
     /// # Errors
     /// [`ServeError::Bind`] when the loopback bind fails (port in use).
     pub async fn bind(document: &Document, port: u16) -> Result<Self, ServeError> {
+        Self::bind_with_assets::<UiAssets>(document, port).await
+    }
+
+    /// [`bind`](Self::bind), generic over the embedded bundle — the seam that lets tests
+    /// (and any embedder) supply their own assets.
+    ///
+    /// # Errors
+    /// [`ServeError::Bind`] when the loopback bind fails; [`ServeError::BundleMissing`]
+    /// (checked BEFORE binding — a startup failure must never leave a port claimed) when
+    /// the bundle has no `index.html`.
+    pub async fn bind_with_assets<A: RustEmbed + 'static>(
+        document: &Document,
+        port: u16,
+    ) -> Result<Self, ServeError> {
+        if A::get(INDEX_HTML).is_none() {
+            return Err(ServeError::BundleMissing);
+        }
         let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
         let listener = TcpListener::bind(addr)
             .await
@@ -84,7 +122,7 @@ impl Server {
             .map_err(|source| ServeError::Bind { addr, source })?;
         Ok(Self {
             listener,
-            router: router(document),
+            router: router::<A>(document),
             local_addr,
         })
     }
@@ -105,7 +143,7 @@ impl Server {
     }
 }
 
-fn router(document: &Document) -> Router {
+fn router<A: RustEmbed + 'static>(document: &Document) -> Router {
     let json = serde_json::to_string(document)
         .expect("Document serialization is infallible (no non-string map keys)");
     let etag = HeaderValue::from_str(&format!("\"{:x}\"", Sha256::digest(json.as_bytes())))
@@ -115,11 +153,56 @@ fn router(document: &Document) -> Router {
         etag,
     });
     // The guard is a `.layer` on the whole router so it also wraps the fallback — every
-    // route that will ever exist (slice 1's SPA fallback included) is born behind it.
+    // route, the SPA fallback included, is born behind it.
     Router::new()
         .route(DOCUMENT_ROUTE, get(serve_document))
+        .fallback(get(serve_ui::<A>))
         .layer(middleware::from_fn(require_local_host))
         .with_state(content)
+}
+
+/// The SPA handler over the embedded bundle: an exact asset is served as itself; anything
+/// else is a client-side route and lands on `index.html` (`#step-N` anchors never reach the
+/// server at all). A custom handler because `ServeDir` reads the filesystem, not an embed.
+async fn serve_ui<A: RustEmbed + 'static>(uri: Uri) -> Response {
+    let path = uri.path();
+    if path.starts_with("/api/") {
+        // A typo'd endpoint must fail loud — the fallback handing fetch() an HTML page to
+        // parse is the silent version of that bug.
+        return (
+            StatusCode::NOT_FOUND,
+            "amberfork: no such endpoint (the content endpoint is /api/document)\n",
+        )
+            .into_response();
+    }
+    let asset_path = path.trim_start_matches('/');
+    match A::get(asset_path) {
+        Some(asset) => asset_response(asset_path, asset),
+        None => match A::get(INDEX_HTML) {
+            Some(index) => asset_response(INDEX_HTML, index),
+            // Unreachable via bind (checked up front), but the library path never panics —
+            // and in a debug build the folder is re-read from disk on every request, so the
+            // bundle genuinely can vanish under a running server.
+            None => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "amberfork: UI bundle lost index.html\n",
+            )
+                .into_response(),
+        },
+    }
+}
+
+fn asset_response(path: &str, asset: EmbeddedFile) -> Response {
+    // Cow discriminates release (borrowed from the binary) from debug (read off disk);
+    // `from_static` keeps the release path zero-copy.
+    let body = match asset.data {
+        Cow::Borrowed(bytes) => Bytes::from_static(bytes),
+        Cow::Owned(bytes) => Bytes::from(bytes),
+    };
+    let mime = mime_guess::from_path(path).first_or_octet_stream();
+    let mime = HeaderValue::from_str(mime.as_ref())
+        .unwrap_or_else(|_| HeaderValue::from_static("application/octet-stream"));
+    ([(header::CONTENT_TYPE, mime)], body).into_response()
 }
 
 async fn serve_document(State(content): State<Arc<Content>>, headers: HeaderMap) -> Response {

@@ -9,8 +9,23 @@ use amberfork_align::{DiffParams, LexicalCost, diff};
 use amberfork_layout::{DOCUMENT_VERSION, Document, ViewModel};
 use amberfork_model::test_support::{run, step};
 use amberfork_server::{DOCUMENT_ROUTE, ServeError, Server};
+use rust_embed::Embed;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream};
+
+/// A committed two-file web bundle, embedded through the same derive the real `ui-dist/`
+/// uses — the tests exercise rust-embed's actual disk/embed duality, not a hand-rolled fake.
+#[derive(Embed)]
+#[folder = "tests/fixture_bundle"]
+struct FixtureBundle;
+
+/// No `index.html` at all: the deterministic stand-in for a dev checkout without a built
+/// UI. Deliberately NOT tested through `Server::bind`'s real bundle — the day someone
+/// builds the UI locally into ui-dist/, a test asserting "the real bundle is missing"
+/// would start lying.
+#[derive(Embed)]
+#[folder = "tests/empty_bundle"]
+struct EmptyBundle;
 
 /// A tiny forked pair pushed through the real engine pipeline (align → layout → document),
 /// so this suite breaks if the wire contract drifts, not only if the server does.
@@ -50,7 +65,9 @@ fn spawn(document: Document) -> SocketAddr {
             .build()
             .expect("current-thread runtime builds");
         runtime.block_on(async move {
-            let server = Server::bind(&document, 0).await.expect("bind 127.0.0.1:0");
+            let server = Server::bind_with_assets::<FixtureBundle>(&document, 0)
+                .await
+                .expect("bind 127.0.0.1:0");
             tx.send(server.local_addr())
                 .expect("test is waiting on the bound address");
             server.serve().await.expect("accept loop outlives the test");
@@ -199,20 +216,78 @@ fn repoll_with_matching_etag_is_not_modified() {
 }
 
 #[test]
-fn unknown_route_is_404_until_the_spa_fallback_lands() {
-    // Slice 1 (#25) replaces this with the SPA fallback: unknown routes serve index.html.
+fn root_serves_index_html() {
+    let addr = spawn(document());
+    let response = get(addr, "/", Some("127.0.0.1"), &[]);
+    assert_eq!(response.status, 200);
+    let content_type = response.header("content-type").unwrap_or_default();
+    assert!(
+        content_type.starts_with("text/html"),
+        "index is HTML, got {content_type:?}"
+    );
+    assert!(response.body.contains("fixture-bundle index"));
+}
+
+#[test]
+fn exact_assets_are_served_with_their_mime() {
+    let addr = spawn(document());
+    let response = get(addr, "/app.js", Some("127.0.0.1"), &[]);
+    assert_eq!(response.status, 200);
+    let content_type = response.header("content-type").unwrap_or_default();
+    assert!(
+        content_type.contains("javascript"),
+        "scripts need a script MIME or the browser refuses modules, got {content_type:?}"
+    );
+    assert_eq!(
+        response.body,
+        "export const marker = \"fixture-bundle app\";\n"
+    );
+}
+
+#[test]
+fn unknown_routes_fall_back_to_index_html() {
+    // The SPA contract: client-side routes (and `#step-N` anchors, which never reach the
+    // server at all) must land on the app, not a 404.
     let addr = spawn(document());
     let response = get(addr, "/no/such/route", Some("127.0.0.1"), &[]);
+    assert_eq!(response.status, 200);
+    assert!(
+        response.body.contains("fixture-bundle index"),
+        "unknown routes serve the app shell"
+    );
+}
+
+#[test]
+fn unknown_api_routes_are_404_not_html() {
+    // A typo'd endpoint must fail loud: handing the UI's fetch() an HTML page to parse is
+    // the silent version of this bug.
+    let addr = spawn(document());
+    let response = get(addr, "/api/no-such-endpoint", Some("127.0.0.1"), &[]);
     assert_eq!(response.status, 404);
+}
+
+#[tokio::test]
+async fn missing_bundle_is_refused_with_a_clear_message() {
+    let doc = document();
+    let err = Server::bind_with_assets::<EmptyBundle>(&doc, 0)
+        .await
+        .expect_err("a bundle without index.html cannot serve");
+    assert!(matches!(err, ServeError::BundleMissing));
+    assert!(
+        err.to_string().contains("ui-dist"),
+        "the message says where the bundle goes: {err}"
+    );
 }
 
 #[tokio::test]
 async fn bind_on_a_taken_port_is_a_typed_error() {
     let doc = document();
-    let first = Server::bind(&doc, 0).await.expect("first bind on port 0");
+    let first = Server::bind_with_assets::<FixtureBundle>(&doc, 0)
+        .await
+        .expect("first bind on port 0");
     let port = first.local_addr().port();
 
-    let err = Server::bind(&doc, port)
+    let err = Server::bind_with_assets::<FixtureBundle>(&doc, port)
         .await
         .expect_err("second bind on an occupied port");
     assert!(matches!(err, ServeError::Bind { .. }));
