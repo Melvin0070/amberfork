@@ -1,0 +1,342 @@
+<!doctype html>
+<!--
+  amberfork README hero — the BROWSER fork view (`amberfork serve --demo`), as a designed,
+  choreographed motion piece. Sibling of hero.html (which stages the terminal render); this one
+  stages the web app: the real DOM + the real ui/index.html CSS, framed as an app window.
+
+  The one beat (DESIGN.md §Motion): two runs sit aligned in calm gray, then the amber IGNITES at
+  the fork node and flows down the divergent path — the fork row and every downstream row kindle
+  to amber. Then the answer pane resolves: attribution + the red/green field diff (the only
+  red/green anywhere, DESIGN.md containment). No blur halo — the saturated amber IS the glow
+  (cold-design-read rule). Amber is spent exactly where the app spends it: the fork + its path.
+
+  Everything is driven by window.__render(t) so build_hero_web.sh can seek + screenshot any frame;
+  opened directly it autoplays for preview. Palette, type, geometry and markup are the shipping
+  app's, copied — this is the product, choreographed, not a redraw.
+-->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<style>
+  /* ---- DESIGN.md tokens — copied verbatim from ui/index.html ------------------------------ */
+  :root {
+    color-scheme: dark;
+    --bg: #0a0a0b;
+    --surface: #121214;
+    --raised: #17171b;
+    --hair: #26262b;
+    --text: #e6e6e9;
+    --muted: #8a8a93;
+    --faint: #55555c;
+    --amber: #ff7a1a;
+    --warning: #f5a623;
+    --mono: "Monaspace Neon", ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    --sans: "General Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --cell: 262px;   /* the two run columns; hero-tuned so the fork tag clears the 320px pane */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ---- The stage + app-window frame (hero-only chrome) ----------------------------------- */
+  html, body { background: var(--bg); }
+  #stage {
+    width: 1200px; height: 675px; position: relative; overflow: hidden;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;
+  }
+  #card {
+    width: 1184px; height: 556px;
+    display: flex; flex-direction: column;
+    border: 1px solid var(--hair); border-radius: 10px; overflow: hidden;
+    background: var(--bg);
+    /* the window floats on the stage; a single soft shadow reads "app", no gradient (anti-slop) */
+    box-shadow: 0 24px 70px -32px rgba(0, 0, 0, 0.8);
+  }
+
+  /* ---- Header bar — copied from ui/index.html -------------------------------------------- */
+  .hdr {
+    display: flex; align-items: baseline; gap: 1rem;
+    padding: 0.5rem 0.875rem;
+    border-bottom: 1px solid var(--hair);
+    background: var(--surface);
+    font-family: var(--mono); font-size: 0.75rem;
+  }
+  .logo { color: var(--text); font-weight: 700; letter-spacing: -0.01em; }
+  .logo-glyph { color: var(--muted); }
+  .pair { color: var(--text); }
+  .pair b { font-weight: 600; }
+  .role { color: var(--muted); }
+  .vs { color: var(--faint); }
+  .verdict { color: var(--text); font-variant-numeric: tabular-nums; text-decoration: none; }
+  .meta { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ---- Body: canvas + attribution pane --------------------------------------------------- */
+  .body { display: flex; flex: 1; min-height: 0; }
+
+  .canvas { flex: 1; min-width: 0; overflow: hidden; }
+  .track {
+    position: relative; min-height: 100%;
+    background-image: radial-gradient(circle, var(--hair) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .spine { position: absolute; top: 0; left: 0; pointer-events: none; }
+  .spine-rail { stroke: var(--faint); stroke-width: 1; }
+  .spine-path { stroke: var(--amber); stroke-width: 2; }
+  .fork-node { fill: var(--amber); transform-box: fill-box; transform-origin: center; }
+
+  .rows { list-style: none; width: fit-content; margin-left: 28px; padding: 18px 0; }
+  .row {
+    display: grid;
+    grid-template-columns: 104px var(--cell) var(--cell) auto;
+    align-items: center; column-gap: 18px;
+    height: 30px; padding: 0 14px;
+    font-family: var(--mono); font-size: 0.75rem;
+    color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .gutter { display: flex; align-items: baseline; gap: 8px; }
+  .cue { width: 0.9em; display: inline-block; text-align: center; color: var(--faint); }
+  .idx { color: var(--muted); }
+  .cell { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .kind { width: 40px; color: var(--faint); }
+  .name {
+    width: 104px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sum {
+    flex: 1; min-width: 0; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tag {
+    justify-self: end; white-space: nowrap;
+    color: var(--amber); font-variant-numeric: tabular-nums;
+  }
+
+  /* Ignition is driven per-row by --lit (0 gray → 1 amber): the fork + divergent rows recede in
+     muted until the beat, then glow. color-mix keeps it a continuous gray→amber, not a class flip. */
+  .row--forkish .cue,
+  .row--forkish .idx,
+  .row--forkish .kind,
+  .row--forkish .name,
+  .row--forkish .sum,
+  .row--forkish .tag {
+    color: color-mix(in srgb, var(--muted), var(--amber) calc(var(--lit, 0) * 100%));
+  }
+  .row--fork {
+    border-radius: 4px;
+    outline: 1px dashed color-mix(in srgb, transparent, var(--amber) calc(var(--lit, 0) * 100%));
+    outline-offset: -1px;
+  }
+
+  /* ---- Attribution + content-diff pane — copied from ui/index.html ----------------------- */
+  .attr {
+    flex: 0 0 320px; border-left: 1px solid var(--hair);
+    background: var(--surface); padding: 16px 18px;
+    font-family: var(--mono); font-size: 0.75rem; overflow: hidden;
+  }
+  .attr-title {
+    margin-bottom: 14px; font-size: 0.625rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+  }
+  .attr-list { display: flex; flex-direction: column; gap: 10px; }
+  .attr-row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+  .attr-row dt { color: var(--muted); }
+  .attr-row dd { color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+
+  .content-diff {
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--hair);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .content-diff-field { display: flex; flex-direction: column; gap: 3px; }
+  .content-diff-path { color: var(--muted); font-size: 0.6875rem; }
+  .content-diff-del, .content-diff-add {
+    display: flex; gap: 6px; padding: 2px 6px; border-radius: 3px;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .content-diff-del { color: #ff5c5c; background: #ff5c5c14; }
+  .content-diff-add { color: #46d39a; background: #46d39a14; }
+  .content-diff-sign { flex: 0 0 auto; font-variant-numeric: tabular-nums; opacity: 0.85; }
+  .content-diff-val { flex: 1; min-width: 0; }
+  .content-diff-copy {
+    align-self: flex-end; margin-bottom: -4px; padding: 2px 8px;
+    border: 1px solid var(--hair); border-radius: 4px;
+    background: var(--surface); color: var(--muted);
+    font-family: var(--mono); font-size: 0.6875rem;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="card">
+    <header class="hdr">
+      <span class="logo">amber<span class="logo-glyph">⑂</span>fork</span>
+      <span class="pair"><b>refund-bad</b> <span class="role">observed</span><span class="vs"> vs </span><b>refund-good</b> <span class="role">reference</span></span>
+      <a class="verdict" href="#fork">⑂ forked at step 05 · conf 0.68</a>
+      <span class="meta">10 vs 10 steps · schema 0.2</span>
+    </header>
+    <div class="body">
+      <main class="canvas">
+        <div class="track" id="track">
+          <svg class="spine" id="spine" width="28" height="366" aria-hidden="true">
+            <line class="spine-rail" x1="14" y1="33" x2="14" y2="333"></line>
+            <line class="spine-path" id="path" x1="14" y1="183" x2="14" y2="183"></line>
+            <circle class="fork-node" id="node" cx="14" cy="183" r="4"></circle>
+          </svg>
+          <ol class="rows" id="rows"></ol>
+        </div>
+      </main>
+      <aside class="attr" id="pane">
+        <h2 class="attr-title">Attribution</h2>
+        <dl class="attr-list">
+          <div class="attr-row"><dt>mode</dt><dd>static</dd></div>
+          <div class="attr-row"><dt>origin</dt><dd>origin step 05</dd></div>
+          <div class="attr-row"><dt>propagation</dt><dd>steps 06–09</dd></div>
+          <div class="attr-row"><dt>confidence</dt><dd>conf 0.68</dd></div>
+        </dl>
+        <section class="content-diff">
+          <button class="content-diff-copy" type="button">Copy</button>
+          <div class="content-diff-field">
+            <span class="content-diff-path">inputs.doc</span>
+            <div class="content-diff-del"><span class="content-diff-sign">-</span><span class="content-diff-val">"policy/refunds_v3.md"</span></div>
+            <div class="content-diff-add"><span class="content-diff-sign">+</span><span class="content-diff-val">"archive/refunds_v1.md"</span></div>
+          </div>
+          <div class="content-diff-field">
+            <span class="content-diff-path">outputs</span>
+            <div class="content-diff-del"><span class="content-diff-sign">-</span><span class="content-diff-val">"Refunds v3 (CURRENT, effective 2026-02-01). Electronics: 30-day return window from delivery; refund to the original payment method."</span></div>
+            <div class="content-diff-add"><span class="content-diff-sign">+</span><span class="content-diff-val">"Refunds v1 (ARCHIVED 2024-11-30, superseded). Electronics may be returned within 14 days of delivery, for store credit only."</span></div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- content: the real `serve --demo` alignment, captured from the running app ------------
+const A = (kind, name, sum) => ({ kind, name, sum });
+const STEPS = [
+  { idx: "step 00", cue: "·", type: "spine", a: A("llm","planner","Plan: look up order 8841, find the refund policy for its category, check eligibility, then process or decline."), b: A("llm","planner","Plan: look up order 8841, find the refund policy for its category, check eligibility, then process or decline.") },
+  { idx: "step 01", cue: "·", type: "spine", a: null, b: A("tool","crm.lookup_order",'{"error":"rate_limited","retry_after_ms":2000}') },
+  { idx: "step 02", cue: "·", type: "spine", a: A("tool","crm.lookup_order",'{"status":"delivered","delivered":"2026-06-15","total":129.0,"category":"electronics"}'), b: A("tool","crm.lookup_order",'{"status":"delivered","delivered":"2026-06-15","total":129.0,"category":"electronics"}') },
+  { idx: "step 03", cue: "·", type: "spine", a: A("llm","planner","Order 8841: electronics, $129.00, delivered 2026-06-15. Next: pull the electronics refund policy and check the return window."), b: A("llm","planner","Order 8841: electronics, $129.00, delivered 2026-06-15. Next: pull the electronics refund policy and check the return window.") },
+  { idx: "step 04", cue: "·", type: "spine", a: A("tool","kb.search",'{"hits":["policy/refunds_v3.md","archive/refunds_v1.md","guides/returns_faq.md"]}'), b: A("tool","kb.search",'{"hits":["policy/refunds_v3.md","archive/refunds_v1.md","guides/returns_faq.md"]}') },
+  { idx: "step 05", cue: "⑂", type: "fork", tag: "[FORK · conf 0.68]", a: A("tool","kb.fetch","Refunds v3 (CURRENT, effective 2026-02-01). Electronics: 30-day return window from delivery; refund to the original payment method."), b: A("tool","kb.fetch","Refunds v1 (ARCHIVED 2024-11-30, superseded). Electronics may be returned within 14 days of delivery, for store credit only.") },
+  { idx: "step 06", cue: "✗", type: "down", a: A("llm","policy_checker","23 days since delivery (2026-06-15 to 2026-07-08), inside the 30-day window. Eligible: full refund of $129.00."), b: A("llm","policy_checker","Order is 23 days old — past the 14-day limit. Not eligible; the request must be declined.") },
+  { idx: "step 07", cue: "✗", type: "down", a: A("llm","planner","Customer is eligible. Refund $129.00 to the original payment method, then resolve the ticket."), b: A("llm","planner","Policy says no. Draft a polite denial citing the 14-day window, then close the ticket.") },
+  { idx: "step 07", cue: "✗", type: "down", a: A("tool","payments.refund",'{"status":"succeeded","txn":"re_20260708_9917"}'), b: null },
+  { idx: "step 08", cue: "✗", type: "down", a: A("tool","crm.set_status",'{"ok":true}'), b: A("tool","crm.set_status",'{"ok":true}') },
+  { idx: "step 09", cue: "✗", type: "down", a: A("llm","answer","Hi Dana — your refund of $129.00 for order 8841 was processed today. You'll see it on your original payment method within 3-5 business days."), b: A("llm","answer","Hi Dana — unfortunately order 8841 falls outside our 14-day return window, so we can't offer a refund. The ticket has been closed.") },
+];
+const FORK_IDX = 5;
+
+// ---- geometry (the shipping app's) --------------------------------------------------------
+const ROW_H = 30, TOP_PAD = 18, SPINE_X = 14;
+const rowCenter = n => TOP_PAD + n * ROW_H + ROW_H / 2;   // 33, 63, … 333
+const FORK_Y = rowCenter(FORK_IDX);        // 183
+const LAST_Y = rowCenter(STEPS.length - 1); // 333
+
+// ---- build the rows -----------------------------------------------------------------------
+const cellHtml = (c, side) => c
+  ? `<span class="cell cell--${side}"><span class="kind">${c.kind}</span><span class="name">${c.name}</span><span class="sum">${c.sum}</span></span>`
+  : `<span class="cell cell--${side}"></span>`;
+const rowsEl = document.getElementById("rows");
+const rowEls = STEPS.map((s) => {
+  const li = document.createElement("li");
+  const forkish = s.type === "fork" || s.type === "down";
+  li.className = "row" + (s.type === "fork" ? " row--fork" : "") + (forkish ? " row--forkish" : "");
+  li.style.setProperty("--lit", "0");
+  li.innerHTML =
+    `<span class="gutter"><span class="cue">${s.cue}</span><span class="idx">${s.idx}</span></span>` +
+    cellHtml(s.a, "a") + cellHtml(s.b, "b") +
+    (s.tag ? `<span class="tag">${s.tag}</span>` : "");
+  rowsEl.appendChild(li);
+  return li;
+});
+const divIdx = STEPS.map((s, n) => ({ s, n })).filter(o => o.s.type === "down").map(o => o.n);
+
+// ---- easing + timeline --------------------------------------------------------------------
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const seg = (t, start, dur) => clamp01((t - start) / dur);
+const outCubic = x => 1 - Math.pow(1 - x, 3);
+const inOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const lerp = (a, b, x) => a + (b - a) * x;
+
+const T = {
+  cardIn: [0.00, 0.40],
+  hold0:  0.95,               // calm gray registers before the beat
+  ignite: [0.95, 1.35],       // THE beat: fork node pops + fork row kindles amber
+  flow:   [1.15, 1.80],       // amber path draws down + divergent rows kindle, staggered
+  select: [1.62, 1.86],       // fork gains the raised selection frame (never amber, DD2)
+  answer: [1.72, 2.24],       // attribution + red/green field diff resolve
+  hold:   [2.40, 4.70],       // payoff (poster lives here)
+  fade:   [4.70, 5.10],
+};
+const DURATION = 5.10;
+const POSTER_T = 2.75;
+
+const node = document.getElementById("node");
+const path = document.getElementById("path");
+const pane = document.getElementById("pane");
+const card = document.getElementById("card");
+
+function render(t) {
+  const outp = t >= T.fade[0] ? seg(t, T.fade[0], T.fade[1] - T.fade[0]) : 0;
+  const globalOpacity = 1 - outp;
+
+  // card entrance (functional, not expressive)
+  const cin = outCubic(seg(t, T.cardIn[0], T.cardIn[1] - T.cardIn[0]));
+  card.style.opacity = cin * globalOpacity;
+  card.style.transform = `translateY(${lerp(8, 0, cin)}px)`;
+
+  // THE beat — the fork node ignites (opacity + scale pop), the fork row kindles gray→amber
+  const ig = seg(t, T.ignite[0], T.ignite[1] - T.ignite[0]);
+  const igE = outCubic(ig);
+  node.style.opacity = igE;
+  node.style.transform = `scale(${lerp(0.2, 1, igE)})`;
+  const forkRow = rowEls[FORK_IDX];
+  forkRow.style.setProperty("--lit", igE);
+  forkRow.style.background = `rgba(255,122,26,${0.05 * igE})`;
+
+  // …and flows down: the amber spine segment draws fork→last, divergent rows kindle in sequence
+  const flowE = inOut(seg(t, T.flow[0], T.flow[1] - T.flow[0]));
+  path.setAttribute("y2", String(FORK_Y + (LAST_Y - FORK_Y) * flowE));
+  path.style.opacity = ig > 0.35 ? globalOpacity : 0;
+  const nDiv = divIdx.length;
+  divIdx.forEach((n, k) => {
+    const p = outCubic(seg(t, T.flow[0] + (k / nDiv) * (T.flow[1] - T.flow[0]) * 0.7, 0.34));
+    rowEls[n].style.setProperty("--lit", p);
+  });
+
+  // selection frame on the fork (raised surface + hairline; never amber) — after it's lit
+  const sel = outCubic(seg(t, T.select[0], T.select[1] - T.select[0]));
+  forkRow.style.background = sel > 0
+    ? `color-mix(in srgb, rgba(255,122,26,${0.05 * igE}), var(--raised) ${Math.round(sel * 100)}%)`
+    : `rgba(255,122,26,${0.05 * igE})`;
+  forkRow.style.boxShadow = `inset 0 0 0 1px color-mix(in srgb, transparent, var(--hair) ${Math.round(sel * 100)}%)`;
+
+  // the answer resolves: attribution + the red/green field diff fade in (quiet, functional)
+  const ans = outCubic(seg(t, T.answer[0], T.answer[1] - T.answer[0]));
+  pane.style.opacity = lerp(0, 1, ans) * globalOpacity;
+  pane.style.transform = `translateY(${lerp(6, 0, ans)}px)`;
+
+  // canvas steady under the global fade
+  document.querySelector(".body").style.opacity = globalOpacity;
+}
+
+window.__render = render;
+window.__duration = DURATION;
+window.__poster = POSTER_T;
+
+// autoplay preview when opened directly; the capture path drives __render(t) explicitly
+if (!window.__capture) {
+  let start = null;
+  const loop = (ts) => {
+    if (start == null) start = ts;
+    render(((ts - start) / 1000) % DURATION);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

@@ -5,26 +5,34 @@
 Point at a failing AI-agent run. amberfork aligns it against a known-good run, finds the
 exact step where they diverged, and shows what changed. Local, deterministic, no account.
 
-![amberfork demo: two agent runs aligned in the terminal — a rate-limit retry is absorbed as a log-move, and the step where the bad run fetched a stale policy doc glows amber as the fork](docs/assets/hero.gif)
+![amberfork serve --demo: two agent runs aligned side by side in the browser on one shared timeline. The steps they agree on recede in gray; the step where the bad run fetched a stale refund policy ignites amber as the fork, the divergent path glows amber down to the wrong answer, and the field diff on the right shows the swapped policy doc in red and green.](docs/assets/hero-web.gif)
 
 ## Try it (30 seconds)
 
 ```sh
-cargo install amberfork      # or a prebuilt binary from the releases page, or build from source
-amberfork demo
+cargo install amberfork        # or a prebuilt binary from the releases page, or build from source
+amberfork serve --demo         # the view above — the bundled sample fork in your browser
+amberfork demo                 # or the same fork rendered in your terminal
 ```
 
-`demo` diffs a sample pair bundled inside the binary — no files, no setup, offline. Then
-point it at your own traces ([plain-JSON format](docs/trace-format.md); worked example in
-[the run-it-on-your-own-agent guide](docs/run-on-your-own-agent.md)):
+`--demo` is a sample pair bundled inside the binary — no files, no setup, offline. `serve` opens
+it as a local `127.0.0.1` web page (nothing leaves your machine); `demo` prints it to the
+terminal. Then point either at your own traces ([plain-JSON format](docs/trace-format.md); worked
+example in [the run-it-on-your-own-agent guide](docs/run-on-your-own-agent.md)):
 
 ```sh
-amberfork diff bad.json --against good.json   # exits 1 on a fork; --json for machines
+amberfork diff  bad.json --against good.json   # exits 1 on a fork; --json for machines
+amberfork serve bad.json --against good.json   # or read the fork in the browser
 ```
 
-> **Status: pre-v1.** `diff` and `demo` are the working surface. The feasibility spike behind
-> the core bet — semantic move-typed alignment beats a positional diff at localizing the
-> decisive step — is done; measurements in [`docs/notebook.md`](docs/notebook.md).
+The same fork, in your terminal:
+
+![amberfork demo in the terminal: the two runs align in gray, a rate-limit retry is absorbed as a log-move, and the step where the bad run fetched a stale policy doc glows amber as the fork, closing with a one-line attribution footer.](docs/assets/hero.gif)
+
+> **Status: pre-v1.** `diff`, `demo`, and `serve` (the browser view above) are the working
+> surface. The feasibility spike behind the core bet — semantic move-typed alignment beats a
+> positional diff at localizing the decisive step — is done; measurements in
+> [`docs/notebook.md`](docs/notebook.md).
 
 ## What v1 will do
 
@@ -120,7 +128,7 @@ cargo run -q -p amberfork-bench -- report --results bench/results/mode_a_prime_r
 
 | Artifact | What it is |
 |---|---|
-| [`crates/`](crates/) | The Rust workspace: model → ingest → align → CLI (`diff`, `demo`) — the walking skeleton |
+| [`crates/`](crates/) | The Rust workspace: model → ingest → align → layout → server → CLI (`diff`, `demo`, `serve`), plus the embedded Leptos web UI |
 | [`spike/`](spike/) | Throwaway feasibility spike (Python): alignment vs positional baseline on real multi-agent failure logs |
 | [`docs/notebook.md`](docs/notebook.md) | Engineering notebook: questions, measurements, dead ends |
 | [`docs/trace-format.md`](docs/trace-format.md) | The canonical plain-JSON trace format v1 accepts |

@@ -1461,3 +1461,47 @@ means here is that every command and flag the guide now names is real (`serve`, 
 this machine, and the 4 KiB figure is `SLOT_TEXT_LIMIT` read from the source, not remembered. What
 remains on #28 is C2: the README web-fork hero (an animated GIF of the fork igniting, chosen over a
 still) plus the README's own `serve` framing.
+
+## 036 · 2026-07-13 · The web-fork hero ships — #28 and the v0.5 milestone close (issue #28 slice C2)
+
+**What changed.** `docs/assets/hero-web.gif` — a 5.1s looping animation of the browser fork view,
+the v0.5 headline. Sibling of the terminal `hero.gif`: `hero-web.html` is a designed, deterministic
+motion piece driven by `window.__render(t)`, and `build_hero_web.sh` renders it to 2x frames in
+headless Chrome → gifski (same pipeline as `build_hero.sh`, reused `render.mjs` unchanged). The one
+beat (DESIGN.md §Motion): calm gray alignment → amber ignites at the fork node and flows down the
+divergent path → the answer resolves (attribution + the red/green field diff). README updated: the
+web fork leads the hero, `serve --demo` joins the 30-second try, the terminal fork follows ("the
+same fork, in your terminal"), and the stale `diff`/`demo`-only status + crates-table row now name
+`serve` + the web UI. 1.30 MB (on par with the 1.6 MB terminal hero). This closes **#28** — all four
+distribution-acceptance boxes (A/B) plus docs+demo+hero — and the **v0.5 "fork in the browser"**
+milestone.
+
+**Decisions that will outlive the code.**
+- *The hero is the product, choreographed — not a redraw.* Rather than hand-reconstruct the Leptos
+  UI from DESIGN.md prose (which drifts), I captured the real rendered DOM and the server-computed
+  SVG geometry from a running `serve --demo` (playwright), then built `hero-web.html` on the shipping
+  app's actual markup + `ui/index.html`'s CSS copied verbatim + the real spine coordinates (fork
+  y=183, path 183→333, 30px pitch). Fidelity is structural: when the app's CSS changes, the hero is
+  rebuilt from the same tokens, not re-eyeballed. The deterministic `__render(t)` seam is the same
+  contract the terminal hero already proved, so the two heroes share one renderer.
+- *Every DESIGN.md rule enforced, checked frame-by-frame.* Amber spent exactly twice (fork node/row
+  + divergent path); no blur halo (the saturated amber IS the glow — cold-design-read); red/green
+  contained to the content-diff pane; the fork's redundant non-color cues (`⑂`, `✗`, dashed outline)
+  present in gray before ignition so the signal survives grayscale; selection is raised-surface +
+  hairline, never amber (DD2). Screenshot-driven: rendered the calm (t=0.7) and payoff (t=2.75)
+  frames and read them before encoding, per the frontend-design skill's critique loop.
+- *The glow is the message; text legibility is secondary — on purpose.* At README display width the
+  row text is small, and that's the right call: DESIGN.md's north star is "you don't read the diff,
+  you see where it broke." The hero optimizes for the amber reading at any size; the transcript
+  detail is supporting texture, and the runnable specifics live in `demo`/`serve` one command away.
+- *Both surfaces kept — terminal is a peer, not a legacy.* The web hero leads (it's the browser
+  milestone), but the terminal `hero.gif` stays right below it: DESIGN.md makes the terminal render
+  a first-class v1 surface (CI/SSH/GIF), so dropping it would misrepresent the tool as browser-only.
+
+**Coverage honesty.** The GIF was rendered and inspected on this machine (frames at calm + payoff,
+plus the encoded GIF's first frame extracted via ffmpeg — amber/red/green clean, no banding at
+1200px). What a still can't prove is the motion's feel end-to-end (pacing of the ignite→flow→answer
+arc); that reads only by watching the loop, which the founder reviewed and approved. `build_hero_web.sh`
+makes it reproducible, so a future palette or layout change regenerates the hero from source rather
+than freezing a stale render. v0.5 is done; the deferred follow-ups (#29 `--html` export, #30
+expand-on-demand, #31 light mode) carry the browser platform into v0.6+.
