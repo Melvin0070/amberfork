@@ -1384,3 +1384,43 @@ an unrelated cwd, reaching that bundle check proves the embedded pair loaded and
 it. The happy-path boot over a real bundle — serve responds, `index.html` embedded, `serve --demo`
 works from the release artifact — is deliberately slice B's release-smoke acceptance, where the UI
 bundle is built into `ui-dist/` before cargo build. Nothing here builds or serves a real bundle yet.
+
+## 034 · 2026-07-13 · The real bundle ships: release builds + embeds the web UI (issue #28 slice B)
+
+**What changed.** The release workflow now builds the web UI and stages it into the server crate's
+embed folder *before* `cargo build` — closing the D13/D5 gap that made every released `serve` a dud.
+`rust-embed` captures `crates/amberfork-server/ui-dist/` at compile time; that folder is `.gitignored`
+(empty in a checkout) and nothing populated it in CI, so a released binary shipped an empty bundle and
+`serve` refused with "web UI bundle missing". Three steps fix it: (1) `trunk build --release` in `ui/`
++ `cp -R ui/dist/. crates/amberfork-server/ui-dist/`, ahead of the existing cargo build; (2) the smoke
+step boots `serve --demo` over the REAL embedded bundle and asserts `/` returns the `amberfork` index
+and `/api/document` returns Document JSON — the happy-path boot slice A structurally could not reach;
+(3) a `cargo package -p amberfork-server --list` check asserts the `include` override actually pulls
+the built `ui-dist/` into the `.crate` tarball, so `cargo install` from crates.io gets a UI too. All
+four of #28's distribution-acceptance checkboxes are now satisfied (the identity one by slice A). No
+Rust changed — this is entirely `release.yml`.
+
+**Decisions that will outlive the code.**
+- *Ordering is the fix, and it lives where the artifact is born.* The bug isn't a missing file, it's a
+  missing *step order*: embed-at-compile-time means the bundle must exist before the compiler runs, not
+  before the tarball is cut. Staging into `ui-dist/` is placed immediately after checkout and before
+  `build release binary`, and the comment says why so a future edit can't reorder it back into breakage.
+- *The smoke tests the shipped artifact, not a rebuild of it.* The boot runs the just-built release
+  binary (`serve --demo`, pinned `--port`, `curl` the two routes) — the same bytes that get tarred and
+  attached. A green smoke is a statement about what a user downloads, which is the only statement worth
+  making at release time. Proven verbatim under `bash -eo pipefail` locally (trap-kill the server,
+  retry-until-up loop, `set -e`-safe greps) before it was ever written into the workflow.
+- *`--list`, not `publish --dry-run --verify`.* A verifying dry-run compiles the crate against the
+  registry and would fail on the unpublished workspace path-deps (`amberfork-layout` isn't on crates.io).
+  The question #28 actually asks — "do the built assets travel into the package?" — is answered by the
+  packaging manifest `--list` emits, no registry needed. Picked the check that answers the question over
+  the ceremony that shares its name.
+
+**Coverage honesty.** Everything here runs on GitHub Actions, which I can't green locally; what I can
+and did prove is every *command* end-to-end on this machine (trunk release build → 481 KB wasm vs 5.8 MB
+debug → stage → release build → `serve --demo` answers 200 on both routes → `--list` shows
+`ui-dist/index.html`), plus the exact smoke shell block verbatim under `bash -eo pipefail`. The runner
+environment itself (trunk install action, macOS-14 + ubuntu matrix, cold caches) only truly proves out
+via a `workflow_dispatch` run — the pre-tag dry-run path that already exists for exactly this. That
+dispatch is the acceptance gate for this slice; it should pass on both targets before v0.5 tags. Slice C
+(README hero screenshot/GIF + run-on-your-own-agent guide) is the remaining scope on #28.

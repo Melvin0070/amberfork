@@ -31,6 +31,25 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # The web bundle is built and staged into the server crate's embed folder BEFORE the
+      # cargo build below (D13/D5): rust-embed captures ui-dist/ at compile time, so a binary
+      # built over an empty ui-dist/ ships a `serve` that refuses with "bundle missing". This
+      # step is the only reason the released `serve` has a UI at all. The UI crate lives
+      # outside the cargo workspace (D4) and targets wasm, hence its own toolchain + trunk.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: trunk
+
+      - name: build the web UI bundle
+        working-directory: ui
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add wasm32-unknown-unknown
+          trunk build --release
+
+      - name: stage the bundle into the server crate's embed folder
+        run: cp -R ui/dist/. crates/amberfork-server/ui-dist/
+
       - name: build release binary
         run: |
           rustup toolchain install stable --profile minimal
@@ -38,11 +57,32 @@ jobs:
           cargo build --release -p amberfork --target ${{ matrix.target }}
 
       - name: smoke-test the built binary
-        # `demo` forks by design, so exit 1 is the pass condition (diff(1) semantics).
+        # `demo` forks by design, so exit 1 is the pass condition (diff(1) semantics). Then the
+        # release acceptance the dev-build tests can't reach (#28): `serve --demo` must boot over
+        # the REAL embedded bundle and answer — proof the UI staged above actually shipped.
         run: |
           bin=target/${{ matrix.target }}/release/amberfork
           "$bin" --version
           "$bin" demo --no-color && exit 1 || test $? -eq 1
+          "$bin" serve --demo --port 8177 &
+          serve_pid=$!
+          trap 'kill $serve_pid 2>/dev/null' EXIT
+          index="$(mktemp)"
+          for _ in $(seq 1 50); do
+            curl -sf http://127.0.0.1:8177/ -o "$index" && break
+            sleep 0.2
+          done
+          grep -q "<title>amberfork</title>" "$index"
+          curl -sf http://127.0.0.1:8177/api/document | grep -q '"schema_version"'
+
+      - name: crates.io package carries the embedded bundle (dry run)
+        # The `.crate` tarball is what crates.io would receive: assert the server's `include`
+        # override actually pulls the (gitignored) built ui-dist/ into it, so a `cargo install`
+        # from the registry gets a `serve` with a UI. `--list` needs no registry-resolved deps;
+        # `--allow-dirty` because the staged bundle is intentionally untracked.
+        run: |
+          cargo package -p amberfork-server --list --allow-dirty \
+            | grep -qx 'ui-dist/index.html'
 
       - name: package tarball + checksum
         run: |
