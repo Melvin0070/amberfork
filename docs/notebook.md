@@ -1207,3 +1207,44 @@ bundle + the ≤1MB gzip gate (needs `wasm-opt`, network) are the `ui/` CI job, 
 `/qa`. Proven in one browser (Chromium). Noted in passing: a pre-existing Leptos warning at
 `canvas.rs:130` (slice 3a's auto-scroll RAF reads a `NodeRef` outside a tracking context; benign,
 `get_untracked` would silence it) — a follow-up, not this slice.
+
+## 030 · 2026-07-13 · The fork ignites: the one expressive beat (issue #26 slice 3c)
+
+**What changed.** The canvas gets its single motion (DESIGN.md §Motion): on load the amber
+*ignites at the fork and flows down the divergent path*. Three coordinated sub-animations inside
+a 0–380ms envelope (medium, ease-out) — the fork node pops (`fork-ignite`), the amber spine
+segment draws downward from the fork (`path-flow`, a `scaleY(0→1)` transform anchored at the fork
+end), and the divergent rows kindle to full amber (`row-kindle`). It is **pure CSS keyed to the
+existing classes**, wholly inside `@media (prefers-reduced-motion: no-preference)`; zero Rust
+change — the whole beat lives at the presentation layer. Verify: the 31 host tests are unchanged
+and green (the static end-state they pin IS each keyframe's `to` state); driven live against the
+real `amberfork serve` (demo refund pair, fork at step 05) — `getComputedStyle` confirmed all four
+elements carry their animation, 8 animations run on the `.track` subtree, and a scrubbed 220ms
+frame showed the path 65% drawn *from the fork down* with rows at 0.79 opacity. Closes #26.
+
+**Decisions that will outlive the code.**
+- *The beat is CSS, not JS — so it needed no new impure edge.* Every prior UI slice split a pure
+  render (SSR-tested) from an impure browser edge (`main.rs`). This slice adds neither: the
+  animation is declarative, the reduced-motion gate is a media query, and the render is
+  byte-identical. So the 8 SSR tests that pin the lit end-state ARE the reduced-motion contract —
+  that end-state is exactly what `reduce` shows, because each keyframe's `to` equals the default.
+- *Draw the path with a transform, not a dash length.* `scaleY(0→1)` with `transform-origin` at
+  the fork end grows the amber line downward without the render computing the segment's pixel
+  length — geometry stays a pure Rust function ([`spine_geometry`]) and "flows down the path"
+  reads literally. `transform-box: fill-box` confirmed resolving live.
+- *One beat, spent once.* Node pop + path draw + row kindle are a single orchestrated moment
+  (0–380ms), not scattered effects. No overshoot bounce, no blur halo — minimal-functional, so it
+  doesn't read as AI-generated motion (the `frontend-design` discipline, subordinate to DESIGN.md).
+  Amber is still spent exactly twice, both in the canvas; the motion introduces no new color.
+- *Fires where the eye is, with no observer.* Slice 3a already auto-scrolls the fork into the
+  upper third on load, so a plain on-mount CSS animation plays exactly where the fork sits — no
+  IntersectionObserver needed for v0.5. When the scrubber lands (record milestone) ignition must
+  re-fire *on scrub*, which will need a JS trigger; that is a future slice's seam, deferred here
+  as a decision, not an omission.
+
+**Coverage honesty.** Reduced-motion is correct by construction (the whole block is gated on
+`no-preference`; every keyframe's `to` == the static default), but the live CDP media-emulation is
+denied by the `browse` allowlist, so the reduced-motion *visual* confirm, real-font metrics, and
+cross-browser all go to the pre-release `/qa` (#28) — same honesty as slices 3a/3b. The live drive
+used the real `serve` binary over a throwaway `ui-dist` copy (restored after). The ≤1MB gzip gate
+still needs `wasm-opt` (#28's `ui/` CI job).
