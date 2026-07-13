@@ -40,10 +40,15 @@
 use std::fmt;
 
 use amberfork_model::{
-    Attribution, AttributionMode, DiffResult, FieldDiffKind, MoveKind, Outcome, Payload, Run, Step,
-    StepKind, Warning,
+    Attribution, AttributionMode, DiffResult, FieldDiffKind, Payload, Run, Step,
 };
 use serde::{Deserialize, Serialize};
+
+// The model types embedded in the view-model's public fields (`StepView::kind`, `StepRow::kind`,
+// `RunHeader::outcome`, `ViewModel::warnings`) and named by the `*_label` helpers travel with it:
+// a consumer that reads a `ViewModel` must be able to name what it is made of. This completes the
+// view-model's own type surface — it is the contract, not a barrel re-export of the engine.
+pub use amberfork_model::{MoveKind, Outcome, StepKind, Warning};
 
 /// The document version this build emits. A bare wire-hygiene marker (issue #24): the web UI
 /// and the server ship in one binary, lockstep by construction, so there is no read-gate —

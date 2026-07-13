@@ -1054,3 +1054,42 @@ for release `-Oz` + latin-subset woff2 fonts (both slice 4).
 yet exercised — it's the manual `/qa` step the issue scopes pre-release, and the end-to-end
 `serve`-through-a-real-bundle path lands with #28. This slice is verified host-side (SSR +
 clippy on the shipping wasm build) and by a real `trunk build`; the pixels are unverified.
+
+## 026 · 2026-07-13 · The amber fork lands: shared-spine canvas (issue #26 slice 1)
+
+**What changed.** `amberfork-ui` grows its hero — the alignment canvas. Side-by-side runs (A
+reference | B observed) on one shared vertical timeline: sync rows recede (`muted`), the fork
+row and every downstream row glow `amber` with the `⑂`/`✗` gutter glyphs + a dashed non-color
+cue, and the `[FORK · conf 0.NN]` tag reuses the terminal painter's exact wording. Rendering is
+split so text stays selectable — DOM rows in a fixed side-by-side grid over a narrow SVG spine
+overlay (faint rail + amber divergent-path segment + fork node), both keyed to one `ROW_H`
+constant. The header's live `#fork` anchor now lands on a real fork row. Verify: 11 new
+host-side tests (SSR string render + pure geometry invariants) atop slice 0's 5, fmt + clippy on
+both Leptos backends, `trunk build` (536 KB gz, < 1 MB budget), and an eyeballed static preview.
+
+**Decisions that will outlive the code.**
+- *Geometry is a pure function, tested independent of the paint.* `spine_geometry(rows)` maps
+  semantic rows to y-coordinates; the invariants (y monotone + evenly spaced, `fork_y` on the
+  fork index, `None` when converged) run in plain `cargo test`, no browser. The SVG and the DOM
+  grid never measure each other — they share `ROW_H`, so alignment holds by construction.
+- *SVG spine + DOM text, not one or the other.* Honors "DOM/SVG, text selectable" AND gives a
+  real drawn timeline for the ignition beat (slice 4) to animate. The amber path is a literal
+  stroke from the fork down, not a border trick.
+- *An absent side renders empty — the gap IS the break.* A gap move shows one column and leaves
+  the other blank; "a divergence visibly breaks the alignment" is the empty cell, not prose.
+- *Fixed side columns, left-anchored (not `1fr 1fr`).* The pixels showed `1fr` stretching the
+  two runs to opposite edges with a dead band — no longer a comparison. Bounded columns +
+  `fit-content` rows keep A|B adjacent, hug the fork's dashed band to its content, and leave the
+  right open for the attribution pane (slice 2).
+- *The web UI is the first surface to see a cut slot.* The CLI reads the view directly and never
+  sees envelope truncation; the canvas renders `SlotText::truncated` with the project's `…` mark.
+
+**Contract completed.** `amberfork-layout` now `pub use`s the four model types embedded in the
+`ViewModel`'s public fields (`StepKind`, `MoveKind`, `Outcome`, `Warning`). Latent gap: a
+consumer depending only on layout could not name what `StepView::kind` etc. are. Source-level
+re-export — no wire/schema change, `schema_version` untouched, root workspace stayed green.
+
+**Coverage honesty.** The wasm mount → fetch → render path is still the manual `/qa` step (#28);
+this slice is verified host-side + by a static preview built from the true SSR output and the
+real stylesheet (colors confirmed against tokens via computed style, no console errors). The
+live browser pixels — hover, scroll, real font metrics — are unverified until fonts + `/qa`.

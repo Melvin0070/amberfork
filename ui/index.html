@@ -172,8 +172,137 @@
         font-variant-numeric: tabular-nums;
       }
 
+      /* --- The alignment canvas: side-by-side runs on the shared spine. Sameness recedes
+             (muted), divergence glows (amber on the fork + every downstream row). Amber is
+             spent here and nowhere else. DOM rows carry selectable text; the SVG overlay
+             draws the timeline rail, the amber divergent-path segment, and the fork node,
+             both keyed to the 30px row pitch so they line up. --- */
       .canvas {
         min-height: 12rem;
+        overflow-x: auto;
+      }
+
+      .track {
+        position: relative;
+        min-width: 1024px; /* below this the canvas scrolls; content never reflows (DD4) */
+        background-image: radial-gradient(circle, var(--hair) 1px, transparent 1px);
+        background-size: 22px 22px;
+      }
+
+      .spine {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+      }
+      .spine-rail {
+        stroke: var(--faint); /* the quiet shared timeline */
+        stroke-width: 1;
+      }
+      .spine-path {
+        stroke: var(--amber); /* the divergent path made literal; the ignition beat animates it */
+        stroke-width: 2;
+      }
+      .fork-node {
+        fill: var(--amber);
+      }
+
+      .rows {
+        list-style: none;
+        width: fit-content; /* hug the two bounded runs; the fork band never spans dead space */
+        margin-left: 28px; /* clear the 28px SVG spine strip */
+        padding: 18px 0; /* 18px top pad matches the geometry's TOP_PAD */
+      }
+
+      /* Fixed side columns, not 1fr: the two runs sit adjacent as one comparison instead of
+         stretching to opposite edges, and the layout anchors left — leaving the right open for
+         the attribution pane (slice 2). Same template on every row keeps the columns aligned. */
+      .row {
+        display: grid;
+        grid-template-columns: 104px 340px 340px auto;
+        align-items: center;
+        column-gap: 18px;
+        height: 30px; /* == ROW_H; the SVG overlay is computed from the same pitch */
+        padding: 0 14px;
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .gutter {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .cue {
+        width: 0.9em;
+        display: inline-block;
+        text-align: center;
+        color: var(--faint);
+      }
+      .idx {
+        color: var(--muted);
+      }
+
+      .cell {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        min-width: 0;
+      }
+      .kind {
+        width: 40px;
+        color: var(--faint);
+      }
+      .name {
+        width: 104px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .sum {
+        flex: 1;
+        min-width: 0;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .slot-trunc {
+        color: var(--muted); /* the honest cut mark — never silently shortened */
+      }
+
+      /* Divergence glows: the fork and every downstream row in one uniform amber (no intensity
+         grading — one scarce accent). The dashed outline is the fork's redundant non-color cue;
+         `outline` never shifts layout, so the row stays 30px and the SVG stays aligned. */
+      .row--fork {
+        color: var(--amber);
+        background: rgba(255, 122, 26, 0.05);
+        border-radius: 4px;
+        outline: 1px dashed var(--amber);
+        outline-offset: -1px;
+      }
+      .row--down {
+        color: var(--amber);
+      }
+      .row--fork .idx,
+      .row--fork .kind,
+      .row--fork .name,
+      .row--fork .sum,
+      .row--fork .cue,
+      .row--down .idx,
+      .row--down .kind,
+      .row--down .name,
+      .row--down .sum,
+      .row--down .cue {
+        color: var(--amber);
+      }
+      .tag {
+        justify-self: end;
+        color: var(--amber);
+        font-variant-numeric: tabular-nums;
       }
     </style>
   </head>

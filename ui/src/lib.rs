@@ -15,14 +15,20 @@
 use amberfork_layout::{Document, Verdict};
 use leptos::prelude::*;
 
-/// The whole view: the header frame over the (still empty) alignment canvas.
+mod canvas;
+use canvas::Canvas;
+
+/// The whole view: the header frame over the shared-spine alignment canvas.
 #[component]
 pub fn App(document: Document) -> impl IntoView {
+    // Clone the view for the canvas before the document moves into the header; both render the
+    // same [`ViewModel`], so the header's `#fork` anchor now lands on the canvas's fork row.
+    let model = document.view.clone();
     view! {
         <Header document=document />
-        // The shared-spine canvas lands here (issue #26 slice 1); the header's `#fork`
-        // anchor gets its target then. Labelled now so the landmark exists from frame one.
-        <main class="canvas" aria-label="alignment canvas"></main>
+        <main class="canvas" aria-label="alignment canvas">
+            <Canvas model=model />
+        </main>
     }
 }
 
