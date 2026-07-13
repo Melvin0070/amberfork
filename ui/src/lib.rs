@@ -15,20 +15,29 @@
 use amberfork_layout::{Document, Verdict};
 use leptos::prelude::*;
 
+mod attribution;
 mod canvas;
+use attribution::Attribution;
 use canvas::Canvas;
 
-/// The whole view: the header frame over the shared-spine alignment canvas.
+/// The whole view: the header frame over the two-pane body — the shared-spine canvas and the
+/// attribution pane (the v0.5 composition, DESIGN.md decisions 2026-07-12).
 #[component]
 pub fn App(document: Document) -> impl IntoView {
-    // Clone the view for the canvas before the document moves into the header; both render the
-    // same [`ViewModel`], so the header's `#fork` anchor now lands on the canvas's fork row.
+    // Pull what each pane reads before the document moves into the header. The canvas renders the
+    // rows; the attribution pane needs only the diff's answer and its verdict — so it never
+    // reaches into the rows, and the header's `#fork` anchor still lands on the canvas fork row.
     let model = document.view.clone();
+    let attribution = model.attribution.clone();
+    let verdict = model.verdict;
     view! {
         <Header document=document />
-        <main class="canvas" aria-label="alignment canvas">
-            <Canvas model=model />
-        </main>
+        <div class="body">
+            <main class="canvas" aria-label="alignment canvas">
+                <Canvas model=model />
+            </main>
+            <Attribution attribution=attribution verdict=verdict />
+        </div>
     }
 }
 
@@ -80,7 +89,9 @@ fn VerdictLine(headline: String, is_forked: bool) -> impl IntoView {
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::*;
-    use amberfork_layout::{AlignedStep, ForkRow, Row, RunHeader, RunRole, SlotText, ViewModel};
+    use amberfork_layout::{
+        AlignedStep, AttributionView, ForkRow, Row, RunHeader, RunRole, SlotText, ViewModel,
+    };
 
     /// Render a component to an HTML string exactly as the browser's SSR peer would — inside
     /// a reactive owner, no DOM required. This is the seam issue #26 tests through (D16).
@@ -119,7 +130,12 @@ mod tests {
             idx_width: 2,
             rows: vec![Row::Fork(fork)],
             verdict: Verdict::Forked,
-            attribution: None,
+            attribution: Some(AttributionView {
+                mode: "static".to_string(),
+                origin: "origin step 11".to_string(),
+                propagation: "step 12".to_string(),
+                confidence: "conf 0.86".to_string(),
+            }),
             warnings: vec![],
         })
     }
@@ -192,6 +208,25 @@ mod tests {
         assert!(
             html.contains("aria-label=\"alignment canvas\""),
             "canvas region is a labelled landmark from frame one: {html}"
+        );
+        assert!(
+            html.contains("aria-label=\"attribution\""),
+            "attribution pane is a labelled landmark: {html}"
+        );
+    }
+
+    #[test]
+    fn app_opens_on_the_attribution_answer() {
+        // The two-pane body renders the diff's answer beside the canvas, so the app is never a
+        // canvas with a dead pane (the fork is selected by default in the canvas).
+        let html = render(forked_doc());
+        assert!(
+            html.contains("origin step 11") && html.contains("static"),
+            "attribution parts render in the pane: {html}"
+        );
+        assert!(
+            html.contains("row row--fork row--selected"),
+            "the fork opens selected: {html}"
         );
     }
 

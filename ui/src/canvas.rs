@@ -87,10 +87,18 @@ pub(crate) fn spine_geometry(rows: &[Row]) -> SpineGeometry {
 pub(crate) fn Canvas(model: ViewModel) -> impl IntoView {
     let geom = spine_geometry(&model.rows);
     let idx_width = model.idx_width;
+    // Default selection = the fork: the app opens on the answer, so the attribution pane is
+    // never a dead zone (DR5's reading order as the first render). Interaction that moves the
+    // selection arrives in slice 3; here it is fixed to the fork by construction.
+    let selected = model
+        .rows
+        .iter()
+        .position(|row| matches!(row, Row::Fork(_)));
     let rows: Vec<AnyView> = model
         .rows
         .iter()
-        .map(|row| row_view(row, idx_width))
+        .enumerate()
+        .map(|(i, row)| row_view(row, idx_width, Some(i) == selected))
         .collect();
 
     view! {
@@ -154,8 +162,10 @@ fn Spine(geom: SpineGeometry) -> impl IntoView {
 /// One aligned move as a canvas row. The role decides everything the eye reads: the gutter cue
 /// (`·` sync / `⑂` fork / `✗` downstream), the amber class, and — on the fork alone — the
 /// `[FORK · conf]` tag, the `#fork` anchor target, and the accessible name that carries the
-/// divergence without relying on color or the decorative glyph.
-fn row_view(row: &Row, idx_width: usize) -> AnyView {
+/// divergence without relying on color or the decorative glyph. `selected` adds the neutral
+/// selection frame (raised surface + hairline in CSS) — a class kept separate from the amber
+/// role so selection is *never* amber (DD2), even on the default-selected fork.
+fn row_view(row: &Row, idx_width: usize, selected: bool) -> AnyView {
     let step = row.step();
     let idx = idx_label(step, idx_width);
     let cell_a = cell_view(step.a.as_ref(), CELL_A, CELL_A_EMPTY);
@@ -163,13 +173,18 @@ fn row_view(row: &Row, idx_width: usize) -> AnyView {
 
     match row {
         Row::Fork(fork) => {
+            let class = if selected {
+                "row row--fork row--selected"
+            } else {
+                "row row--fork"
+            };
             let tag = format!("[FORK · {}]", fork.confidence);
             let aria = format!(
                 "fork — reference and observed diverge at {idx}, {}",
                 fork.confidence
             );
             view! {
-                <li class="row row--fork" id="fork" aria-label=aria>
+                <li class=class id="fork" aria-label=aria>
                     <span class="gutter">
                         <span class="cue" aria-hidden="true">"⑂"</span>
                         <span class="idx">{idx}</span>
@@ -182,9 +197,15 @@ fn row_view(row: &Row, idx_width: usize) -> AnyView {
             .into_any()
         }
         Row::Step(step_row) => {
-            let (class, cue) = match step_row.role {
-                RowRole::Spine => ("row row--spine", "·"),
-                RowRole::Downstream => ("row row--down", "✗"),
+            let class = match (step_row.role, selected) {
+                (RowRole::Spine, false) => "row row--spine",
+                (RowRole::Spine, true) => "row row--spine row--selected",
+                (RowRole::Downstream, false) => "row row--down",
+                (RowRole::Downstream, true) => "row row--down row--selected",
+            };
+            let cue = match step_row.role {
+                RowRole::Spine => "·",
+                RowRole::Downstream => "✗",
             };
             view! {
                 <li class=class>
@@ -542,6 +563,39 @@ mod tests {
         assert!(
             html.contains("aria-label=\"fork"),
             "fork carries an accessible name (the third redundancy leg): {html}"
+        );
+    }
+
+    #[test]
+    fn the_fork_is_selected_by_default() {
+        let html = render(forked());
+        // Exactly one row is selected, so the attribution pane opens on one answer...
+        assert_eq!(
+            html.matches("row--selected").count(),
+            1,
+            "exactly one default selection: {html}"
+        );
+        // ...and it is the fork: the selection class rides on the SAME row as the amber role,
+        // proving selection is a separate class, never keyed to amber (DD2).
+        assert!(
+            html.contains("row row--fork row--selected"),
+            "the fork is the default-selected row: {html}"
+        );
+    }
+
+    #[test]
+    fn converged_canvas_selects_nothing() {
+        // No fork means no default selection; the pane shows its converged state instead.
+        let html = render(model(
+            vec![
+                spine(0, "planner", "\"plan\""),
+                spine(1, "web.search", "q=\"x\""),
+            ],
+            Verdict::Identical { steps: 2 },
+        ));
+        assert!(
+            !html.contains("row--selected"),
+            "nothing is selected when there is no fork: {html}"
         );
     }
 }

@@ -1093,3 +1093,36 @@ re-export — no wire/schema change, `schema_version` untouched, root workspace 
 this slice is verified host-side + by a static preview built from the true SSR output and the
 real stylesheet (colors confirmed against tokens via computed style, no console errors). The
 live browser pixels — hover, scroll, real font metrics — are unverified until fonts + `/qa`.
+
+## 027 · 2026-07-13 · The attribution pane + default fork selection (issue #26 slice 2)
+
+**What changed.** The composition closes: header + a two-pane body (canvas flexes, a fixed 320px
+attribution pane on the right). The pane renders `AttributionView` as a description list in DR5
+reading order (mode → origin → propagation → confidence) — the parts the terminal flattens to one
+footer line, now separate elements; when there is no attribution it still speaks (converged → "no
+fork to attribute", forked-but-unlocalized → its own line), so the pane is never dead. The fork
+pair is selected by default so the app opens on the answer. Verify: 9 new host-side tests (25
+total), fmt + clippy on both backends, `trunk build` 555 KB gz, two-pane pixels eyeballed.
+
+**Decisions that will outlive the code.**
+- *The pane reads the answer, not the rows.* `Attribution` takes `Option<AttributionView>` +
+  `Verdict`, nothing else — it never touches the canvas rows. Attribution is a statement ABOUT
+  the divergence, so no amber and no red/green live in it (the red/green field-diff card is #27's
+  job, confined there); an SSR test asserts the pane carries none of the canvas amber hooks.
+- *Selection is a class separate from the amber role.* `row--selected` (raised surface + hairline
+  via inset box-shadow, no layout shift) rides on the same `<li>` as `row--fork` for the
+  default-selected fork, but keys to neutral tokens only — so "selection is never amber" (DD2)
+  holds even where the selected row IS the amber fork (computed bg confirmed `raised`, not amber).
+  Slice 3 makes selection signal-driven; here it is fixed to the fork index by construction.
+- *Default selection = the fork.* The app opens answering DR5's reading order — no dead pane, no
+  fold-hidden fork.
+- *Canvas-only horizontal scroll, done right.* Dropped the forced `min-width:1024` on the track
+  (once the 320px pane took its share it scrolled the canvas needlessly); the bounded rows
+  left-anchor on the dotted field and the canvas alone scrolls only when content truly exceeds
+  it. Side columns tightened to 300px so the two runs + the fork tag fit beside the pane, and the
+  `[FORK · conf]` tag is `nowrap` so it never breaks the fork's single 30px row.
+
+**Coverage honesty.** Same as slice 1: wasm mount → fetch → render is the manual `/qa` step (#28).
+Verified host-side + a static preview from the true SSR output and the real stylesheet (selection
+bg = `raised`, pane border = `hair`, values = `text` via computed style; no console errors).
+Moving the selection, keyboard nav, and the disconnect banner are slice 3.

@@ -43,12 +43,22 @@
 
       body {
         min-height: 100vh;
+        display: flex;
+        flex-direction: column;
         background: var(--bg);
         color: var(--text);
         font-family: var(--sans);
         font-size: 0.875rem;
         line-height: 1.5;
         -webkit-font-smoothing: antialiased;
+      }
+
+      /* The two-pane body: canvas flexes, attribution holds a fixed 320px on the right. Fills
+         the height below the header so the pane's border-left runs the full column. */
+      .body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
       }
 
       /* --- The app shell: never a blank page before wasm mounts (D20). The boot node is
@@ -178,13 +188,18 @@
              draws the timeline rail, the amber divergent-path segment, and the fork node,
              both keyed to the 30px row pitch so they line up. --- */
       .canvas {
+        flex: 1;
+        min-width: 0; /* let the flex child shrink so its own overflow-x engages */
         min-height: 12rem;
         overflow-x: auto;
       }
 
+      /* Fills the canvas viewport (dotted field), with the bounded rows left-anchored on top.
+         When the rows are wider than the canvas the canvas alone scrolls (DD4 canvas-only
+         horizontal scroll) — the header and attribution pane never move. */
       .track {
         position: relative;
-        min-width: 1024px; /* below this the canvas scrolls; content never reflows (DD4) */
+        min-height: 100%;
         background-image: radial-gradient(circle, var(--hair) 1px, transparent 1px);
         background-size: 22px 22px;
       }
@@ -219,7 +234,7 @@
          the attribution pane (slice 2). Same template on every row keeps the columns aligned. */
       .row {
         display: grid;
-        grid-template-columns: 104px 340px 340px auto;
+        grid-template-columns: 104px 300px 300px auto;
         align-items: center;
         column-gap: 18px;
         height: 30px; /* == ROW_H; the SVG overlay is computed from the same pitch */
@@ -301,8 +316,61 @@
       }
       .tag {
         justify-self: end;
+        white-space: nowrap; /* the [FORK · conf] tag stays on the fork's single 30px row */
         color: var(--amber);
         font-variant-numeric: tabular-nums;
+      }
+
+      /* Selection is the neutral frame: raised surface + a hairline ring (inset box-shadow, so
+         no layout shift). Never amber (DD2) — the default-selected fork keeps its amber role via
+         `row--fork` and only gains the raised surface + hairline on top. Placed after the role
+         rules so its raised background wins over the fork's amber tint. */
+      .row--selected {
+        background: var(--raised);
+        box-shadow: inset 0 0 0 1px var(--hair);
+      }
+
+      /* --- Attribution pane: the diff's one answer in DR5 order. No amber, no red/green — a
+             statement ABOUT the divergence, not the divergence itself. --- */
+      .attr {
+        flex: 0 0 320px;
+        border-left: 1px solid var(--hair);
+        background: var(--surface);
+        padding: 16px 18px;
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        overflow-y: auto;
+      }
+      .attr-title {
+        margin-bottom: 14px;
+        font-size: 0.625rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .attr-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .attr-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 14px;
+      }
+      .attr-row dt {
+        color: var(--muted);
+      }
+      .attr-row dd {
+        color: var(--text);
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .attr-empty {
+        color: var(--muted);
+        line-height: 1.6;
       }
     </style>
   </head>
