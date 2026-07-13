@@ -1164,3 +1164,46 @@ total) + the whole interaction driven live in a real browser (`trunk serve` + a 
 committed); the shipped serve-through-a-real-bundle path is still #28. Interaction is proven in one
 browser (Chromium) at a few viewports; cross-browser + real-font metrics are the pre-release `/qa`.
 The disconnect re-poll banner is slice 3b (next).
+
+## 029 · 2026-07-13 · The server-stopped state: disconnect re-poll banner (issue #26 slice 3b)
+
+**What changed.** The browser now notices when the server that fed the view stops. After the
+first load keeps the snapshot's ETag, a 5s interval re-polls the one content endpoint with a
+conditional GET (`If-None-Match`); a healthy server answers with a cheap 304, and only a
+*transport error* — the loopback process gone — reads as stopped. On the first dead probe a slim
+`warning` banner docks at the bottom edge — `server stopped — restart: amberfork serve <bad>
+--against <good>` with the REAL run ids — and the poll *latches off*. No spinner. Verify: 3 new
+SSR tests (31 total, pure banner: copy + real names + `role=alert` + carries no amber hook + never
+shown on the connected App), fmt + clippy on both backends, wasm compiles — and the whole thing
+driven live against the real `amberfork serve` (demo refund traces): killed the server, watched
+the banner appear, and proved the two behaviours only a live drive can prove.
+
+**Decisions that will outlive the code.**
+- *The pure/impure seam holds again.* `DisconnectBanner` is pure markup in `lib.rs` (SSR-tested,
+  D16); the re-poll loop — the app's only ongoing I/O — lives in the `csr` binary (`main.rs`), the
+  one impure edge. Same split as every prior UI slice: the thing the browser must do lives at the
+  edge, the thing we can assert lives where a plain `cargo test` can render it.
+- *Disconnect = a transport error, not a bad status.* ANY HTTP answer (even a 500) means the
+  server is up; the probe treats only `send().await` failing as stopped. This is exactly the
+  ETag/304 path `amberfork-server` was built for ("a strong ETag/304 pair is all the UI's
+  disconnect detection needs") — cheap liveness, no re-download of the document each tick.
+- *Latch, don't reconnect.* On loopback a dead fetch means the process is gone, and the server
+  serves an *immutable* snapshot — so recovery is restart + reload, never a silent reconnect to a
+  possibly-different diff. The banner stays and polling stops (proven live: 0 further polls over a
+  real 15s window). A "reconnecting…" spinner would be a lie about what the state is.
+- *Warning is not amber.* The banner speaks in `warning #F5A623`; amber is still spent exactly
+  twice, both in the canvas. A system-status message is not a divergence. An SSR test asserts the
+  banner carries none of the canvas amber hooks; the live computed style read `rgb(245,166,35)`,
+  not amber's `rgb(255,122,26)`.
+- *Real names over placeholders.* The restart command names the loaded runs (evidence-out rule),
+  so it is paste-ready — the live drive showed `amberfork serve refund-bad --against refund-good`,
+  pulled from the document, not a template.
+- *Fixed, not in flow.* The strip is `position: fixed` so it annunciates without reflowing the
+  canvas — no scroll jump when a terminal state arrives.
+
+**Coverage honesty.** The live drive used the real `serve` binary over a dev bundle copied into
+the (gitignored) embed folder — throwaway, restored after. The shipped serve-through-the-release
+bundle + the ≤1MB gzip gate (needs `wasm-opt`, network) are the `ui/` CI job, still #28's pre-release
+`/qa`. Proven in one browser (Chromium). Noted in passing: a pre-existing Leptos warning at
+`canvas.rs:130` (slice 3a's auto-scroll RAF reads a `NodeRef` outside a tracking context; benign,
+`get_untracked` would silence it) — a follow-up, not this slice.

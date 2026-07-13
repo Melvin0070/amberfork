@@ -384,6 +384,27 @@
         color: var(--muted);
         line-height: 1.6;
       }
+
+      /* --- Disconnect banner: the server that fed this view stopped (D-decision 2026-07-12).
+             A slim strip docked at the bottom edge, `warning` — never amber: a system-status
+             message is not a divergence. Fixed, so it annunciates without reflowing the canvas;
+             no spinner — the state is terminal until the user restarts + reloads. --- */
+      .banner {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 0.5rem 0.875rem;
+        border-top: 1px solid var(--warning);
+        background: rgba(245, 166, 35, 0.08); /* faint warning wash over the surface */
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        color: var(--warning);
+      }
+
+      .banner code {
+        color: var(--text); /* the restart command reads as copy-ready, brighter than the label */
+      }
     </style>
   </head>
   <body>

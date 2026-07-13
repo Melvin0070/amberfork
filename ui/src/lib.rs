@@ -86,6 +86,22 @@ fn VerdictLine(headline: String, is_forked: bool) -> impl IntoView {
     }
 }
 
+/// The disconnect banner: the server that fed this view stopped. Pure markup so it is
+/// SSR-testable (D16) — the impure re-poll loop that decides *when* to mount it lives in the
+/// `csr` binary (`main.rs`), the one I/O edge. It speaks in `warning`, never amber: a
+/// system-status message is not a divergence, and amber is spent only twice, both in the canvas.
+/// It emits a paste-ready restart command with the real run names (the evidence-out rule), and
+/// carries no spinner — the state is terminal until the user restarts the server and reloads.
+#[component]
+pub fn DisconnectBanner(bad: String, good: String) -> impl IntoView {
+    let command = format!("amberfork serve {bad} --against {good}");
+    view! {
+        <div class="banner banner--disconnect" role="alert">
+            "server stopped — restart: "<code>{command}</code>
+        </div>
+    }
+}
+
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::*;
@@ -98,6 +114,14 @@ mod tests {
     fn render(document: Document) -> String {
         let owner = Owner::new();
         owner.with(|| view! { <App document=document /> }.to_html())
+    }
+
+    /// Render the disconnect banner in isolation, exactly as the `csr` binary mounts it.
+    fn render_banner(bad: &str, good: &str) -> String {
+        let owner = Owner::new();
+        owner.with(|| {
+            view! { <DisconnectBanner bad=bad.to_string() good=good.to_string() /> }.to_html()
+        })
     }
 
     fn run(id: &str, role: RunRole, n_steps: usize) -> RunHeader {
@@ -227,6 +251,57 @@ mod tests {
         assert!(
             html.contains("row row--fork row--selected"),
             "the fork opens selected: {html}"
+        );
+    }
+
+    #[test]
+    fn disconnect_banner_says_stopped_and_how_to_restart() {
+        // The banner names the failure and the exact recovery, in the interface's voice — and
+        // the restart command carries the REAL run names so it is paste-ready, not a template.
+        let html = render_banner("bad.json", "good.json");
+        assert!(html.contains("server stopped"), "names the failure: {html}");
+        assert!(
+            html.contains("amberfork serve bad.json --against good.json"),
+            "restart command names the real runs (bad, then --against good): {html}"
+        );
+        assert!(
+            html.contains("banner--disconnect"),
+            "carries the disconnect banner class the stylesheet keys `warning` to: {html}"
+        );
+        assert!(
+            html.contains("role=\"alert\""),
+            "announced assertively to assistive tech: {html}"
+        );
+    }
+
+    #[test]
+    fn disconnect_banner_is_warning_never_amber() {
+        // Amber is spent exactly twice, both in the canvas (fork + divergent path). A
+        // system-status message is not a divergence, so the banner must carry none of the
+        // canvas's amber-role hooks — it speaks in `warning` via `banner--disconnect` alone.
+        let html = render_banner("bad.json", "good.json");
+        for amber_hook in [
+            "row--fork",
+            "row--down",
+            "spine-path",
+            "fork-node",
+            "verdict--fork",
+        ] {
+            assert!(
+                !html.contains(amber_hook),
+                "banner carries no amber hook `{amber_hook}`: {html}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_loaded_app_never_shows_the_banner() {
+        // The banner is mounted only by the `csr` re-poll loop on disconnect; the pure App
+        // render — the connected state — must never carry it, or a live server would look dead.
+        let html = render(forked_doc());
+        assert!(
+            !html.contains("banner--disconnect"),
+            "the connected view carries no disconnect banner: {html}"
         );
     }
 
