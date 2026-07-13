@@ -1126,3 +1126,41 @@ total), fmt + clippy on both backends, `trunk build` 555 KB gz, two-pane pixels 
 Verified host-side + a static preview from the true SSR output and the real stylesheet (selection
 bg = `raised`, pane border = `hair`, values = `text` via computed style; no console errors).
 Moving the selection, keyboard nav, and the disconnect banner are slice 3.
+
+## 028 · 2026-07-13 · The canvas comes alive: selection, keyboard nav, auto-scroll (issue #26 slice 3a)
+
+**What changed.** The canvas becomes an interactive listbox. Selection is a signal (default = the
+fork); click or Enter commits it, and the highlight is the neutral raised+hairline frame — a class
+kept separate from the amber role, so selection is never amber even on the fork. Roving tabindex:
+exactly one row is `tabindex=0`; arrows move the focus cursor (clamped at the ends) without moving
+the selection so navigating never thrashes the pane; the rows are `role="listbox"`/`option` with
+`aria-selected`. focus-visible ring (a box-shadow, so it never overrides the fork's dashed cue) +
+hover tint. The canvas is now the scroll container (canvas-only scroll — header + pane stay fixed),
+and the fork auto-scrolls into the upper third on load. Verify: 3 new SSR scaffolding tests (28
+total) + the whole interaction driven live in a real browser (`trunk serve` + a stub
+`/api/document` + the browse skill). `trunk build` 623 KB gz.
+
+**Decisions that will outlive the code.**
+- *Selection follows Enter, not focus.* Arrows move a roving focus cursor; selection changes only
+  on Enter/click. For a debugger where selection will drive the content-diff pane (#27),
+  decoupling nav from selection avoids thrashing the pane as you arrow through — the issue's
+  "Enter selects" made literal.
+- *Selection is a class, proven neutral live.* `row--selected` keys to `raised`/`hair` only; a
+  browser computed-style check on a selected SYNC row read `muted` text + `raised` bg — "selection
+  is never amber" (DD2) holds as the selection moves, not just on the default fork.
+- *The focus ring is a box-shadow, not an outline.* So it never overrides the fork's dashed amber
+  `outline` — a focused fork keeps its non-color divergence cue.
+- *The canvas owns the vertical scroll.* `body { height:100vh; overflow:hidden }` + the flex chain
+  bounds the canvas so IT scrolls, not the page — header and pane stay fixed, and
+  `scroll_into_view` + `scroll-margin-top:96px` land the fork in the upper third. The on-mount
+  scroll is deferred one animation frame: an immediate scroll runs before layout settles (caught
+  live — `scrollTop` stayed 0 until the RAF deferral).
+- *Behaviour is verified by driving it, not by asserting scaffolding.* Host SSR tests pin the
+  static contract (listbox/option, roving-tabindex initial state, `aria-selected`); the real
+  click/keyboard/scroll behaviour was exercised against live wasm — the honest way to verify an
+  interaction slice, closest to the `/qa` the issue defers.
+
+**Coverage honesty.** The live drive used a stub `/api/document` + `trunk serve` (throwaway, not
+committed); the shipped serve-through-a-real-bundle path is still #28. Interaction is proven in one
+browser (Chromium) at a few viewports; cross-browser + real-font metrics are the pre-release `/qa`.
+The disconnect re-poll banner is slice 3b (next).

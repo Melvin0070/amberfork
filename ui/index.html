@@ -42,9 +42,10 @@
       }
 
       body {
-        min-height: 100vh;
+        height: 100vh; /* exact viewport height so the CANVAS scrolls, never the whole page */
         display: flex;
         flex-direction: column;
+        overflow: hidden;
         background: var(--bg);
         color: var(--text);
         font-family: var(--sans);
@@ -189,9 +190,9 @@
              both keyed to the 30px row pitch so they line up. --- */
       .canvas {
         flex: 1;
-        min-width: 0; /* let the flex child shrink so its own overflow-x engages */
+        min-width: 0; /* let the flex child shrink so its own overflow engages */
         min-height: 12rem;
-        overflow-x: auto;
+        overflow: auto; /* the canvas is the scroll container — header + pane stay fixed */
       }
 
       /* Fills the canvas viewport (dotted field), with the bounded rows left-anchored on top.
@@ -243,6 +244,17 @@
         font-size: 0.75rem;
         color: var(--muted);
         font-variant-numeric: tabular-nums;
+        cursor: pointer;
+        scroll-margin-top: 96px; /* auto-scroll lands the fork in the upper third, not the edge */
+      }
+      /* Hover tint (never on the selected row) and a clear focus-visible ring. The ring is a
+         box-shadow, not an outline, so it never overrides the fork's dashed amber cue. */
+      .row:hover:not(.row--selected) {
+        background: var(--surface);
+      }
+      .row:focus-visible {
+        outline: none;
+        box-shadow: inset 0 0 0 2px var(--muted);
       }
 
       .gutter {

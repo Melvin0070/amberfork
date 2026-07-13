@@ -14,6 +14,7 @@
 //! independent of anything the browser paints (issue #26 D16).
 
 use amberfork_layout::{AlignedStep, Row, RowRole, SlotText, StepView, ViewModel, kind_label};
+use leptos::html::Li;
 use leptos::prelude::*;
 
 /// Vertical pitch between adjacent rows, in px. The single geometry constant the DOM grid
@@ -82,30 +83,83 @@ pub(crate) fn spine_geometry(rows: &[Row]) -> SpineGeometry {
     }
 }
 
+/// Everything the interactive rows share: the reactive selection + roving-focus state and the
+/// node refs the keyboard handler moves focus between. `Copy` (every field is), so it threads
+/// into each row's closures for free.
+#[derive(Clone, Copy)]
+struct RowState {
+    /// The selected row (drives the highlight + the pane). `None` only when nothing is
+    /// selectable — a converged diff with no fork. Enter/click commit a new selection.
+    selected: RwSignal<Option<usize>>,
+    /// The roving-tabindex cursor: exactly one row is `tabindex=0`. Arrows move it (and focus);
+    /// selection follows only on Enter, so navigating never thrashes the pane.
+    active: RwSignal<usize>,
+    /// One ref per row, so a keydown on the active row can move focus to its neighbour.
+    refs: StoredValue<Vec<NodeRef<Li>>>,
+    /// Row count, for clamping arrow navigation at the ends.
+    count: usize,
+}
+
 /// The alignment canvas over one diff's [`ViewModel`].
 #[component]
 pub(crate) fn Canvas(model: ViewModel) -> impl IntoView {
     let geom = spine_geometry(&model.rows);
     let idx_width = model.idx_width;
-    // Default selection = the fork: the app opens on the answer, so the attribution pane is
-    // never a dead zone (DR5's reading order as the first render). Interaction that moves the
-    // selection arrives in slice 3; here it is fixed to the fork by construction.
-    let selected = model
+    let count = model.rows.len();
+    // Default selection = the fork: the app opens on the answer, so the pane is never a dead
+    // zone (DR5's reading order as the first render). The roving cursor starts there too, so Tab
+    // reaches the fork first.
+    let fork = model
         .rows
         .iter()
         .position(|row| matches!(row, Row::Fork(_)));
+    let state = RowState {
+        selected: RwSignal::new(fork),
+        active: RwSignal::new(fork.unwrap_or(0)),
+        refs: StoredValue::new((0..count).map(|_| NodeRef::new()).collect()),
+        count,
+    };
+
+    // Auto-scroll the fork (the answer) into view on load; `scroll-margin-top` in CSS lands it in
+    // the upper third. Deferred one frame so the rows are laid out before we scroll (an on-mount
+    // scroll runs before the scroll metrics settle). Effects never run in the SSR string render,
+    // so this is browser-only by construction — the tests below see the static scaffolding.
+    Effect::new(move |_| {
+        if let Some(i) = fork {
+            request_animation_frame(move || {
+                if let Some(el) = state.refs.with_value(|refs| refs[i].get()) {
+                    el.scroll_into_view_with_bool(true);
+                }
+            });
+        }
+    });
+
     let rows: Vec<AnyView> = model
         .rows
         .iter()
         .enumerate()
-        .map(|(i, row)| row_view(row, idx_width, Some(i) == selected))
+        .map(|(i, row)| row_view(row, idx_width, i, state))
         .collect();
 
     view! {
         <div class="track" style=format!("min-height:{}px", geom.height)>
             <Spine geom=geom />
-            <ol class="rows" role="list">{rows}</ol>
+            <ol class="rows" role="listbox" aria-label="alignment steps">
+                {rows}
+            </ol>
         </div>
+    }
+}
+
+/// Move the roving cursor (and DOM focus) to `target`. The heart of the keyboard contract: one
+/// `tabindex=0` at a time, focus following the arrows.
+fn focus_row(state: RowState, target: usize) {
+    state.active.set(target);
+    if let Some(el) = state
+        .refs
+        .with_value(|refs| refs.get(target).and_then(|node| node.get()))
+    {
+        let _ = el.focus();
     }
 }
 
@@ -159,67 +213,115 @@ fn Spine(geom: SpineGeometry) -> impl IntoView {
     }
 }
 
-/// One aligned move as a canvas row. The role decides everything the eye reads: the gutter cue
-/// (`·` sync / `⑂` fork / `✗` downstream), the amber class, and — on the fork alone — the
-/// `[FORK · conf]` tag, the `#fork` anchor target, and the accessible name that carries the
-/// divergence without relying on color or the decorative glyph. `selected` adds the neutral
-/// selection frame (raised surface + hairline in CSS) — a class kept separate from the amber
-/// role so selection is *never* amber (DD2), even on the default-selected fork.
-fn row_view(row: &Row, idx_width: usize, selected: bool) -> AnyView {
+/// One aligned move as an interactive canvas row (an `option` in the listbox). The role decides
+/// what the eye reads — the gutter cue (`·` sync / `⑂` fork / `✗` downstream), the amber class,
+/// and, on the fork alone, the `[FORK · conf]` tag, the `#fork` anchor target, and the accessible
+/// name that carries the divergence without color or the decorative glyph. `state` makes it live:
+/// the selection frame (raised surface + hairline — a class separate from the amber role, so
+/// selection is *never* amber, DD2), the roving `tabindex`, `aria-selected`, and click/arrow/Enter.
+fn row_view(row: &Row, idx_width: usize, i: usize, state: RowState) -> AnyView {
     let step = row.step();
     let idx = idx_label(step, idx_width);
     let cell_a = cell_view(step.a.as_ref(), CELL_A, CELL_A_EMPTY);
     let cell_b = cell_view(step.b.as_ref(), CELL_B, CELL_B_EMPTY);
 
-    match row {
-        Row::Fork(fork) => {
-            let class = if selected {
-                "row row--fork row--selected"
-            } else {
-                "row row--fork"
-            };
-            let tag = format!("[FORK · {}]", fork.confidence);
-            let aria = format!(
+    // Variant-specific bits: base (role) class, gutter cue, and the fork-only id, accessible
+    // name, and tag.
+    let (base, cue, id, aria_label, tag): (
+        &str,
+        &str,
+        Option<&str>,
+        Option<String>,
+        Option<AnyView>,
+    ) = match row {
+        Row::Fork(fork) => (
+            "row row--fork",
+            "⑂",
+            Some("fork"),
+            Some(format!(
                 "fork — reference and observed diverge at {idx}, {}",
                 fork.confidence
-            );
-            view! {
-                <li class=class id="fork" aria-label=aria>
-                    <span class="gutter">
-                        <span class="cue" aria-hidden="true">"⑂"</span>
-                        <span class="idx">{idx}</span>
-                    </span>
-                    {cell_a}
-                    {cell_b}
-                    <span class="tag">{tag}</span>
-                </li>
-            }
-            .into_any()
+            )),
+            Some(
+                view! { <span class="tag">{format!("[FORK · {}]", fork.confidence)}</span> }
+                    .into_any(),
+            ),
+        ),
+        Row::Step(step_row) => match step_row.role {
+            RowRole::Spine => ("row row--spine", "·", None, None, None),
+            RowRole::Downstream => ("row row--down", "✗", None, None, None),
+        },
+    };
+
+    let RowState {
+        selected, active, ..
+    } = state;
+    let node_ref = state.refs.with_value(|refs| refs[i]);
+
+    let class = move || {
+        if selected.get() == Some(i) {
+            format!("{base} row--selected")
+        } else {
+            base.to_string()
         }
-        Row::Step(step_row) => {
-            let class = match (step_row.role, selected) {
-                (RowRole::Spine, false) => "row row--spine",
-                (RowRole::Spine, true) => "row row--spine row--selected",
-                (RowRole::Downstream, false) => "row row--down",
-                (RowRole::Downstream, true) => "row row--down row--selected",
-            };
-            let cue = match step_row.role {
-                RowRole::Spine => "·",
-                RowRole::Downstream => "✗",
-            };
-            view! {
-                <li class=class>
-                    <span class="gutter">
-                        <span class="cue" aria-hidden="true">{cue}</span>
-                        <span class="idx">{idx}</span>
-                    </span>
-                    {cell_a}
-                    {cell_b}
-                </li>
-            }
-            .into_any()
+    };
+    let tabindex = move || if active.get() == i { "0" } else { "-1" };
+    let aria_selected = move || {
+        if selected.get() == Some(i) {
+            "true"
+        } else {
+            "false"
         }
+    };
+
+    let on_click = move |_| {
+        selected.set(Some(i));
+        focus_row(state, i);
+    };
+    // Roving-tabindex keyboard contract: arrows move the focus cursor (clamped at the ends),
+    // Enter commits the selection. Nothing else is captured, so the browser keeps its own keys.
+    let on_keydown = move |ev: leptos::ev::KeyboardEvent| {
+        let last = state.count.saturating_sub(1);
+        let target = match ev.key().as_str() {
+            "ArrowDown" | "ArrowRight" => Some((i + 1).min(last)),
+            "ArrowUp" | "ArrowLeft" => Some(i.saturating_sub(1)),
+            "Home" => Some(0),
+            "End" => Some(last),
+            "Enter" | " " => {
+                ev.prevent_default();
+                selected.set(Some(i));
+                None
+            }
+            _ => None,
+        };
+        if let Some(target) = target {
+            ev.prevent_default();
+            focus_row(state, target);
+        }
+    };
+
+    view! {
+        <li
+            node_ref=node_ref
+            class=class
+            role="option"
+            id=id
+            aria-label=aria_label
+            aria-selected=aria_selected
+            tabindex=tabindex
+            on:click=on_click
+            on:keydown=on_keydown
+        >
+            <span class="gutter">
+                <span class="cue" aria-hidden="true">{cue}</span>
+                <span class="idx">{idx}</span>
+            </span>
+            {cell_a}
+            {cell_b}
+            {tag}
+        </li>
     }
+    .into_any()
 }
 
 /// The timeline gutter label: `step NN`, zero-padded to the view's shared width. A fork with no
@@ -596,6 +698,59 @@ mod tests {
         assert!(
             !html.contains("row--selected"),
             "nothing is selected when there is no fork: {html}"
+        );
+    }
+
+    // --- a11y scaffolding: the static contract host tests can pin (live behaviour is /qa) -----
+
+    #[test]
+    fn rows_are_a_listbox_of_options() {
+        let html = render(forked());
+        assert!(
+            html.contains("role=\"listbox\""),
+            "the rows are a listbox: {html}"
+        );
+        // One option per aligned row (the fixture has five).
+        assert_eq!(
+            html.matches("role=\"option\"").count(),
+            5,
+            "one option per row: {html}"
+        );
+    }
+
+    #[test]
+    fn roving_tabindex_starts_on_the_fork() {
+        let html = render(forked());
+        // Exactly one row is tabbable, so Tab reaches the canvas at a single, predictable row...
+        assert_eq!(
+            html.matches("tabindex=\"0\"").count(),
+            1,
+            "exactly one roving tab stop: {html}"
+        );
+        assert_eq!(
+            html.matches("tabindex=\"-1\"").count(),
+            4,
+            "every other row is removed from the tab order: {html}"
+        );
+        // ...and that row is the fork: the tab stop opens on the answer.
+        let fork_li = html.find("id=\"fork\"").expect("fork row present");
+        let tab_stop = html.find("tabindex=\"0\"").expect("a tab stop exists");
+        let next_li = html[fork_li..]
+            .find("<li")
+            .map_or(html.len(), |o| fork_li + o);
+        assert!(
+            (fork_li..next_li).contains(&tab_stop),
+            "the roving tab stop is on the fork row: {html}"
+        );
+    }
+
+    #[test]
+    fn aria_selected_marks_exactly_the_fork() {
+        let html = render(forked());
+        assert_eq!(
+            html.matches("aria-selected=\"true\"").count(),
+            1,
+            "exactly one option is aria-selected: {html}"
         );
     }
 }
