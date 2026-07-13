@@ -11,7 +11,8 @@
 //! `amberfork serve <bad> --against <good>` runs the same engine, then hands the fork to the
 //! browser: a loopback-only server (amberfork-server) over the layout `Document`. It is a
 //! sibling of `diff`, not a flag on it — a long-running server has different lifecycle
-//! semantics than diff's exit-code contract.
+//! semantics than diff's exit-code contract. `amberfork serve --demo` is the zero-setup form:
+//! the embedded pair `demo` renders in the terminal, handed to the browser instead of files.
 //!
 //! Exit codes follow the `diff(1)` precedent: **0** converged, **1** forked, **2** trouble
 //! (unreadable input, bad usage — clap's own usage errors also exit 2). Errors go to stderr;
@@ -45,6 +46,10 @@ const DEMO_BAD: &str = include_str!("../assets/demo/bad.json");
 /// The demo's hand-off line: its last job is teaching the real command.
 const DEMO_HINT: &str =
     "  bundled sample pair · try your own runs:  amberfork diff <bad> --against <good>";
+
+/// The `serve --demo` analog of `DEMO_HINT`: same teaching handoff, pointed at `serve`.
+const DEMO_SERVE_HINT: &str =
+    "  bundled sample pair · serve your own runs:  amberfork serve <bad> --against <good>";
 
 #[derive(Parser)]
 #[command(name = "amberfork", version, about)]
@@ -93,13 +98,27 @@ struct DemoArgs {
 
 #[derive(Args)]
 struct ServeArgs {
-    /// The failing/observed run trace (side `b` of the result).
-    #[arg(value_name = "BAD")]
-    bad: PathBuf,
+    /// The failing/observed run trace (side `b` of the result). Omit with `--demo`.
+    #[arg(
+        value_name = "BAD",
+        required_unless_present = "demo",
+        conflicts_with = "demo"
+    )]
+    bad: Option<PathBuf>,
 
-    /// The known-good reference run trace (side `a` of the result).
-    #[arg(long, value_name = "GOOD")]
-    against: PathBuf,
+    /// The known-good reference run trace (side `a` of the result). Omit with `--demo`.
+    #[arg(
+        long,
+        value_name = "GOOD",
+        required_unless_present = "demo",
+        conflicts_with = "demo"
+    )]
+    against: Option<PathBuf>,
+
+    /// Serve the bundled sample pair — the fork in the browser with zero setup, no files
+    /// needed (the same embedded pair `demo` renders in the terminal).
+    #[arg(long)]
+    demo: bool,
 
     /// Refuse runs longer than this many steps — same escape hatch as `diff` (alignment
     /// memory and time grow with steps²).
@@ -157,12 +176,7 @@ fn run_diff(args: &DiffArgs) -> Result<ExitCode, IngestError> {
 }
 
 fn run_demo(args: &DemoArgs) -> ExitCode {
-    // Infallible by construction: the embedded pair is committed next to this crate and
-    // `tests/demo_cli.rs` runs it end-to-end, so a parse failure cannot survive CI.
-    let good = amberfork_ingest::from_json_str(DEMO_GOOD)
-        .expect("embedded demo trace good.json parses (locked by demo_cli tests)");
-    let bad = amberfork_ingest::from_json_str(DEMO_BAD)
-        .expect("embedded demo trace bad.json parses (locked by demo_cli tests)");
+    let (good, bad) = demo_pair();
     diff_and_report(
         good,
         bad,
@@ -172,12 +186,37 @@ fn run_demo(args: &DemoArgs) -> ExitCode {
     )
 }
 
+/// The single embed site for the bundled pair (design doc D7): `demo` and `serve --demo` both
+/// source their traces here, so there is one copy that cannot drift, not two. Infallible by
+/// construction — the files are committed next to this crate and `tests/demo_cli.rs` runs them
+/// end-to-end, so a parse failure cannot survive CI.
+fn demo_pair() -> (Ingested, Ingested) {
+    let good = amberfork_ingest::from_json_str(DEMO_GOOD)
+        .expect("embedded demo trace good.json parses (locked by demo_cli tests)");
+    let bad = amberfork_ingest::from_json_str(DEMO_BAD)
+        .expect("embedded demo trace bad.json parses (locked by demo_cli tests)");
+    (good, bad)
+}
+
 /// The startup order is the contract (issue #25): ingest fails first with its typed errors,
 /// then the engine, then the server's own checks (bundle, port) — all in the terminal,
 /// before any port is bound. Only a running server produces stdout.
 fn run_serve(args: &ServeArgs) -> Result<ExitCode, IngestError> {
-    let good = amberfork_ingest::load_file(&args.against)?;
-    let bad = amberfork_ingest::load_file(&args.bad)?;
+    let (good, bad) = if args.demo {
+        demo_pair()
+    } else {
+        // clap guarantees both are present unless `--demo` (required_unless_present), so these
+        // `expect`s encode a parser invariant, not a runtime hope.
+        let good = amberfork_ingest::load_file(
+            args.against
+                .as_ref()
+                .expect("clap requires --against unless --demo"),
+        )?;
+        let bad = amberfork_ingest::load_file(
+            args.bad.as_ref().expect("clap requires BAD unless --demo"),
+        )?;
+        (good, bad)
+    };
     let mut result = match run_engine(&good, &bad, args.max_steps) {
         Ok(result) => result,
         Err(code) => return Ok(code),
@@ -185,6 +224,20 @@ fn run_serve(args: &ServeArgs) -> Result<ExitCode, IngestError> {
     result.warnings = merged_warnings(good.warnings, bad.warnings);
     let document = Document::new(ViewModel::compute(&result, &good.run, &bad.run));
     Ok(serve_document(&document, args))
+}
+
+/// The human label for what a `serve` invocation is showing: the bundled pair for `--demo`,
+/// or the two trace paths otherwise (clap guarantees both are present in that branch).
+fn serve_source(args: &ServeArgs) -> String {
+    if args.demo {
+        return "the bundled demo pair".to_string();
+    }
+    let bad = args.bad.as_ref().expect("clap requires BAD unless --demo");
+    let against = args
+        .against
+        .as_ref()
+        .expect("clap requires --against unless --demo");
+    format!("{} vs {}", bad.display(), against.display())
 }
 
 /// The ONE async edge in this crate: a current-thread runtime wrapping the server's
@@ -213,11 +266,11 @@ fn serve_document(document: &Document, args: &ServeArgs) -> ExitCode {
         // browser opens — the web view elaborates the answer, it never gates it.
         let url = format!("http://{}", server.local_addr());
         println!("{}", document.view.headline());
-        println!(
-            "serving {} vs {} → {url}  (Ctrl-C to stop)",
-            args.bad.display(),
-            args.against.display()
-        );
+        println!("serving {} → {url}  (Ctrl-C to stop)", serve_source(args));
+        if args.demo {
+            // The demo's last job is teaching the real command — the serve analog of DEMO_HINT.
+            println!("{DEMO_SERVE_HINT}");
+        }
         for warning in &document.view.warnings {
             eprintln!("amberfork: warning: {}", warning.msg);
         }
@@ -324,4 +377,27 @@ fn merged_warnings(reference: Vec<Warning>, observed: Vec<Warning>) -> Vec<Warni
         })
     }
     tag('a', reference).chain(tag('b', observed)).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The D7 identity anchor: `demo` and `serve --demo` both source their pair from this one
+    /// `demo_pair()` — there is a single embed site, not two that can drift. This locks the
+    /// infallibility both call sites `.expect()` on, and proves the shared bytes are the real
+    /// authored divergence (a forking pair), not an empty or degenerate one.
+    #[test]
+    fn demo_pair_is_the_single_forking_source() {
+        let (good, bad) = demo_pair();
+        let params = DiffParams::default()
+            .validated()
+            .expect("default params validate");
+        let result =
+            diff(&good.run, &bad.run, &LexicalCost, &params).expect("the demo pair aligns");
+        assert!(
+            result.fork.is_some(),
+            "the embedded demo pair must encode a real divergence"
+        );
+    }
 }

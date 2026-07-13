@@ -1346,3 +1346,41 @@ visual, and the ≤1MB gzip gate all remain #28's pre-release `/qa` + `ui/` CI j
 SSR-vs-live honesty every prior UI slice drew. Noted again in passing: the pre-existing Leptos
 warning at `canvas.rs:131` (slice 3a's auto-scroll `NodeRef` read outside a tracking context)
 surfaced in the live console — benign, still a follow-up, untouched by this slice.
+
+## 033 · 2026-07-13 · serve --demo: the zero-setup browser hero (issue #28 slice A)
+
+**What changed.** `amberfork serve` gains a `--demo` mode: the same pair embedded in the binary
+that `demo` renders in the terminal is handed to the local web view instead — no files, no cwd,
+no network. `bad`/`--against` became `Option<PathBuf>` carrying `required_unless_present = "demo"`
++ `conflicts_with = "demo"`, so the parser enforces "exactly one of {`--demo`, `<bad> --against
+<good>`}" and a wrong invocation is a clap usage error (exit 2) before any I/O. The terminal
+hand-off carries over: `serve --demo` prints `DEMO_SERVE_HINT`, teaching the real
+`serve <bad> --against <good>` — the exact analog of `demo`'s `DEMO_HINT`. First of #28's three
+slices (**A** serve --demo · B the real bundle ships · C docs+hero). Verify: 3 new
+`serve_demo_cli` integration tests + 1 `demo_pair` unit test, parent `cargo test --workspace` +
+smoke + fmt + clippy `-D warnings` all green. No new crate.
+
+**Decisions that will outlive the code.**
+- *One embed site, made structural (design doc D7).* Extracted `demo_pair() -> (Ingested,
+  Ingested)` — the single place the embedded `good.json`/`bad.json` are parsed; both `run_demo`
+  and `run_serve` now source from it. The "serve --demo reads the same bytes as demo" identity is
+  no longer a promise to keep — there is one copy that cannot drift, not two that might. The unit
+  test asserts `demo_pair()` yields a *forking* pair, so the shared bytes are proven to be the
+  real authored divergence, not an empty or degenerate one.
+- *The parser owns the mode contract, not a hand-rolled `if`.* clap's `required_unless_present` +
+  `conflicts_with` express "one mode or the other" declaratively; usage errors stay exit-2 and are
+  phrased by clap before ingest runs. The two `.expect()`s in the file branch encode that parser
+  invariant (clap already guaranteed presence) — a proof obligation discharged by the arg
+  attributes, not a panic-on-bad-input.
+- *serve --demo is a flag on serve; demo stays its own subcommand — deliberately.* D14 puts every
+  long-running surface under `serve`, so the zero-setup entry to the *browser* is a mode of
+  `serve`, while the zero-setup entry to the *terminal* stays the `demo` subcommand. Same bytes,
+  two front doors, one loader.
+
+**Coverage honesty.** A dev build has an empty `ui-dist/`, so `serve` on a clean pair reaches the
+"web UI bundle missing" refusal *before* binding a port (the startup-order contract from #25).
+Slice A therefore pins the *wiring*, not the boot: `serve --demo` with no file arguments, run from
+an unrelated cwd, reaching that bundle check proves the embedded pair loaded and the engine ran off
+it. The happy-path boot over a real bundle — serve responds, `index.html` embedded, `serve --demo`
+works from the release artifact — is deliberately slice B's release-smoke acceptance, where the UI
+bundle is built into `ui-dist/` before cargo build. Nothing here builds or serves a real bundle yet.
