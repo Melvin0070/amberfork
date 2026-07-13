@@ -190,8 +190,35 @@ How to read it:
 - **`⑂ … [FORK · conf 0.68]`** — the first divergence the runs never recover from, with
   both sides' content and the engine's confidence in this localization.
 - **`- / +` lines** — the field-level diff at the fork: which input/output changed.
+- **A trailing `…` is display abbreviation, not lost data** — the terminal shortens each line
+  to your terminal width so the diff stays one-line-per-step. The full fields are always in the
+  `--json` contract below; the browser view (§4) shows more per slot before it abbreviates.
 
-## 4 · Machines: `--json` and exit codes
+## 4 · Read it in the browser
+
+Prefer a scrollable, selectable view — or want to hand the fork to someone else? `serve` runs
+the same diff and opens it as a local web page: the fork glows amber, every step is clickable
+to reveal its field-level diff, and a copy button lifts the diff out as runnable evidence for a
+bug report.
+
+```sh
+amberfork serve bad.json --against good.json   # prints a http://127.0.0.1:… URL — Ctrl-C to stop
+amberfork serve --demo                          # the bundled sample pair, zero files
+```
+
+It binds loopback only (`127.0.0.1`) — nothing leaves your machine, no account, no telemetry.
+`--open` launches your browser at the URL; `--port <N>` pins the port instead of taking an
+OS-assigned one; the same `--max-steps` guard as `diff` applies (§6). The verdict still lands
+in your terminal first — the web view elaborates the answer, it never gates it — so `serve`
+stays as scriptable as `diff`.
+
+**The payload envelope.** So a multi-megabyte tool result can't bloat the page, the browser
+view caps each payload slot at 4 KiB and renders a visible truncation marker on any slot it
+cut — a shortened payload must never read as the whole payload. The marker means "there is
+more here"; the full field is always one `amberfork diff … --json` away. (Click-to-expand the
+cut slots in place is [issue #30](https://github.com/Melvin0070/amberfork/issues/30).)
+
+## 5 · Machines: `--json` and exit codes
 
 ```sh
 amberfork diff bad.json --against good.json --json > result.json
@@ -209,7 +236,7 @@ jq -r '.warnings[].msg' result.json              # ingest/normalization diagnost
 Exit codes follow `diff(1)`: **0** converged, **1** forked, **2** trouble (unreadable or
 invalid input). `amberfork diff` in CI gates on a reference run for free.
 
-## 5 · When it goes wrong
+## 6 · When it goes wrong
 
 - **`failed to parse trace JSON: missing field 'schema_version'`** — you probably pointed
   amberfork at the raw exporter file (e.g. the `.jsonl` transcript itself). It takes one

@@ -1424,3 +1424,40 @@ environment itself (trunk install action, macOS-14 + ubuntu matrix, cold caches)
 via a `workflow_dispatch` run — the pre-tag dry-run path that already exists for exactly this. That
 dispatch is the acceptance gate for this slice; it should pass on both targets before v0.5 tags. Slice C
 (README hero screenshot/GIF + run-on-your-own-agent guide) is the remaining scope on #28.
+
+## 035 · 2026-07-13 · The guide learns the browser + the envelope (issue #28 slice C1)
+
+**What changed.** `docs/run-on-your-own-agent.md` — the guide that teaches reading *your own*
+fork — taught only the terminal, predating the v0.5 browser view entirely. Added a §4 "Read it in
+the browser" (`serve <bad> --against <good>` + `serve --demo`, the loopback/no-telemetry
+guarantee, `--open`/`--port`/`--max-steps`, the "verdict lands in the terminal first" contract),
+renumbering the machine + troubleshooting sections to 5/6. Documented the payload envelope where
+it applies (browser: 4 KiB per-slot cap with a visible truncation marker, `--json` for the whole
+field, expand-on-demand is #30), and clarified that a terminal `…` is display-width abbreviation.
+Prose only; no code. Splitting #28's slice C, this is C1 (docs); C2 is the README hero GIF, which
+carries the README's own `serve` framing with it.
+
+**Decisions that will outlive the code.**
+- *Document each truncation where it is actually true — the honest correction.* First draft
+  claimed "the payload envelope is the same in the terminal and the browser." It is not:
+  `amberfork-layout` builds the envelope only in `Document::new` (the serve path), while
+  `ViewModel::compute` always emits full text and the CLI painter reads it directly, doing its
+  own *width-based* line truncation (lib.rs's own comment: "the CLI painter … never sees a cut
+  slot"). Two different mechanisms, so two different notes: width-abbreviation in the terminal §3,
+  the 4 KiB wire envelope in the browser §4. A guide that conflated them would teach a bug. Same
+  honesty-in-artifacts reflex as the notebook 002 number correction, applied to prose.
+- *`serve` belongs in the reading guide, not only the README.* The guide's whole job is "read the
+  answer"; v0.5 added a second surface to read it on, so the omission was a correctness gap, not a
+  nicety. The README's `serve` mention stays paired with the C2 hero visual (a GIF *of* serve), so
+  the slice boundary is clean: C1 teaches the surface, C2 shows it.
+- *Every abbreviation names its full-fidelity escape.* Both the terminal `…` note and the browser
+  envelope note point at `--json` (and the envelope note at #30) — a reader who hits a `…` is never
+  left wondering whether data was lost. "A shortened payload must never read as the whole payload"
+  is the layout crate's own invariant (SlotText.truncated), restated for the human running the tool.
+
+**Coverage honesty.** Prose-only change, so the workspace stays green from slice B; what "verify"
+means here is that every command and flag the guide now names is real (`serve`, `--demo`, `--open`,
+`--port`, `--max-steps`, `--json`, the /api/document behavior) — all exercised live in slices A/B on
+this machine, and the 4 KiB figure is `SLOT_TEXT_LIMIT` read from the source, not remembered. What
+remains on #28 is C2: the README web-fork hero (an animated GIF of the fork igniting, chosen over a
+still) plus the README's own `serve` framing.
