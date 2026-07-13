@@ -100,21 +100,22 @@ struct RowState {
     count: usize,
 }
 
-/// The alignment canvas over one diff's [`ViewModel`].
+/// The alignment canvas over one diff's [`ViewModel`]. `selected` is lifted to the app so the
+/// content-diff pane reads the same selection this canvas commits (issue #27); the canvas still
+/// owns the roving-focus cursor, which is purely a canvas concern.
 #[component]
-pub(crate) fn Canvas(model: ViewModel) -> impl IntoView {
+pub(crate) fn Canvas(model: ViewModel, selected: RwSignal<Option<usize>>) -> impl IntoView {
     let geom = spine_geometry(&model.rows);
     let idx_width = model.idx_width;
     let count = model.rows.len();
-    // Default selection = the fork: the app opens on the answer, so the pane is never a dead
-    // zone (DR5's reading order as the first render). The roving cursor starts there too, so Tab
-    // reaches the fork first.
+    // The roving cursor starts on the fork (the app's default selection), so Tab reaches the
+    // answer first; a converged diff has no fork, so it starts at the top.
     let fork = model
         .rows
         .iter()
         .position(|row| matches!(row, Row::Fork(_)));
     let state = RowState {
-        selected: RwSignal::new(fork),
+        selected,
         active: RwSignal::new(fork.unwrap_or(0)),
         refs: StoredValue::new((0..count).map(|_| NodeRef::new()).collect()),
         count,
@@ -378,9 +379,15 @@ mod tests {
     use amberfork_layout::{ForkRow, MoveKind, StepKind, StepRow, Verdict};
 
     /// Render a component to HTML exactly as the browser's SSR peer would (issue #26 D16).
+    /// Selection is lifted to the app now, so the helper supplies it — starting on the fork, the
+    /// app's default, which is what these canvas assertions expect.
     fn render(model: ViewModel) -> String {
         let owner = Owner::new();
-        owner.with(|| view! { <Canvas model=model /> }.to_html())
+        owner.with(|| {
+            let fork = model.rows.iter().position(|r| matches!(r, Row::Fork(_)));
+            let selected = RwSignal::new(fork);
+            view! { <Canvas model=model selected=selected /> }.to_html()
+        })
     }
 
     fn stepview(kind: StepKind, name: &str, summary: &str) -> StepView {
@@ -397,6 +404,7 @@ mod tests {
             b_idx: Some(idx),
             a: Some(stepview(kind, name, summary)),
             b: Some(stepview(kind, name, summary)),
+            field_diffs: vec![],
         }
     }
 
@@ -431,11 +439,11 @@ mod tests {
                     "lookup_order",
                     "name=\"J. Smith\"",
                 )),
+                field_diffs: vec![],
             },
             side_a: SlotText::new("A: order_id=\"8841\""),
             side_b: SlotText::new("B: name=\"J. Smith\""),
             confidence: "conf 0.86".to_string(),
-            field_diffs: vec![],
         })
     }
 
@@ -626,6 +634,7 @@ mod tests {
                 b_idx: Some(12),
                 a: None,
                 b: Some(stepview(StepKind::Llm, "planner", "diverged")),
+                field_diffs: vec![],
             },
         });
         let html = render(model(vec![fork(11), one_sided], Verdict::Forked));

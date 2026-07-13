@@ -11,13 +11,21 @@
 //! as issue #27. No amber and no red/green live here — attribution is a statement *about* the
 //! divergence, not the divergence itself.
 
-use amberfork_layout::{AttributionView, Verdict};
+use amberfork_layout::{AttributionView, FieldDiffView, Verdict};
 use leptos::prelude::*;
 
-/// The right pane. Takes just the attribution and the verdict, not the whole view — the pane
-/// never reads the rows.
+use crate::content_diff::ContentDiff;
+
+/// The right pane. Takes the diff's answer (attribution + verdict) plus the lifted `selected`
+/// signal and the per-row field diffs the content-diff card reads (issue #27) — but never the
+/// rows themselves: the canvas owns those, and the pane only reflects which one is selected.
 #[component]
-pub(crate) fn Attribution(attribution: Option<AttributionView>, verdict: Verdict) -> impl IntoView {
+pub(crate) fn Attribution(
+    attribution: Option<AttributionView>,
+    verdict: Verdict,
+    selected: RwSignal<Option<usize>>,
+    field_diffs: Vec<Vec<FieldDiffView>>,
+) -> impl IntoView {
     let body = match attribution {
         Some(view) => attribution_rows(view),
         None => empty_state(verdict),
@@ -26,6 +34,7 @@ pub(crate) fn Attribution(attribution: Option<AttributionView>, verdict: Verdict
         <aside class="attr" aria-label="attribution">
             <h2 class="attr-title">"Attribution"</h2>
             {body}
+            <ContentDiff selected=selected field_diffs=field_diffs />
         </aside>
     }
 }
@@ -62,7 +71,20 @@ mod tests {
 
     fn render(attribution: Option<AttributionView>, verdict: Verdict) -> String {
         let owner = Owner::new();
-        owner.with(|| view! { <Attribution attribution=attribution verdict=verdict /> }.to_html())
+        owner.with(|| {
+            // These attribution-pane assertions are about the answer, not the field diff, so the
+            // content-diff is rendered inert: nothing selected, no per-row evidence.
+            let selected = RwSignal::new(None::<usize>);
+            view! {
+                <Attribution
+                    attribution=attribution
+                    verdict=verdict
+                    selected=selected
+                    field_diffs=vec![]
+                />
+            }
+            .to_html()
+        })
     }
 
     fn attributed() -> AttributionView {

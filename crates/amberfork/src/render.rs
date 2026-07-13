@@ -375,7 +375,7 @@ fn fork_block(rows: &mut Vec<Row>, fork: &ForkRow, cols: &Columns) {
 
     // Field-level diff, indented to the kind column, hard-wrapped.
     let field_width = |prefix_len: usize| cols.content_width.max(20).saturating_sub(prefix_len);
-    for fd in &fork.field_diffs {
+    for fd in &fork.step.field_diffs {
         let mut push_side = |sign: char, role: Role, value: &Option<SlotText>| {
             let Some(value) = value else { return };
             let text = format!("{sign} {}: {value}", fd.path);

@@ -437,6 +437,62 @@
         line-height: 1.6;
       }
 
+      /* --- Content-diff pane: the selected pair's field-level -/+ evidence (issue #27). The
+             ONLY red/green in any surface (DESIGN.md containment) — removed red, added green,
+             kept deliberately distinct from the amber fork. Lives inside the attribution aside,
+             below the answer; a card per field, monospace, values wrapping so long payloads stay
+             readable and copyable (never a canvas draw). --- */
+      .content-diff,
+      .content-diff-empty {
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid var(--hair);
+      }
+      .content-diff {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .content-diff-empty {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .content-diff-field {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .content-diff-path {
+        color: var(--muted);
+        font-size: 0.6875rem;
+      }
+      .content-diff-del,
+      .content-diff-add {
+        display: flex;
+        gap: 6px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .content-diff-del {
+        color: #ff5c5c;
+        background: #ff5c5c14;
+      }
+      .content-diff-add {
+        color: #46d39a;
+        background: #46d39a14;
+      }
+      .content-diff-sign {
+        flex: 0 0 auto;
+        font-variant-numeric: tabular-nums;
+        opacity: 0.85;
+      }
+      .content-diff-val {
+        flex: 1;
+        min-width: 0;
+      }
+
       /* --- Disconnect banner: the server that fed this view stopped (D-decision 2026-07-12).
              A slim strip docked at the bottom edge, `warning` — never amber: a system-status
              message is not a divergence. Fixed, so it annunciates without reflowing the canvas;

@@ -53,7 +53,9 @@ pub use amberfork_model::{MoveKind, Outcome, StepKind, Warning};
 /// The document version this build emits. A bare wire-hygiene marker (issue #24): the web UI
 /// and the server ship in one binary, lockstep by construction, so there is no read-gate —
 /// bump it when the document's shape changes so a stale payload is at least identifiable.
-pub const DOCUMENT_VERSION: &str = "0.1";
+/// `0.2`: field-level evidence moved from `ForkRow` onto every [`AlignedStep`] (issue #27) so
+/// the content-diff pane can show any selected pair's diff, not only the fork's.
+pub const DOCUMENT_VERSION: &str = "0.2";
 
 /// The wire form of the seam: what `amberfork serve` ships to the web painter. The body is
 /// the SAME [`ViewModel`] the terminal paints — the document only adds wire hygiene on top.
@@ -86,6 +88,8 @@ impl Document {
 pub const SLOT_TEXT_LIMIT: usize = 4096;
 
 /// Cut every payload-derived slot in the view down to [`SLOT_TEXT_LIMIT`], marking the cut.
+/// The fork adds its own resolved sides on top; the field-level evidence rides on the aligned
+/// step now, so [`envelope_step`] bounds it uniformly for every row.
 fn envelope(view: &mut ViewModel) {
     for row in &mut view.rows {
         match row {
@@ -94,14 +98,6 @@ fn envelope(view: &mut ViewModel) {
                 envelope_step(&mut fork.step);
                 fork.side_a.truncate_to(SLOT_TEXT_LIMIT);
                 fork.side_b.truncate_to(SLOT_TEXT_LIMIT);
-                for fd in &mut fork.field_diffs {
-                    if let Some(removed) = &mut fd.removed {
-                        removed.truncate_to(SLOT_TEXT_LIMIT);
-                    }
-                    if let Some(added) = &mut fd.added {
-                        added.truncate_to(SLOT_TEXT_LIMIT);
-                    }
-                }
             }
         }
     }
@@ -110,6 +106,14 @@ fn envelope(view: &mut ViewModel) {
 fn envelope_step(step: &mut AlignedStep) {
     for side in [&mut step.a, &mut step.b].into_iter().flatten() {
         side.summary.truncate_to(SLOT_TEXT_LIMIT);
+    }
+    for fd in &mut step.field_diffs {
+        if let Some(removed) = &mut fd.removed {
+            removed.truncate_to(SLOT_TEXT_LIMIT);
+        }
+        if let Some(added) = &mut fd.added {
+            added.truncate_to(SLOT_TEXT_LIMIT);
+        }
     }
 }
 
@@ -268,8 +272,6 @@ pub struct ForkRow {
     pub side_b: SlotText,
     /// Designed confidence wording: `conf 0.NN`, or `marginal call` at zero (notebook 005).
     pub confidence: String,
-    /// The only red/green in any surface: field-level `-`/`+` evidence at the fork.
-    pub field_diffs: Vec<FieldDiffView>,
 }
 
 /// The two sides of one alignment move, resolved for display. Indices are kept separate
@@ -285,6 +287,13 @@ pub struct AlignedStep {
     pub a: Option<StepView>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub b: Option<StepView>,
+    /// Field-level `-`/`+` evidence for this synchronous pair — the only red/green in any
+    /// surface. Empty when the payloads matched (a recede-worthy sync) or the move has no
+    /// counterpart to compare (a log/model gap move); the engine emits it for every sync,
+    /// so it rides the pair, not the fork alone (issue #27). The content-diff pane shows
+    /// the selected row's; the terminal renders only the fork's.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub field_diffs: Vec<FieldDiffView>,
 }
 
 impl AlignedStep {
@@ -398,6 +407,9 @@ impl ViewModel {
                     b_idx: mv.b_idx,
                     a: step_view(reference, mv.a_idx),
                     b: step_view(observed, mv.b_idx),
+                    // The field-level evidence rides on the pair, so every sync row carries its
+                    // own — the content-diff pane reads the selected row's, not only the fork's.
+                    field_diffs: field_diff_views(result, i),
                 };
                 match result.fork {
                     Some(fork) if i == fork.index => Row::Fork(ForkRow {
@@ -405,7 +417,6 @@ impl ViewModel {
                         side_a: side_content(reference, fork.a_step),
                         side_b: side_content(observed, fork.b_step),
                         confidence: confidence_text(fork.confidence),
-                        field_diffs: field_diff_views(result, i),
                     }),
                     Some(fork) if i > fork.index => Row::Step(StepRow {
                         role: RowRole::Downstream,
@@ -765,7 +776,7 @@ mod tests {
         );
         assert_eq!(fork.confidence, "conf 0.47");
         assert_eq!(
-            fork.field_diffs,
+            fork.step.field_diffs,
             [FieldDiffView {
                 path: "outputs".to_string(),
                 removed: Some(SlotText::new("\"census.gov page\"")),
@@ -791,6 +802,88 @@ mod tests {
                 propagation: "step 03".to_string(),
                 confidence: "conf 0.47".to_string(),
             })
+        );
+    }
+
+    #[test]
+    fn every_sync_pair_carries_its_own_field_diff() {
+        // The content-diff pane shows the SELECTED row's field diff, so the evidence must ride
+        // every sync pair, not only the fork (issue #27). A spine sync whose payloads match
+        // stays empty (a recede-worthy pair); a divergent sync downstream of the fork surfaces
+        // its own diff — proof the layout no longer discards what the engine already computes.
+        let a = run(
+            "good",
+            Outcome::Pass,
+            vec![
+                step(0, "plan", "same"),
+                step(1, "lookup", "reference value"),
+                step(2, "send", "reference tail"),
+            ],
+        );
+        let b = run(
+            "bad",
+            Outcome::Fail,
+            vec![
+                step(0, "plan", "same"),
+                step(1, "lookup", "observed value"),
+                step(2, "send", "observed tail"),
+            ],
+        );
+        // Two costly syncs after a clean one: index 1 is the fork, index 2 the divergent
+        // downstream pair.
+        let alignment = vec![
+            Move::sync(0, 0, 0.0, 1.0),
+            Move::sync(1, 1, 0.8, 0.2),
+            Move::sync(2, 2, 0.8, 0.2),
+        ];
+        let fork = Fork {
+            index: 1,
+            a_step: Some(1),
+            b_step: Some(1),
+            confidence: 0.8,
+        };
+        // The engine keys field diffs by alignment index; here we inject the two divergent
+        // pairs it would emit (the identical pair 0 emits nothing, by construction).
+        let mut res = result(&a, &b, alignment, Some(fork));
+        res.field_diffs = vec![
+            FieldDiff {
+                step: 1,
+                path: "outputs".to_string(),
+                before: Some(json!("reference value")),
+                after: Some(json!("observed value")),
+                kind: FieldDiffKind::Changed,
+            },
+            FieldDiff {
+                step: 2,
+                path: "outputs".to_string(),
+                before: Some(json!("reference tail")),
+                after: Some(json!("observed tail")),
+                kind: FieldDiffKind::Changed,
+            },
+        ];
+        let view = ViewModel::compute(&res, &a, &b);
+
+        let Some(Row::Step(spine)) = view.rows.first() else {
+            panic!("row 0 is the spine");
+        };
+        assert!(
+            spine.step.field_diffs.is_empty(),
+            "an identical sync pair carries no field diff: {:?}",
+            spine.step.field_diffs
+        );
+
+        let Some(Row::Step(down)) = view.rows.get(2) else {
+            panic!("row 2 is the divergent downstream sync");
+        };
+        assert_eq!(down.role, RowRole::Downstream);
+        assert_eq!(
+            down.step.field_diffs,
+            [FieldDiffView {
+                path: "outputs".to_string(),
+                removed: Some(SlotText::new("\"reference tail\"")),
+                added: Some(SlotText::new("\"observed tail\"")),
+            }],
+            "the divergent downstream pair surfaces its own field diff"
         );
     }
 
@@ -1017,10 +1110,10 @@ mod tests {
             assert!(huge.starts_with(&slot.text));
         }
         assert!(!fork.side_b.truncated);
-        let removed = fork.field_diffs[0].removed.as_ref().unwrap();
+        let removed = fork.step.field_diffs[0].removed.as_ref().unwrap();
         assert!(removed.truncated);
         assert!(removed.text.len() <= SLOT_TEXT_LIMIT);
-        assert!(!fork.field_diffs[0].added.as_ref().unwrap().truncated);
+        assert!(!fork.step.field_diffs[0].added.as_ref().unwrap().truncated);
 
         // The marker itself survives the wire.
         let back: Document = serde_json::from_str(&serde_json::to_string(&doc).unwrap()).unwrap();

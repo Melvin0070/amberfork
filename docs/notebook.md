@@ -1208,6 +1208,53 @@ bundle + the ≤1MB gzip gate (needs `wasm-opt`, network) are the `ui/` CI job, 
 `canvas.rs:130` (slice 3a's auto-scroll RAF reads a `NodeRef` outside a tracking context; benign,
 `get_untracked` would silence it) — a follow-up, not this slice.
 
+## 031 · 2026-07-13 · The content-diff pane: red/green for the selected pair (issue #27 slice 1)
+
+**What changed.** The attribution aside gains the ONE surface that spends red/green (DESIGN.md
+containment): a content-diff card showing the *selected* row's field-level `-`/`+` evidence —
+removed red `#FF5C5C`, added green `#46D39A`, nowhere else. Selection is lifted out of the canvas
+up to `App` (one `RwSignal<Option<usize>>` the canvas commits and the pane reflects), defaulting to
+the fork so the pane opens on the answer's evidence, never a dead zone. The card renders the diff,
+or the pinned `no field changes for this pair — payloads identical on the wire` when the pair
+matched, or nothing at all when nothing is selectable (a converged diff — the attribution
+empty-state already speaks). New crate touch: none — `amberfork-ui` gains a `content_diff` module;
+the enabling change is in the layout seam. Verify: `amberfork-layout` 20 host tests, `amberfork-ui`
+38 SSR tests, parent `cargo test --workspace` + smoke + fmt + clippy `-D warnings` all green; the
+live reactive re-render (click a different row → pane updates) is browser behaviour deferred to
+`/qa` (#28), the same SSR-vs-live split as slices 3a/3b.
+
+**Decisions that will outlive the code.**
+- *Field diffs ride the aligned pair, not the fork.* The engine (`field_diff.rs`, #13) already
+  diffs **every** synchronous pair; the layout was attaching the result to the `ForkRow` alone and
+  silently dropping the rest. For "select any sync pair → its diff" to be honest, `field_diffs`
+  moved from `ForkRow` onto `AlignedStep`, so `compute` attaches each row's own evidence and the
+  pane reads `row.step().field_diffs`. This is what keeps the empty line truthful: it shows only
+  when the engine genuinely found no change, never as a fork-bound fiction over a diverged
+  downstream sync. The move also collapsed the envelope's fork special-case into `envelope_step`
+  (one truncation path for all rows) and cost the CLI painter exactly one line
+  (`fork.field_diffs` → `fork.step.field_diffs`). `DOCUMENT_VERSION` → `0.2` because the wire
+  shape shifted.
+- *Selection is lifted, not duplicated.* The canvas owned `selected` privately; the pane needs the
+  same value, so it rose to `App` as the single source of truth. The canvas keeps its roving-focus
+  cursor (a canvas-only concern) but no longer owns what is selected. No cross-pane wiring, no
+  second signal to keep in sync.
+- *Containment holds by construction, not by discipline.* Red/green exist only as
+  `.content-diff-*` CSS classes, and those classes are emitted only by the `ContentDiff` component
+  inside the aside. An App-level test splits the rendered HTML at the aside and asserts the canvas
+  region carries neither class — so the "red/green only in the content-diff pane" rule is a
+  compiled guard, not a convention someone must remember.
+- *Color is never the only signal.* Each line carries a `-`/`+` glyph (grayscale- and
+  colorblind-safe) and an `aria-label` naming the side in words ("removed …"/"added …"), so the
+  meaning survives without the hue — the same redundancy rule the fork row follows (DR2/DD4).
+
+**Coverage honesty.** The SSR host tests pin the static contract at the initial selection (the
+fork by default); the `ContentDiff` unit tests preset the signal to arbitrary rows to exercise the
+"any pair" logic without a browser, but the *live* re-render on click is genuine client reactivity
+and goes to `/qa` (#28). The copy affordance (terminal unified format + repro command, issue #27's
+evidence-out amendment) is deliberately held for slice 2 — it mixes a pure formatter with an impure
+clipboard edge and earns its own review. Real-font metrics, reduced-motion visual, and the ≤1MB
+gzip gate remain #28's pre-release `/qa` + `ui/` CI job, unchanged by this slice.
+
 ## 030 · 2026-07-13 · The fork ignites: the one expressive beat (issue #26 slice 3c)
 
 **What changed.** The canvas gets its single motion (DESIGN.md §Motion): on load the amber

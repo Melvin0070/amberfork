@@ -12,11 +12,12 @@
 //! header carries ZERO amber on purpose ("sameness recedes"): amber is spent exactly twice,
 //! both in the canvas (the fork node and its divergent path).
 
-use amberfork_layout::{Document, Verdict};
+use amberfork_layout::{Document, FieldDiffView, Row, Verdict};
 use leptos::prelude::*;
 
 mod attribution;
 mod canvas;
+mod content_diff;
 use attribution::Attribution;
 use canvas::Canvas;
 
@@ -30,13 +31,33 @@ pub fn App(document: Document) -> impl IntoView {
     let model = document.view.clone();
     let attribution = model.attribution.clone();
     let verdict = model.verdict;
+
+    // Selection is lifted here so both panes read one source of truth: the canvas commits it
+    // (click/Enter/arrows), the content-diff pane reflects it. Default = the fork, so the app
+    // opens on the answer (DR5) AND its field diff, never a dead pane. A converged diff has no
+    // fork, so nothing is selected and the content-diff shows no card.
+    let selected = RwSignal::new(model.rows.iter().position(|r| matches!(r, Row::Fork(_))));
+    // Each row's field-level evidence, indexed to match the canvas rows, so the content-diff
+    // pane resolves the selected row without reaching back into the canvas. Cloned once here
+    // before `model` moves into the canvas.
+    let field_diffs: Vec<Vec<FieldDiffView>> = model
+        .rows
+        .iter()
+        .map(|r| r.step().field_diffs.clone())
+        .collect();
+
     view! {
         <Header document=document />
         <div class="body">
             <main class="canvas" aria-label="alignment canvas">
-                <Canvas model=model />
+                <Canvas model=model selected=selected />
             </main>
-            <Attribution attribution=attribution verdict=verdict />
+            <Attribution
+                attribution=attribution
+                verdict=verdict
+                selected=selected
+                field_diffs=field_diffs
+            />
         </div>
     }
 }
@@ -106,7 +127,8 @@ pub fn DisconnectBanner(bad: String, good: String) -> impl IntoView {
 mod tests {
     use super::*;
     use amberfork_layout::{
-        AlignedStep, AttributionView, ForkRow, Row, RunHeader, RunRole, SlotText, ViewModel,
+        AlignedStep, AttributionView, FieldDiffView, ForkRow, Row, RunHeader, RunRole, SlotText,
+        ViewModel,
     };
 
     /// Render a component to an HTML string exactly as the browser's SSR peer would — inside
@@ -142,11 +164,15 @@ mod tests {
                 b_idx: Some(11),
                 a: None,
                 b: None,
+                field_diffs: vec![FieldDiffView {
+                    path: "outputs.arg".to_string(),
+                    removed: Some(SlotText::new("\"8841\"")),
+                    added: Some(SlotText::new("\"J. Smith\"")),
+                }],
             },
             side_a: SlotText::new("A: order_id=\"8841\""),
             side_b: SlotText::new("B: name=\"J. Smith\""),
             confidence: "conf 0.86".to_string(),
-            field_diffs: vec![],
         };
         Document::new(ViewModel {
             run_a: run("good.json", RunRole::Reference, 25),
@@ -251,6 +277,41 @@ mod tests {
         assert!(
             html.contains("row row--fork row--selected"),
             "the fork opens selected: {html}"
+        );
+    }
+
+    #[test]
+    fn the_pane_opens_on_the_forks_field_diff() {
+        // The fork is selected by default, so the content-diff pane is never a dead zone: it
+        // opens showing the fork's field-level evidence (the amendment's default state).
+        let html = render(forked_doc());
+        assert!(
+            html.contains("content-diff-del") && html.contains("content-diff-add"),
+            "the fork's red/green field diff renders on load: {html}"
+        );
+        assert!(
+            html.contains("8841") && html.contains("J. Smith"),
+            "both field values are real selectable text: {html}"
+        );
+    }
+
+    #[test]
+    fn red_green_is_confined_to_the_content_diff_pane() {
+        // DESIGN.md's hard containment rule: red/green live ONLY in the content-diff card, which
+        // sits inside the attribution aside. Everything the canvas paints (before the aside)
+        // must carry neither diff class — the canvas spends amber, never red/green.
+        let html = render(forked_doc());
+        let aside = html
+            .find("class=\"attr\"")
+            .expect("attribution aside present");
+        let canvas = &html[..aside];
+        assert!(
+            !canvas.contains("content-diff-del") && !canvas.contains("content-diff-add"),
+            "no red/green anywhere in the canvas: {canvas}"
+        );
+        assert!(
+            html.contains("content-diff-del"),
+            "the red/green does render — inside the pane: {html}"
         );
     }
 
