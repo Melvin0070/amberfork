@@ -25,6 +25,8 @@ pub(crate) fn Attribution(
     verdict: Verdict,
     selected: RwSignal<Option<usize>>,
     field_diffs: Vec<Vec<FieldDiffView>>,
+    bad: String,
+    good: String,
 ) -> impl IntoView {
     let body = match attribution {
         Some(view) => attribution_rows(view),
@@ -34,7 +36,7 @@ pub(crate) fn Attribution(
         <aside class="attr" aria-label="attribution">
             <h2 class="attr-title">"Attribution"</h2>
             {body}
-            <ContentDiff selected=selected field_diffs=field_diffs />
+            <ContentDiff selected=selected field_diffs=field_diffs bad=bad good=good />
         </aside>
     }
 }
@@ -81,6 +83,8 @@ mod tests {
                     verdict=verdict
                     selected=selected
                     field_diffs=vec![]
+                    bad="bad.json".to_string()
+                    good="good.json".to_string()
                 />
             }
             .to_html()

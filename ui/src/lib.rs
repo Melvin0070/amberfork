@@ -31,6 +31,10 @@ pub fn App(document: Document) -> impl IntoView {
     let model = document.view.clone();
     let attribution = model.attribution.clone();
     let verdict = model.verdict;
+    // The run names the content-diff copy bakes into its repro command: observed (bad) run vs
+    // reference (good), the DiffResult side convention — cloned before `model` moves into Canvas.
+    let bad = model.run_b.id.clone();
+    let good = model.run_a.id.clone();
 
     // Selection is lifted here so both panes read one source of truth: the canvas commits it
     // (click/Enter/arrows), the content-diff pane reflects it. Default = the fork, so the app
@@ -57,6 +61,8 @@ pub fn App(document: Document) -> impl IntoView {
                 verdict=verdict
                 selected=selected
                 field_diffs=field_diffs
+                bad=bad
+                good=good
             />
         </div>
     }
@@ -292,6 +298,12 @@ mod tests {
         assert!(
             html.contains("8841") && html.contains("J. Smith"),
             "both field values are real selectable text: {html}"
+        );
+        // The default-selected fork is copyable on load: the evidence-out affordance renders
+        // with the diff, so the answer is one click from a paste-ready bug report (issue #27).
+        assert!(
+            html.contains("content-diff-copy"),
+            "the fork's field diff carries the copy affordance on load: {html}"
         );
     }
 

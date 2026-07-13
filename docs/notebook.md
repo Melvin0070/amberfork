@@ -1295,3 +1295,54 @@ denied by the `browse` allowlist, so the reduced-motion *visual* confirm, real-f
 cross-browser all go to the pre-release `/qa` (#28) — same honesty as slices 3a/3b. The live drive
 used the real `serve` binary over a throwaway `ui-dist` copy (restored after). The ≤1MB gzip gate
 still needs `wasm-opt` (#28's `ui/` CI job).
+
+## 032 · 2026-07-13 · Evidence-out: the copy affordance on the field-diff card (issue #27 slice 2)
+
+**What changed.** The content-diff card gains a top-right **Copy** button. One click puts the
+selected pair's field diff on the clipboard as the grayscale-safe terminal unified `-`/`+` format,
+a blank line, then the re-runnable repro command (`amberfork diff <bad> --against <good>`) — the
+DESIGN.md evidence-out rule (2026-07-12) made real, so a debugger pastes runnable evidence into a
+bug report or PR, not a screenshot. The label confirms with `Copied ✓` for ~1.5s, then reverts.
+This closes #27. New crate touch: none — `amberfork-ui` gains a `copy_text` formatter + a
+`CopyButton`, plus a csr-only `web-sys` (Navigator + Clipboard) dep. Verify: `amberfork-ui` **43**
+SSR tests (was 38: +3 `copy_text`, +2 button-render), the csr/wasm `cargo check` + clippy
+`-D warnings` on both backends, parent `cargo test --workspace` + smoke + fmt + clippy all green;
+**driven live** against the real `amberfork serve` (demo refund pair, fork at step 05) — the button
+renders `Copy`, a click flips it to `Copied ✓`, and it reverts to `Copy` after the timer, all
+confirmed by reading the live DOM.
+
+**Decisions that will outlive the code.**
+- *The copy text is a pure function; only the write is a browser edge.* `copy_text(diffs, bad,
+  good)` is a total, SSR-unit-tested `String` builder — the exact bytes the clipboard receives are
+  asserted by a plain `cargo test`, no browser. The two browser touches — `navigator.clipboard`
+  and the reset `set_timeout` — are `#[cfg(feature = "csr")]` helpers that compile to no-ops under
+  the `ssr` host build. Same pure-render/impure-edge split as the disconnect banner: the thing we
+  can assert lives where `cargo test` renders it; the thing the browser must do lives at the edge.
+  So the button's markup + label are SSR-pinned, and the copy content is pinned separately as a
+  pure fn — the wiring between them is one obvious line.
+- *The paste mirrors the terminal, verbatim.* The `-`/`+` lines match the CLI painter's fork block
+  (`- path: value`), one-sided fields render only their present side, and a slot the envelope cut
+  keeps its honest `…` — so the pasted evidence never reads a shortened payload as whole (D17). The
+  repro verb is `diff`, not `serve` (it reproduces the *diff*), with the real run names in the
+  observed-first / `--against`-reference order the disconnect banner already established.
+- *The affordance appears only where there is evidence.* No button on the pinned empty line (an
+  identical pair) or the no-selection state (a converged diff) — nothing to hand out, so nothing to
+  click. An SSR test pins both absences.
+- *Feedback without a new colour.* `Copied ✓` stays neutral (`--muted`→`--text`), never the diff's
+  red/green and never amber: the confirmation must not spend the pane's one scarce pair of hues,
+  which are reserved for the evidence itself. Buttons-at-rest are neutral by DESIGN.md; hover is a
+  surface tint, focus-visible a hairline ring matching the canvas rows, and the transition is gated
+  behind `prefers-reduced-motion`.
+
+**Coverage honesty.** The live drive proved everything observable headless: the button renders, the
+click flips the label reactively, and the timer reverts it — all read back from the live DOM against
+the real `serve` binary (throwaway `ui-dist`, restored after). What a headless browser can *not*
+prove is the clipboard's byte content: `readText` is blocked (`NotAllowedError`), and a bare
+`writeText` probe is refused for lack of user activation — the click-driven write fires *with*
+activation (the label flip confirms the handler ran) and will land in a real user's browser
+(localhost is a secure context, a click is a gesture), but reading it back to assert the exact
+bytes is a headed `/qa` step. So the clipboard-content confirm, real-font metrics, reduced-motion
+visual, and the ≤1MB gzip gate all remain #28's pre-release `/qa` + `ui/` CI job — the same
+SSR-vs-live honesty every prior UI slice drew. Noted again in passing: the pre-existing Leptos
+warning at `canvas.rs:131` (slice 3a's auto-scroll `NodeRef` read outside a tracking context)
+surfaced in the live console — benign, still a follow-up, untouched by this slice.

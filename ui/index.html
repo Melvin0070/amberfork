@@ -492,6 +492,40 @@
         flex: 1;
         min-width: 0;
       }
+      /* The copy affordance (issue #27 evidence-out). Quiet neutral at rest — buttons are never
+         amber (DESIGN.md), and it must not compete with the card's scarce red/green, so the
+         confirmed state stays neutral too. Sits top-right of the card; hover = surface tint;
+         focus-visible = hairline ring, matching the canvas rows. */
+      .content-diff-copy {
+        align-self: flex-end;
+        margin-bottom: -4px;
+        padding: 2px 8px;
+        border: 1px solid var(--hair);
+        border-radius: 4px;
+        background: var(--surface);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.6875rem;
+        cursor: pointer;
+        transition:
+          color 150ms ease-out,
+          background 150ms ease-out,
+          border-color 150ms ease-out;
+      }
+      .content-diff-copy:hover {
+        background: var(--raised);
+        color: var(--text);
+        border-color: var(--muted);
+      }
+      .content-diff-copy:focus-visible {
+        outline: 2px solid var(--muted);
+        outline-offset: 1px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .content-diff-copy {
+          transition: none;
+        }
+      }
 
       /* --- Disconnect banner: the server that fed this view stopped (D-decision 2026-07-12).
              A slim strip docked at the bottom edge, `warning` — never amber: a system-status

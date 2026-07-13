@@ -36,6 +36,7 @@ dependencies = [
  "console_error_panic_hook",
  "gloo-net",
  "leptos",
+ "web-sys",
 ]
 
 [[package]]

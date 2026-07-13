@@ -25,13 +25,24 @@ gloo-net = { version = "0.6", optional = true, default-features = false, feature
     "json",
 ] }
 console_error_panic_hook = { version = "0.1", optional = true }
+# The clipboard edge for the content-diff copy affordance (issue #27). csr-only: Navigator +
+# Clipboard aren't in the set leptos enables, and the ssr test build must never see web-sys.
+web-sys = { version = "0.3", optional = true, features = [
+    "Navigator",
+    "Clipboard",
+] }
 
 [features]
 # ssr is default so the render tests run under a plain host `cargo test` (D16); trunk builds
 # the browser bundle with `--no-default-features --features csr` (see index.html). The two
 # are mutually exclusive by Leptos's design — one reactive backend per build.
 default = ["ssr"]
-csr = ["leptos/csr", "dep:gloo-net", "dep:console_error_panic_hook"]
+csr = [
+    "leptos/csr",
+    "dep:gloo-net",
+    "dep:console_error_panic_hook",
+    "dep:web-sys",
+]
 ssr = ["leptos/ssr"]
 
 # Mirror the workspace's deny-by-default posture (the parent's [workspace.lints] can't reach
