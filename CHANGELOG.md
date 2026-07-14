@@ -2,6 +2,51 @@
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-07-15
+
+v0.5 — the fork in the browser (milestone issues #21–#28); also carries the untagged
+post-v0.4.0 work (perf, CI, and two CLI fixes, issues #16/#18–#20).
+
+- **`amberfork serve <bad> --against <good>`**: the fork in a local web view. New
+  `amberfork-server` crate (7th) — a loopback-only Axum API (`/api/document`, ETag/304),
+  Host-header allowlisted, the release bundle embedded via `rust-embed` so a released binary
+  is a complete single-file app. `--demo` gives the zero-setup browser entry (the same
+  embedded pair `demo` renders in the terminal); `--port`/`--open` round it out (issue #25).
+- **`amberfork-ui`**: the Leptos/WebAssembly frontend — a shared-spine alignment canvas
+  (SVG spine + DOM rows, text stays selectable), an attribution pane, a content-diff pane
+  (the one surface that spends red/green), keyboard-navigable selection with roving
+  tabindex, a disconnect/re-poll banner when the local server stops, a copy affordance that
+  puts the selected pair's evidence + a re-runnable repro command on the clipboard, and the
+  one expressive beat — amber igniting at the fork and flowing down the divergent path,
+  gated behind `prefers-reduced-motion` (issue #26, #27).
+- **`amberfork-layout`** (6th crate): the serializable view-model + payload envelope
+  extracted from the terminal painter into its own seam, so the CLI and the web UI render
+  the exact same `Document` (issue #21, #24). `field_diffs` moved from the fork row onto
+  every synced row, so the content-diff pane can show evidence for *any* selected pair, not
+  just the fork — `DOCUMENT_VERSION` 0.1 → 0.2 for the wire-shape change (issue #27).
+  `align()` gained a typed size-guard error and the CLI's `--max-steps` escape hatch
+  (issue #23).
+- **CI**: the release workflow now builds the web UI (`trunk build --release`) and stages
+  it into the server crate's embed folder *before* `cargo build`, so a released `serve`
+  actually ships a UI; the release smoke test boots `serve --demo` over the real embedded
+  bundle and checks both routes answer (issue #28).
+- **Docs**: `docs/run-on-your-own-agent.md` gained a browser-reading section and documents
+  the payload envelope where each truncation mechanism actually applies (terminal
+  width-abbreviation vs. the browser's 4 KiB wire cap); the README leads with the web-fork
+  hero GIF, `serve --demo` joins the 30-second try, and the terminal hero follows as a peer
+  surface (issue #28).
+- **Benchmark**: the v0.5.0 reveal (protocol rule 2) reproduces the sealed test-split
+  numbers identically on every arm and metric — despite real scoring-path changes since
+  v0.4.0 (the #16 tokenization cache). Committed alongside the originals as
+  `bench/results/chimera_noise_seed*_test_v0.5.0.json` +
+  `chimera_noise_multiseed_test_v0.5.0.json` (rule 3; notebook 037).
+- **Fixes riding along untagged**: `amberfork-align`'s `LexicalCost` tokenization cached at
+  a prepare-once seam, O(n·m) → ~33% faster per cell without changing any cost or alignment
+  (issue #16); CI bumped off deprecated Node 20 actions (issue #18); the converged summary
+  no longer claims "identical" when divergences were absorbed (issue #19); a non-canonical
+  or raw-JSONL input now points at `docs/trace-format.md` instead of a dead-end parse error
+  (issue #20).
+
 ## [0.4.0] — 2026-07-11
 
 v0.4 — distribution + run-it-yourself (milestone issue #15); also carries the untagged

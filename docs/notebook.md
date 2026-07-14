@@ -1505,3 +1505,39 @@ arc); that reads only by watching the loop, which the founder reviewed and appro
 makes it reproducible, so a future palette or layout change regenerates the hero from source rather
 than freezing a stale render. v0.5 is done; the deferred follow-ups (#29 `--html` export, #30
 expand-on-demand, #31 light mode) carry the browser platform into v0.6+.
+
+## 037 · 2026-07-15 · v0.5.0: the reveal survives a real scoring-path change (issues #21–#28)
+
+**What prompted it.** Tagging v0.5.0 ("the fork in the browser") triggers BENCHMARK.md rule 2's
+one-test-look-per-tag. Unlike v0.4.0 — whose reveal (021) changed nothing scoring-relevant by
+construction — the diff since v0.4.0 genuinely touches the cost path: #16's prepare-once
+tokenization cache rewired `cost.rs`/`nw.rs`/`params.rs`. Notebook 023 claimed "same costs, same
+alignments, same forks" from the dev gate staying green; the reveal is the test-side check of
+that claim, at the only granularity that matters — predicted fork indices, not "it compiles."
+
+**Method.** Same recipe as 021: `spike/data/regen_noise_seed{42,43,44}` (the cached regenerated
+pair sets — unchanged since v0.4.0, no upstream or sanitizer work this cycle) scored via
+`amberfork-bench run --split test`, same frozen `bench/params.toml`
+(sha256:8ebd95ce8f3d, unchanged).
+
+**Result: identical, to the digit.** Test split, seeds 42/43/44, n=35 pooled: every arm, every
+metric, every calibration bin matches the sealed v0.2.0/v0.4.0 documents exactly — full engine
+0.49 exact / 0.71 ±1 / 0.91 ±3, best baseline ±3 0.49; per-seed exact 0.75/0.23/0.50 (seeds
+42/43/44). A structural diff of the new aggregate against
+`chimera_noise_multiseed_test_v0.4.0.json`, excluding the `sources` list (which necessarily
+names different filenames), shows zero difference anywhere else. Committed as
+`bench/results/chimera_noise_seed*_test_v0.5.0.json` +
+`chimera_noise_multiseed_test_v0.5.0.json` (rule 3: alongside, never swapped).
+
+**Reading.** This is the sharpest test rule 2 has faced so far — the first reveal since the seal
+where the code path that computes cost actually changed, not just code around it. It held:
+prepare-once tokenization is a cache in front of the same function, and the test split confirms
+that where it counts. v0.5's own scope (server, UI, `amberfork-layout` extraction) never touched
+`amberfork-align`'s cost/alignment path at all, so that half of the diff was never in question —
+only #16 was.
+
+**Release.** Workspace + `ui/` bumped 0.4.0 → 0.5.0 (`Cargo.toml`'s internal path-dep versions
+moved with it, per its own comment). CHANGELOG's `[0.5.0]` entry covers the milestone (#21–#28:
+`amberfork-server`, `amberfork-ui`, the `amberfork-layout` extraction, release CI embedding the
+web bundle, docs) plus the untagged riders since v0.4.0 (#16 perf, #18 CI, #19/#20 CLI fixes).
+Tag `v0.5.0` closes the "fork in the browser" milestone.

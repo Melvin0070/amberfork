@@ -1,0 +1,624 @@
+{
+  "bench_schema_version": "0.6",
+  "protocol": "chimera",
+  "split": "test",
+  "coverage": {
+    "total": 60,
+    "evaluated": 60,
+    "dev": 25,
+    "test": 35,
+    "reasons": {},
+    "exclusions": []
+  },
+  "n_pairs": 35,
+  "cross_system": 0,
+  "params": {
+    "source": "bench/params.toml",
+    "sha256": "8ebd95ce8f3d50549017b4d381c8d0dc1f76264184ce92e5795895b383f36014",
+    "tau": 0.3,
+    "resync_k": 2,
+    "gap_open": 0.6,
+    "gap_ext": 0.3
+  },
+  "sources": [
+    {
+      "file": "bench/results/chimera_noise_seed42_test_v0.5.0.json",
+      "sha256": "96ef80edca1f3653ab6de8e559b44a3ff27e53ce260f82c3e276d382db2d40c3",
+      "n_pairs": 12
+    },
+    {
+      "file": "bench/results/chimera_noise_seed43_test_v0.5.0.json",
+      "sha256": "f0ffa53e76dbd3142fbb087aae53920318f1a499e81218adfc579e756a9ceba2",
+      "n_pairs": 13
+    },
+    {
+      "file": "bench/results/chimera_noise_seed44_test_v0.5.0.json",
+      "sha256": "ddbbdc496bd84e3332982376a7655585bab4e2c5a957b29cbb087d5343c13fd3",
+      "n_pairs": 10
+    }
+  ],
+  "pairs": [
+    {
+      "name": "pair_00",
+      "task_key": "whowhen_hand_14",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_01",
+      "task_key": "whowhen_hand_12",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_02",
+      "task_key": "whowhen_hand_53",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_03",
+      "task_key": "whowhen_hand_32",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_04",
+      "task_key": "whowhen_hand_13",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_05",
+      "task_key": "whowhen_hand_43",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_06",
+      "task_key": "whowhen_hand_49",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_07",
+      "task_key": "whowhen_hand_13",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_08",
+      "task_key": "whowhen_hand_7",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_09",
+      "task_key": "whowhen_hand_39",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_10",
+      "task_key": "whowhen_hand_49",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_11",
+      "task_key": "whowhen_hand_21",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_12",
+      "task_key": "whowhen_hand_21",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_13",
+      "task_key": "whowhen_hand_12",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_14",
+      "task_key": "whowhen_hand_1",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_15",
+      "task_key": "whowhen_hand_49",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_16",
+      "task_key": "whowhen_hand_16",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_17",
+      "task_key": "whowhen_hand_53",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_18",
+      "task_key": "whowhen_hand_1",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_19",
+      "task_key": "whowhen_hand_42",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed42_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_00",
+      "task_key": "whowhen_hand_5",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_01",
+      "task_key": "whowhen_hand_52",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_02",
+      "task_key": "whowhen_hand_26",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_03",
+      "task_key": "whowhen_hand_40",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_04",
+      "task_key": "whowhen_hand_55",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_05",
+      "task_key": "whowhen_hand_17",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_06",
+      "task_key": "whowhen_hand_5",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_07",
+      "task_key": "whowhen_hand_38",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_08",
+      "task_key": "whowhen_hand_27",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_09",
+      "task_key": "whowhen_hand_45",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_10",
+      "task_key": "whowhen_hand_5",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_11",
+      "task_key": "whowhen_hand_29",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_12",
+      "task_key": "whowhen_hand_21",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_13",
+      "task_key": "whowhen_hand_28",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_14",
+      "task_key": "whowhen_hand_10",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_15",
+      "task_key": "whowhen_hand_39",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_16",
+      "task_key": "whowhen_hand_5",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_17",
+      "task_key": "whowhen_hand_4",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_18",
+      "task_key": "whowhen_hand_27",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_19",
+      "task_key": "whowhen_hand_57",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed43_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_00",
+      "task_key": "whowhen_hand_43",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_01",
+      "task_key": "whowhen_hand_49",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_02",
+      "task_key": "whowhen_hand_1",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_03",
+      "task_key": "whowhen_hand_42",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_04",
+      "task_key": "whowhen_hand_28",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_05",
+      "task_key": "whowhen_hand_25",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_06",
+      "task_key": "whowhen_hand_17",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_07",
+      "task_key": "whowhen_hand_49",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_08",
+      "task_key": "whowhen_hand_22",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_09",
+      "task_key": "whowhen_hand_52",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_10",
+      "task_key": "whowhen_hand_16",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_11",
+      "task_key": "whowhen_hand_13",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_12",
+      "task_key": "whowhen_hand_29",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_13",
+      "task_key": "whowhen_hand_14",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_14",
+      "task_key": "whowhen_hand_14",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_15",
+      "task_key": "whowhen_hand_32",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_16",
+      "task_key": "whowhen_hand_25",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_17",
+      "task_key": "whowhen_hand_16",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_18",
+      "task_key": "whowhen_hand_17",
+      "split": "test",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    },
+    {
+      "name": "pair_19",
+      "task_key": "whowhen_hand_38",
+      "split": "dev",
+      "source": "bench/results/chimera_noise_seed44_test_v0.5.0.json"
+    }
+  ],
+  "arms": [
+    {
+      "arm": "random",
+      "exact": {
+        "hits": 0,
+        "n": 35,
+        "rate": 0.0,
+        "ci95_lo": 6.938893903907228e-18,
+        "ci95_hi": 0.09890099232440402
+      },
+      "w1": {
+        "hits": 3,
+        "n": 35,
+        "rate": 0.08571428571428572,
+        "ci95_lo": 0.02958236826696982,
+        "ci95_hi": 0.22379273965896496
+      },
+      "w3": {
+        "hits": 10,
+        "n": 35,
+        "rate": 0.2857142857142857,
+        "ci95_lo": 0.16326536236434688,
+        "ci95_hi": 0.45054934863182616
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 35,
+        "rate": 0.0,
+        "ci95_lo": 6.938893903907228e-18,
+        "ci95_hi": 0.09890099232440402
+      }
+    },
+    {
+      "arm": "pos-lexical",
+      "exact": {
+        "hits": 0,
+        "n": 35,
+        "rate": 0.0,
+        "ci95_lo": 6.938893903907228e-18,
+        "ci95_hi": 0.09890099232440402
+      },
+      "w1": {
+        "hits": 7,
+        "n": 35,
+        "rate": 0.2,
+        "ci95_lo": 0.10042446473798625,
+        "ci95_hi": 0.3589161306566562
+      },
+      "w3": {
+        "hits": 17,
+        "n": 35,
+        "rate": 0.4857142857142857,
+        "ci95_lo": 0.32994236002509725,
+        "ci95_hi": 0.6443119540413141
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 35,
+        "rate": 0.0,
+        "ci95_lo": 6.938893903907228e-18,
+        "ci95_hi": 0.09890099232440402
+      }
+    },
+    {
+      "arm": "nw-structural/resync",
+      "exact": {
+        "hits": 1,
+        "n": 35,
+        "rate": 0.02857142857142857,
+        "ci95_lo": 0.005061491855444203,
+        "ci95_hi": 0.14533087233613673
+      },
+      "w1": {
+        "hits": 7,
+        "n": 35,
+        "rate": 0.2,
+        "ci95_lo": 0.10042446473798625,
+        "ci95_hi": 0.3589161306566562
+      },
+      "w3": {
+        "hits": 7,
+        "n": 35,
+        "rate": 0.2,
+        "ci95_lo": 0.10042446473798625,
+        "ci95_hi": 0.3589161306566562
+      },
+      "no_pred": {
+        "hits": 9,
+        "n": 35,
+        "rate": 0.2571428571428571,
+        "ci95_lo": 0.14163027069060447,
+        "ci95_hi": 0.42069306843839166
+      },
+      "calibration": [
+        {
+          "lo": 0.0,
+          "hi": 0.2,
+          "rate": {
+            "hits": 0,
+            "n": 14,
+            "rate": 0.0,
+            "ci95_lo": 1.3877787807814457e-17,
+            "ci95_hi": 0.2153108027376358
+          }
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.4,
+          "rate": null
+        },
+        {
+          "lo": 0.4,
+          "hi": 0.6,
+          "rate": null
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.8,
+          "rate": null
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.0,
+          "rate": {
+            "hits": 1,
+            "n": 12,
+            "rate": 0.08333333333333333,
+            "ci95_lo": 0.014865094404917095,
+            "ci95_hi": 0.35387991114111694
+          }
+        }
+      ]
+    },
+    {
+      "arm": "nw-lexical/resync",
+      "exact": {
+        "hits": 17,
+        "n": 35,
+        "rate": 0.4857142857142857,
+        "ci95_lo": 0.32994236002509725,
+        "ci95_hi": 0.6443119540413141
+      },
+      "w1": {
+        "hits": 25,
+        "n": 35,
+        "rate": 0.7142857142857143,
+        "ci95_lo": 0.5494506513681738,
+        "ci95_hi": 0.836734637635653
+      },
+      "w3": {
+        "hits": 32,
+        "n": 35,
+        "rate": 0.9142857142857143,
+        "ci95_lo": 0.7762072603410349,
+        "ci95_hi": 0.9704176317330301
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 35,
+        "rate": 0.0,
+        "ci95_lo": 6.938893903907228e-18,
+        "ci95_hi": 0.09890099232440402
+      },
+      "calibration": [
+        {
+          "lo": 0.0,
+          "hi": 0.2,
+          "rate": {
+            "hits": 1,
+            "n": 12,
+            "rate": 0.08333333333333333,
+            "ci95_lo": 0.014865094404917095,
+            "ci95_hi": 0.35387991114111694
+          }
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.4,
+          "rate": {
+            "hits": 4,
+            "n": 7,
+            "rate": 0.5714285714285714,
+            "ci95_lo": 0.2504583645276572,
+            "ci95_hi": 0.8417801447485302
+          }
+        },
+        {
+          "lo": 0.4,
+          "hi": 0.6,
+          "rate": {
+            "hits": 6,
+            "n": 10,
+            "rate": 0.6,
+            "ci95_lo": 0.31267376973365824,
+            "ci95_hi": 0.8318196702937638
+          }
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.8,
+          "rate": {
+            "hits": 4,
+            "n": 4,
+            "rate": 1.0,
+            "ci95_lo": 0.5101091635454027,
+            "ci95_hi": 1.0
+          }
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.0,
+          "rate": {
+            "hits": 2,
+            "n": 2,
+            "rate": 1.0,
+            "ci95_lo": 0.34238022750665303,
+            "ci95_hi": 1.0
+          }
+        }
+      ]
+    }
+  ]
+}

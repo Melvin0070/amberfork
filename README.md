@@ -83,8 +83,8 @@ params: bench/params.toml sha256:8ebd95ce8f3d · tau 0.3 · resync_k 2 · gap 0.
 
 Read it honestly: Wilson 95% intervals are wide at these n, and the test split is scored
 exactly once per release tag (protocol rule 2) — the next reveal comes with the next tag.
-(The v0.4.0 reveal reproduced these numbers identically on every arm and metric —
-`bench/results/*_test_v0.4.0.json`, notebook 021.) The claim the numbers support is the
+(The v0.4.0 and v0.5.0 reveals reproduced these numbers identically on every arm and metric —
+`bench/results/*_test_v0.4.0.json` / `*_test_v0.5.0.json`, notebooks 021 and 037.) The claim the numbers support is the
 *shape* — content-aware alignment localizes within a few steps where position and structure
 do not.
 
