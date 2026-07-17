@@ -6,6 +6,7 @@ members = [
     "crates/amberfork-align",
     "crates/amberfork-layout",
     "crates/amberfork-server",
+    "crates/amberfork-record",
     "crates/amberfork",
     "crates/amberfork-bench",
 ]
@@ -45,6 +46,14 @@ axum = "0.8"
 mime_guess = "2"
 rust-embed = "8"
 tokio = { version = "1", features = ["net"] }
+# The capture proxy's forwarding client (issue: the record path). `rustls` rather than the
+# default native-tls so the binary keeps its no-system-OpenSSL property — the same reason the
+# offline/single-binary claim holds elsewhere. `default-features = false` drops the default
+# TLS stack; without it both backends link.
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+    "json",
+] }
 webbrowser = "1"
 insta = "1"
 tempfile = "3"
@@ -57,6 +66,7 @@ amberfork-align = { path = "crates/amberfork-align", version = "0.5.0" }
 amberfork-ingest = { path = "crates/amberfork-ingest", version = "0.5.0" }
 amberfork-layout = { path = "crates/amberfork-layout", version = "0.5.0" }
 amberfork-server = { path = "crates/amberfork-server", version = "0.5.0" }
+amberfork-record = { path = "crates/amberfork-record", version = "0.5.0" }
 
 # Deny-by-default lints applied workspace-wide. CI runs `clippy --all-targets -- -D warnings`;
 # keeping the intent here documents that a warning is a stop-the-line event.

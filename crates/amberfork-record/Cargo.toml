@@ -1,0 +1,29 @@
+[package]
+name = "amberfork-record"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Record path for amberfork — a local capture proxy that wraps an agent and writes a full-content cassette."
+keywords.workspace = true
+categories = ["development-tools::debugging"]
+
+[lints]
+workspace = true
+
+[dependencies]
+axum = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+# The proxy test stands up a fake upstream and drives it over real HTTP: the contract under
+# test is "what crosses the boundary", so faking at the client seam would test nothing. The
+# fake provider is why `axum` needs `tokio`'s macros/rt here.
+axum = { workspace = true }
+reqwest = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
