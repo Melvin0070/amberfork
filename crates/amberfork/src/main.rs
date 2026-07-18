@@ -24,12 +24,13 @@ use amberfork_align::{AlignParams, DiffParams, LexicalCost, diff};
 use amberfork_ingest::Ingested;
 use amberfork_layout::{Document, ViewModel};
 use amberfork_model::{DiffResult, Warning};
+use amberfork_record::{CaptureProxy, Cassette};
 use amberfork_server::Server;
 use clap::{Args, Parser, Subcommand};
 use load::{LoadError, load_run};
 use render::{RenderOpts, resolve_color_mode};
 use std::io::IsTerminal;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 mod load;
@@ -71,6 +72,9 @@ enum Command {
 
     /// Serve the fork in a local web view (127.0.0.1 only) — Ctrl-C to stop.
     Serve(ServeArgs),
+
+    /// Record an agent behind a capture proxy, writing a full-content cassette.
+    Record(RecordArgs),
 }
 
 #[derive(Args)]
@@ -137,6 +141,41 @@ struct ServeArgs {
     open: bool,
 }
 
+#[derive(Args)]
+struct RecordArgs {
+    /// The real provider origin the proxy relays to, e.g. `https://api.openai.com`. Required and
+    /// provider-agnostic — there is no baked-in default to go stale.
+    #[arg(long, value_name = "URL")]
+    upstream: String,
+
+    /// Environment variable to point the agent's SDK at the proxy, e.g. `OPENAI_BASE_URL`.
+    /// Repeatable; at least one is required — an SDK reading none would bypass the proxy and
+    /// record nothing.
+    #[arg(long = "base-url-env", value_name = "NAME", required = true)]
+    base_url_env: Vec<String>,
+
+    /// Where to write the cassette. Defaults to `<id>.cassette.json` in the working directory.
+    #[arg(long, value_name = "FILE")]
+    out: Option<PathBuf>,
+
+    /// Recording id, stamped into the cassette and used for the default output name.
+    #[arg(long, value_name = "ID", default_value = "recording")]
+    id: String,
+
+    /// The agent command to run, after `--` — e.g. `-- python agent.py`.
+    #[arg(value_name = "CMD", last = true, required = true, num_args = 1..)]
+    command: Vec<String>,
+}
+
+impl RecordArgs {
+    /// The resolved cassette output path: the explicit `--out`, else `<id>.cassette.json`.
+    fn out_path(&self) -> PathBuf {
+        self.out
+            .clone()
+            .unwrap_or_else(|| PathBuf::from(format!("{}.cassette.json", self.id)))
+    }
+}
+
 /// Output flags shared by every result-emitting subcommand, so `--json`/`--no-color` mean the
 /// same thing everywhere.
 #[derive(Args)]
@@ -162,6 +201,7 @@ fn main() -> ExitCode {
             eprintln!("amberfork: {err}");
             ExitCode::from(EXIT_TROUBLE)
         }),
+        Command::Record(args) => run_record(&args),
     }
 }
 
@@ -290,6 +330,99 @@ fn serve_document(document: &Document, args: &ServeArgs) -> ExitCode {
     })
 }
 
+/// `amberfork record -- <cmd>`: run the agent behind the capture proxy and write a cassette.
+///
+/// Exit contract differs from `diff`'s on purpose: `record` is a transparent wrapper, so it
+/// propagates the *agent's* exit code (a `record`ed CI run behaves like the command it wraps).
+/// Only `record`'s own setup/teardown failures — proxy bind, agent not spawnable, cassette not
+/// writable — map to exit 2, the same trouble code the rest of the CLI uses.
+fn run_record(args: &RecordArgs) -> ExitCode {
+    // The async edge, like `serve`: a current-thread runtime wrapping the proxy's lifetime while
+    // the agent runs, so nothing above it touches the runtime.
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .build()
+    {
+        Ok(runtime) => runtime,
+        Err(err) => {
+            eprintln!("amberfork: cannot start the async runtime: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
+    runtime.block_on(record_session(args))
+}
+
+/// Bind the proxy, run the agent against it, and write what was captured. The agent runs as an
+/// async child (`tokio::process`) so the proxy keeps serving concurrently — a blocking wait on the
+/// current-thread runtime would starve the relay and deadlock the very call being recorded.
+async fn record_session(args: &RecordArgs) -> ExitCode {
+    let proxy = match CaptureProxy::bind(&args.id, &args.upstream).await {
+        Ok(proxy) => proxy,
+        Err(err) => {
+            eprintln!("amberfork: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
+
+    // clap guarantees at least the program name (`num_args = 1..`).
+    let (program, program_args) = args
+        .command
+        .split_first()
+        .expect("clap requires a command after --");
+    let mut child = tokio::process::Command::new(program);
+    child.args(program_args);
+    // The agent inherits the parent environment (its credential lives there); we only override the
+    // base-URL var(s) so its SDK talks to the proxy instead of the provider directly.
+    for name in &args.base_url_env {
+        child.env(name, proxy.base_url());
+    }
+
+    let status = match child.status().await {
+        Ok(status) => status,
+        Err(err) => {
+            eprintln!("amberfork: cannot run agent `{program}`: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
+
+    // Write the cassette even when the agent failed — a failed run is precisely the one worth
+    // recording, so capture is unconditional and only the write itself can still fail here.
+    let cassette = proxy.cassette();
+    let out = args.out_path();
+    if let Err(code) = write_cassette(&cassette, &out) {
+        return code;
+    }
+    eprintln!(
+        "amberfork: recorded {} exchange(s) → {}",
+        cassette.exchanges.len(),
+        out.display()
+    );
+
+    ExitCode::from(exit_code_of(&status))
+}
+
+/// Serialize a cassette to its output file. Serialization itself is infallible (bodies are
+/// `serde_json::Value`, no non-string map keys); only the filesystem write can fail, and that is
+/// a `record` trouble (exit 2), not the agent's.
+fn write_cassette(cassette: &Cassette, out: &Path) -> Result<(), ExitCode> {
+    let json = serde_json::to_string_pretty(cassette)
+        .expect("cassette serialization is infallible (Value bodies, string keys)");
+    std::fs::write(out, json).map_err(|err| {
+        eprintln!(
+            "amberfork: cannot write cassette to {}: {err}",
+            out.display()
+        );
+        ExitCode::from(EXIT_TROUBLE)
+    })
+}
+
+/// The exit code `record` returns for a finished agent. A normal exit propagates its code (already
+/// a byte at the OS boundary); a signal-terminated agent has no code, so it maps to a generic
+/// failure — the transparent-wrapper contract means the agent's fate is the command's fate.
+fn exit_code_of(status: &std::process::ExitStatus) -> u8 {
+    status.code().map_or(1, |code| code as u8)
+}
+
 /// Params + engine, shared by every subcommand. The single decision point for engine params:
 /// anything user-supplied (--max-steps today, future --tau style flags) routes through
 /// validated() here, and both param and engine refusals (today: the size guard) map to exit
@@ -399,5 +532,29 @@ mod tests {
             result.fork.is_some(),
             "the embedded demo pair must encode a real divergence"
         );
+    }
+
+    fn record_args(out: Option<PathBuf>, id: &str) -> RecordArgs {
+        RecordArgs {
+            upstream: "https://api.example.com".to_string(),
+            base_url_env: vec!["OPENAI_BASE_URL".to_string()],
+            out,
+            id: id.to_string(),
+            command: vec!["python".to_string(), "agent.py".to_string()],
+        }
+    }
+
+    #[test]
+    fn record_out_defaults_to_the_id_cassette_when_unset() {
+        assert_eq!(
+            record_args(None, "run-42").out_path(),
+            PathBuf::from("run-42.cassette.json")
+        );
+    }
+
+    #[test]
+    fn record_explicit_out_wins_over_the_default() {
+        let out = PathBuf::from("/tmp/custom.cassette.json");
+        assert_eq!(record_args(Some(out.clone()), "run-42").out_path(), out);
     }
 }

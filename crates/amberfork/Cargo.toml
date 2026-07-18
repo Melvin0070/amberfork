@@ -29,8 +29,9 @@ amberfork-server = { workspace = true }
 clap = { workspace = true }
 serde_json = { workspace = true }
 terminal_size = { workspace = true }
-# The runtime lives at the ONE async edge (`serve`); engine paths never touch it.
-tokio = { workspace = true, features = ["rt"] }
+# The runtime lives at the async edges (`serve`, `record`); engine paths never touch it.
+# `process` is for `record`: it runs the agent as a child while the capture proxy serves.
+tokio = { workspace = true, features = ["rt", "process"] }
 webbrowser = { workspace = true }
 
 [dev-dependencies]
