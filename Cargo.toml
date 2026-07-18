@@ -16,7 +16,7 @@ members = [
 exclude = ["ui"]
 
 [workspace.package]
-version = "0.5.0"
+version = "0.6.0"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/Melvin0070/amberfork"
@@ -61,12 +61,12 @@ criterion = "0.8"
 # Internal crates share versions here too, so a path move is a one-line change. The
 # `version` field is what dependents publish against on crates.io (path is stripped at
 # package time) — bump it together with workspace.package.version at every release.
-amberfork-model = { path = "crates/amberfork-model", version = "0.5.0" }
-amberfork-align = { path = "crates/amberfork-align", version = "0.5.0" }
-amberfork-ingest = { path = "crates/amberfork-ingest", version = "0.5.0" }
-amberfork-layout = { path = "crates/amberfork-layout", version = "0.5.0" }
-amberfork-server = { path = "crates/amberfork-server", version = "0.5.0" }
-amberfork-record = { path = "crates/amberfork-record", version = "0.5.0" }
+amberfork-model = { path = "crates/amberfork-model", version = "0.6.0" }
+amberfork-align = { path = "crates/amberfork-align", version = "0.6.0" }
+amberfork-ingest = { path = "crates/amberfork-ingest", version = "0.6.0" }
+amberfork-layout = { path = "crates/amberfork-layout", version = "0.6.0" }
+amberfork-server = { path = "crates/amberfork-server", version = "0.6.0" }
+amberfork-record = { path = "crates/amberfork-record", version = "0.6.0" }
 
 # Deny-by-default lints applied workspace-wide. CI runs `clippy --all-targets -- -D warnings`;
 # keeping the intent here documents that a warning is a stop-the-line event.

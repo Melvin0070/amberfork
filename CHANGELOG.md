@@ -2,6 +2,32 @@
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-07-19
+
+v0.6 — the record path (milestone issues #32–#34): the RECORD half of the hybrid
+passive+record architecture. `Source::Record` is now reachable from the CLI, and a run
+amberfork captured itself diffs through the same engine as a passively-ingested trace.
+
+- **`amberfork-record`** (8th crate): the capture proxy + the cassette contract. A
+  loopback-only HTTP proxy (`docs/cassette-format.md`) relays an agent's provider traffic and
+  records every request/response round trip full-content, with a fail-closed header allowlist
+  so a shareable cassette never carries a credential (issue #32).
+- **Cassette → `Run` normalization**: `normalize(&Cassette)` maps each captured exchange to
+  one canonical LLM step (full request/response bodies as inputs/outputs), so a recorded run
+  reads through exactly the aligner the passive path uses — no per-consumer fork of the trace
+  contract (issue #33).
+- **`amberfork diff` auto-detects a cassette**: a file carrying `cassette_version` is
+  normalized and aligned in place — one command, no convert step, since a cassette is a
+  first-party self-versioning artifact. The sniff lives at the CLI, so `amberfork-ingest`
+  stays canonical-only and the tokio quarantine holds (issue #33).
+- **`amberfork record -- <cmd>`**: the zero-code capture verb. Binds the proxy, runs the agent
+  as an async child with a base-URL env var (`--base-url-env`) pointed at it, and writes the
+  cassette — even when the agent fails, because a failed run is the one worth recording. The
+  agent's exit code propagates (transparent wrapper) (issue #34).
+
+Scope: this completes the record path's *capture* side. Replay — serving recorded responses
+back for re-execution — rides into v0.7 with counterfactual attribution, its only consumer.
+
 ## [0.5.0] — 2026-07-15
 
 v0.5 — the fork in the browser (milestone issues #21–#28); also carries the untagged
