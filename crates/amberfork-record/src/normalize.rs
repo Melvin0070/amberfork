@@ -24,6 +24,22 @@ use serde_json::{Map, Value};
 /// always an LLM call, so the fallback stays in that vocabulary.
 const UNNAMED_LLM: &str = "llm";
 
+/// Parse a cassette from JSON and normalize it into a [`Run`].
+///
+/// The string entry to the record path's normalizer — what the CLI reaches for once it has
+/// sniffed a `cassette_version` and routed a file here, paralleling
+/// [`amberfork_ingest::from_json_str`] on the passive path. Kept separate from [`normalize`] so
+/// the in-memory mapping stays a pure `&Cassette -> Run` function with no serde in its signature.
+///
+/// # Errors
+/// Returns the [`serde_json::Error`] if the input is not a well-formed cassette (malformed JSON,
+/// or valid JSON whose shape does not match the cassette contract). The caller owns turning that
+/// into a file-attributed, doc-linked message.
+pub fn normalize_str(s: &str) -> Result<Run, serde_json::Error> {
+    let cassette: Cassette = serde_json::from_str(s)?;
+    Ok(normalize(&cassette))
+}
+
 /// Normalize a captured cassette into the canonical [`Run`] the aligner consumes.
 ///
 /// Each [`Exchange`] becomes one step, in capture order, as a linear chain (no `parent_idx`, no
@@ -230,6 +246,34 @@ mod tests {
             Body::Json(json!({})),
         )]);
         assert_eq!(normalize(&cass).steps[0].name, UNNAMED_LLM);
+    }
+
+    #[test]
+    fn normalize_str_parses_then_normalizes_a_well_formed_cassette() {
+        let json = r#"{
+            "cassette_version": "0.1",
+            "id": "from-str",
+            "exchanges": [
+                {
+                    "idx": 0,
+                    "request": { "method": "POST", "path": "/v1/messages",
+                        "body": { "model": "claude-sonnet-5" } },
+                    "response": { "status": 200, "body": { "ok": true } }
+                }
+            ]
+        }"#;
+        let run = normalize_str(json).expect("well-formed cassette normalizes");
+        assert_eq!(run.id, "from-str");
+        assert_eq!(run.steps.len(), 1);
+        assert_eq!(run.steps[0].name, "claude-sonnet-5");
+    }
+
+    #[test]
+    fn normalize_str_errors_on_a_broken_cassette_shape() {
+        // Valid JSON, but `exchanges` is the wrong type — the string entry surfaces the serde
+        // error rather than silently yielding a run, so the caller can attribute it to a file.
+        let json = r#"{"cassette_version": "0.1", "id": "broken", "exchanges": "not-an-array"}"#;
+        assert!(normalize_str(json).is_err());
     }
 
     #[test]

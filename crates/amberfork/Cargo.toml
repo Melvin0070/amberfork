@@ -21,6 +21,10 @@ amberfork-align = { workspace = true }
 amberfork-ingest = { workspace = true }
 amberfork-layout = { workspace = true }
 amberfork-model = { workspace = true }
+# The record path's normalizer: the CLI sniffs a `cassette_version` and normalizes cassettes
+# through the same engine as passive traces. Only the pure normalizer is used here; the capture
+# proxy (the crate's tokio/reqwest half) is reached by the future `record` command, not `diff`.
+amberfork-record = { workspace = true }
 amberfork-server = { workspace = true }
 clap = { workspace = true }
 serde_json = { workspace = true }
@@ -33,5 +37,6 @@ webbrowser = { workspace = true }
 assert_cmd = { workspace = true }
 predicates = { workspace = true }
 insta = { workspace = true }
+tempfile = { workspace = true }
 # Fixture builders only; the normal dependency above stays featureless so nothing ships.
 amberfork-model = { workspace = true, features = ["test-support"] }

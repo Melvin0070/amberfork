@@ -21,16 +21,18 @@
 //! otherwise runs until interrupted.
 
 use amberfork_align::{AlignParams, DiffParams, LexicalCost, diff};
-use amberfork_ingest::{IngestError, Ingested};
+use amberfork_ingest::Ingested;
 use amberfork_layout::{Document, ViewModel};
 use amberfork_model::{DiffResult, Warning};
 use amberfork_server::Server;
 use clap::{Args, Parser, Subcommand};
+use load::{LoadError, load_run};
 use render::{RenderOpts, resolve_color_mode};
 use std::io::IsTerminal;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+mod load;
 mod render;
 
 const EXIT_CONVERGED: u8 = 0;
@@ -163,9 +165,9 @@ fn main() -> ExitCode {
     }
 }
 
-fn run_diff(args: &DiffArgs) -> Result<ExitCode, IngestError> {
-    let good = amberfork_ingest::load_file(&args.against)?;
-    let bad = amberfork_ingest::load_file(&args.bad)?;
+fn run_diff(args: &DiffArgs) -> Result<ExitCode, LoadError> {
+    let good = load_run(&args.against)?;
+    let bad = load_run(&args.bad)?;
     Ok(diff_and_report(
         good,
         bad,
@@ -201,20 +203,18 @@ fn demo_pair() -> (Ingested, Ingested) {
 /// The startup order is the contract (issue #25): ingest fails first with its typed errors,
 /// then the engine, then the server's own checks (bundle, port) — all in the terminal,
 /// before any port is bound. Only a running server produces stdout.
-fn run_serve(args: &ServeArgs) -> Result<ExitCode, IngestError> {
+fn run_serve(args: &ServeArgs) -> Result<ExitCode, LoadError> {
     let (good, bad) = if args.demo {
         demo_pair()
     } else {
         // clap guarantees both are present unless `--demo` (required_unless_present), so these
         // `expect`s encode a parser invariant, not a runtime hope.
-        let good = amberfork_ingest::load_file(
+        let good = load_run(
             args.against
                 .as_ref()
                 .expect("clap requires --against unless --demo"),
         )?;
-        let bad = amberfork_ingest::load_file(
-            args.bad.as_ref().expect("clap requires BAD unless --demo"),
-        )?;
+        let bad = load_run(args.bad.as_ref().expect("clap requires BAD unless --demo"))?;
         (good, bad)
     };
     let mut result = match run_engine(&good, &bad, args.max_steps) {

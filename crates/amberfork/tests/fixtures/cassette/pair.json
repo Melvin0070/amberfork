@@ -1,0 +1,5 @@
+{
+  "failing": "bad.cassette.json",
+  "reference": "good.cassette.json",
+  "gold_step": 2
+}

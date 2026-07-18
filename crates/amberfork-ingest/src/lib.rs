@@ -84,8 +84,9 @@ pub enum IngestError {
 
 impl IngestError {
     /// Attach the originating file to a parse-family error — [`load_file`] knows the path,
-    /// [`from_json_str`] doesn't. `Io` already names its file.
-    fn with_path(self, path: &Path) -> Self {
+    /// [`from_json_str`] doesn't. `Io` already names its file. Public because a caller that reads
+    /// the bytes itself (the CLI's format-sniffing loader) still wants the file attributed.
+    pub fn with_path(self, path: &Path) -> Self {
         let path = Some(path.to_path_buf());
         match self {
             Self::Io { .. } => self,

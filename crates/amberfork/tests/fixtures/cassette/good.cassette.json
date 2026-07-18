@@ -1,0 +1,121 @@
+{
+  "cassette_version": "0.1",
+  "id": "refund-good-cassette",
+  "exchanges": [
+    {
+      "idx": 0,
+      "request": {
+        "method": "POST",
+        "path": "/v1/messages",
+        "body": {
+          "model": "claude-sonnet-5",
+          "messages": [
+            { "role": "user", "content": "Ticket #4512: Dana G. requests a refund on order 8841. Plan the triage." }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Plan: look up order 8841, pull the refund policy for its category, check eligibility, then process or decline." }
+          ],
+          "stop_reason": "end_turn"
+        }
+      }
+    },
+    {
+      "idx": 1,
+      "request": {
+        "method": "POST",
+        "path": "/v1/messages",
+        "body": {
+          "model": "claude-sonnet-5",
+          "messages": [
+            { "role": "user", "content": "Order 8841 lookup: delivered 2026-06-15, electronics, $129.00. What next?" }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Pull the electronics refund policy and check the return window against the delivery date." }
+          ],
+          "stop_reason": "end_turn"
+        }
+      }
+    },
+    {
+      "idx": 2,
+      "request": {
+        "method": "POST",
+        "path": "/v1/messages",
+        "body": {
+          "model": "claude-sonnet-5",
+          "messages": [
+            { "role": "user", "content": "Policy doc: Refunds v3 (CURRENT, effective 2026-02-01). Electronics: 30-day return window from delivery; refund to the original payment method. Is the customer eligible?" }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "23 days since delivery, inside the 30-day window. Eligible: full refund of $129.00 to the original payment method." }
+          ],
+          "stop_reason": "end_turn"
+        }
+      }
+    },
+    {
+      "idx": 3,
+      "request": {
+        "method": "POST",
+        "path": "/v1/messages",
+        "body": {
+          "model": "claude-sonnet-5",
+          "messages": [
+            { "role": "user", "content": "Draft the resolution for ticket 4512." }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Refund $129.00 to the original payment method and mark ticket 4512 resolved." }
+          ],
+          "stop_reason": "end_turn"
+        }
+      }
+    },
+    {
+      "idx": 4,
+      "request": {
+        "method": "POST",
+        "path": "/v1/messages",
+        "body": {
+          "model": "claude-sonnet-5",
+          "messages": [
+            { "role": "user", "content": "Write the customer reply for ticket 4512." }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "role": "assistant",
+          "content": [
+            { "type": "text", "text": "Hi Dana - your refund of $129.00 for order 8841 was processed today. You'll see it on your original payment method within 3-5 business days." }
+          ],
+          "stop_reason": "end_turn"
+        }
+      }
+    }
+  ]
+}
