@@ -13,6 +13,10 @@ categories = ["development-tools::debugging"]
 workspace = true
 
 [dependencies]
+# The normalizer produces the canonical model, so the record path finally reaches the shape
+# the aligner reads. The capture proxy (tokio) and the normalizer (sync, pure) share this crate
+# because they are two halves of one path; only the proxy touches the runtime.
+amberfork-model = { workspace = true }
 axum = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
@@ -27,3 +31,7 @@ axum = { workspace = true }
 reqwest = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+# A normalized cassette must survive the real aligner: the self-align invariant (a run vs
+# itself never forks) is the canonical guard, and `insta` pins the produced run's shape.
+amberfork-align = { workspace = true }
+insta = { workspace = true, features = ["json"] }

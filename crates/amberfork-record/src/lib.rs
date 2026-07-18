@@ -19,7 +19,9 @@
 //! stay sync and pure.
 
 mod cassette;
+mod normalize;
 mod proxy;
 
 pub use cassette::{Body, CapturedRequest, CapturedResponse, Cassette, CassetteVersion, Exchange};
+pub use normalize::normalize;
 pub use proxy::{CaptureProxy, RecordError};

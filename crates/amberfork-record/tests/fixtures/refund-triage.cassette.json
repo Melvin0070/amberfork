@@ -1,0 +1,72 @@
+{
+  "cassette_version": "0.1",
+  "id": "refund-triage_2026-07-17_good",
+  "exchanges": [
+    {
+      "idx": 0,
+      "request": {
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "headers": [["content-type", "application/json"]],
+        "body": {
+          "model": "claude-sonnet-5",
+          "messages": [
+            { "role": "system", "content": "You are a refund-triage agent. Look up the order before deciding." },
+            { "role": "user", "content": "Handle refund for order 8841." }
+          ],
+          "tools": [{ "type": "function", "function": { "name": "lookup_order" } }]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [["content-type", "application/json"]],
+        "body": {
+          "id": "chatcmpl-a1",
+          "choices": [
+            {
+              "message": {
+                "role": "assistant",
+                "content": "I'll look up order 8841 first.",
+                "tool_calls": [
+                  { "id": "call_1", "function": { "name": "lookup_order", "arguments": "{\"order_id\":8841}" } }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "idx": 1,
+      "request": {
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "headers": [["content-type", "application/json"]],
+        "body": {
+          "model": "claude-sonnet-5",
+          "messages": [
+            { "role": "system", "content": "You are a refund-triage agent. Look up the order before deciding." },
+            { "role": "user", "content": "Handle refund for order 8841." },
+            { "role": "assistant", "content": "I'll look up order 8841 first." },
+            { "role": "tool", "content": "{\"order_id\":8841,\"total\":42.0,\"status\":\"delivered\",\"days_since\":9}" }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [["content-type", "application/json"]],
+        "body": {
+          "id": "chatcmpl-a2",
+          "choices": [
+            {
+              "message": {
+                "role": "assistant",
+                "content": "Order 8841 was delivered 9 days ago and is within the 30-day window. Approving the $42.00 refund."
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
