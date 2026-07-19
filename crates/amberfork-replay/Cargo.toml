@@ -1,0 +1,25 @@
+[package]
+name = "amberfork-replay"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Replay path for amberfork — re-drive a recorded agent run from its cassette, serving recorded responses and relaying live once the run branches off the tape."
+keywords.workspace = true
+categories = ["development-tools::debugging"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# The cassette contract lives in the record crate; replay is its consumer — it serves back the
+# exact `CapturedRequest`/`CapturedResponse`/`Cassette` types the recorder wrote, so a
+# re-executed run is itself a cassette, normalizable by the same `normalize`. This is the only
+# structural coupling between the two halves of the record/replay path.
+amberfork-record = { workspace = true }
+
+[dev-dependencies]
+# Bodies are matched by value; the tests build JSON bodies with `json!` and assert that object
+# key order does not defeat a match (the "canonical JSON body" the issue calls for).
+serde_json = { workspace = true }

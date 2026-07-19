@@ -117,6 +117,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "amberfork-replay"
+version = "0.6.0"
+dependencies = [
+ "amberfork-record",
+ "serde_json",
+]
+
+[[package]]
 name = "amberfork-server"
 version = "0.6.0"
 dependencies = [

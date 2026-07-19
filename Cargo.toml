@@ -7,6 +7,7 @@ members = [
     "crates/amberfork-layout",
     "crates/amberfork-server",
     "crates/amberfork-record",
+    "crates/amberfork-replay",
     "crates/amberfork",
     "crates/amberfork-bench",
 ]
@@ -67,6 +68,7 @@ amberfork-ingest = { path = "crates/amberfork-ingest", version = "0.6.0" }
 amberfork-layout = { path = "crates/amberfork-layout", version = "0.6.0" }
 amberfork-server = { path = "crates/amberfork-server", version = "0.6.0" }
 amberfork-record = { path = "crates/amberfork-record", version = "0.6.0" }
+amberfork-replay = { path = "crates/amberfork-replay", version = "0.6.0" }
 
 # Deny-by-default lints applied workspace-wide. CI runs `clippy --all-targets -- -D warnings`;
 # keeping the intent here documents that a warning is a stop-the-line event.
