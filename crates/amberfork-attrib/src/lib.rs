@@ -29,6 +29,7 @@
 //!
 //! This slice provides the first stage; the rest land in the following slices of issue #37.
 
+mod oracle;
 mod patch;
 
 pub use patch::patch_cassette;

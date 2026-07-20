@@ -61,6 +61,7 @@ dependencies = [
 name = "amberfork-attrib"
 version = "0.6.0"
 dependencies = [
+ "amberfork-align",
  "amberfork-model",
  "amberfork-record",
  "serde_json",
