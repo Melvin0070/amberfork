@@ -1,0 +1,26 @@
+[package]
+name = "amberfork-attrib"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Counterfactual attribution for amberfork — patch the fork step with the good run's behaviour, re-execute the agent, and verify whether that recovers the run."
+keywords.workspace = true
+categories = ["development-tools::debugging"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# The frozen output contract. Attribution reads `DiffResult.fork` to find the step to patch and
+# produces the `Attribution` the CLI swaps back in. This crate is the first producer of
+# `AttributionMode::Counterfactual` — the variant the model has defined but nothing has emitted.
+amberfork-model = { workspace = true }
+# The cassette is what gets patched and re-executed: this slice rewrites one recorded response in
+# the bad cassette; later slices re-drive the agent through `amberfork-replay` against the result.
+amberfork-record = { workspace = true }
+
+[dev-dependencies]
+# Cassette bodies are `serde_json::Value`; the tests author them with `json!`.
+serde_json = { workspace = true }

@@ -58,6 +58,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "amberfork-attrib"
+version = "0.6.0"
+dependencies = [
+ "amberfork-model",
+ "amberfork-record",
+ "serde_json",
+]
+
+[[package]]
 name = "amberfork-bench"
 version = "0.6.0"
 dependencies = [
