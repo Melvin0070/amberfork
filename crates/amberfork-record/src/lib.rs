@@ -24,7 +24,7 @@ mod proxy;
 
 pub use cassette::{
     Body, CapturedRequest, CapturedResponse, Cassette, CassetteVersion, Exchange,
-    retain_request_headers,
+    retain_request_headers, retain_response_headers,
 };
 pub use normalize::{normalize, normalize_str};
 pub use proxy::{CaptureProxy, RecordError};

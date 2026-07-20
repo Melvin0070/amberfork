@@ -33,11 +33,15 @@ serde_json = { workspace = true }
 # `axum`'s feature unification to supply them.
 axum = { workspace = true }
 tokio = { workspace = true, features = ["rt", "sync"] }
+# The live relay (`LiveUpstream`) forwards a cache-miss to the real provider and reads the answer
+# back. It graduates `reqwest` from a dev-dependency to a real one — the same client the record
+# path already uses to forward, with the same rustls-only TLS stack the single-binary claim rests
+# on (configured once in the workspace dependency).
+reqwest = { workspace = true }
 
 [dev-dependencies]
-# The integration test drives the listener with a stub "agent": a `reqwest` client pointed at the
-# loopback base URL, exactly as a provider SDK would be — the contract under test is what crosses
-# the HTTP boundary, so faking at the client seam would test nothing. `tokio`'s test macros and a
-# multi-thread runtime run the async tests (the server task and the client share the runtime).
-reqwest = { workspace = true }
+# The integration tests drive the listener and the live relay with a stub "agent"/"provider": a
+# `reqwest` client and a local `axum` server, exactly as a real SDK and provider would be — the
+# contract under test is what crosses the HTTP boundary, so faking at the client seam would test
+# nothing. `tokio`'s test macros and a multi-thread runtime run the async tests.
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

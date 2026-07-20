@@ -180,7 +180,12 @@ pub fn retain_request_headers<'a>(
 }
 
 /// Filter response headers to the recordable allowlist.
-pub(crate) fn retain_response_headers<'a>(
+///
+/// Public for the same reason as [`retain_request_headers`]: `amberfork-replay`'s live relay builds
+/// a [`CapturedResponse`] from the provider's answer, and that response lands on the re-executed
+/// cassette — just as shareable as a recorded one. It reuses this function so there stays exactly
+/// one response allowlist, never a second that could leak a `set-cookie` or an org identifier.
+pub fn retain_response_headers<'a>(
     headers: impl Iterator<Item = (&'a str, &'a [u8])>,
 ) -> Vec<(String, String)> {
     retain_headers(headers, KEPT_RESPONSE_HEADERS)

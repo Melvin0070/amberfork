@@ -39,4 +39,4 @@ mod upstream;
 pub use proxy::ReplayProxy;
 pub use replay::Replay;
 pub use server::{ReplayError, ReplayServer};
-pub use upstream::{ScriptedUpstream, Upstream, UpstreamError};
+pub use upstream::{LiveUpstream, ScriptedUpstream, Upstream, UpstreamError};
