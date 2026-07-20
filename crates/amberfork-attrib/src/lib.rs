@@ -27,11 +27,16 @@
 //!                  └─ consensus over N (pure) → Recovery tri-state → upgraded Attribution
 //! ```
 //!
-//! This slice provides the first stage; the rest land in the following slices of issue #37.
+//! [`verify`] is the entry that runs the whole pipeline; the CLI wires it behind `diff --verify`.
 
 mod driver;
 mod oracle;
 mod patch;
+mod verify;
+
+#[cfg(test)]
+mod testkit;
 
 pub use driver::{AgentDriver, AgentError, ReexecError};
 pub use patch::patch_cassette;
+pub use verify::verify;

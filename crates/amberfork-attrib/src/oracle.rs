@@ -20,9 +20,6 @@ use amberfork_model::Run;
 /// N runs; this is one run's contribution to it. `Inconclusive` is a run that yields no evidence
 /// about the patch — it never reached the patched step, or produced no trajectory to judge — and
 /// is dropped from the vote rather than counted as a failure.
-// Consumed by the multi-run consensus in slice 4 of #37; until that lands it is exercised only by
-// this module's tests. The allow goes the moment `verify` calls the oracle.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum RunVerdict {
     Recovered,
@@ -38,8 +35,6 @@ pub(crate) enum RunVerdict {
 /// or the agent died) says nothing about the patch and is `Inconclusive`. Otherwise the re-run is
 /// aligned against good and the standard fork rule decides: no surviving fork → the run converged
 /// with good → `Recovered`; a fork that persists → `NotRecovered`.
-// See the note on `RunVerdict`: wired into `verify` in slice 4.
-#[allow(dead_code)]
 pub(crate) fn classify_recovery(
     good: &Run,
     reexecuted: &Run,

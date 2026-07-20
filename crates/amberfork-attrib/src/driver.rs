@@ -119,9 +119,6 @@ impl std::error::Error for ReexecError {
 ///
 /// [`ReexecError::Bind`] if the listener cannot bind; [`ReexecError::Agent`] if the agent cannot be
 /// launched.
-// Consumed by the multi-run consensus in `verify` (slice 4 of #37); until then it is exercised only
-// by this module's tests. The allow goes the moment `verify` calls it.
-#[allow(dead_code)]
 pub(crate) async fn reexecute_once<U, D>(
     patched: amberfork_record::Cassette,
     good: &Run,
@@ -152,92 +149,20 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use amberfork_record::{Body, CapturedRequest, CapturedResponse, Cassette, Exchange};
+    use crate::testkit::{
+        B2, G0, G1, G2, ScriptedAgent, body_of, cassette, good_cassette, response,
+    };
+    use amberfork_record::Cassette;
     use amberfork_replay::ScriptedUpstream;
-    use serde_json::{Value, json};
-
-    /// An in-process agent that POSTs a fixed script of request bodies at the loopback listener,
-    /// exactly as an SDK pointed at the base URL would. It reacts to nothing it is served: the
-    /// re-executed tape is fully determined by the script and what the server answers, which is
-    /// what makes each scenario's recovered/not-recovered outcome deterministic.
-    struct ScriptedAgent {
-        requests: Vec<Value>,
-    }
-
-    impl AgentDriver for ScriptedAgent {
-        fn drive(&self, base_url: &str) -> impl Future<Output = Result<(), AgentError>> + Send {
-            let url = format!("{base_url}/v1/chat/completions");
-            let bodies = self.requests.clone();
-            async move {
-                let client = reqwest::Client::new();
-                for body in bodies {
-                    client
-                        .post(&url)
-                        .json(&body)
-                        .send()
-                        .await
-                        .expect("the scripted agent reaches the replay listener");
-                }
-                Ok(())
-            }
-        }
-    }
-
-    fn request(content: &str) -> CapturedRequest {
-        CapturedRequest {
-            method: "POST".to_string(),
-            path: "/v1/chat/completions".to_string(),
-            headers: vec![("content-type".to_string(), "application/json".to_string())],
-            body: Body::Json(json!({
-                "model": "claude-sonnet-5",
-                "messages": [{ "role": "user", "content": content }],
-            })),
-        }
-    }
-
-    fn response(content: &str) -> CapturedResponse {
-        CapturedResponse {
-            status: 200,
-            headers: vec![("content-type".to_string(), "application/json".to_string())],
-            body: Body::Json(json!({ "choices": [{ "message": { "content": content } }] })),
-        }
-    }
-
-    /// The request body of a turn, as an SDK would re-serialize it — what the scripted agent sends.
-    fn body_of(content: &str) -> Value {
-        let Body::Json(body) = request(content).body else {
-            unreachable!("request bodies are JSON")
-        };
-        body
-    }
-
-    fn cassette(id: &str, turns: &[(&str, &str)]) -> Cassette {
-        let mut cassette = Cassette::new(id);
-        for (idx, (question, answer)) in turns.iter().enumerate() {
-            cassette.exchanges.push(Exchange {
-                idx,
-                request: request(question),
-                response: response(answer),
-            });
-        }
-        cassette
-    }
-
-    // The shared fixture across both scenarios. The good run answers three turns cleanly; the
-    // patched cassette is the bad run with its fork step (turn 1) already carrying the good
-    // response, so re-execution starts from the counterfactual "what if turn 1 had gone right".
-    // `q2_good` is a turn the bad cassette never recorded, so it cache-misses onto the upstream.
-    const G0: &str = "acknowledged, looking up order 8841";
-    const G1: &str = "order 8841 found, refund eligible";
-    const G2: &str = "refund of 42 dollars issued";
-    const B2: &str = "escalation ticket opened pending manual review"; // disjoint tokens from G2
 
     fn good_run() -> Run {
-        normalize(&cassette("good", &[("q0", G0), ("q1", G1), ("q2", G2)]))
+        normalize(&good_cassette())
     }
 
     /// The patched bad cassette: prefix matches good, turn 1 (the fork) serves the good response,
-    /// turn 2 still holds the bad answer for the bad request. Origin (the patched step) is 1.
+    /// turn 2 still holds the bad answer for the bad request. Origin (the patched step) is 1 — this
+    /// is what `patch_cassette` produces from the good/bad pair, built directly here so the driver
+    /// test does not depend on the patch builder.
     fn patched_cassette() -> Cassette {
         cassette("bad", &[("q0", G0), ("q1", G1), ("q2_bad", B2)])
     }
