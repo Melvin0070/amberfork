@@ -2,6 +2,8 @@
 
 use amberfork_record::{CapturedRequest, CapturedResponse, Cassette};
 
+use crate::canon::canonicalize_body;
+
 /// A recorded run, ready to serve its responses back to a re-execution.
 ///
 /// `Replay` is the pure, offline half of the replay path: given the cassette and a request the
@@ -28,22 +30,25 @@ impl Replay {
     /// credential and other session-specific noise the cassette deliberately does not treat as
     /// load-bearing, so keying on them would turn every re-run into a miss. JSON bodies compare
     /// by value, so a semantically identical body with reordered object keys still matches.
+    ///
+    /// Bodies are compared *after* tool-call-ID canonicalization (see [`crate::canon`]): a
+    /// re-driven agent mints a fresh tool-call ID each run, so the raw body would miss on every
+    /// turn after the first tool call even when nothing meaningful changed. The incoming body is
+    /// canonicalized once here; each recorded body is canonicalized as the scan reaches it.
     #[must_use]
     pub fn lookup(&self, request: &CapturedRequest) -> Option<&CapturedResponse> {
+        let incoming_body = canonicalize_body(&request.body);
         self.cassette
             .exchanges
             .iter()
-            .find(|exchange| request_matches(&exchange.request, request))
+            .find(|exchange| {
+                let recorded = &exchange.request;
+                recorded.method == request.method
+                    && recorded.path == request.path
+                    && canonicalize_body(&recorded.body) == incoming_body
+            })
             .map(|exchange| &exchange.response)
     }
-}
-
-/// Whether a re-issued request addresses the same recorded exchange, keyed on the fields the
-/// cassette contract declares load-bearing: method, path, and body.
-fn request_matches(recorded: &CapturedRequest, incoming: &CapturedRequest) -> bool {
-    recorded.method == incoming.method
-        && recorded.path == incoming.path
-        && recorded.body == incoming.body
 }
 
 #[cfg(test)]
@@ -114,5 +119,37 @@ mod tests {
 
         let branched = request(json!({"messages": [{"role": "user", "content": "different"}]}));
         assert_eq!(replay.lookup(&branched), None);
+    }
+
+    #[test]
+    fn a_reissued_call_with_a_fresh_tool_id_still_hits() {
+        // The recorded turn carries a tool call under `call_ABC`; on the re-run the SDK minted a
+        // fresh `call_XYZ`. Nothing else changed, so it must still resolve to the recorded
+        // response — the whole point of tool-call-ID canonicalization in the matcher.
+        let recorded_response = response(json!({"choices": [{"message": {"content": "done"}}]}));
+        let replay = Replay::new(one_exchange_cassette(
+            request(json!({
+                "messages": [
+                    {"role": "assistant", "tool_calls": [
+                        {"id": "call_ABC", "type": "function",
+                         "function": {"name": "search", "arguments": "{}"}}
+                    ]},
+                    {"role": "tool", "tool_call_id": "call_ABC", "content": "result"}
+                ]
+            })),
+            recorded_response.clone(),
+        ));
+
+        let reissued = request(json!({
+            "messages": [
+                {"role": "assistant", "tool_calls": [
+                    {"id": "call_XYZ", "type": "function",
+                     "function": {"name": "search", "arguments": "{}"}}
+                ]},
+                {"role": "tool", "tool_call_id": "call_XYZ", "content": "result"}
+            ]
+        }));
+
+        assert_eq!(replay.lookup(&reissued), Some(&recorded_response));
     }
 }

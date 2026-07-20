@@ -30,6 +30,7 @@
 //! asserting a false result. Keeping that limit here, in the crate that could pretend otherwise,
 //! is the honest place for it.
 
+mod canon;
 mod proxy;
 mod replay;
 mod upstream;

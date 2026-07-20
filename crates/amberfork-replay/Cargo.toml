@@ -18,11 +18,13 @@ workspace = true
 # re-executed run is itself a cassette, normalizable by the same `normalize`. This is the only
 # structural coupling between the two halves of the record/replay path.
 amberfork-record = { workspace = true }
+# Tool-call-ID canonicalization walks and rewrites the request body as a `serde_json::Value`
+# before the match, so serde_json graduates from a dev-dependency to a real one. `preserve_order`
+# is the workspace default; canonical bodies compare by value (object key order is not
+# load-bearing), so it does not affect matching.
+serde_json = { workspace = true }
 
 [dev-dependencies]
-# Bodies are matched by value; the tests build JSON bodies with `json!` and assert that object
-# key order does not defeat a match (the "canonical JSON body" the issue calls for).
-serde_json = { workspace = true }
 # `ReplayProxy::answer` is async (it awaits the live relay on a cache miss), so its tests need a
 # runtime. tokio is a *dev*-dependency only for now — the library half is runtime-agnostic native
 # async, so `tokio` stays out of `[dependencies]` until the loopback listener lands (slice 4).
