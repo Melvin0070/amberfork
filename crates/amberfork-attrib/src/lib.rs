@@ -29,7 +29,9 @@
 //!
 //! This slice provides the first stage; the rest land in the following slices of issue #37.
 
+mod driver;
 mod oracle;
 mod patch;
 
+pub use driver::{AgentDriver, AgentError, ReexecError};
 pub use patch::patch_cassette;

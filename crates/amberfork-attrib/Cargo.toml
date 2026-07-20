@@ -24,6 +24,11 @@ amberfork-record = { workspace = true }
 # re-run against the good run and applies the resync-k fork rule, so "recovered" means exactly the
 # "converged" every other consumer already trusts — no second, forkable definition of recovery.
 amberfork-align = { workspace = true }
+# The re-execution engine. `reexecute_once` stands up a `ReplayServer` over the patched cassette,
+# drives the agent at its loopback URL, and reads the re-executed tape back — the design's
+# "amberfork-attrib drives amberfork-replay" edge (issue #35). The async lives entirely behind
+# replay's seam; this crate stays runtime-free until the CLI supplies one.
+amberfork-replay = { workspace = true }
 
 [dev-dependencies]
 # Cassette bodies are `serde_json::Value`; the tests author them with `json!`.
@@ -31,3 +36,9 @@ serde_json = { workspace = true }
 # Fixture builders (`test_support::step`/`run`) for the oracle's `Run` inputs — the same featured
 # dev-dep the engine crates use, so nothing test-only ships in a normal build.
 amberfork-model = { workspace = true, features = ["test-support"] }
+# The driver's end-to-end test drives the real `ReplayServer` over HTTP with an in-process agent —
+# a `reqwest` client pointed at the loopback URL, exactly as a provider SDK would be — so the seam
+# under test is what crosses the boundary. `tokio`'s macros + runtime run the async test (the
+# server task and the agent share it), the same shape amberfork-replay's own integration test uses.
+reqwest = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
