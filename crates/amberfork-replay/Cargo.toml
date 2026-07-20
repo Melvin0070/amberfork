@@ -23,3 +23,8 @@ amberfork-record = { workspace = true }
 # Bodies are matched by value; the tests build JSON bodies with `json!` and assert that object
 # key order does not defeat a match (the "canonical JSON body" the issue calls for).
 serde_json = { workspace = true }
+# `ReplayProxy::answer` is async (it awaits the live relay on a cache miss), so its tests need a
+# runtime. tokio is a *dev*-dependency only for now — the library half is runtime-agnostic native
+# async, so `tokio` stays out of `[dependencies]` until the loopback listener lands (slice 4).
+# Same pattern the sibling I/O-edge crates (`record`, `server`) already use for their async tests.
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

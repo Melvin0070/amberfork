@@ -30,8 +30,10 @@
 //! asserting a false result. Keeping that limit here, in the crate that could pretend otherwise,
 //! is the honest place for it.
 
+mod proxy;
 mod replay;
 mod upstream;
 
+pub use proxy::ReplayProxy;
 pub use replay::Replay;
 pub use upstream::{ScriptedUpstream, Upstream, UpstreamError};

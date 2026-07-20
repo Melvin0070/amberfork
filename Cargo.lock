@@ -122,6 +122,7 @@ version = "0.6.0"
 dependencies = [
  "amberfork-record",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
