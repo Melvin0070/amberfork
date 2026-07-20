@@ -7,10 +7,10 @@
 //! it does next. That re-run needs something that answers the agent's requests from the tape
 //! and only reaches a live provider once the run has branched off it.
 //!
-//! This crate is an I/O edge, alongside `amberfork-record` and `amberfork-server`: when the
-//! live relay and loopback listener land (later slices of #36), `tokio`/`reqwest` live here,
-//! never in the engine crates. The matching core in [`Replay`] is deliberately sync and pure —
-//! the async surface is confined to the [`Upstream`] seam.
+//! This crate is an I/O edge, alongside `amberfork-record` and `amberfork-server`: `tokio`/`axum`
+//! live here, never in the engine crates. The matching core in [`Replay`] is deliberately sync and
+//! pure; the async surface is confined to the [`Upstream`] seam and the [`ReplayServer`] listener
+//! the re-driven agent talks to.
 //!
 //! ## Matching is content-addressed, not positional
 //!
@@ -33,8 +33,10 @@
 mod canon;
 mod proxy;
 mod replay;
+mod server;
 mod upstream;
 
 pub use proxy::ReplayProxy;
 pub use replay::Replay;
+pub use server::{ReplayError, ReplayServer};
 pub use upstream::{ScriptedUpstream, Upstream, UpstreamError};

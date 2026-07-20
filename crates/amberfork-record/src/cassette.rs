@@ -167,7 +167,13 @@ pub(crate) fn retain_headers<'a>(
 }
 
 /// Filter request headers to the recordable allowlist.
-pub(crate) fn retain_request_headers<'a>(
+///
+/// Public because the record path is not the only writer of a cassette: `amberfork-replay`'s
+/// loopback listener re-records the agent's requests at the *same* provider boundary, and its
+/// re-executed cassette is just as shareable as a recorded one. It reuses this function so there
+/// stays exactly one allowlist — the module doc's whole point is that a second, forked one would
+/// silently leak the next provider's credential scheme.
+pub fn retain_request_headers<'a>(
     headers: impl Iterator<Item = (&'a str, &'a [u8])>,
 ) -> Vec<(String, String)> {
     retain_headers(headers, KEPT_REQUEST_HEADERS)

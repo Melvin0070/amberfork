@@ -22,6 +22,9 @@ mod cassette;
 mod normalize;
 mod proxy;
 
-pub use cassette::{Body, CapturedRequest, CapturedResponse, Cassette, CassetteVersion, Exchange};
+pub use cassette::{
+    Body, CapturedRequest, CapturedResponse, Cassette, CassetteVersion, Exchange,
+    retain_request_headers,
+};
 pub use normalize::{normalize, normalize_str};
 pub use proxy::{CaptureProxy, RecordError};

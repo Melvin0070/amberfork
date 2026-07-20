@@ -121,6 +121,8 @@ name = "amberfork-replay"
 version = "0.6.0"
 dependencies = [
  "amberfork-record",
+ "axum",
+ "reqwest",
  "serde_json",
  "tokio",
 ]

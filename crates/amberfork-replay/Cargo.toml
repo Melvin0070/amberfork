@@ -23,10 +23,21 @@ amberfork-record = { workspace = true }
 # is the workspace default; canonical bodies compare by value (object key order is not
 # load-bearing), so it does not affect matching.
 serde_json = { workspace = true }
+# The loopback listener (slice 4) is an I/O edge: the re-driven agent's SDK points at
+# `http://127.0.0.1:PORT` (via `--base-url-env`, the mechanism `record` already uses) and this
+# crate serves the tape back over real HTTP. `axum` is that listener; `tokio` supplies its runtime
+# primitives. Both are quarantined here, never in the engine crates, exactly as in
+# `amberfork-record`/`amberfork-server`. Features are declared to what this crate's own code uses:
+# `net` (the workspace default) for the `TcpListener`, `rt` for `tokio::spawn`, and `sync` for the
+# `tokio::sync::Mutex` guarding the proxy across the live-relay await — rather than leaning on
+# `axum`'s feature unification to supply them.
+axum = { workspace = true }
+tokio = { workspace = true, features = ["rt", "sync"] }
 
 [dev-dependencies]
-# `ReplayProxy::answer` is async (it awaits the live relay on a cache miss), so its tests need a
-# runtime. tokio is a *dev*-dependency only for now — the library half is runtime-agnostic native
-# async, so `tokio` stays out of `[dependencies]` until the loopback listener lands (slice 4).
-# Same pattern the sibling I/O-edge crates (`record`, `server`) already use for their async tests.
+# The integration test drives the listener with a stub "agent": a `reqwest` client pointed at the
+# loopback base URL, exactly as a provider SDK would be — the contract under test is what crosses
+# the HTTP boundary, so faking at the client seam would test nothing. `tokio`'s test macros and a
+# multi-thread runtime run the async tests (the server task and the client share the runtime).
+reqwest = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
