@@ -37,9 +37,10 @@ minutes, not the person installing it (do not degrade the install path either).
 debugger content is prompt/arg/error text that must be selectable, copyable, and accessible). Any
 "wgpu" in the sections below is stale and superseded by this line.
 
-**Workspace: phased — 5 crates shipped at v0.4.0, grown one slice at a time** (amended
-2026-07-11; the original "14 crates + `ui/`" roster is a *target-state capability map*, not the
-build plan — see Amendment 2026-07-11 for the shipped roster and where each planned crate went).
+**Workspace: phased — 10 crates shipped at v0.7.0, grown one slice at a time** (amended
+2026-07-11 … -21; the original "14 crates + `ui/`" roster is a *target-state capability map*, not
+the build plan — see Amendment 2026-07-11 for the v0.4.0 roster and Amendment 2026-07-21 for the
+record + counterfactual crates that completed it).
 Full feature set kept: move-typed alignment, field-level diff, counterfactual-causal attribution,
 cluster-to-consensus (gated on a corpus), replay/record cassettes, and a factorized,
 local-capable judge (semantic naming only, never localization).
@@ -200,6 +201,30 @@ server's own checks (bundle present, port free) — all in the terminal before a
 the verdict headline prints before any browser opens (`ViewModel::headline()`, the same
 string #26's web header renders). Where "## Module / crate layout" below describes
 `amberfork-server` aspirationally (result API + WASM serving), THIS describes what shipped.
+
+## Amendment 2026-07-21 — the record + counterfactual crates shipped (v0.6, v0.7)
+
+The roster reached its planned Phase-2 depth over v0.6–v0.7, three crates landing with the phases
+that needed them (Amendment 2026-07-11's rule), taking the shipped workspace from 7 crates to 10:
+
+- **amberfork-record** (8th crate, v0.6) — the capture proxy + cassette contract: a loopback-only
+  HTTP proxy that records an agent's provider traffic full-content (fail-closed header allowlist),
+  and `normalize(&Cassette) → Run` so a recorded run reads through the same aligner as a passive
+  trace. `amberfork record -- <cmd>` is the zero-code capture verb (issues #32–#34).
+- **amberfork-replay** (9th crate, v0.7) — VCR re-execution: a tool-call-ID-normalized cassette
+  matcher behind an `Upstream` seam, a relay-on-miss `ReplayProxy`, and a loopback `ReplayServer`
+  the re-driven agent talks to — recorded responses for the recorded path, live once it branches
+  past the patch (issues #36–#37).
+- **amberfork-attrib** (10th crate, v0.7) — the counterfactual harness, the design's named moat:
+  patch the fork step with the good run's response, re-drive the agent through replay, and judge
+  recovery by a multi-run consensus oracle (tri-state `Recovery`); ddmin then reduces the patch-set
+  to the minimal cause and labels origination vs propagation. Produces
+  `AttributionMode::Counterfactual` behind `diff --verify`; the static half stays in
+  `amberfork-align` (issues #35–#38).
+
+Still unbuilt, still earning their crate with the need: `amberfork-judge` (semantic `cause_label`,
+issue #10 — never localization), `amberfork-store` (persistence), and cluster/consensus (Phase 3,
+gated on a corpus). Default `amberfork diff` stays 100% offline; re-execution is opt-in (`--verify`).
 
 ---
 
