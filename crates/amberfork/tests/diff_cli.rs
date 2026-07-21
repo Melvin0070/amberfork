@@ -187,3 +187,98 @@ fn missing_file_exits_2_with_the_path_on_stderr_and_clean_stdout() {
         .stdout(predicates::str::is_empty())
         .stderr(predicates::str::contains("no/such/trace.json"));
 }
+
+// --- `diff --verify` wiring (issue #37, slice 4b) -----------------------------------------------
+//
+// The re-execution mechanism itself is verified offline with stubs at the `amberfork-attrib`
+// layer; these lock the CLI's own contract — flag validation and cassette-only input — and stay
+// hermetic by failing before any network is touched. The counterfactual `--json` block is locked
+// by `amberfork-model`'s round-trip test, which `diff --json` serializes through unchanged.
+
+#[test]
+fn verify_companion_flags_without_verify_exit_2_and_name_the_gate() {
+    // A companion flag on its own is a mistake worth catching loudly: it only means something with
+    // --verify, and silently ignoring it would hide that the re-execution never ran.
+    let (bad, good, _) = manifest();
+
+    amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--upstream")
+        .arg("http://127.0.0.1:0")
+        .assert()
+        .code(EXIT_TROUBLE)
+        .stdout(predicates::str::is_empty())
+        .stderr(predicates::str::contains("--verify"));
+}
+
+#[test]
+fn verify_without_upstream_exits_2_and_names_the_missing_flag() {
+    let (bad, good, _) = manifest();
+
+    amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--verify")
+        .arg("--base-url-env")
+        .arg("OPENAI_BASE_URL")
+        .arg("--")
+        .arg("true")
+        .assert()
+        .code(EXIT_TROUBLE)
+        .stdout(predicates::str::is_empty())
+        .stderr(predicates::str::contains("--upstream"));
+}
+
+#[test]
+fn verify_on_canonical_traces_exits_2_and_asks_for_a_cassette() {
+    // --verify replays recorded exchanges, so both runs must be cassettes; the smoke fixtures are
+    // canonical traces. This fails at load, before the runtime or any network — so it is hermetic.
+    let (bad, good, _) = manifest();
+
+    amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--verify")
+        .arg("--upstream")
+        .arg("http://127.0.0.1:0")
+        .arg("--base-url-env")
+        .arg("OPENAI_BASE_URL")
+        .arg("--")
+        .arg("true")
+        .assert()
+        .code(EXIT_TROUBLE)
+        .stdout(predicates::str::is_empty())
+        .stderr(predicates::str::contains("cassette"));
+}
+
+#[test]
+fn verify_runs_below_one_is_rejected_by_the_parser() {
+    // The consensus is a majority over N re-runs; N = 0 has no majority to take, so the parser
+    // refuses it up front rather than letting it degrade to a silent `Unverified`.
+    let (bad, good, _) = manifest();
+
+    amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--verify")
+        .arg("--runs")
+        .arg("0")
+        .arg("--upstream")
+        .arg("http://127.0.0.1:0")
+        .arg("--base-url-env")
+        .arg("OPENAI_BASE_URL")
+        .arg("--")
+        .arg("true")
+        .assert()
+        .code(EXIT_TROUBLE)
+        .stderr(predicates::str::contains("invalid value"));
+}

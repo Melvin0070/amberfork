@@ -25,12 +25,19 @@ amberfork-model = { workspace = true }
 # through the same engine as passive traces. Only the pure normalizer is used here; the capture
 # proxy (the crate's tokio/reqwest half) is reached by the future `record` command, not `diff`.
 amberfork-record = { workspace = true }
+# `diff --verify` re-executes the fork (issue #37): amberfork-attrib drives the re-run and folds
+# the recovery verdict, amberfork-replay supplies the live provider seam it relays cache-misses to.
+# Both stay behind `--verify` — default `diff` never constructs them.
+amberfork-attrib = { workspace = true }
+amberfork-replay = { workspace = true }
 amberfork-server = { workspace = true }
 clap = { workspace = true }
+# The `LiveUpstream` client `diff --verify` hands the re-run; featureless like the rest of the CLI.
+reqwest = { workspace = true }
 serde_json = { workspace = true }
 terminal_size = { workspace = true }
-# The runtime lives at the async edges (`serve`, `record`); engine paths never touch it.
-# `process` is for `record`: it runs the agent as a child while the capture proxy serves.
+# The runtime lives at the async edges (`serve`, `record`, `diff --verify`); engine paths never
+# touch it. `process` runs the agent as a child while the capture/replay proxy serves.
 tokio = { workspace = true, features = ["rt", "process"] }
 webbrowser = { workspace = true }
 

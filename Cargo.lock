@@ -31,15 +31,18 @@ name = "amberfork"
 version = "0.6.0"
 dependencies = [
  "amberfork-align",
+ "amberfork-attrib",
  "amberfork-ingest",
  "amberfork-layout",
  "amberfork-model",
  "amberfork-record",
+ "amberfork-replay",
  "amberfork-server",
  "assert_cmd",
  "clap",
  "insta",
  "predicates",
+ "reqwest",
  "serde_json",
  "tempfile",
  "terminal_size",

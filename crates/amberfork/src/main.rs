@@ -23,7 +23,7 @@
 use amberfork_align::{AlignParams, DiffParams, LexicalCost, diff};
 use amberfork_ingest::Ingested;
 use amberfork_layout::{Document, ViewModel};
-use amberfork_model::{DiffResult, Warning};
+use amberfork_model::{DiffResult, Run, Warning};
 use amberfork_record::{CaptureProxy, Cassette};
 use amberfork_server::Server;
 use clap::{Args, Parser, Subcommand};
@@ -35,6 +35,7 @@ use std::process::ExitCode;
 
 mod load;
 mod render;
+mod verify;
 
 const EXIT_CONVERGED: u8 = 0;
 const EXIT_FORKED: u8 = 1;
@@ -92,8 +93,34 @@ struct DiffArgs {
     #[arg(long, value_name = "N", default_value_t = AlignParams::DEFAULT_MAX_STEPS)]
     max_steps: usize,
 
+    /// Verify the fork by counterfactual re-execution: patch the fork step with the good run's
+    /// response, re-drive the agent, and report whether the run recovered. Opt-in; both runs must
+    /// be recorded cassettes, and it requires --upstream, --base-url-env, and a `-- <cmd>`.
+    #[arg(long)]
+    verify: bool,
+
+    /// The real provider origin to relay post-branch cache-misses to, e.g.
+    /// `https://api.openai.com`. Required with --verify.
+    #[arg(long, value_name = "URL")]
+    upstream: Option<String>,
+
+    /// Env var pointing the re-driven agent's SDK at the replay listener, e.g. `OPENAI_BASE_URL`.
+    /// Repeatable; at least one is required with --verify.
+    #[arg(long = "base-url-env", value_name = "NAME")]
+    base_url_env: Vec<String>,
+
+    /// How many times to re-execute when verifying; the recovery verdict is a strict majority over
+    /// these. Only meaningful with --verify.
+    #[arg(long, value_name = "N", default_value_t = 3, value_parser = clap::value_parser!(u32).range(1..))]
+    runs: u32,
+
     #[command(flatten)]
     output: OutputArgs,
+
+    /// The agent command to re-drive, after `--` — e.g. `-- python agent.py`. Required with
+    /// --verify; ignored otherwise.
+    #[arg(value_name = "CMD", last = true, num_args = 1..)]
+    command: Vec<String>,
 }
 
 #[derive(Args)]
@@ -206,15 +233,70 @@ fn main() -> ExitCode {
 }
 
 fn run_diff(args: &DiffArgs) -> Result<ExitCode, LoadError> {
-    let good = load_run(&args.against)?;
-    let bad = load_run(&args.bad)?;
-    Ok(diff_and_report(
-        good,
-        bad,
-        args.max_steps,
-        &args.output,
-        None,
-    ))
+    // The verify flags are validated once, here: `None` is the untouched passive path, `Some` the
+    // counterfactual path, `Err` an inconsistent request (maps to trouble, like a bad input).
+    match verify::VerifyConfig::resolve(
+        args.verify,
+        args.upstream.as_deref(),
+        &args.base_url_env,
+        &args.command,
+        args.runs,
+    ) {
+        Ok(None) => {
+            let good = load_run(&args.against)?;
+            let bad = load_run(&args.bad)?;
+            Ok(diff_and_report(
+                good,
+                bad,
+                args.max_steps,
+                &args.output,
+                None,
+            ))
+        }
+        Ok(Some(config)) => run_diff_verify(args, &config),
+        Err(message) => {
+            eprintln!("amberfork: {message}");
+            Ok(ExitCode::from(EXIT_TROUBLE))
+        }
+    }
+}
+
+/// The `--verify` path: both inputs must be cassettes (re-execution replays their recorded
+/// exchanges), so it loads them as cassettes, runs the same engine on their normalized runs, then
+/// re-executes the fork to upgrade the attribution from static to counterfactual before reporting.
+/// Default `diff` never reaches here — the passive path in [`run_diff`] is byte-for-byte untouched.
+fn run_diff_verify(args: &DiffArgs, config: &verify::VerifyConfig) -> Result<ExitCode, LoadError> {
+    let good = load::load_cassette(&args.against)?;
+    let bad = load::load_cassette(&args.bad)?;
+    let good_run = amberfork_record::normalize(&good);
+    let bad_run = amberfork_record::normalize(&bad);
+
+    let params = match engine_params(args.max_steps) {
+        Ok(params) => params,
+        Err(code) => return Ok(code),
+    };
+    let mut result = match diff(&good_run, &bad_run, &LexicalCost, &params) {
+        Ok(result) => result,
+        Err(err) => {
+            eprintln!("amberfork: {err}");
+            return Ok(ExitCode::from(EXIT_TROUBLE));
+        }
+    };
+    // A cassette carries full content and raises no ingest diagnostics, so there are no per-run
+    // warnings to merge — the passive path's `merged_warnings` reduces to an empty list here.
+    result.warnings = Vec::new();
+
+    match verify::verify_attribution(&result, &good, &bad, config, &params) {
+        Ok(Some(attribution)) => result.attribution = Some(attribution),
+        // Converged: verify found no fork to re-execute and leaves attribution as static analysis
+        // left it (already `None` on a converged diff).
+        Ok(None) => {}
+        Err(err) => {
+            eprintln!("amberfork: {err}");
+            return Ok(ExitCode::from(EXIT_TROUBLE));
+        }
+    }
+    Ok(report(&result, &good_run, &bad_run, &args.output, None))
 }
 
 fn run_demo(args: &DemoArgs) -> ExitCode {
@@ -427,7 +509,7 @@ fn exit_code_of(status: &std::process::ExitStatus) -> u8 {
 /// anything user-supplied (--max-steps today, future --tau style flags) routes through
 /// validated() here, and both param and engine refusals (today: the size guard) map to exit
 /// 2 with the same stderr shape as an unreadable input — the engine itself never asserts.
-fn run_engine(good: &Ingested, bad: &Ingested, max_steps: usize) -> Result<DiffResult, ExitCode> {
+fn engine_params(max_steps: usize) -> Result<DiffParams, ExitCode> {
     let params = DiffParams {
         align: AlignParams {
             max_steps,
@@ -435,10 +517,14 @@ fn run_engine(good: &Ingested, bad: &Ingested, max_steps: usize) -> Result<DiffR
         },
         ..DiffParams::default()
     };
-    let params = params.validated().map_err(|err| {
+    params.validated().map_err(|err| {
         eprintln!("amberfork: {err}");
         ExitCode::from(EXIT_TROUBLE)
-    })?;
+    })
+}
+
+fn run_engine(good: &Ingested, bad: &Ingested, max_steps: usize) -> Result<DiffResult, ExitCode> {
+    let params = engine_params(max_steps)?;
     diff(&good.run, &bad.run, &LexicalCost, &params).map_err(|err| {
         eprintln!("amberfork: {err}");
         ExitCode::from(EXIT_TROUBLE)
@@ -460,9 +546,22 @@ fn diff_and_report(
         Err(code) => return code,
     };
     result.warnings = merged_warnings(good.warnings, bad.warnings);
+    report(&result, &good.run, &bad.run, output, footer)
+}
 
+/// Emit an already-computed result — `--json` machine contract, or the rendered view — and map it
+/// to the `diff(1)` exit code. Shared by the passive `diff`/`demo` path and `diff --verify`, so
+/// every surface reports identically; the verify path's only difference is the attribution it
+/// hands in. `result.warnings` is set by the caller (ingest warnings, or none for a cassette).
+fn report(
+    result: &DiffResult,
+    good_run: &Run,
+    bad_run: &Run,
+    output: &OutputArgs,
+    footer: Option<&str>,
+) -> ExitCode {
     if output.json {
-        let json = serde_json::to_string_pretty(&result)
+        let json = serde_json::to_string_pretty(result)
             .expect("DiffResult serialization is infallible (no non-string map keys)");
         println!("{json}");
     } else {
@@ -479,7 +578,7 @@ fn diff_and_report(
             width: width.max(60),
         };
         // The seam in one line: semantics from the layout crate, styling from the painter.
-        let view = ViewModel::compute(&result, &good.run, &bad.run);
+        let view = ViewModel::compute(result, good_run, bad_run);
         print!("{}", render::render(&view, &opts));
         if let Some(footer) = footer {
             // Chrome, not result: dim so it never competes with the amber fork.

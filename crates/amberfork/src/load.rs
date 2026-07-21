@@ -15,6 +15,7 @@
 
 use amberfork_ingest::{IngestError, Ingested};
 use amberfork_model::Run;
+use amberfork_record::Cassette;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
@@ -44,6 +45,10 @@ pub enum LoadError {
         path: PathBuf,
         source: serde_json::Error,
     },
+    /// `diff --verify` needs a recorded cassette to re-execute, but this file is a canonical
+    /// trace (no `cassette_version`). Only a cassette carries the recorded exchanges a re-run
+    /// replays — a passive trace has nothing to re-execute.
+    NotACassette { path: PathBuf },
 }
 
 impl fmt::Display for LoadError {
@@ -61,6 +66,14 @@ impl fmt::Display for LoadError {
                  format reference: {CASSETTE_FORMAT_URL}",
                 format_args!("{}: ", path.display())
             ),
+            Self::NotACassette { path } => write!(
+                f,
+                "{}: diff --verify re-executes recorded exchanges, so both runs must be cassettes \
+                 — this is a canonical trace (no `cassette_version`)\n  \
+                 record one with `amberfork record -- <cmd>`\n  \
+                 format reference: {CASSETTE_FORMAT_URL}",
+                path.display()
+            ),
         }
     }
 }
@@ -71,6 +84,7 @@ impl std::error::Error for LoadError {
             Self::Io { source, .. } => Some(source),
             Self::Ingest(err) => Some(err),
             Self::Cassette { source, .. } => Some(source),
+            Self::NotACassette { .. } => None,
         }
     }
 }
@@ -115,6 +129,30 @@ pub fn load_run(path: &Path) -> Result<Ingested, LoadError> {
     amberfork_ingest::from_json_str(&text).map_err(|err| LoadError::Ingest(err.with_path(path)))
 }
 
+/// Load a file as a recorded [`Cassette`], the input `diff --verify` re-executes. Unlike
+/// [`load_run`], a canonical trace is a hard error here ([`LoadError::NotACassette`]): re-execution
+/// replays recorded exchanges, and a passive trace has none. The same version sniff routes the
+/// file, so a cassette that fails to parse still fails as a *cassette*, never as a not-a-trace.
+///
+/// # Errors
+/// Returns [`LoadError`] if the file cannot be read, is a canonical trace, or is not a well-formed
+/// cassette.
+pub fn load_cassette(path: &Path) -> Result<Cassette, LoadError> {
+    let text = std::fs::read_to_string(path).map_err(|source| LoadError::Io {
+        path: path.to_path_buf(),
+        source,
+    })?;
+    if !is_cassette(&text) {
+        return Err(LoadError::NotACassette {
+            path: path.to_path_buf(),
+        });
+    }
+    serde_json::from_str(&text).map_err(|source| LoadError::Cassette {
+        path: path.to_path_buf(),
+        source,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -148,5 +186,36 @@ mod tests {
         // JSON-Lines / not-a-trace errors, rather than mislabeling a broken file a cassette.
         assert!(!is_cassette("{not json"));
         assert!(!is_cassette("{\"a\":1}\n{\"b\":2}"));
+    }
+
+    fn write_temp(contents: &str) -> tempfile::NamedTempFile {
+        let file = tempfile::NamedTempFile::new().expect("temp file");
+        std::fs::write(file.path(), contents).expect("write temp");
+        file
+    }
+
+    #[test]
+    fn load_cassette_reads_a_recorded_cassette() {
+        let file = write_temp(r#"{"cassette_version": "0.1", "id": "run-7", "exchanges": []}"#);
+        let cassette = load_cassette(file.path()).expect("a well-formed cassette loads");
+        assert_eq!(cassette.id, "run-7");
+    }
+
+    #[test]
+    fn load_cassette_rejects_a_canonical_trace_as_not_a_cassette() {
+        // A passive trace has no recorded exchanges to re-execute, so --verify cannot use it — and
+        // it fails as a not-a-cassette, never as the misleading "not a canonical trace".
+        let file = write_temp(r#"{"schema_version": "0.1", "id": "x", "steps": []}"#);
+        let err = load_cassette(file.path()).expect_err("a canonical trace is not a cassette");
+        assert!(matches!(err, LoadError::NotACassette { .. }));
+    }
+
+    #[test]
+    fn load_cassette_reports_a_cassette_shaped_but_broken_file_as_a_cassette_error() {
+        // Sniffed onto the cassette path by its version key, but the body is not a valid cassette:
+        // it fails as a cassette (owning that error), not routed back to the trace loader.
+        let file = write_temp(r#"{"cassette_version": "0.1", "id": 5}"#);
+        let err = load_cassette(file.path()).expect_err("a broken cassette body is an error");
+        assert!(matches!(err, LoadError::Cassette { .. }));
     }
 }
