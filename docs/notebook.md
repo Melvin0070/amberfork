@@ -1541,3 +1541,59 @@ moved with it, per its own comment). CHANGELOG's `[0.5.0]` entry covers the mile
 `amberfork-server`, `amberfork-ui`, the `amberfork-layout` extraction, release CI embedding the
 web bundle, docs) plus the untagged riders since v0.4.0 (#16 perf, #18 CI, #19/#20 CLI fixes).
 Tag `v0.5.0` closes the "fork in the browser" milestone.
+
+## 038 · 2026-07-21 · Counterfactual attribution ships: diff --verify re-executes the fork (issues #35, #37)
+
+**What prompted it.** Static attribution (`amberfork-align`, #12) answers *where* the runs diverge
+and labels it `Static` — a structural claim ("they diverge here, and it propagates downstream")
+that no re-execution ever checked. `AttributionMode::Counterfactual` has sat in the frozen model,
+produced nowhere, since the model was authored. #35 is the epic that fills it: re-execute the
+cassette with the fork patched, and report whether the run *recovered* — the difference between
+"they differ here" and "this is what broke it". #37 is its payoff child; #36 (`amberfork-replay`,
+the VCR matcher + loopback `ReplayServer`) was the substrate it re-drives against.
+
+**What shipped.** `amberfork diff --verify … -- <cmd>` now emits a real `Counterfactual`
+attribution. The pipeline, all in the new `amberfork-attrib` crate: `patch_cassette` (pure) swaps
+the fork step's response for the good run's → `reexecute_once` stands up a `ReplayServer` over the
+patched cassette and re-drives the agent (recorded turns from the tape, live relay on cache-miss
+past the branch) → the recovery oracle aligns the re-executed run against good and applies the same
+resync-k fork rule → consensus over N folds the per-run verdicts into a `Recovery`. The terminal
+answer is a trailing segment on the attribution line: `… · recovered · 3 runs`.
+
+**Decisions worth keeping.**
+- *The whole fork step is the patch candidate.* Shrinking to a minimal sub-cause is #38 (ddmin);
+  #37 patches the single fork step and asks only "does the sustained divergence at/after it go away".
+- *Recovery is a tri-state, not a bool.* `recovered` / `not_recovered` / `unverified`. A live
+  provider will not answer bit-identically twice, so a single run's crisp call is only evidence;
+  the consensus (strict majority of *conclusive* runs) degrades to `Unverified` rather than
+  asserting a result the runs did not agree on. `Unverified` is an honest verdict, never a silent
+  absence — the reason the model chose a tri-state over a bool in the first place.
+- *`--verify` requires both inputs to be cassettes.* Re-execution replays recorded exchanges; a
+  passive trace has none. `load_cassette` makes a canonical trace a hard `NotACassette` error that
+  points at `amberfork record`, rather than silently having nothing to re-run.
+- *Injected seams keep the offline discipline.* The agent (`AgentDriver`) and provider (`Upstream`)
+  are traits; `amberfork-attrib`'s whole suite substitutes in-process stubs, so `cargo test
+  --workspace` stays offline and deterministic. The CLI supplies the two production seams — a
+  subprocess `AgentDriver` and `LiveUpstream` — behind a current-thread runtime, the same tokio
+  quarantine `serve`/`record` observe. `amberfork-align` is *never* called with a provider; it
+  stays pure and offline, and the CLI (the composition root) swaps the upgraded attribution into
+  the `DiffResult` after the fact.
+- *Flag validation in `resolve()`, not clap.* The cross-flag contract (`--verify` ⟺ `--upstream` +
+  `--base-url-env` + `-- <cmd>`) lives in one unit-testable function that gives one honest message
+  per failure mode, instead of version-dependent clap constraint magic.
+
+**The one deliberate testing boundary.** No subprocess-plus-network end-to-end test of the *happy*
+`--verify` path. Driving a real agent binary against a real provider through the CLI cannot be
+hermetic, and the workspace suite must stay offline. Coverage is layered instead: the re-execution
+*mechanism* (patch → drive → oracle → consensus) is fully tested offline with stubs at the
+`amberfork-attrib` layer; the counterfactual `--json` wire form (`mode: counterfactual`,
+`recovered`, `runs`) is locked by `amberfork-model`'s round-trip test, which `diff --json`
+serializes through unchanged; the CLI's own logic (`resolve`, `load_cassette`, and hermetic
+`diff --verify` validation paths that fail before any network) adds 11 tests. Recorded here as the
+honest coverage boundary, not an oversight — a fake-provider + stub-agent harness through the
+binary would be slower and more brittle than the layered offline coverage for the same claim.
+
+**Verified.** `smoke ✓ · fmt ✓ · clippy -D warnings ✓ · cargo test --workspace ✓` (333 passed).
+Real-binary spot checks: `diff --help` shows the new flags, both validation paths print their
+designed errors, default `diff` renders byte-identically (static attribution line unchanged).
+#37 closes; epic #35 now has only #38 (ddmin minimal-cause) left in the v0.7 milestone.
