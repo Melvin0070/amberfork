@@ -1597,3 +1597,66 @@ binary would be slower and more brittle than the layered offline coverage for th
 Real-binary spot checks: `diff --help` shows the new flags, both validation paths print their
 designed errors, default `diff` renders byte-identically (static attribution line unchanged).
 #37 closes; epic #35 now has only #38 (ddmin minimal-cause) left in the v0.7 milestone.
+
+## 039 · 2026-07-21 · ddmin minimal-cause: verified origination vs propagation (issue #38, epic #35 closes)
+
+**What prompted it.** #37 patches the *fork* step and asks "did the run recover" — but the fork is
+rarely the whole story. The true fault can sit a step deeper in the divergent region, and a run of
+downstream steps may merely *propagate* one upstream break. Static attribution paints the whole
+tail one colour (DR4's uniform divergent path) because structure alone cannot tell a carried error
+from an independent one. #38 is the crate's named moat: reduce the patch-set to the **minimal
+subset whose patch still recovers**, and split the region into *origination* vs *propagation*.
+
+**What shipped.** Three pieces in `amberfork-attrib`, composed by `verify`:
+- `ddmin::minimize` — hand-rolled Zeller–Hildebrandt ddmin over the index set `0..n`, re-pointed to
+  preserve `Recovery::Recovered` instead of a failing property. Pure algorithm, pluggable oracle.
+- `cause::fork_candidates` — the contiguous run of patchable (two-sided) alignment moves from the
+  fork onward; `cause::relabel` — maps ddmin's verdict back onto `origin_step`/`propagation`.
+- `verify` wires them: candidates → `minimize` (oracle = re-execute the subset-patched cassette,
+  consensus over N) → `relabel`. The minimal cause becomes origination; the rest of the region,
+  propagation. The attribution *wire shape is unchanged* — only `origin_step`/`propagation` tighten.
+
+**Decisions worth keeping.**
+- *Integration drove the interface — the slice-1 core was revised, not frozen.* ddmin started sync
+  and pure (clean, but the oracle is real async re-execution). Rather than a `spawn_blocking` +
+  nested-runtime bridge that forces `'static`/`Arc` onto the borrowed driver and cassettes, the
+  oracle became `async` + fallible (`Reduction` tri-state). The algorithm logic is untouched; it
+  now composes with `verify`'s borrows directly. Recorded because "the just-built component's API
+  was wrong once it met its caller" is the normal shape of honest slicing, not a misstep.
+- *Full ddmin, not a bisection.* The minimal cause can be *multiple independent faults* (step k and
+  step k+2 both broken, neither alone sufficient) — a binary search returns one and mislabels the
+  other. ddmin's complement phase finds the pair. `finds_a_multi_element_minimal_cause` guards it.
+- *The O(log n) bound is real on the single-cause case, and asserted.* Single relevant element →
+  each level halves the region in ≤2 oracle calls, +1 precondition; `stays_within_the_logarithmic_
+  rerun_bound` asserts `calls ≤ 3·⌈log₂n⌉`. The cassette serves the unbranched prefix from the tape,
+  so each re-run is cheap. Multi-fault is quadratic worst case — the honest cost of correctness.
+- *Inconclusive never reduces; an unstable full set is `Unverified`, never a false cause.* Only
+  `Recovered` triggers a reduction, so the set stays recovering at every step (what survives is
+  1-minimal). If the *precondition* — patching the whole region — can't be established (a
+  nondeterministic re-run), `minimize` returns `Inconclusive` and the labels stay static. This is
+  the ddmin-level echo of #37's tri-state honesty: acceptance criterion 3, no fabricated minimum.
+- *The candidate run stops at the first one-sided move.* A structural gap (a step in only one run)
+  has no response to graft; re-executing *past* an unpatchable step would be serving a branch we
+  cannot set. So a one-sided fork yields no candidates and falls back to static — matching what the
+  single-patch path already did. Caught reviewing the first cut (`filter_map` skipped gaps and kept
+  going); `map_while` is the honest shape.
+- *`origin_step` is the earliest cause step; an independent downstream fault is pulled out of
+  propagation.* The whole value over static: a tail step that does *not* recover once the upstream
+  cause is patched is origination, not propagation, and no longer mislabeled. Under the fixed
+  single-origin contract a genuinely multi-step cause surfaces only its earliest step as
+  `origin_step` (the others are excluded from propagation but not separately listed) — a documented
+  limitation, not a wire change (out of scope per #38; a future multi-origin field would carry it).
+- *`confidence` = conclusive ÷ total ddmin oracle calls* — oracle stability across the re-runs. A
+  fork verified across stable re-runs is worth more than one whose oracle kept wavering. Tallied
+  with two `AtomicUsize` so the count survives `.await` without making `verify`'s future `!Send`.
+
+**The testing boundary (unchanged discipline).** The labeling logic is tested *purely* — synthetic
+`Reduction`s into `relabel`, a counting synthetic oracle into `minimize` — because the offline
+`ScriptedAgent` reacts to nothing it is served, so it cannot exercise "patching subset S changes
+what recovers". The happy path (align → candidates → ddmin → re-execute via stub agent+upstream →
+relabel) is integration-tested end-to-end offline and asserts the refined `origin_step=1`,
+`propagation=[2]`, `confidence=1.0`. `amberfork-attrib` grew 14 → 29 unit tests.
+
+**Verified.** `smoke ✓ · fmt ✓ · clippy -D warnings ✓ · cargo test --workspace ✓` (348 passed).
+#38 closes, and with it epic #35 (counterfactual attribution) and the v0.7 milestone: `diff
+--verify` now re-executes the cassette to verify the cause *and* minimize it.
