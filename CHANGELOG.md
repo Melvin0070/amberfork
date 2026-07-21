@@ -2,6 +2,43 @@
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-07-21
+
+v0.7 — counterfactual attribution (milestone issues #35–#38): the REPLAY + re-execution half the
+record path was built for. `amberfork diff --verify` no longer just localizes the fork and labels it
+`Static` — it re-executes the cassette with the fork patched to the good run's behaviour and reports
+whether the run *recovered*: the difference between "they differ here" and "this is what broke it".
+`AttributionMode::Counterfactual`, defined in the frozen model since it was authored and produced
+nowhere, is now real output.
+
+- **`amberfork-replay`** (9th crate): VCR re-execution. A cassette matcher (tool-call-ID normalized)
+  behind an `Upstream` seam, a `ReplayProxy` that relays-on-miss and records every turn, and a
+  loopback `ReplayServer` the re-driven agent talks to — serving recorded responses for the recorded
+  path and going live once the run branches past the patch. `LiveUpstream` forwards a cache-miss to
+  the real provider (issues #36, #37).
+- **`amberfork-attrib`** (10th crate): the counterfactual harness — the design's named moat.
+  `patch_cassette` swaps the fork step's response for the good run's; the re-execution driver stands
+  up the replay server and re-drives the agent (an injected `AgentDriver` seam); the recovery oracle
+  aligns the re-run against good under the same resync-k fork rule; and consensus over N folds the
+  per-run verdicts into a tri-state `Recovery` (`recovered` / `not_recovered` / `unverified`),
+  degrading to `Unverified` rather than asserting a result nondeterministic re-runs did not agree on
+  (issues #36, #37).
+- **`amberfork diff --verify … -- <cmd>`**: the opt-in verb. Reuses `record`'s trio (`--upstream`,
+  `--base-url-env`, `-- <cmd>`) to re-drive the agent; a trailing segment on the attribution line
+  reports the verdict (`… · recovered · 3 runs`). `--verify` requires both inputs to be cassettes (a
+  passive trace has nothing to re-run) and is validated in one unit-testable `resolve()` (issue #37).
+- **ddmin minimal-cause + origination/propagation labeling**: instead of patching only the fork,
+  hand-rolled Zeller–Hildebrandt ddmin reduces the candidate region to the *minimal subset whose
+  patch still recovers*, then splits it into verified **origination** (the minimal cause) and
+  **propagation** (what recovers for free once the cause is patched) — pulling an independent
+  downstream fault out of the tail that static analysis would have mislabeled. `origin_step` tightens
+  to the minimal cause; `confidence` reflects oracle stability across the ddmin re-runs (issue #38).
+
+Offline invariant held throughout: default `amberfork diff` (terminal + `--json`) is byte-identical
+to pre-epic, and the whole suite substitutes in-process stubs for the agent and provider, so `cargo
+test --workspace` stays offline and deterministic. Semantic cause naming (`cause_label`) stays the
+judge's job (issue #10), never localization's.
+
 ## [0.6.0] — 2026-07-19
 
 v0.6 — the record path (milestone issues #32–#34): the RECORD half of the hybrid

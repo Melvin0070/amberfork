@@ -28,7 +28,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "amberfork-align",
  "amberfork-attrib",
@@ -52,7 +52,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork-align"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "amberfork-model",
  "criterion",
@@ -62,7 +62,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork-attrib"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "amberfork-align",
  "amberfork-model",
@@ -75,7 +75,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork-bench"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "amberfork-align",
  "amberfork-ingest",
@@ -94,7 +94,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork-ingest"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "amberfork-model",
  "serde",
@@ -103,7 +103,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork-layout"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "amberfork-model",
  "serde",
@@ -112,7 +112,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork-model"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -120,7 +120,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork-record"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "amberfork-align",
  "amberfork-model",
@@ -134,7 +134,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork-replay"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "amberfork-record",
  "axum",
@@ -145,7 +145,7 @@ dependencies = [
 
 [[package]]
 name = "amberfork-server"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "amberfork-align",
  "amberfork-layout",
