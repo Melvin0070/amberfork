@@ -97,6 +97,7 @@ mod tests {
             origin: "origin step 11".to_string(),
             propagation: "step 12".to_string(),
             confidence: "conf 0.86".to_string(),
+            verdict: None,
         }
     }
 

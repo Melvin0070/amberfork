@@ -40,7 +40,8 @@
 use std::fmt;
 
 use amberfork_model::{
-    Attribution, AttributionMode, DiffResult, FieldDiffKind, Payload, Run, Step,
+    Attribution, AttributionMode, Counterfactual, DiffResult, FieldDiffKind, Payload, Recovery,
+    Run, Step,
 };
 use serde::{Deserialize, Serialize};
 
@@ -369,9 +370,10 @@ impl Verdict {
     }
 }
 
-/// The attribution answer in DR5's reading order — mode, origin, propagation, confidence —
-/// each part already in its designed wording. The terminal flattens the parts to one line;
-/// the web attribution pane renders them as separate elements.
+/// The attribution answer in DR5's reading order — mode, origin, propagation, confidence, then
+/// the counterfactual verdict when there is one — each part already in its designed wording. The
+/// terminal flattens the parts to one line; the web attribution pane renders them as separate
+/// elements.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AttributionView {
     /// `static` or `counterfactual` — owned, not `&'static str`, because the view must
@@ -382,6 +384,11 @@ pub struct AttributionView {
     /// `step 03`, a contiguous `steps 03–07`, a comma list, or `none`.
     pub propagation: String,
     pub confidence: String,
+    /// The counterfactual recovery verdict — `recovered · 3 runs`, `not recovered · 3 runs`, or
+    /// `unverified · 3 runs` — present only when re-execution produced evidence. `None` for static
+    /// attribution, whose wire form and terminal line are therefore unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verdict: Option<String>,
 }
 
 impl ViewModel {
@@ -602,7 +609,25 @@ fn attribution_view(attribution: &Attribution, idx_width: usize) -> AttributionV
         origin,
         propagation: steps_text(&attribution.propagation, idx_width),
         confidence: confidence_text(attribution.confidence),
+        // Keyed on the evidence, not the mode: a verdict appears iff re-execution produced one, so
+        // static attribution stays verdict-free and its rendering is untouched.
+        verdict: attribution.counterfactual.as_ref().map(verdict_text),
     }
+}
+
+/// The counterfactual verdict wording: the recovery outcome and the run count that backs it —
+/// `recovered · 3 runs`, `not recovered · 1 run`, `unverified · 3 runs`. The tri-state maps
+/// one-to-one to [`Recovery`], so `unverified` reads as the honest "we re-ran but the runs did not
+/// agree", never as a silent absence.
+fn verdict_text(counterfactual: &Counterfactual) -> String {
+    let outcome = match counterfactual.recovered {
+        Recovery::Recovered => "recovered",
+        Recovery::NotRecovered => "not recovered",
+        Recovery::Unverified => "unverified",
+    };
+    let runs = counterfactual.runs;
+    let unit = if runs == 1 { "run" } else { "runs" };
+    format!("{outcome} · {runs} {unit}")
 }
 
 /// A step list in the gutter's zero-padded style: `none`, `step 03`, a contiguous
@@ -801,8 +826,42 @@ mod tests {
                 origin: "origin step 02".to_string(),
                 propagation: "step 03".to_string(),
                 confidence: "conf 0.47".to_string(),
+                // Static attribution carries no counterfactual evidence, so no verdict — the
+                // reading order and wire form are unchanged from before re-execution existed.
+                verdict: None,
             })
         );
+    }
+
+    /// A counterfactual attribution is the same reading order plus the recovery verdict as a
+    /// distinct part — the terminal appends it, the web pane will render it separately.
+    #[test]
+    fn a_counterfactual_attribution_adds_the_recovery_verdict() {
+        let attribution = Attribution {
+            mode: AttributionMode::Counterfactual,
+            origin_step: Some(2),
+            propagation: vec![3],
+            counterfactual: Some(Counterfactual {
+                recovered: Recovery::Recovered,
+                runs: 3,
+            }),
+            cause_label: None,
+            confidence: 0.86,
+        };
+        let view = attribution_view(&attribution, 2);
+        assert_eq!(view.mode, "counterfactual");
+        assert_eq!(view.verdict.as_deref(), Some("recovered · 3 runs"));
+    }
+
+    /// Every `Recovery` state has its own honest wording, and the run count is pluralized — so a
+    /// single-run verify never reads `1 runs` and `unverified` never reads as a silent absence.
+    #[test]
+    fn each_recovery_state_has_its_designed_verdict_wording() {
+        let verdict = |recovered, runs| verdict_text(&Counterfactual { recovered, runs });
+        assert_eq!(verdict(Recovery::Recovered, 3), "recovered · 3 runs");
+        assert_eq!(verdict(Recovery::NotRecovered, 3), "not recovered · 3 runs");
+        assert_eq!(verdict(Recovery::Unverified, 3), "unverified · 3 runs");
+        assert_eq!(verdict(Recovery::Recovered, 1), "recovered · 1 run");
     }
 
     #[test]

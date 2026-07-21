@@ -90,16 +90,21 @@ pub fn render(view: &ViewModel, opts: &RenderOpts) -> String {
     // line. Plain, not amber — it is a statement about the divergence, not the divergence.
     if let Some(attribution) = &view.attribution {
         rows.push(Row::blank());
+        let mut body = format!(
+            "  attribution · {} · {} · propagation {} · {}",
+            attribution.mode, attribution.origin, attribution.propagation, attribution.confidence
+        );
+        // The counterfactual verdict (`recovered · 3 runs`) is a trailing segment on the same
+        // dotted line — present only when re-execution produced one, so static attribution's line
+        // is byte-identical to before.
+        if let Some(verdict) = &attribution.verdict {
+            body.push_str(" · ");
+            body.push_str(verdict);
+        }
         rows.push(Row {
             role: Role::Footer,
             prefix: String::new(),
-            body: format!(
-                "  attribution · {} · {} · propagation {} · {}",
-                attribution.mode,
-                attribution.origin,
-                attribution.propagation,
-                attribution.confidence
-            ),
+            body,
         });
     }
 
@@ -451,8 +456,8 @@ fn split_at_char(s: &str, chars: usize) -> (&str, &str) {
 mod tests {
     use super::*;
     use amberfork_model::{
-        Attribution, AttributionMode, DiffResult, FieldDiff, FieldDiffKind, Fork, Meta, Move,
-        Outcome, Run, RunPair, RunRef, Source, Step, test_support,
+        Attribution, AttributionMode, Counterfactual, DiffResult, FieldDiff, FieldDiffKind, Fork,
+        Meta, Move, Outcome, Recovery, Run, RunPair, RunRef, Source, Step, test_support,
     };
     use serde_json::json;
 
@@ -685,6 +690,39 @@ mod tests {
         assert_eq!(
             last, "  attribution · static · origin step 02 · propagation step 03 · conf 0.47",
             "every forked diff ends with a designed answer line, like converged does"
+        );
+    }
+
+    #[test]
+    fn a_counterfactual_attribution_line_carries_the_recovery_verdict() {
+        // The same fork, re-executed: attribution is upgraded to counterfactual and the recovery
+        // verdict rides the attribution line as a trailing segment — the payoff of `diff --verify`.
+        // Widened past the 100-col default here: the counterfactual line is longer than the static
+        // one, so this asserts the composition without the painter's truncate-to-fit clipping it
+        // (the attribution row obeys that rule like every other row does at narrow widths).
+        let wide = RenderOpts {
+            color: ColorMode::Plain,
+            width: 120,
+        };
+        let (a, b, mut res) = forked(0.47);
+        res.attribution = Some(Attribution {
+            mode: AttributionMode::Counterfactual,
+            origin_step: Some(2),
+            propagation: vec![3],
+            counterfactual: Some(Counterfactual {
+                recovered: Recovery::Recovered,
+                runs: 3,
+            }),
+            cause_label: None,
+            confidence: 0.47,
+        });
+        let out = paint(&res, &a, &b, &wide);
+
+        let last = out.lines().last().expect("non-empty render");
+        assert_eq!(
+            last,
+            "  attribution · counterfactual · origin step 02 · propagation step 03 · conf 0.47 · recovered · 3 runs",
+            "the verdict is a trailing segment on the same dotted line"
         );
     }
 

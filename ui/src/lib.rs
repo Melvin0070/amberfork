@@ -191,6 +191,9 @@ mod tests {
                 origin: "origin step 11".to_string(),
                 propagation: "step 12".to_string(),
                 confidence: "conf 0.86".to_string(),
+                // The web pane does not render the counterfactual verdict yet (its own slice); the
+                // field exists on the contract so payloads carrying one still deserialize.
+                verdict: None,
             }),
             warnings: vec![],
         })
