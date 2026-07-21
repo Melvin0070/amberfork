@@ -29,6 +29,7 @@
 //!
 //! [`verify`] is the entry that runs the whole pipeline; the CLI wires it behind `diff --verify`.
 
+mod cause;
 mod ddmin;
 mod driver;
 mod oracle;

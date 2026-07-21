@@ -29,12 +29,30 @@ use amberfork_record::Cassette;
 #[must_use]
 pub fn patch_cassette(diff: &DiffResult, bad: &Cassette, good: &Cassette) -> Option<Cassette> {
     let fork = diff.fork?;
-    let good_step = fork.a_step?;
-    let bad_step = fork.b_step?;
+    patch_many(bad, good, &[(fork.b_step?, fork.a_step?)])
+}
 
-    let good_response = good.exchanges.get(good_step)?.response.clone();
+/// Graft several good-run responses onto the bad cassette at once — the multi-step generalization
+/// of [`patch_cassette`], and the primitive the ddmin oracle re-executes (issue #38).
+///
+/// `grafts` is `(bad_step, good_step)` pairs: at bad-cassette exchange `bad_step`, serve good-cassette
+/// exchange `good_step`'s response instead. This is exactly how [`patch_cassette`] patches the single
+/// fork step, applied to a *subset* of the divergent region so ddmin can ask "does patching just
+/// these steps recover the run?". Requests are never touched — only the answers change.
+///
+/// Returns `None` if any index is out of bounds (a diff paired with a mismatched cassette); for the
+/// aligned pairs [`crate::cause::fork_candidates`] derives from these very cassettes, it never fires.
+/// An empty `grafts` yields an unchanged clone — the untouched bad run.
+pub(crate) fn patch_many(
+    bad: &Cassette,
+    good: &Cassette,
+    grafts: &[(usize, usize)],
+) -> Option<Cassette> {
     let mut patched = bad.clone();
-    patched.exchanges.get_mut(bad_step)?.response = good_response;
+    for &(bad_step, good_step) in grafts {
+        let good_response = good.exchanges.get(good_step)?.response.clone();
+        patched.exchanges.get_mut(bad_step)?.response = good_response;
+    }
     Some(patched)
 }
 
@@ -162,6 +180,45 @@ mod tests {
         let bad = cassette("bad", vec![exchange(0, "q0", "same")]);
         let good = cassette("good", vec![exchange(0, "q0", "same")]);
         assert!(patch_cassette(&diff_with_fork(None), &bad, &good).is_none());
+    }
+
+    #[test]
+    fn patch_many_grafts_every_listed_step_and_leaves_the_rest_alone() {
+        let bad = cassette(
+            "bad",
+            vec![
+                exchange(0, "q0", "bad-a0"),
+                exchange(1, "q1", "bad-a1"),
+                exchange(2, "q2", "bad-a2"),
+                exchange(3, "q3", "bad-a3"),
+            ],
+        );
+        let good = cassette(
+            "good",
+            vec![
+                exchange(0, "q0", "good-a0"),
+                exchange(1, "q1", "good-a1"),
+                exchange(2, "q2", "good-a2"),
+                exchange(3, "q3", "good-a3"),
+            ],
+        );
+
+        // Graft the good responses at steps 1 and 3; steps 0 and 2 keep the bad answers.
+        let patched = patch_many(&bad, &good, &[(1, 1), (3, 3)]).expect("in-bounds grafts patch");
+
+        assert_eq!(patched.exchanges[0], bad.exchanges[0]);
+        assert_eq!(patched.exchanges[1].response, good.exchanges[1].response);
+        assert_eq!(patched.exchanges[1].request, bad.exchanges[1].request);
+        assert_eq!(patched.exchanges[2], bad.exchanges[2]);
+        assert_eq!(patched.exchanges[3].response, good.exchanges[3].response);
+        assert_eq!(patched.id, bad.id);
+    }
+
+    #[test]
+    fn patch_many_with_an_out_of_bounds_graft_yields_no_patch() {
+        let bad = cassette("bad", vec![exchange(0, "q0", "bad")]);
+        let good = cassette("good", vec![exchange(0, "q0", "good")]);
+        assert!(patch_many(&bad, &good, &[(0, 0), (5, 0)]).is_none());
     }
 
     #[test]

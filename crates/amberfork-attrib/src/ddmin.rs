@@ -33,34 +33,57 @@
 //! in the worst case), but that case is real and a plain bisection would miss it, which is why this
 //! is ddmin and not a binary search.
 
-// Wired into `verify` in the next slice (issue #38 step 2); until then only the unit tests below
-// exercise it, and `clippy -D warnings` would flag the unused `pub(crate)` surface.
-#![allow(dead_code)]
-
 use amberfork_model::Recovery;
+use std::future::Future;
+
+/// The outcome of minimizing a candidate set.
+///
+/// Explicit rather than an `Option` so the caller can report the *full-set precondition* verdict
+/// honestly: patching the whole region either recovers (there is a cause to minimize), still forks
+/// (`Persisted` — the cause is not in this region), or cannot be decided (`Inconclusive` — a
+/// nondeterministic re-run). The `Recovery` the caller ultimately emits follows straight from which
+/// variant this is.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum Reduction {
+    /// The full candidate set recovers; the payload is the 1-minimal cause — sorted candidate
+    /// indices, none droppable without losing recovery, never empty.
+    Minimized(Vec<usize>),
+    /// The full candidate set did not recover: patching the whole region still forks, so there is
+    /// no cause within it to minimize.
+    Persisted,
+    /// The oracle could not decide whether the full set recovers. No trustworthy cause, so the
+    /// caller reports `Recovery::Unverified` rather than inventing one.
+    Inconclusive,
+}
 
 /// Reduce a candidate set of `n` patchable steps to a 1-minimal recovering subset.
 ///
 /// `recovers` is the oracle: given a subset of candidate indices (always sorted, always a subset of
 /// `0..n`), it re-executes with exactly those steps patched and reports whether the run recovered.
-/// Returns the minimal subset — sorted indices, none droppable without losing recovery — or `None`
-/// when recovery could not be established (the full set does not recover, or the oracle was
-/// inconclusive about it). The returned subset is never empty: the empty patch is the untouched bad
-/// run, which by definition still forks.
-pub(crate) fn minimize<F>(n: usize, mut recovers: F) -> Option<Vec<usize>>
+/// It is `async` because that re-execution is real I/O — a replay server and a driven agent — and
+/// fallible because the experiment itself can fail to run (the listener will not bind); such an
+/// error aborts minimization rather than being mistaken for an inconclusive result.
+///
+/// The returned [`Reduction`] tells the three cases apart (see its docs). A `Minimized` subset is
+/// never empty: the empty patch is the untouched bad run, which by definition still forks.
+///
+/// The first oracle call is always the full set `0..n` — the precondition — so the shape here is
+/// classic ddmin only once recovery is established.
+pub(crate) async fn minimize<F, Fut, E>(n: usize, mut recovers: F) -> Result<Reduction, E>
 where
-    F: FnMut(&[usize]) -> Recovery,
+    F: FnMut(&[usize]) -> Fut,
+    Fut: Future<Output = Result<Recovery, E>>,
 {
     // No candidates is no cause. Also spares the oracle a pointless empty-patch re-run.
     if n == 0 {
-        return None;
+        return Ok(Reduction::Persisted);
     }
-    // Precondition: the whole region must recover, or there is nothing to minimize. A `NotRecovered`
-    // full set means recovery was never on the table; an `Unverified` one means the oracle is too
-    // unstable to trust — either way, no cause, not a fabricated one.
+    // Precondition: the whole region must recover, or there is nothing to minimize.
     let mut subset: Vec<usize> = (0..n).collect();
-    if recovers(&subset) != Recovery::Recovered {
-        return None;
+    match recovers(&subset).await? {
+        Recovery::Recovered => {}
+        Recovery::NotRecovered => return Ok(Reduction::Persisted),
+        Recovery::Unverified => return Ok(Reduction::Inconclusive),
     }
 
     // Classic ddmin: try to reduce to a single block, then to a block's complement, and only when
@@ -71,24 +94,32 @@ where
         let blocks = partition(&subset, granularity);
 
         // Reduce to a block: is one slice of the candidates sufficient on its own?
-        if let Some(block) = blocks
-            .iter()
-            .find(|block| recovers(block) == Recovery::Recovered)
-        {
-            subset = block.clone();
+        let mut sufficient_block = None;
+        for block in &blocks {
+            if recovers(block).await? == Recovery::Recovered {
+                sufficient_block = Some(block.clone());
+                break;
+            }
+        }
+        if let Some(block) = sufficient_block {
+            subset = block;
             granularity = 2;
             continue;
         }
 
         // Reduce to a complement: can we drop a whole block and still recover? Granularity eases
         // back by one so the coarser split is retried against the smaller set.
-        if let Some(complement) = blocks
-            .iter()
-            .map(|block| complement(&subset, block))
-            .find(|complement| recovers(complement) == Recovery::Recovered)
-        {
-            granularity = (granularity - 1).max(2);
-            subset = complement;
+        let mut reduced = false;
+        for block in &blocks {
+            let complement = complement(&subset, block);
+            if recovers(&complement).await? == Recovery::Recovered {
+                subset = complement;
+                granularity = (granularity - 1).max(2);
+                reduced = true;
+                break;
+            }
+        }
+        if reduced {
             continue;
         }
 
@@ -99,7 +130,7 @@ where
         }
         granularity = (granularity * 2).min(subset.len());
     }
-    Some(subset)
+    Ok(Reduction::Minimized(subset))
 }
 
 /// Split `subset` into `k` contiguous, near-equal blocks (the last few absorb the remainder). `k` is
@@ -127,6 +158,7 @@ mod tests {
     use super::*;
     use amberfork_model::Recovery::{NotRecovered, Recovered, Unverified};
     use std::cell::Cell;
+    use std::convert::Infallible;
 
     /// Smallest exponent with `2^e >= n`; `0` for `n <= 1`. The re-run bound is a multiple of this.
     fn ceil_log2(n: usize) -> u32 {
@@ -137,52 +169,49 @@ mod tests {
         }
     }
 
-    #[test]
-    fn finds_a_single_element_minimal_cause() {
+    #[tokio::test]
+    async fn finds_a_single_element_minimal_cause() {
         // Recovery holds exactly when the one true cause `k` is patched: every superset recovers,
         // every subset without it persists. ddmin must peel away to the singleton {k}.
         let k = 5;
-        let got = minimize(8, |subset| {
-            if subset.contains(&k) {
-                Recovered
-            } else {
-                NotRecovered
-            }
-        });
-        assert_eq!(got, Some(vec![k]));
+        let got = minimize(8, |subset: &[usize]| {
+            let recovered = subset.contains(&k);
+            async move { Ok::<_, Infallible>(if recovered { Recovered } else { NotRecovered }) }
+        })
+        .await
+        .unwrap();
+        assert_eq!(got, Reduction::Minimized(vec![k]));
     }
 
-    #[test]
-    fn finds_a_multi_element_minimal_cause() {
+    #[tokio::test]
+    async fn finds_a_multi_element_minimal_cause() {
         // Two independent faults: the run recovers only when BOTH are patched. Neither alone is the
         // cause, so a plain bisection would miss it — full ddmin returns the pair.
         let causes = [2usize, 6];
-        let got = minimize(8, |subset| {
-            if causes.iter().all(|c| subset.contains(c)) {
-                Recovered
-            } else {
-                NotRecovered
-            }
-        });
-        assert_eq!(got, Some(vec![2, 6]));
+        let got = minimize(8, |subset: &[usize]| {
+            let recovered = causes.iter().all(|c| subset.contains(c));
+            async move { Ok::<_, Infallible>(if recovered { Recovered } else { NotRecovered }) }
+        })
+        .await
+        .unwrap();
+        assert_eq!(got, Reduction::Minimized(vec![2, 6]));
     }
 
-    #[test]
-    fn stays_within_the_logarithmic_rerun_bound() {
+    #[tokio::test]
+    async fn stays_within_the_logarithmic_rerun_bound() {
         // Single-cause reduction visits O(log n) subsets: each level halves the candidate region in
         // at most two oracle calls, plus the one full-set precondition check.
         let n = 16;
         let k = 11;
         let calls = Cell::new(0usize);
-        let got = minimize(n, |subset| {
+        let got = minimize(n, |subset: &[usize]| {
             calls.set(calls.get() + 1);
-            if subset.contains(&k) {
-                Recovered
-            } else {
-                NotRecovered
-            }
-        });
-        assert_eq!(got, Some(vec![k]));
+            let recovered = subset.contains(&k);
+            async move { Ok::<_, Infallible>(if recovered { Recovered } else { NotRecovered }) }
+        })
+        .await
+        .unwrap();
+        assert_eq!(got, Reduction::Minimized(vec![k]));
         assert!(
             calls.get() as u32 <= 3 * ceil_log2(n),
             "took {} oracle calls, bound is {}",
@@ -191,20 +220,24 @@ mod tests {
         );
     }
 
-    #[test]
-    fn an_inconclusive_full_set_yields_no_cause() {
+    #[tokio::test]
+    async fn an_inconclusive_full_set_yields_no_cause() {
         // The oracle cannot even establish that patching everything recovers — a nondeterministic
-        // re-run. ddmin must report "no minimal cause" (None -> Recovery::Unverified upstream),
-        // never fabricate one from an unstable signal.
-        let got = minimize(8, |_subset| Unverified);
-        assert_eq!(got, None);
+        // re-run. ddmin must report Inconclusive (-> Recovery::Unverified upstream), never fabricate
+        // a cause from an unstable signal.
+        let got = minimize(8, |_: &[usize]| async { Ok::<_, Infallible>(Unverified) })
+            .await
+            .unwrap();
+        assert_eq!(got, Reduction::Inconclusive);
     }
 
-    #[test]
-    fn a_fork_that_never_recovers_yields_no_cause() {
+    #[tokio::test]
+    async fn a_fork_that_never_recovers_persists() {
         // Even fully patched the run still forks — recovery was never on the table, so there is no
         // cause to minimize.
-        let got = minimize(8, |_subset| NotRecovered);
-        assert_eq!(got, None);
+        let got = minimize(8, |_: &[usize]| async { Ok::<_, Infallible>(NotRecovered) })
+            .await
+            .unwrap();
+        assert_eq!(got, Reduction::Persisted);
     }
 }
