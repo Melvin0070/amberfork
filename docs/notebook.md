@@ -1660,3 +1660,54 @@ relabel) is integration-tested end-to-end offline and asserts the refined `origi
 **Verified.** `smoke ✓ · fmt ✓ · clippy -D warnings ✓ · cargo test --workspace ✓` (348 passed).
 #38 closes, and with it epic #35 (counterfactual attribution) and the v0.7 milestone: `diff
 --verify` now re-executes the cassette to verify the cause *and* minimize it.
+
+## 040 · 2026-07-22 · mid-project retrospective: what's strong, what's thinning, what to track
+
+Halfway-point deep retrospect (founder-initiated). Four parallel deep-reads — the full notebook
+arc, the architecture doc + amendments, a crate-by-crate code audit, and a fresh 2026 competitive
+sweep — plus a re-read of POSITIONING / BENCHMARK / trace-format / DESIGN.
+
+**Verdict: the engineering is not the weak point.** Code audit is clean — no stubs / `todo!()`, no
+`unsafe`, no `#[allow]` anywhere, `-D warnings`, panics kept off the library path, tokio quarantine
+honored, one frozen `DiffResult` seam defined once. The roster grew by need (14 aspirational → 10
+built). What has thinned since v0.2 is **defensibility and proof**, not build quality:
+- The market commoditized the adjectives: local / offline / deterministic is now table-stakes
+  (Phoenix, Langfuse, Opik, Laminar, and **EvalView** — `hidai25/eval-view`, the closest *shipping*
+  analog: offline trajectory diff, but stops before fork-localization + attribution). The durable
+  wedge is narrower: **two-run fork localization + no-re-run counterfactual attribution**, a
+  craft/DX moat, not a technology moat.
+- The research frontier is co-inventing the attribution half in the open (FALAT 2606.00765,
+  CausalFlow 2605.25338, Causal Agent Replay 2606.08275 — the last *requires* re-running, which is
+  exactly the asymmetry to keep leading with).
+- The sharpest reviewer-catch: every strong number is **true by construction** (injected chimera
+  forks favor the alignment arms, notebook 001); the only natural-pair evidence (Mode A′) is a null
+  (016). The README is already honest about the null and seed-sensitivity; it does not yet state the
+  by-construction caveat *at* the number.
+
+**Actions.**
+- Positioning re-aim in progress (docs-only, slices B→A→C): README hero + currency refresh (the
+  README undersells v0.6/v0.7 — record/replay/attrib/`--verify` go unmentioned); POSITIONING §6 adds
+  EvalView + promotes the no-re-run wedge; surface the by-construction caveat.
+- Filed 6 un-milestoned backlog issues: **#39** OpenInference/OTel ingest adapter (real on-ramp +
+  natural TRAIL fixture), **#40** cost/token/latency deltas (UC1), **#41** natural-pair bench that
+  isn't a null, **#42** held-out fixture for resync-k generalization, **#43** cassette secret/PII
+  redaction, **#44** real-provider e2e for `--verify`. Milestoned deliberately after v0.8.
+
+**Architectural watch-items (track, don't act):**
+1. `amberfork-align` is widening into a god-crate (absorbed core + embed + static-attrib; owns cost
+   model + aligner + fork rule + static attribution + field-diff). Natural split point: when a
+   second cost model (embeddings) actually lands.
+2. Linear NW vs the "typed causal DAG" ambition — the model carries `edges`/`parent_idx` but the
+   aligner linearizes, so multi-agent / branchy runs aren't tree-aligned. Either reconcile the
+   design doc's claim to the shipped linear reality, or scope GumTree-style tree alignment as the v2
+   frontier.
+3. Quadratic O(n·m) scale wall — fine to ~1000 steps, projected minutes at 5000 (022/023). The
+   `prepare`/`cost_prepared` seam is designed; trigger to build it = a real slow trace, not a
+   schedule.
+4. ViewModel vs Document doubling (layout) — two serialization layers between engine and painters; a
+   minor drift watch.
+
+Next milestone unchanged: **v0.8 = the explain layer (#10, `amberfork-judge`)** — localize → verify
+→ **name**. Honest note logged: naming is the LLM-in-the-loop, most-co-invented part
+(lower-differentiation, lower-risk); #41 / #39 are arguably higher skeptic-leverage and worth
+sequencing right behind it.
