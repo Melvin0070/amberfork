@@ -17,8 +17,8 @@
 ## 0. One-liner
 
 **Point at a failing agent run. amberfork aligns it against a known-good run, ignites the exact
-step where they diverged in amber, and tells you what changed. Local, all-Rust, deterministic,
-no account.**
+step where they diverged in amber, and tells you what changed — then, on a recorded run, confirms
+the cause by replaying it with that step patched. All local, all-Rust, offline, no account.**
 
 The mental model to teach: *observability shows you what one run did; amberfork shows you what
 **changed** between two.*
@@ -395,6 +395,7 @@ Aimed at the primary persona. Each is a thing the evaluator *sees* and reads as 
 | Arize Phoenix | observability + eval | yes (local-first) | no | no | no | yes | LLM eng teams |
 | Neatlogs | collab debugging | no (cloud; SDK MIT) | no | no (LLM "investigate") | no | partial | teams shipping agents |
 | Laminar (lmnr) | agent obs + replay | no (cloud/OSS) | no | no | no | Apache | agent builders (funded) |
+| **EvalView** | regression gate (snapshot) | yes | no (snapshot-vs-baseline) | no (full-trajectory diff) | **yes** | **yes** | teams gating agent regressions in CI |
 | StepFinder / AgenTracer / CausalFlow / WebStep | research | n/a | some (single-traj or run-vs-ref) | paper-level | mixed | mostly unreleased | researchers |
 | vcrpy / pytest-recording | replay cassette | yes | no | no | yes (byte-level) | yes | test engineers |
 | difftastic / delta | code/text diff | yes | n/a (design **reference**, not a competitor) | n/a | yes | yes | all devs |
@@ -410,19 +411,28 @@ Aimed at the primary persona. Each is a thing the evaluator *sees* and reads as 
 
 ### How it DIFFERS (the wedge)
 
-1. **Automated semantic alignment vs manual eyeballing.** LangSmith and Langfuse show you two trees and
-   leave *you* to find the divergence (Langfuse's own docs: "multi-step causal analysis across agent
-   turns is manual"). amberfork *computes* the alignment and the fork. That is the core capability none
-   of them have.
-2. **Deterministic + explainable vs LLM-in-the-loop.** Neatlogs' "ask it to investigate" and LangSmith's
+The wedge is two capabilities nobody shipping has — not any single adjective:
+
+1. **Aligns two arbitrary runs and localizes the *one* decisive fork — vs a full diff or manual
+   eyeballing.** LangSmith and Langfuse show you two trees and leave *you* to find the divergence
+   (Langfuse's own docs: "multi-step causal analysis across agent turns is manual"). EvalView diffs a run
+   against its own saved baseline and lists *every* tool-call that changed — a regression gate, not a
+   localizer. amberfork *computes* the alignment of two independent runs and lights the single first
+   non-recovered divergence. Nobody shipping does run-vs-run fork localization (Braintrust's own 2026
+   roundup: no tool "compar[es] two agent runs to find their divergence point").
+2. **Confirms the cause by counterfactual re-execution, with no live re-run — vs locate-only.** On a
+   recorded run, `diff --verify` replays it with the fork step patched and reports whether the run
+   recovers. The research methods that do this (CausalFlow, Causal Agent Replay) *re-run the live agent*;
+   amberfork re-drives a recorded cassette, so it works on a frozen incident trace with no key. No
+   shipping tool offers it.
+3. **Deterministic + explainable vs LLM-in-the-loop.** Neatlogs' "ask it to investigate" and LangSmith's
    Polly hand the trace to an LLM and get a probabilistic guess. amberfork's core is a deterministic
    algorithm you can reproduce and explain step by step. (An optional local judge does *semantic naming
    only*, never localization.)
-3. **Local / offline / no account vs cloud SDK-to-dashboard.** Neatlogs, LangSmith, and Laminar send your
-   traces to a hosted service. amberfork is a single local binary; nothing leaves your machine.
-4. **Two-run fork attribution vs single-run inspection or metric dashboards.** Everyone else does
-   single-run trace views (plus "compare experiments" dashboards that are metric/score-level, not
-   trajectory alignment). The run-vs-run *watershed* is the thing.
+4. **Local / offline / no account — now table-stakes, not the wedge.** It still separates amberfork from
+   the *cloud* tools (LangSmith, Neatlogs, and hosted Laminar send traces off-box), but the offline OSS
+   crowd (Phoenix, self-hosted Langfuse, EvalView) all share it. So local/offline is a *property* of
+   amberfork, not its differentiator — points 1 and 2 are.
 5. **Craft artifact vs product/SaaS.** The others optimize adoption funnels; amberfork optimizes
    legibility, reproducibility, and taste for an audience that reads code and UI, not pricing pages.
 
@@ -437,10 +447,21 @@ and unverifiable; amberfork is reproducible and legible. And the automated fork 
 LLM-diff and the side-by-side view both leave as manual work. (Honest caveat kept: on very short runs,
 "just read them" wins, and that's in the README.)
 
+> "Isn't this just EvalView — an offline agent-diff that already exists?"
+
+**No:** EvalView is a snapshot-vs-baseline regression *gate* — it records what your agent does now and
+flags any tool-call that drifts from that baseline, listing *all* the changes. amberfork aligns *two
+independent runs*, localizes the *single* decisive fork, and can *confirm* the cause by counterfactual
+re-execution. Different job: EvalView says "behavior drifted"; amberfork says "here is the step it
+forked, and here is the change that caused it." (They compose — an EvalView gate that goes red is a
+natural place to reach for amberfork.)
+
 ### Closest analogs, named
 
-- **Closest *shipping* thing:** LangSmith / Langfuse "compare runs." Same intent, manual execution, no
-  automated alignment, cloud or metric-level.
+- **Closest *shipping* thing:** **EvalView** (`hidai25/eval-view`) for the offline-diff shape — a
+  deterministic, no-key trajectory differ — but it is a snapshot-vs-baseline *gate* that stops at
+  "these tool calls changed," with no run-vs-run alignment, fork localization, or cause attribution.
+  LangSmith / Langfuse "compare runs" for the same *intent*, but manual, cloud or metric-level.
 - **Closest *conceptual* work:** the research line (WebStep's "bifurcation," AgenTracer's success-vs-
   failure alignment). Same idea of a divergence watershed, but these are papers, mostly with unreleased
   datasets, not local tools, and the standalone paired benchmark is thin and scoopable (do not lean on a
@@ -468,8 +489,9 @@ LLM-diff and the side-by-side view both leave as manual work. (Honest caveat kep
 
 ## 8. Positioning statements (reusable one-liners)
 
-- **README hero:** "Point at a failing agent run. See exactly where it diverged from a known-good run,
-  and what changed. Local, deterministic, no account."
+- **README hero:** "Point at a failing AI-agent run. amberfork aligns it against a known-good run, finds
+  the exact step where they diverged, and shows what changed — then, on a recorded run, confirms the
+  cause by replaying it with that step patched. All local, offline, no account."
 - **Mental-model teacher:** "Observability shows you what happened. amberfork shows you what *changed*."
 - **The intuition pump (use once, not as the headline):** "Like `git bisect`, but for agent runs."
 - **The depth claim (for the writeup):** "A move-typed sequence aligner that localizes the decisive step
