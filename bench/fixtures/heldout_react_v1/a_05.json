@@ -1,0 +1,72 @@
+{
+ "schema_version": "0.1",
+ "id": "react_tokyo__heldout__moon",
+ "task": "What is the population of Tokyo?",
+ "outcome": "fail",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Look up the population of Tokyo.\nAction: web_search[Tokyo population]"
+  },
+  {
+   "idx": 1,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "(retry) Thought: Look up the population of web_search[Tokyo population]"
+  },
+  {
+   "idx": 2,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Tokyo population",
+   "outputs": "Observation: Tokyo's population is about 13.96 million (city proper)."
+  },
+  {
+   "idx": 3,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: That is the city proper; the metro area differs.\nAction: web_search[Tokyo metropolitan area population]"
+  },
+  {
+   "idx": 4,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Tokyo metropolitan area population",
+   "outputs": "Observation: The Greater Tokyo Area has about 37 million people."
+  },
+  {
+   "idx": 5,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: City proper ~14M, metro ~37M. Confirm the city figure.\nAction: web_search[Tokyo city proper population 2023]"
+  },
+  {
+   "idx": 6,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Moon mean distance NASA 384400",
+   "outputs": "Observation: NASA lists the mean distance as 384,400 km."
+  },
+  {
+   "idx": 7,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Confirmed by NASA.\nAction: web_search[Moon distance light seconds]"
+  },
+  {
+   "idx": 8,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Moon distance light seconds",
+   "outputs": "Observation: Light takes about 1.28 seconds to cross it."
+  },
+  {
+   "idx": 9,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "Thought: I now have the answer.\nAnswer: The average Earth-Moon distance is about 384,400 km."
+  }
+ ]
+}

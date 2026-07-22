@@ -753,16 +753,29 @@ mod tests {
     /// content (proof the redaction ran over steps, not just the task field).
     #[test]
     fn committed_fixtures_carry_the_sanitizer_signature() {
+        // Fixtures that are NOT GAIA/Who&When-derived carry no redaction signature by design, so
+        // this licensing check does not apply to them. The exemption is deliberately opt-OUT and
+        // explicit: any new fixture is checked unless it is named here, so a genuinely GAIA-derived
+        // set can never slip the check merely by being named differently. Today's sole exemption is
+        // the synthetic ReAct generalization probe (issue #42; see its README for the provenance).
+        const NON_GAIA_FIXTURES: &[&str] = &["heldout_react_v1"];
+
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../bench/fixtures");
         let mut seed_dirs: Vec<PathBuf> = std::fs::read_dir(&root)
             .expect("bench/fixtures must exist")
             .map(|entry| entry.expect("readable dir entry").path())
             .filter(|path| path.is_dir())
+            .filter(|path| {
+                !path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|n| NON_GAIA_FIXTURES.contains(&n))
+            })
             .collect();
         seed_dirs.sort();
         assert!(
             seed_dirs.len() >= 3,
-            "expected the three committed seed dirs, found {seed_dirs:?}"
+            "expected at least the three committed GAIA seed dirs, found {seed_dirs:?}"
         );
 
         for dir in seed_dirs {

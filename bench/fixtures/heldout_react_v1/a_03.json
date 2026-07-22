@@ -1,0 +1,72 @@
+{
+ "schema_version": "0.1",
+ "id": "react_austen__heldout__currency",
+ "task": "Who wrote the novel Pride and Prejudice?",
+ "outcome": "fail",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Search for the author of Pride and Prejudice.\nAction: web_search[Pride and Prejudice author]"
+  },
+  {
+   "idx": 1,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "(retry) Thought: Search for the author of and Prejudice.\nAction: web_search[Pride and Prejudice author]"
+  },
+  {
+   "idx": 2,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Pride and Prejudice author",
+   "outputs": "Observation: Pride and Prejudice is a novel by Jane Austen."
+  },
+  {
+   "idx": 3,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: The author is Jane Austen. Confirm the publication year.\nAction: web_search[Pride and Prejudice publication year]"
+  },
+  {
+   "idx": 4,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "USD EUR exchange rate today",
+   "outputs": "Observation: 1 USD = 0.92 EUR."
+  },
+  {
+   "idx": 5,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: The rate is consistent. Compute the amount.\nAction: calculator[100 * 0.92]"
+  },
+  {
+   "idx": 6,
+   "kind": "tool",
+   "name": "calculator",
+   "inputs": "100 * 0.92",
+   "outputs": "Observation: 92.0"
+  },
+  {
+   "idx": 7,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: 100 USD is 92 EUR. Verify the conversion.\nAction: currency_convert[verify 100 USD 92 EUR]"
+  },
+  {
+   "idx": 8,
+   "kind": "tool",
+   "name": "currency_convert",
+   "inputs": "verify 100 USD 92 EUR",
+   "outputs": "Observation: Confirmed: 100 USD equals 92.0 EUR."
+  },
+  {
+   "idx": 9,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "Thought: I now have the answer.\nAnswer: 100 USD is approximately 92 EUR."
+  }
+ ]
+}

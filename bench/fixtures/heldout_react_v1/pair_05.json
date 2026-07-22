@@ -1,0 +1,13 @@
+{
+ "failing": "a_05.json",
+ "reference": "b_05.json",
+ "gold_step": 6,
+ "meta": {
+  "x": "tokyo",
+  "y": "moon",
+  "splice": 5,
+  "retry_pos": 1,
+  "shape": "react",
+  "synthetic": true
+ }
+}

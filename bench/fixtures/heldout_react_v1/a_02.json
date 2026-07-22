@@ -1,0 +1,72 @@
+{
+ "schema_version": "0.1",
+ "id": "react_interest__heldout__austen",
+ "task": "What is the compound interest on $1000 at 5% annually for 3 years?",
+ "outcome": "fail",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Compute compound interest with A = P(1+r)^n. Start with year one.\nAction: calculator[1000 * (1.05)^1]"
+  },
+  {
+   "idx": 1,
+   "kind": "tool",
+   "name": "calculator",
+   "inputs": "1000 * (1.05)^1",
+   "outputs": "Observation: 1050.0"
+  },
+  {
+   "idx": 2,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: After one year it is 1050. Continue to year two.\nAction: calculator[1000 * (1.05)^2]"
+  },
+  {
+   "idx": 3,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "(retry) Thought: After one year it is Continue to year two.\nAction: calculator[1000 *"
+  },
+  {
+   "idx": 4,
+   "kind": "tool",
+   "name": "calculator",
+   "inputs": "1000 * (1.05)^2",
+   "outputs": "Observation: 1102.5"
+  },
+  {
+   "idx": 5,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Year two gives 1102.5. Now year three.\nAction: calculator[1000 * (1.05)^3]"
+  },
+  {
+   "idx": 6,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Jane Austen Pride and Prejudice attribution",
+   "outputs": "Observation: Published anonymously, later attributed to Jane Austen."
+  },
+  {
+   "idx": 7,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Confirmed Jane Austen wrote it.\nAction: web_search[Jane Austen novels list]"
+  },
+  {
+   "idx": 8,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Jane Austen novels list",
+   "outputs": "Observation: Her novels include Sense and Sensibility, Pride and Prejudice, Emma."
+  },
+  {
+   "idx": 9,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "Thought: I now have the answer.\nAnswer: Pride and Prejudice was written by Jane Austen."
+  }
+ ]
+}

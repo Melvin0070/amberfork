@@ -1,0 +1,13 @@
+{
+ "failing": "a_01.json",
+ "reference": "b_01.json",
+ "gold_step": 5,
+ "meta": {
+  "x": "eiffel",
+  "y": "interest",
+  "splice": 4,
+  "retry_pos": 2,
+  "shape": "react",
+  "synthetic": true
+ }
+}

@@ -1,0 +1,66 @@
+{
+ "schema_version": "0.1",
+ "id": "react_interest",
+ "task": "What is the compound interest on $1000 at 5% annually for 3 years?",
+ "outcome": "pass",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Compute compound interest with A = P(1+r)^n. Start with year one.\nAction: calculator[1000 * (1.05)^1]"
+  },
+  {
+   "idx": 1,
+   "kind": "tool",
+   "name": "calculator",
+   "inputs": "1000 * (1.05)^1",
+   "outputs": "Observation: 1050.0"
+  },
+  {
+   "idx": 2,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: After one year it is 1050. Continue to year two.\nAction: calculator[1000 * (1.05)^2]"
+  },
+  {
+   "idx": 3,
+   "kind": "tool",
+   "name": "calculator",
+   "inputs": "1000 * (1.05)^2",
+   "outputs": "Observation: 1102.5"
+  },
+  {
+   "idx": 4,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Year two gives 1102.5. Now year three.\nAction: calculator[1000 * (1.05)^3]"
+  },
+  {
+   "idx": 5,
+   "kind": "tool",
+   "name": "calculator",
+   "inputs": "1000 * (1.05)^3",
+   "outputs": "Observation: 1157.625"
+  },
+  {
+   "idx": 6,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Final amount 1157.625; interest is amount minus principal.\nAction: calculator[1157.625 - 1000]"
+  },
+  {
+   "idx": 7,
+   "kind": "tool",
+   "name": "calculator",
+   "inputs": "1157.625 - 1000",
+   "outputs": "Observation: 157.625"
+  },
+  {
+   "idx": 8,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "Thought: I now have the answer.\nAnswer: The compound interest is about $157.63."
+  }
+ ]
+}

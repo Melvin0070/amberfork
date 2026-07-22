@@ -1,0 +1,66 @@
+{
+ "schema_version": "0.1",
+ "id": "react_moon",
+ "task": "What is the average distance from the Earth to the Moon?",
+ "outcome": "pass",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Search for the average Earth-Moon distance.\nAction: web_search[average Earth Moon distance]"
+  },
+  {
+   "idx": 1,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "average Earth Moon distance",
+   "outputs": "Observation: The average distance is about 384,400 km."
+  },
+  {
+   "idx": 2,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: 384,400 km is the mean; note the range too.\nAction: web_search[Earth Moon distance perigee apogee]"
+  },
+  {
+   "idx": 3,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Earth Moon distance perigee apogee",
+   "outputs": "Observation: It ranges from 363,300 km to 405,500 km."
+  },
+  {
+   "idx": 4,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Mean 384,400 km. Confirm with a primary source.\nAction: web_search[Moon mean distance NASA 384400]"
+  },
+  {
+   "idx": 5,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Moon mean distance NASA 384400",
+   "outputs": "Observation: NASA lists the mean distance as 384,400 km."
+  },
+  {
+   "idx": 6,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Confirmed by NASA.\nAction: web_search[Moon distance light seconds]"
+  },
+  {
+   "idx": 7,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Moon distance light seconds",
+   "outputs": "Observation: Light takes about 1.28 seconds to cross it."
+  },
+  {
+   "idx": 8,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "Thought: I now have the answer.\nAnswer: The average Earth-Moon distance is about 384,400 km."
+  }
+ ]
+}

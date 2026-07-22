@@ -1,0 +1,66 @@
+{
+ "schema_version": "0.1",
+ "id": "react_eiffel",
+ "task": "In what year was the Eiffel Tower completed?",
+ "outcome": "pass",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: I should find when the Eiffel Tower was completed.\nAction: web_search[Eiffel Tower completion year]"
+  },
+  {
+   "idx": 1,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Eiffel Tower completion year",
+   "outputs": "Observation: The Eiffel Tower was built from 1887 to 1889."
+  },
+  {
+   "idx": 2,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: 1889 is mentioned as the end of construction. Confirm the exact date.\nAction: web_search[Eiffel Tower inaugurated date]"
+  },
+  {
+   "idx": 3,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Eiffel Tower inaugurated date",
+   "outputs": "Observation: It was inaugurated on 31 March 1889."
+  },
+  {
+   "idx": 4,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Construction finished in 1889. Verify there was no later completion phase.\nAction: web_search[Eiffel Tower final completion 1889]"
+  },
+  {
+   "idx": 5,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Eiffel Tower final completion 1889",
+   "outputs": "Observation: Completed in 1889 for the World's Fair."
+  },
+  {
+   "idx": 6,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Multiple sources agree on 1889.\nAction: web_search[Eiffel Tower 1889 exposition]"
+  },
+  {
+   "idx": 7,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Eiffel Tower 1889 exposition",
+   "outputs": "Observation: Built as the arch to the 1889 Exposition Universelle."
+  },
+  {
+   "idx": 8,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "Thought: I now have the answer.\nAnswer: The Eiffel Tower was completed in 1889."
+  }
+ ]
+}

@@ -1,0 +1,66 @@
+{
+ "schema_version": "0.1",
+ "id": "react_austen",
+ "task": "Who wrote the novel Pride and Prejudice?",
+ "outcome": "pass",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Search for the author of Pride and Prejudice.\nAction: web_search[Pride and Prejudice author]"
+  },
+  {
+   "idx": 1,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Pride and Prejudice author",
+   "outputs": "Observation: Pride and Prejudice is a novel by Jane Austen."
+  },
+  {
+   "idx": 2,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: The author is Jane Austen. Confirm the publication year.\nAction: web_search[Pride and Prejudice publication year]"
+  },
+  {
+   "idx": 3,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Pride and Prejudice publication year",
+   "outputs": "Observation: It was first published in 1813."
+  },
+  {
+   "idx": 4,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Jane Austen, 1813. Verify the attribution.\nAction: web_search[Jane Austen Pride and Prejudice attribution]"
+  },
+  {
+   "idx": 5,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Jane Austen Pride and Prejudice attribution",
+   "outputs": "Observation: Published anonymously, later attributed to Jane Austen."
+  },
+  {
+   "idx": 6,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Confirmed Jane Austen wrote it.\nAction: web_search[Jane Austen novels list]"
+  },
+  {
+   "idx": 7,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Jane Austen novels list",
+   "outputs": "Observation: Her novels include Sense and Sensibility, Pride and Prejudice, Emma."
+  },
+  {
+   "idx": 8,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "Thought: I now have the answer.\nAnswer: Pride and Prejudice was written by Jane Austen."
+  }
+ ]
+}

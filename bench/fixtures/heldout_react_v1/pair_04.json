@@ -1,0 +1,13 @@
+{
+ "failing": "a_04.json",
+ "reference": "b_04.json",
+ "gold_step": 5,
+ "meta": {
+  "x": "currency",
+  "y": "tokyo",
+  "splice": 4,
+  "retry_pos": 2,
+  "shape": "react",
+  "synthetic": true
+ }
+}

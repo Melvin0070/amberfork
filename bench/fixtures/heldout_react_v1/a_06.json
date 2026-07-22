@@ -1,0 +1,73 @@
+{
+ "schema_version": "0.1",
+ "id": "react_moon__heldout__eiffel",
+ "task": "What is the average distance from the Earth to the Moon?",
+ "outcome": "fail",
+ "steps": [
+  {
+   "idx": 0,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Search for the average Earth-Moon distance.\nAction: web_search[average Earth Moon distance]"
+  },
+  {
+   "idx": 1,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "average Earth Moon distance",
+   "outputs": "Observation: The average distance is about 384,400 km."
+  },
+  {
+   "idx": 2,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "average Earth Moon distance",
+   "outputs": "(retry) Observation: The average distance is about km."
+  },
+  {
+   "idx": 3,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: 384,400 km is the mean; note the range too.\nAction: web_search[Earth Moon distance perigee apogee]"
+  },
+  {
+   "idx": 4,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Eiffel Tower inaugurated date",
+   "outputs": "Observation: It was inaugurated on 31 March 1889."
+  },
+  {
+   "idx": 5,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Construction finished in 1889. Verify there was no later completion phase.\nAction: web_search[Eiffel Tower final completion 1889]"
+  },
+  {
+   "idx": 6,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Eiffel Tower final completion 1889",
+   "outputs": "Observation: Completed in 1889 for the World's Fair."
+  },
+  {
+   "idx": 7,
+   "kind": "llm",
+   "name": "reason",
+   "outputs": "Thought: Multiple sources agree on 1889.\nAction: web_search[Eiffel Tower 1889 exposition]"
+  },
+  {
+   "idx": 8,
+   "kind": "tool",
+   "name": "web_search",
+   "inputs": "Eiffel Tower 1889 exposition",
+   "outputs": "Observation: Built as the arch to the 1889 Exposition Universelle."
+  },
+  {
+   "idx": 9,
+   "kind": "llm",
+   "name": "answer",
+   "outputs": "Thought: I now have the answer.\nAnswer: The Eiffel Tower was completed in 1889."
+  }
+ ]
+}

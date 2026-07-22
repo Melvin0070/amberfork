@@ -1711,3 +1711,56 @@ Next milestone unchanged: **v0.8 = the explain layer (#10, `amberfork-judge`)** 
 → **name**. Honest note logged: naming is the LLM-in-the-loop, most-co-invented part
 (lower-differentiation, lower-risk); #41 / #39 are arguably higher skeptic-leverage and worth
 sequencing right behind it.
+
+## 041 · 2026-07-23 · held-out generalization probe: frozen params on a different agent shape (#42)
+
+First slice of the re-scoped **v0.8 = the credibility pass** (milestones reshaped this session:
+v0.8 now = prove localization on data we did not construct — #42 → #39 → #41, plus #44; the explain
+layer #10/#40 moved to v0.9). Attacks the sharpest catch from 040: every strong number is on the
+Who&When-derived chimera family, so "the fork params generalize" is an *untested, load-bearing*
+assumption — τ=0.3 / resync_k=2 / gaps 0.6/0.3 were calibrated on that one family (notebook 001/007)
+and frozen since, never run against an unseen agent shape.
+
+**Method.** New held-out fixture `bench/fixtures/heldout_react_v1/` — six pairs in a deliberately
+different structural shape: a **single-agent ReAct tool loop** (`llm` think → `tool` act/observe →
+`llm` answer), where the chimera set is all multi-agent Magentic-One orchestration (`kind: agent`
+throughout). Built by the *same* mechanical injection as the chimera set (splice a reference prefix +
+a different task's suffix at a known `gold_step`, one duplicated `(retry)` step + token-dropout
+rewording on the shared prefix), so "gold fork" is defined by construction, not by peeking at the
+aligner. Frozen `DiffParams::default()` run **once**; whatever it scored is the finding — no tuning
+on this set. Test: `crates/amberfork-align/tests/heldout_generalization.rs`.
+
+**Result — frozen params generalize to the ReAct shape:**
+
+| metric | held-out ReAct (n=6) |
+|---|---|
+| exact | 5/6 |
+| ±1 | 5/6 |
+| ±3 | **6/6** |
+
+Per-pair: 01/02/04/05 exact; `pair_03` (austen→currency) fires a *model-only* fork (the fork move
+has no `b` side) that `fork_step_observed`'s fallback resolves to gold (exact); `pair_06`
+(moon→eiffel) is the one near-miss — localizes two steps early (predicted 2, gold 4), still inside
+±3. Reported, not hidden. The blind (all-identical) cost control localizes nothing, so the fixture
+discriminates. Test pins ±3 at the observed 6/6 (deterministic — no seed draw, unlike the chimera
+gate), mirroring `chimera_parity`'s pin-at-baseline convention: any drop out of ±3 is a red CI that
+forces a notebook entry, never a silent retune (#42 acceptance).
+
+**Honest caveat (the reason this is a first datapoint, not the answer).** The fixture is
+**synthetic and hand-authored**. Because we wrote it, we cannot fully rule out having made the fork
+findable — it is weaker evidence than a real third-party log, and it varies *shape*, not *provenance*.
+So this narrows the "tuned to one family" critique (the frozen rule does transfer to a structurally
+different trajectory without retuning) but does **not** touch the natural-data null (Mode A′, 016) —
+that is #41's job, and the genuinely-external different-framework version of this same probe arrives
+with the OpenInference/OTel adapter over TRAIL (#39). The probe *mechanism* built here is what #39/#41
+reuse: swap the fixture, keep the test.
+
+**Bench corpus notes.** The synthetic fixture forced two honest adjustments to amberfork-bench's
+corpus-wide invariants (both had globbed *all* of `bench/fixtures/` assuming GAIA-sanitized chimera
+pairs): (1) `pyjson` byte-for-byte round trip — dropped the generator's trailing newline so the
+files match `json.dumps(indent=1)`; they now *extend* the serializer-parity corpus rather than
+break it. (2) The `sanitize` licensing check (every `task` must be a GAIA redaction marker) — scoped
+with an explicit opt-**out** allowlist (`NON_GAIA_FIXTURES`), safe by default: a new fixture is
+checked unless deliberately exempted, so a real GAIA set can never slip the check by naming. The
+serializer itself was correct throughout — the 1-byte divergence was a fixture artifact, not an
+engine bug.
