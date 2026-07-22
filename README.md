@@ -87,12 +87,15 @@ params: bench/params.toml sha256:8ebd95ce8f3d · tau 0.3 · resync_k 2 · gap 0.
 | nw-lexical/resync | 0.75 [0.41, 0.93] exact | 0.88 ±1 | 1.00 ±3 | n=8 |  (dev, seed 42)
 ```
 
-Read it honestly: Wilson 95% intervals are wide at these n, and the test split is scored
-exactly once per release tag (protocol rule 2) — the next reveal comes with the next tag.
-(The v0.4.0 and v0.5.0 reveals reproduced these numbers identically on every arm and metric —
-`bench/results/*_test_v0.4.0.json` / `*_test_v0.5.0.json`, notebooks 021 and 037.) The claim the numbers support is the
-*shape* — content-aware alignment localizes within a few steps where position and structure
-do not.
+Read it honestly: these are **injected** forks — a controlled divergence spliced into real logs — so
+sustained divergence at the gold step is true *by construction*, which structurally favors the
+content-aware alignment arms. What the headline measures is the aligner's tolerance to benign noise
+around a known fork, not attribution on a *natural* failure (for that, see the Mode A′ null below).
+Wilson 95% intervals are wide at these n, and the test split is scored exactly once per release tag
+(protocol rule 2) — the next reveal comes with the next tag. (The v0.4.0 and v0.5.0 reveals reproduced
+these numbers identically on every arm and metric — `bench/results/*_test_v0.4.0.json` /
+`*_test_v0.5.0.json`, notebooks 021 and 037.) The claim the numbers support is the *shape* —
+content-aware alignment localizes within a few steps where position and structure do not.
 
 Reproduce the tables offline — they render from the committed results documents, zero fetch:
 

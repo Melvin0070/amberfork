@@ -479,9 +479,12 @@ natural place to reach for amberfork.)
 - **Replay can't re-derive the divergent path.** Response-cache replay reproduces the recorded path
   only; fork-finding is semantic/state-based, not byte-exact. Counterfactual re-execution needs record
   mode (owning execution).
-- **The benchmark is contestable no matter how honest.** The two-run aligner is handed a known-good
-  reference the single-trajectory baselines weren't, so the claim is an *asymmetry*, not a clean SOTA
-  win. Stated openly.
+- **The benchmark is contestable no matter how honest.** Two ways: (a) the two-run aligner is handed a
+  known-good reference the single-trajectory baselines weren't, so the headline claim is an *asymmetry*,
+  not a clean SOTA win; and (b) the primary fixtures are *injected* chimera forks, so sustained
+  divergence at the gold step is true by construction, which favors the alignment arms — the number is
+  noise-tolerance around a known fork, not attribution on a natural failure (the natural-pair Mode A′
+  slice is an honest null). Both stated openly.
 - **Standalone adoption will be a trickle.** Distribution belongs to incumbents; usage is a byproduct,
   not the goal. This doc treats that as a fact, not a problem to paper over.
 
