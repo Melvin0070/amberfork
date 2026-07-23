@@ -1828,3 +1828,75 @@ TapeAgents **implemented**) instead of listing all as informative. The design do
 crate — each adapter is a self-contained namespace over the shared model; no god-crate pressure
 here (unlike `amberfork-align`). The OTLP envelope reader is the first shared substrate between
 adapters; if a third OTLP-based adapter lands, factor it out then, not now.
+
+## 043 · 2026-07-23 · TRAIL ingest adapter — real external traces, a shared vocabulary seam (#41, v0.8 slice S1)
+
+First slice of **#41** (the natural-pair bench that isn't a null). #41 turned out to be a
+~5-slice mini-epic, not the "swap TRAIL into the Mode A′ pipeline via #39's adapter" one-liner the
+backlog assumed — a feasibility spike against the real repo (`patronus-ai/trail-benchmark`, MIT,
+ungated, ~28 MB) found three things that reshape the work:
+
+1. **Format mismatch.** TRAIL traces are the Patronus SDK's **nested** JSON (`{trace_id, spans:[…
+   child_spans …]}`), *not* the flat OTLP `resourceSpans→scopeSpans→spans` envelope #39 (042) built
+   — so `openinference::from_otlp_json_str` does not ingest TRAIL. But the deep spans carry the
+   *same* OpenInference vocabulary (`openinference.span.kind`, `input.value`/`output.value`,
+   `llm.*`, `tool.*`) in `span_attributes`. It is the mirror of #39's gen_ai sibling: there, *same
+   envelope, additive vocabulary*; here, *same vocabulary, different envelope*.
+2. **Gold is span-located and multi-error.** `processed_annotations_gaia/<id>.json` (in-repo,
+   ungated) gives `errors[].location = <span_id>` + category + impact, up to 9 per trace. Scoring
+   will need span-id → step-index and a predicted-∈-gold reading — deferred to S2/S5.
+3. **Single-trajectory.** No same-task duplicate run exists in TRAIL, so the *reference* problem
+   that nulled Mode A′ (016) is unchanged — a reference still has to come cross-system or from a
+   consensus. TRAIL improves provenance/N/length, not the reference. That is S4's hard part.
+
+**What shipped in S1 (the adapter only).** `amberfork_ingest::trail` — a Patronus trace tree → one
+canonical `Run`. The reuse was the point: the OpenInference **vocabulary** layer (kind/name/content
+mapping + the known-vs-foreign attribute split + step assembly) was extracted out of
+`openinference.rs` into a shared `oivocab` module, and both adapters now call it. `openinference`
+behaviour is byte-identical (its 20 tests unchanged, green) — this was a pure factor-out, the
+second-consumer trigger notebook 042 named (it flagged the OTLP *envelope* as the first shared
+substrate; the *vocabulary* is the second, and TRAIL is what earned it). `trail` owns only the
+envelope: a pre-order DFS over `child_spans` (which *is* execution order for a single-SDK tree —
+no timestamp re-sort, no time dependency), `parent_idx` from the nesting, `kind` from the
+`openinference.span.kind` attribute never the wire `span_kind` (always `"Internal"`), RFC3339
+`timestamp` → `t_start` (native — TRAIL gives real RFC3339, unlike #39's raw nanos), and the source
+`span_id` retained in `attrs["otel.span_id"]` so S2 can resolve an annotation's span-located gold to
+a step.
+
+**Architecture rule held again.** TRAIL spans carry a `status_code` (`Error`); the adapter never
+reads it — `outcome` stays `None`. A run's verdict is a user assertion, not inferred from span
+status (POSITIONING §187, trace-format.md). A test pins it (`status_code: "Error"` → `outcome ==
+None`).
+
+**Tests (7, mirroring the whowhen/tape/openinference discipline):** tree flatten to pre-order steps
++ parent wiring under nesting; kind from the attribute not the wire kind; `tool.name` name
+override; mime-driven content typing; foreign (`pat.*`/`smolagents.*`) vs known (`llm.*`) attribute
+split + warning; content-absent advisory; span_id + `t_start` provenance retention; the canonical
+round-trip guard; empty-trace and parse-error paths. Full gate green (smoke + fmt + clippy
+`-D warnings` + `cargo test --workspace`).
+
+**Fixture provenance — honest, and the real-bytes check.** The committed fixture is **spec-faithful
+hand-authored** (no GAIA content — real TRAIL traces embed gated GAIA questions/answers, never
+committed; same call as #39/042). To prove the adapter parses genuine bytes anyway, a *throwaway*
+check (deleted, not committed) ran two real fetched traces through it: an 11-step and a 46-step run
+normalized cleanly — 100% span-id retention, `parent_idx` nested to depth 42, kinds distributed
+`{agent, llm, tool, other}`, `t_start` on every step. Two things that matter downstream: (a) these
+are **much longer** than the 7–10-step Who&When logs that nulled at ±3 in 016 — a ±3 window no
+longer swamps the run, which is the pre-registered reason #41 *could* separate from random this
+time; (b) the committed real-bytes parse test belongs in S3 (the `fetch` pin), where the ingest
+crate's std-fs-only purity isn't compromised by a network dep — it is not in S1.
+
+**Watch-item (for S3).** Every Patronus span carries `pat.*` platform attrs, so on real traces the
+`unmapped-attributes` advisory fires on **every** step (one warning/step). It is honest (those
+attrs *are* foreign to the OpenInference vocabulary) and advisory-only, but it is noise at scale;
+if S3/S4 wants it quieter, add a TRAIL-scoped silent prefix rather than polluting the shared
+`oivocab` vocabulary. Left as-is in S1 for consistency with #39 — not gold-plated ahead of the need.
+
+**Watch-item update (040 #1 / 042).** `amberfork-ingest` now has five adapters but is still thin;
+the new `oivocab` is the first *shared* substrate between two of them, extracted exactly when the
+second consumer arrived rather than speculatively. No god-crate pressure here (unlike
+`amberfork-align`).
+
+**Next (S2):** parse `processed_annotations_gaia/<id>.json` → resolve `errors[].location` span-ids
+to step indices via the retained `attrs["otel.span_id"]`, returning gold *beside* the run (the
+whowhen/tape convention), never merged in.

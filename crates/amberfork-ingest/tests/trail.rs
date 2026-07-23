@@ -1,0 +1,259 @@
+//! TRAIL adapter tests: a real-shaped Patronus-SDK trace tree (the wire format of the
+//! `patronus-ai/trail-benchmark` GAIA traces) becomes a canonical [`amberfork_model::Run`]. The
+//! fixture exercises every mapping branch the adapter must handle:
+//! - a nested `child_spans` tree flattened in pre-order, with `parent_idx` wired from the nesting;
+//! - the semantic kind read from `span_attributes["openinference.span.kind"]`, NOT the wire
+//!   `span_kind` (which every Patronus span reports as `"Internal"`);
+//! - a `TOOL` span named by its `tool.name`, not its `span_name`;
+//! - `input.value`/`output.value` honoring `*.mime_type` (JSON → field-diffable object, else text);
+//! - Patronus/framework attributes (`pat.*`, `smolagents.*`) preserved to `attrs` and surfaced as
+//!   an unmapped-attributes warning, while OpenInference vocabulary (`llm.*`, `openinference.*`)
+//!   rides silently;
+//! - a content-free span degrading to a metadata-only step plus a content-absent advisory;
+//! - the source `span_id` retained in `attrs["otel.span_id"]` and the RFC3339 `timestamp` landing
+//!   in `t_start`, so a later slice can resolve an error annotation's span id to a step.
+//!
+//! A `status_code` of `Error` on one span asserts the architecture rule: `outcome` is never
+//! inferred from span status.
+
+use amberfork_ingest::trail;
+use amberfork_model::{Payload, StepKind, WarningCode};
+
+/// A spec-faithful TRAIL/Patronus trace tree: a root `main` span (no OpenInference kind → Other)
+/// with an `AGENT` child that itself has three children — an `LLM` call, a `TOOL` call, and a
+/// content-free span. Attribute values are plain JSON (TRAIL does not use the OTLP `AnyValue` wire
+/// shape). No GAIA question/answer content appears — real TRAIL traces embed gated GAIA data and
+/// are never committed.
+const TRAIL_TRACE: &str = r#"{
+  "trace_id": "trace-gaia-0001",
+  "spans": [
+    {
+      "span_id": "root0000",
+      "parent_span_id": null,
+      "span_name": "main",
+      "span_kind": "Internal",
+      "status_code": "Unset",
+      "timestamp": "2025-03-19T16:40:46.830526Z",
+      "duration": "PT24.688187S",
+      "span_attributes": {
+        "pat.app": "GAIA-Samples",
+        "pat.project.id": "a69d64fc"
+      },
+      "child_spans": [
+        {
+          "span_id": "agent001",
+          "parent_span_id": "root0000",
+          "span_name": "CodeAgent.run",
+          "span_kind": "Internal",
+          "status_code": "Error",
+          "timestamp": "2025-03-19T16:40:47.204950Z",
+          "span_attributes": {
+            "openinference.span.kind": "AGENT",
+            "input.mime_type": "text/plain",
+            "input.value": "Find the capital of France",
+            "llm.token_count.total": 512,
+            "smolagents.max_steps": 6,
+            "pat.app": "GAIA-Samples"
+          },
+          "child_spans": [
+            {
+              "span_id": "llm00001",
+              "parent_span_id": "agent001",
+              "span_name": "LiteLLMModel.__call__",
+              "span_kind": "Internal",
+              "status_code": "Unset",
+              "timestamp": "2025-03-19T16:40:47.300000Z",
+              "span_attributes": {
+                "openinference.span.kind": "LLM",
+                "llm.model_name": "gpt-4o",
+                "input.mime_type": "application/json",
+                "input.value": "{\"messages\":[{\"role\":\"user\",\"content\":\"Find the capital of France\"}]}",
+                "output.mime_type": "text/plain",
+                "output.value": "Let me search."
+              },
+              "child_spans": []
+            },
+            {
+              "span_id": "tool0001",
+              "parent_span_id": "agent001",
+              "span_name": "tool_call",
+              "span_kind": "Internal",
+              "status_code": "Unset",
+              "timestamp": "2025-03-19T16:40:48.100000Z",
+              "span_attributes": {
+                "openinference.span.kind": "TOOL",
+                "tool.name": "web_search",
+                "input.mime_type": "application/json",
+                "input.value": "{\"query\":\"capital of France\"}",
+                "output.value": "Paris"
+              },
+              "child_spans": []
+            },
+            {
+              "span_id": "empty001",
+              "parent_span_id": "agent001",
+              "span_name": "postprocess",
+              "span_kind": "Internal",
+              "status_code": "Unset",
+              "timestamp": "2025-03-19T16:40:48.500000Z",
+              "span_attributes": {
+                "openinference.span.kind": "CHAIN"
+              },
+              "child_spans": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}"#;
+
+#[test]
+fn tree_flattens_pre_order_with_parents_and_the_trace_id_as_run_id() {
+    let ingested = trail::from_trace_json_str(TRAIL_TRACE).unwrap();
+    let run = &ingested.run;
+
+    assert_eq!(run.id, "trace-gaia-0001");
+    // Pre-order DFS: root, then its AGENT child, then that agent's three children in order.
+    assert_eq!(run.steps.len(), 5);
+
+    let names: Vec<&str> = run.steps.iter().map(|s| s.name.as_str()).collect();
+    assert_eq!(
+        names,
+        [
+            "main",
+            "CodeAgent.run",
+            "LiteLLMModel.__call__",
+            "web_search", // named by tool.name, not its span_name "tool_call"
+            "postprocess"
+        ]
+    );
+
+    // Steps are indexed 0..n in the walk order; parent_idx comes from the tree nesting.
+    let idxs: Vec<usize> = run.steps.iter().map(|s| s.idx).collect();
+    assert_eq!(idxs, [0, 1, 2, 3, 4]);
+    let parents: Vec<Option<usize>> = run.steps.iter().map(|s| s.parent_idx).collect();
+    assert_eq!(parents, [None, Some(0), Some(1), Some(1), Some(1)]);
+
+    // Semantic kind is the OpenInference attribute, never the wire span_kind ("Internal"). The
+    // root has none (→ Other); CHAIN is outside the canonical four (→ Other).
+    let kinds: Vec<StepKind> = run.steps.iter().map(|s| s.kind).collect();
+    assert_eq!(
+        kinds,
+        [
+            StepKind::Other,
+            StepKind::Agent,
+            StepKind::Llm,
+            StepKind::Tool,
+            StepKind::Other
+        ]
+    );
+
+    // The architecture rule: a run's verdict is a user assertion, never inferred from span status —
+    // the AGENT span's status_code "Error" must not become an Outcome.
+    assert_eq!(run.outcome, None);
+}
+
+#[test]
+fn content_honors_mime_and_provenance_is_retained() {
+    let ingested = trail::from_trace_json_str(TRAIL_TRACE).unwrap();
+    let steps = &ingested.run.steps;
+
+    // AGENT: a text/plain input becomes a Text payload; no output was captured.
+    assert_eq!(
+        steps[1].inputs,
+        Some(Payload::Text("Find the capital of France".to_string()))
+    );
+    assert_eq!(steps[1].outputs, None);
+
+    // LLM: an application/json input parses into a field-diffable Object; text/plain output is Text.
+    match steps[2].inputs.as_ref().expect("llm input present") {
+        Payload::Object(map) => assert!(map.contains_key("messages")),
+        other => panic!("expected an Object input payload, got {other:?}"),
+    }
+    assert_eq!(
+        steps[2].outputs,
+        Some(Payload::Text("Let me search.".to_string()))
+    );
+
+    // The source span id is retained for annotation → step resolution, and the RFC3339 timestamp
+    // lands natively in t_start (display-only, never an alignment signal).
+    assert_eq!(
+        steps[3].attrs.get("otel.span_id").and_then(|v| v.as_str()),
+        Some("tool0001")
+    );
+    assert_eq!(
+        steps[0].t_start.as_deref(),
+        Some("2025-03-19T16:40:46.830526Z")
+    );
+    // Duration is preserved as display-only provenance.
+    assert_eq!(
+        steps[0].attrs.get("otel.duration").and_then(|v| v.as_str()),
+        Some("PT24.688187S")
+    );
+}
+
+#[test]
+fn foreign_attrs_are_flagged_and_openinference_vocab_rides_silently() {
+    let ingested = trail::from_trace_json_str(TRAIL_TRACE).unwrap();
+
+    // The AGENT span carries pat.* and smolagents.* (foreign) plus llm.* (known). Only the foreign
+    // ones are named in a single unmapped-attributes warning for that step.
+    let agent_warning = ingested
+        .warnings
+        .iter()
+        .find(|w| w.code == WarningCode::UnmappedAttributes && w.msg.contains("CodeAgent.run"))
+        .expect("agent step raises an unmapped-attributes warning");
+    assert!(agent_warning.msg.contains("pat.app"));
+    assert!(agent_warning.msg.contains("smolagents.max_steps"));
+    assert!(
+        !agent_warning.msg.contains("llm.token_count"),
+        "known OpenInference vocabulary must not be flagged as foreign"
+    );
+
+    // Both known and foreign attributes are still preserved to attrs — nothing is dropped.
+    let agent = &ingested.run.steps[1];
+    assert!(agent.attrs.contains_key("llm.token_count.total"));
+    assert!(agent.attrs.contains_key("smolagents.max_steps"));
+    assert!(agent.attrs.contains_key("pat.app"));
+}
+
+#[test]
+fn content_free_span_degrades_to_metadata_only_with_an_advisory() {
+    let ingested = trail::from_trace_json_str(TRAIL_TRACE).unwrap();
+
+    let postprocess = &ingested.run.steps[4];
+    assert_eq!(postprocess.inputs, None);
+    assert_eq!(postprocess.outputs, None);
+    assert!(
+        ingested
+            .warnings
+            .iter()
+            .any(|w| w.code == WarningCode::ContentAbsent && w.msg.contains("postprocess")),
+        "a content-free span raises a content-absent advisory"
+    );
+}
+
+#[test]
+fn normalized_run_round_trips_through_the_canonical_loader() {
+    // The canonical guard: a TRAIL-normalized run must re-serialize and re-load through the plain
+    // JSON loader unchanged — proof the adapter lands squarely in the canonical model.
+    let ingested = trail::from_trace_json_str(TRAIL_TRACE).unwrap();
+    let json = serde_json::to_string(&ingested.run).expect("run serializes");
+    let reloaded = amberfork_ingest::from_json_str(&json).expect("canonical reload");
+    assert_eq!(reloaded.run, ingested.run);
+}
+
+#[test]
+fn a_trace_with_no_spans_yields_a_run_with_no_steps() {
+    let ingested = trail::from_trace_json_str(r#"{"trace_id": "empty", "spans": []}"#).unwrap();
+    assert_eq!(ingested.run.id, "empty");
+    assert!(ingested.run.steps.is_empty());
+    assert!(ingested.warnings.is_empty());
+}
+
+#[test]
+fn malformed_json_is_a_parse_error() {
+    let err = trail::from_trace_json_str("{not json").expect_err("malformed input must fail");
+    assert!(matches!(err, amberfork_ingest::IngestError::Parse { .. }));
+}

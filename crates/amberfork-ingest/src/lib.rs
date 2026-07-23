@@ -40,7 +40,14 @@ const CONVERSION_GUIDE_URL: &str = concat!(
 /// onto [`Run`]; each is namespaced so its quirks stay isolated from the canonical format.
 pub mod openinference;
 pub mod tape;
+pub mod trail;
 pub mod whowhen;
+
+/// The OpenInference **vocabulary** layer, shared by the `openinference` (OTLP envelope) and
+/// `trail` (Patronus tree envelope) adapters: the span-attribute → canonical-[`Step`] mapping,
+/// independent of how spans are found on the wire. Crate-internal — adapters call it, callers
+/// use the adapters.
+mod oivocab;
 
 /// A loaded run together with any non-fatal diagnostics raised while normalizing it. The
 /// warnings flow onward into [`amberfork_model::DiffResult::warnings`].

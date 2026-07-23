@@ -80,6 +80,16 @@ subset today, not a blanket claim.
 - **OTel GenAI** (native `gen_ai.*` spans) — **planned** (next slice). Same OTLP/JSON envelope as
   the OpenInference adapter, different attribute vocabulary: `gen_ai.operation.name` → `kind`/`name`,
   opt-in content events → `inputs`/`outputs` (absent content ⇒ metadata-only step + banner).
+- **TRAIL / Patronus trace trees** — **implemented** (`amberfork_ingest::trail`, one `Run` per
+  trace file). A *different envelope* — a nested `child_spans` tree, not a flat OTLP export — over
+  the *same* OpenInference vocabulary, so it shares the mapping above (`openinference.span.kind` →
+  `kind`, `tool.name` → `name`, `input.value`/`output.value` + `*.mime_type` → `inputs`/`outputs`,
+  foreign attrs → `attrs` + `unmapped-attributes` warning, `outcome` never from `status_code`).
+  Envelope specifics: steps ordered by a pre-order walk of the tree (which *is* execution order for
+  a single-SDK trace) with `parent_idx` from the nesting; semantic `kind` from the attribute, never
+  the wire `span_kind` (always `"Internal"`); RFC3339 `timestamp` → `t_start`; the source `span_id`
+  is retained in `attrs` (`otel.span_id`) so a TRAIL error annotation's span-located `location` can
+  be resolved to a step by the benchmark layer.
 - **Who&When failure logs** — **implemented** (`amberfork_ingest::whowhen`): each history entry →
   one step; entry name/role → `name` with `kind=agent`; entry content → `outputs`; the dataset's
   blame annotation is returned *beside* the run as gold, never merged into it.
