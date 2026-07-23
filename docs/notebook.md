@@ -1900,3 +1900,53 @@ second consumer arrived rather than speculatively. No god-crate pressure here (u
 **Next (S2):** parse `processed_annotations_gaia/<id>.json` → resolve `errors[].location` span-ids
 to step indices via the retained `attrs["otel.span_id"]`, returning gold *beside* the run (the
 whowhen/tape convention), never merged in.
+
+## 044 · 2026-07-23 · TRAIL gold annotations parsed + resolved to steps (#41, v0.8 slice S2)
+
+Second slice of #41. S1 (043) retained each span's `span_id` in `attrs["otel.span_id"]`; S2 turns
+that into gold. `amberfork_ingest::trail` now parses a TRAIL error-annotation file
+(`processed_annotations_gaia/<id>.json`) into a `TrailGold` — the trace's errors, each with its
+taxonomy `category`, its span-located `location`, and a typed `Impact` — and `TrailGold::resolve(&
+run)` maps every `location` span id to a step index via the retained provenance, returning one
+`GoldStep` per error in file order. Gold lives *beside* the run, never merged (the `tape`/`whowhen`
+convention); the `otel.span_id` join key stays an internal detail of the adapter, so the bench layer
+(S4/S5) asks for gold by calling `resolve`, not by knowing the magic attribute.
+
+**Schema, confirmed against the real repo before building** (117 GAIA annotation files, MIT):
+`errors[]` may be empty (a trace the annotators cleared — no gold fork, a candidate *reference* not
+a failing side); `location` is always a single span-id string; `impact` is the closed vocabulary
+`{LOW, MEDIUM, HIGH}`. `Impact` is therefore a typed enum, with `Impact::Other(String)` preserving
+any out-of-vocabulary value losslessly rather than failing the parse — the forgiving-input contract
+the crate holds everywhere. `category` stays a `String` (TRAIL's taxonomy is free-ish text carried
+through for per-category coverage in S5, not a control-flow value worth an enum guess). The
+annotation file's `scores`/`evidence`/`description` fields are human context the benchmark does not
+read and are ignored, never a parse failure.
+
+**Tests (4, extending `tests/trail.rs` so the gold resolves against the S1 fixture's real span
+ids):** typed-impact + file-order parse with a lossless `Other`; span-id → step resolution
+(`agent001`→1, `tool0001`→3, `root0000`→0) with an unresolvable `ghost999`→`None` (data, rule 4);
+an empty-`errors` clean trace → empty gold; malformed-JSON parse error. Full gate green (smoke +
+fmt + clippy `-D warnings` + `cargo test --workspace`).
+
+**Real-bytes join — exact.** A throwaway check (deleted, not committed) ran two real fetched
+trace+annotation pairs through `load_file` + `load_annotations` + `resolve`: the 11-step trace's one
+error resolved to step 6; the 46-step trace's nine errors resolved to steps 14/23/31/33/34/36/37/37/
+43 — **100% resolution, no unresolvable span ids**. Two things this settles: (a) the span-id join is
+real, not just fixture-shaped — annotation `location`s are genuine trace span ids; (b) the gold is
+**distributed through the run**, not clustered at the end or pinned at step 0 (the murk that made the
+short cross-system Mode A′ null in 016). On a 46-step trace with gold at 14–43, a ±3 window covers a
+small fraction of the run — random is weak, and a real localizer has room to separate. That is the
+pre-registered reason #41 *could* be non-null; S4/S5 will measure whether it is.
+
+**Multi-error, and what S5 must decide.** A TRAIL trace carries up to 13 errors (median a few); the
+9-error trace even had two at the same step. amberfork predicts *one* fork. So S5 owns a
+pre-registered metric choice: score the prediction against the *earliest* resolved gold step (first
+decisive divergence — matches the "first meaningful divergence" hypothesis) and/or predicted-∈-gold
+(any annotated error), always windowed and reported per BENCHMARK.md. S2 deliberately returns the
+full ordered `Vec<GoldStep>` and makes no such choice — the seam stays honest.
+
+**Still ahead.** S3 = `fetch` pin for TRAIL (traces + annotations) + the committed real-bytes
+network test the ingest crate's std-fs purity keeps out of S1/S2. S4 = the hard, uncertain part —
+sourcing a *reference* run per failing TRAIL trace (single-trajectory means the reference is
+cross-system or a consensus; the 016 wall is unchanged). S5 = scoring + committed results doc +
+`report` snapshot + the honest null-or-not writeup.

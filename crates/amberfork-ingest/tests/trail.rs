@@ -257,3 +257,113 @@ fn malformed_json_is_a_parse_error() {
     let err = trail::from_trace_json_str("{not json").expect_err("malformed input must fail");
     assert!(matches!(err, amberfork_ingest::IngestError::Parse { .. }));
 }
+
+// --- Gold annotations (S2) ------------------------------------------------------------------
+//
+// A TRAIL error-annotation file (`processed_annotations_gaia/<id>.json`) locates each decisive
+// error at a span id. These tests reuse the `TRAIL_TRACE` fixture above so the span ids resolve
+// against a real normalized run: `agent001` → step 1, `tool0001` → step 3, and so on. One error
+// points at a span id the run does not contain, and one carries an out-of-vocabulary impact.
+
+/// A spec-faithful annotation for `TRAIL_TRACE`: three errors that resolve (agent, tool, root),
+/// one that does not (`ghost999`), and one with an unexpected impact. The `scores` block mirrors
+/// the real files and must be ignored, not fail the parse.
+const TRAIL_ANNOTATIONS: &str = r#"{
+  "trace_id": "trace-gaia-0001",
+  "errors": [
+    {
+      "category": "Instruction Non-compliance",
+      "location": "agent001",
+      "evidence": "missing <end_plan> tag",
+      "description": "plan not terminated as instructed",
+      "impact": "LOW"
+    },
+    {
+      "category": "Poor Information Retrieval",
+      "location": "tool0001",
+      "evidence": "tool returned an unrelated result",
+      "description": "search did not match the query",
+      "impact": "MEDIUM"
+    },
+    {
+      "category": "Goal Deviation",
+      "location": "root0000",
+      "evidence": "drifted from the task",
+      "description": "top-level goal abandoned",
+      "impact": "HIGH"
+    },
+    {
+      "category": "Tool-related",
+      "location": "ghost999",
+      "evidence": "references a span not in this run",
+      "description": "unresolvable location",
+      "impact": "CRITICAL"
+    }
+  ],
+  "scores": [
+    { "reliability_score": 3, "overall": 3.5 }
+  ]
+}"#;
+
+#[test]
+fn annotations_parse_with_typed_impact_and_file_order() {
+    let gold = trail::annotations_from_json_str(TRAIL_ANNOTATIONS).unwrap();
+
+    assert_eq!(gold.trace_id, "trace-gaia-0001");
+    assert_eq!(gold.errors.len(), 4);
+
+    // File order is preserved, category is carried, and the closed impact vocabulary is typed —
+    // with an out-of-vocabulary value kept losslessly rather than dropped or failing the parse.
+    let impacts: Vec<&trail::Impact> = gold.errors.iter().map(|e| &e.impact).collect();
+    assert_eq!(
+        impacts,
+        [
+            &trail::Impact::Low,
+            &trail::Impact::Medium,
+            &trail::Impact::High,
+            &trail::Impact::Other("CRITICAL".to_string()),
+        ]
+    );
+    assert_eq!(gold.errors[0].category, "Instruction Non-compliance");
+    assert_eq!(gold.errors[1].location, "tool0001");
+}
+
+#[test]
+fn resolve_maps_span_ids_to_step_indices_and_flags_the_unresolvable() {
+    let run = trail::from_trace_json_str(TRAIL_TRACE).unwrap().run;
+    let gold = trail::annotations_from_json_str(TRAIL_ANNOTATIONS).unwrap();
+
+    let resolved = gold.resolve(&run);
+    assert_eq!(resolved.len(), 4);
+
+    // Each error's span-located gold resolves to the step index the adapter assigned it: agent001
+    // is step 1, tool0001 is step 3, root0000 is step 0. `ghost999` is absent from the run, so it
+    // resolves to None — data, per protocol rule 4, never a silent drop.
+    let steps: Vec<Option<usize>> = resolved.iter().map(|g| g.step).collect();
+    assert_eq!(steps, [Some(1), Some(3), Some(0), None]);
+
+    // Category and impact ride through resolution for later per-category coverage.
+    assert_eq!(resolved[1].category, "Poor Information Retrieval");
+    assert_eq!(resolved[2].impact, trail::Impact::High);
+    assert_eq!(resolved[3].location, "ghost999");
+}
+
+#[test]
+fn a_clean_trace_has_empty_gold() {
+    // A trace the annotators found no fault in has an empty `errors` array — a valid file, and a
+    // run with no gold fork (a candidate reference, not a failing side).
+    let gold =
+        trail::annotations_from_json_str(r#"{"trace_id": "clean", "errors": [], "scores": []}"#)
+            .unwrap();
+    assert_eq!(gold.trace_id, "clean");
+    assert!(gold.errors.is_empty());
+
+    let run = trail::from_trace_json_str(TRAIL_TRACE).unwrap().run;
+    assert!(gold.resolve(&run).is_empty());
+}
+
+#[test]
+fn malformed_annotations_are_a_parse_error() {
+    let err = trail::annotations_from_json_str("{not json").expect_err("malformed input must fail");
+    assert!(matches!(err, amberfork_ingest::IngestError::Parse { .. }));
+}

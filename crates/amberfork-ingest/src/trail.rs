@@ -31,6 +31,7 @@ use crate::{IngestError, Ingested, oivocab};
 use amberfork_model::{Run, SchemaVersion, Step, Warning};
 use serde::Deserialize;
 use serde_json::{Map, Value};
+use std::collections::HashMap;
 use std::path::Path;
 
 /// Parse a TRAIL/Patronus trace tree into one canonical [`Run`].
@@ -58,6 +59,125 @@ pub fn load_file(path: impl AsRef<Path>) -> Result<Ingested, IngestError> {
         source,
     })?;
     from_trace_json_str(&text).map_err(|err| err.with_path(path))
+}
+
+// --- Gold annotations -----------------------------------------------------------------------
+//
+// TRAIL ships error annotations *beside* the traces, one `processed_annotations_gaia/<id>.json`
+// per trace: a list of decisive errors, each located at a span id. This is the gold a benchmark
+// scores a fork prediction against. Like the `tape`/`whowhen` gold, it is parsed and returned
+// beside the run — never merged into the trajectory, which is the run's own identity — and the
+// span id → step index join is done here (via the `otel.span_id` the adapter retained) so the
+// `otel.span_id` provenance key stays an internal detail of this adapter.
+
+/// The impact an annotator assigned an error. A closed vocabulary in the dataset (`LOW`/`MEDIUM`/
+/// `HIGH`), kept typed — with [`Impact::Other`] preserving any out-of-vocabulary value losslessly
+/// rather than failing the parse, matching the crate's forgiving-input contract.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Impact {
+    Low,
+    Medium,
+    High,
+    /// An impact value outside the known vocabulary, preserved verbatim.
+    Other(String),
+}
+
+impl Impact {
+    fn from_raw(raw: &str) -> Self {
+        match raw.to_ascii_uppercase().as_str() {
+            "LOW" => Self::Low,
+            "MEDIUM" => Self::Medium,
+            "HIGH" => Self::High,
+            _ => Self::Other(raw.to_string()),
+        }
+    }
+}
+
+/// One TRAIL error annotation: a decisive error the annotators located at a span, with its
+/// taxonomy category and impact. `location` is a source span id — resolve it to a step index with
+/// [`TrailGold::resolve`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TrailError {
+    /// The error taxonomy category (free text — TRAIL's taxonomy, e.g. `Instruction
+    /// Non-compliance`), carried through for per-category coverage reporting.
+    pub category: String,
+    /// The source span id the error is attributed to.
+    pub location: String,
+    /// The annotator's impact rating.
+    pub impact: Impact,
+}
+
+/// The TRAIL gold for one trace: the annotated errors, in annotation-file order. Kept beside the
+/// run, never merged — a run's trajectory is its identity; the benchmark bookkeeping rides
+/// alongside, exactly as the `tape`/`whowhen` gold does.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TrailGold {
+    pub trace_id: String,
+    pub errors: Vec<TrailError>,
+}
+
+/// One error resolved against a run: the step index its span id maps to (`None` when that span is
+/// absent from the run), with the category and impact carried for later per-category scoring.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GoldStep {
+    /// The step index this error's span id resolved to, or `None` if the run has no such span.
+    pub step: Option<usize>,
+    pub category: String,
+    pub location: String,
+    pub impact: Impact,
+}
+
+/// Parse a TRAIL error-annotation file into the gold for one trace.
+///
+/// # Errors
+/// Returns [`IngestError::Parse`] if the string is not valid annotation JSON. An empty `errors`
+/// array is valid — a trace the annotators found no fault in has no gold fork.
+pub fn annotations_from_json_str(s: &str) -> Result<TrailGold, IngestError> {
+    let raw: RawAnnotations =
+        serde_json::from_str(s).map_err(|source| IngestError::Parse { path: None, source })?;
+    Ok(raw.into_gold())
+}
+
+/// Load a TRAIL error-annotation file from disk.
+///
+/// # Errors
+/// Returns [`IngestError::Io`] if the file cannot be read, or [`IngestError::Parse`] (with the path
+/// attached) if its contents are not valid annotation JSON.
+pub fn load_annotations(path: impl AsRef<Path>) -> Result<TrailGold, IngestError> {
+    let path = path.as_ref();
+    let text = std::fs::read_to_string(path).map_err(|source| IngestError::Io {
+        path: path.to_path_buf(),
+        source,
+    })?;
+    annotations_from_json_str(&text).map_err(|err| err.with_path(path))
+}
+
+impl TrailGold {
+    /// Resolve each error's span id to a step index in `run`, via the `otel.span_id` provenance the
+    /// adapter retained on every step. Returns one [`GoldStep`] per error in file order; a span id
+    /// absent from the run resolves to `None` (data, per protocol rule 4 — never a silent drop).
+    #[must_use]
+    pub fn resolve(&self, run: &Run) -> Vec<GoldStep> {
+        let idx_of: HashMap<&str, usize> = run
+            .steps
+            .iter()
+            .filter_map(|step| {
+                step.attrs
+                    .get("otel.span_id")
+                    .and_then(Value::as_str)
+                    .map(|span_id| (span_id, step.idx))
+            })
+            .collect();
+        self.errors
+            .iter()
+            .map(|error| GoldStep {
+                step: idx_of.get(error.location.as_str()).copied(),
+                category: error.category.clone(),
+                location: error.location.clone(),
+                impact: error.impact.clone(),
+            })
+            .collect()
+    }
 }
 
 /// One span flattened out of the tree: its assigned index, its parent's index (from the nesting),
@@ -183,4 +303,43 @@ struct RawTrailSpan {
     span_attributes: Map<String, Value>,
     #[serde(default)]
     child_spans: Vec<RawTrailSpan>,
+}
+
+/// A TRAIL annotation file: the trace's errors plus a `scores` block. Only the errors are read;
+/// `scores` and any other field are ignored by serde, never a parse failure.
+#[derive(Deserialize)]
+struct RawAnnotations {
+    #[serde(default)]
+    trace_id: String,
+    #[serde(default)]
+    errors: Vec<RawError>,
+}
+
+impl RawAnnotations {
+    fn into_gold(self) -> TrailGold {
+        TrailGold {
+            trace_id: self.trace_id,
+            errors: self
+                .errors
+                .into_iter()
+                .map(|error| TrailError {
+                    impact: Impact::from_raw(&error.impact),
+                    category: error.category,
+                    location: error.location,
+                })
+                .collect(),
+        }
+    }
+}
+
+/// One raw error annotation. `evidence`/`description` are human context the benchmark does not
+/// read, so they are ignored; only the category, its span-located `location`, and impact are kept.
+#[derive(Deserialize)]
+struct RawError {
+    #[serde(default)]
+    category: String,
+    #[serde(default)]
+    location: String,
+    #[serde(default)]
+    impact: String,
 }

@@ -88,8 +88,11 @@ subset today, not a blanket claim.
   Envelope specifics: steps ordered by a pre-order walk of the tree (which *is* execution order for
   a single-SDK trace) with `parent_idx` from the nesting; semantic `kind` from the attribute, never
   the wire `span_kind` (always `"Internal"`); RFC3339 `timestamp` → `t_start`; the source `span_id`
-  is retained in `attrs` (`otel.span_id`) so a TRAIL error annotation's span-located `location` can
-  be resolved to a step by the benchmark layer.
+  is retained in `attrs` (`otel.span_id`). TRAIL's error annotations
+  (`processed_annotations_gaia/<id>.json`) are parsed *beside* the run (never merged) by
+  `trail::load_annotations` into a `TrailGold` — each error's span-located `location` + taxonomy
+  category + typed impact — and `TrailGold::resolve(&run)` maps each `location` span id to a step
+  index via that retained `otel.span_id`; an unresolvable span id is reported, never dropped.
 - **Who&When failure logs** — **implemented** (`amberfork_ingest::whowhen`): each history entry →
   one step; entry name/role → `name` with `kind=agent`; entry content → `outputs`; the dataset's
   blame annotation is returned *beside* the run as gold, never merged into it.
