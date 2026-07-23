@@ -14,9 +14,11 @@ this block, this block is authoritative.**
 
 **What it is.** amberfork: a local, all-Rust tool that takes two AI-agent run trajectories,
 aligns them with an explainable move-typed affine-gap aligner, ignites the fork point in amber,
-and attributes the regression. Hybrid execution: a PASSIVE path (align any two existing OTel
-traces) and a RECORD path (`amberfork record` wraps an agent under a capture proxy for full-content
-cassettes and counterfactual re-execution).
+and attributes the regression. Hybrid execution: a PASSIVE path (align any two existing traces —
+canonical JSON plus namespaced adapters; **OpenInference/OTLP ingestion shipped 2026-07-23**,
+native `gen_ai.*` is the next slice, see `docs/trace-format.md` Mappings) and a RECORD path
+(`amberfork record` wraps an agent under a capture proxy for full-content cassettes and
+counterfactual re-execution).
 
 **Goal.** Earn strong-engineer respect. Organic usage is a welcome byproduct, not the bar.
 Primary persona is the skeptical senior engineer judging the repo/benchmark/writeup in 2 to 5

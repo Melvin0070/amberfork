@@ -1764,3 +1764,67 @@ with an explicit opt-**out** allowlist (`NON_GAIA_FIXTURES`), safe by default: a
 checked unless deliberately exempted, so a real GAIA set can never slip the check by naming. The
 serializer itself was correct throughout — the 1-byte divergence was a fixture artifact, not an
 engine bug.
+
+## 042 · 2026-07-23 · OpenInference OTLP ingest adapter — the real on-ramp (#39, v0.8 slice 2)
+
+Second slice of **v0.8 = the credibility pass** (after 041's held-out probe). The sharpest
+skeptic-catch closed here: the design doc positioned amberfork as "framework-agnostic, aligns any
+two existing OTel traces," but the shipped `amberfork-ingest` was a forgiving canonical-JSON loader
+plus two *dataset* adapters (Who&When, TapeAgents). There was **no** real OpenInference/OTel
+normalizer — so the only realistic on-ramp for the "point it at traces I already have" persona
+(logs coming out of LangSmith / Phoenix / Langfuse as OpenInference spans) did not exist, and the
+claim over-reached what was built.
+
+**What shipped.** `amberfork_ingest::openinference` — one genuine adapter: OTLP/JSON span export →
+one canonical `Run` per `traceId`. It owns two layers that the sibling `gen_ai.*` slice will reuse
+verbatim: (1) the **OTLP envelope reader** — resource/scope nesting flattened, `AnyValue` typed
+values (`stringValue`/`intValue`-as-string/`boolValue`/`doubleValue`/`arrayValue`/`kvlistValue`)
+decoded to plain JSON; (2) the **OpenInference vocabulary** on top. Mapping: `openinference.span.kind`
+LLM/TOOL/AGENT → `kind` (CHAIN/RETRIEVER/EMBEDDING/… → `other`); `tool.name` → `name` (else span
+name); `input.value`/`output.value` honoring `*.mime_type` (JSON → field-diffable `Object`, else
+`Text`). Steps are re-indexed by `startTimeUnixNano` (exporters don't promise execution order),
+then `parentSpanId` → `parent_idx`. A non-OpenInference attribute is preserved to `attrs` **and**
+raises an `unmapped-attributes` warning (recognized vocabulary rides in `attrs` silently — the
+known/foreign split is a prefix allowlist); a content-free span → metadata-only step +
+`content-absent` warning.
+
+**Architecture rule held under temptation.** OTLP spans carry a `status` (`STATUS_CODE_ERROR`); the
+adapter *ignores* it — `outcome` stays `None`. A run's verdict is a user assertion, never inferred
+from span status (POSITIONING §187, trace-format.md). A test pins this: an error-status span still
+produces `outcome == None`.
+
+**Slice boundaries drawn on purpose (founder-approved before building).** (a) OpenInference now,
+native `gen_ai.*` next — same envelope, additive vocabulary; not folded in. (b) The TRAIL
+natural-pair *benchmark* fixture stays in #41; this slice ships the adapter it will consume, not the
+bench. (c) CLI auto-detection (`amberfork diff trace.otlp`) is out — like `whowhen`/`tape`, this is
+a library adapter first (bench/tooling call it); wiring the CLI sniffer is a later slice. (d)
+Deferred inside the adapter, with nothing lost: structured-message reconstruction from
+`llm.input_messages.*` (rides in `attrs`), and RFC3339 timing (raw nanos preserved in
+`attrs.otel.*_time_unix_nano` — timing is display-only, never an alignment signal, so no new time
+dependency was pulled in for it).
+
+**Fixture provenance — honest.** The test fixture is **spec-faithful but hand-authored** (an inline
+OTLP/JSON export matching the OpenInference wire shape), chosen deliberately over sourcing a real
+third-party trace now: parser correctness is *not* a "true by construction" risk the way
+localization is (041) — the adapter either decodes the documented wire shape or it doesn't. The
+genuinely-external, different-*provenance* trace (TRAIL, from real logs) arrives with #41, which
+needs a real pair regardless; that is where this adapter meets data we did not construct. So this
+slice narrows the "framework-agnostic over-claim" (a real OpenInference normalizer now exists and is
+tested against the spec) without yet touching the natural-data question.
+
+**Tests (7, mirroring the `whowhen`/`tape` discipline):** kind/name/idx/parent wiring under
+out-of-order + multi-trace spans; mime-driven content typing; recognized-vs-foreign attribute
+split + warning; content-absent advisory; the canonical round-trip guard (normalized run
+re-serializes and re-loads through the plain-JSON loader unchanged); parse-error and empty-export
+paths. Full gate green (smoke + fmt + clippy `-D warnings` + `cargo test --workspace`).
+
+**Docs reconciled (acceptance item 3).** `docs/trace-format.md` Mappings now states status per
+adapter (OpenInference **implemented** with its covered subset; `gen_ai.*` **planned**; Who&When /
+TapeAgents **implemented**) instead of listing all as informative. The design doc's Current State
+"align any two existing OTel traces" gained the honest qualifier: OpenInference/OTLP shipped
+2026-07-23, native `gen_ai.*` next.
+
+**Watch-item update (040 #1).** `amberfork-ingest` grew a fourth adapter, but stayed a *thin*
+crate — each adapter is a self-contained namespace over the shared model; no god-crate pressure
+here (unlike `amberfork-align`). The OTLP envelope reader is the first shared substrate between
+adapters; if a third OTLP-based adapter lands, factor it out then, not now.

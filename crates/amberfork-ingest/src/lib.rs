@@ -38,6 +38,7 @@ const CONVERSION_GUIDE_URL: &str = concat!(
 
 /// Framework source adapters. Unlike the canonical loader above, these map a foreign trace shape
 /// onto [`Run`]; each is namespaced so its quirks stay isolated from the canonical format.
+pub mod openinference;
 pub mod tape;
 pub mod whowhen;
 

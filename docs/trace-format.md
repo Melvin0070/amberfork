@@ -62,15 +62,30 @@ Minimal valid step: `{"idx": n, "kind": "…", "name": "…", "outputs": "…"}`
 deliberately forgiving: unknown fields are preserved into `attrs` and reported by the
 "unmapped attributes" warning rather than failing the parse.
 
-## Mappings (informative)
+## Mappings
 
-- **OTel GenAI** (`gen_ai.*` spans): span → step; operation/tool name → `kind`/`name`; opt-in
-  content events → `inputs`/`outputs` (absent content ⇒ metadata-only step + banner).
-- **OpenInference** (`llm.*` / `openinference.*`): span kind LLM/TOOL/AGENT/CHAIN → `kind`;
-  `llm.input_messages` / `llm.output_messages`, `tool.name` → fields above.
-- **Who&When failure logs** (used by the spike): each history entry → one step; entry
-  name/role → `name` with `kind=agent`; entry content → `outputs`; the annotated mistake step
-  maps to `idx`.
+Each foreign shape has its own namespaced adapter in `amberfork-ingest`; the canonical loader
+above never bends to fit one. Status is stated honestly — "framework-agnostic" is a covered
+subset today, not a blanket claim.
+
+- **OpenInference** (`openinference.*` / `llm.*` / `tool.*` over OTLP/JSON) — **implemented**
+  (`amberfork_ingest::openinference`, one `Run` per `traceId`). Covered: `openinference.span.kind`
+  LLM/TOOL/AGENT → `kind` (CHAIN/RETRIEVER/EMBEDDING/… fold to `other`); `tool.name` → `name`;
+  `input.value`/`output.value` honoring `*.mime_type` (JSON → field-diffable object, else text) →
+  `inputs`/`outputs`; steps ordered by `startTimeUnixNano`, `parentSpanId` → `parent_idx`. Absent
+  content ⇒ metadata-only step + `content-absent` warning; a non-OpenInference attribute is
+  preserved to `attrs` + an `unmapped-attributes` warning. `outcome` is **never** inferred from
+  span status. Deferred: reconstructing structured messages from flattened `llm.input_messages.*`
+  (they ride in `attrs` meanwhile); RFC3339 timing (raw nanos are preserved in `attrs`).
+- **OTel GenAI** (native `gen_ai.*` spans) — **planned** (next slice). Same OTLP/JSON envelope as
+  the OpenInference adapter, different attribute vocabulary: `gen_ai.operation.name` → `kind`/`name`,
+  opt-in content events → `inputs`/`outputs` (absent content ⇒ metadata-only step + banner).
+- **Who&When failure logs** — **implemented** (`amberfork_ingest::whowhen`): each history entry →
+  one step; entry name/role → `name` with `kind=agent`; entry content → `outputs`; the dataset's
+  blame annotation is returned *beside* the run as gold, never merged into it.
+- **TapeAgents tapes** — **implemented** (`amberfork_ingest::tape`): each typed node → one
+  `kind=agent` step whose body survives as a field-diffable object; GAIA pairing metadata is
+  returned beside the run.
 
 ## Versioning
 
