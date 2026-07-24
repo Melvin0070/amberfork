@@ -367,3 +367,182 @@ fn malformed_annotations_are_a_parse_error() {
     let err = trail::annotations_from_json_str("{not json").expect_err("malformed input must fail");
     assert!(matches!(err, amberfork_ingest::IngestError::Parse { .. }));
 }
+
+// --- Pairing metadata (S4a) -----------------------------------------------------------------
+//
+// Every TRAIL GAIA trace is a smolagents run that embeds its canonical GAIA `task_id` (a UUID)
+// inside the harness spans' structured `logs`: `get_examples_to_answer` carries the loaded
+// dataset row under `logs[].body["function.output"]`, and `answer_single_question` carries the
+// specific example under `logs[].body["function.arguments"].example`. That id is the join key a
+// same-task reference is matched on (issue #41). It sits *beside* the gated GAIA
+// question/answer/annotator-steps, so `convert_str` lifts only the UUID into `TrailMeta` and
+// never the content around it — the same "identity beside the run, never inside it" rule the
+// `tape` adapter's `TapeMeta` holds.
+
+/// A harness-bearing trace: `main` → `get_examples_to_answer` (the dataset load, task_id in
+/// `function.output`) and `answer_single_question` (task_id in the answered `example`). The gated
+/// fields carry distinctive `SECRET-*` markers, present ONLY in the harness log body, so any leak
+/// into the trajectory is detectable.
+const TRAIL_TRACE_WITH_TASK_ID: &str = r#"{
+  "trace_id": "trace-gaia-meta",
+  "spans": [
+    {
+      "span_id": "root0000",
+      "parent_span_id": null,
+      "span_name": "main",
+      "span_kind": "Internal",
+      "status_code": "Unset",
+      "span_attributes": { "pat.app": "GAIA-Samples" },
+      "child_spans": [
+        {
+          "span_id": "harness0",
+          "parent_span_id": "root0000",
+          "span_name": "get_examples_to_answer",
+          "span_kind": "Internal",
+          "status_code": "Unset",
+          "span_attributes": {},
+          "logs": [
+            {
+              "body": {
+                "function.name": "get_examples_to_answer",
+                "function.arguments": {
+                  "answers_file": "output/validation/gaia.jsonl",
+                  "eval_ds": "Dataset({ features: ['task_id', 'question'], num_rows: 1 })"
+                },
+                "function.output": [
+                  {
+                    "task_id": "11111111-2222-3333-4444-555555555555",
+                    "question": "SECRET-HARNESS-QUESTION",
+                    "true_answer": "SECRET-GOLD-ANSWER",
+                    "Annotator Metadata": { "Steps": "SECRET-STEPS" }
+                  }
+                ]
+              }
+            }
+          ],
+          "child_spans": []
+        },
+        {
+          "span_id": "answer00",
+          "parent_span_id": "root0000",
+          "span_name": "answer_single_question",
+          "span_kind": "Internal",
+          "status_code": "Unset",
+          "span_attributes": {},
+          "logs": [
+            {
+              "body": {
+                "function.name": "answer_single_question",
+                "function.arguments": {
+                  "example": {
+                    "task_id": "11111111-2222-3333-4444-555555555555",
+                    "question": "SECRET-HARNESS-QUESTION"
+                  }
+                }
+              }
+            }
+          ],
+          "child_spans": []
+        }
+      ]
+    }
+  ]
+}"#;
+
+/// A trace whose only task-id source is the answered example under `function.arguments` — no
+/// `function.output` dataset-load span — exercising the `answer_single_question` path alone.
+const TRAIL_TRACE_EXAMPLE_ONLY: &str = r#"{
+  "trace_id": "trace-gaia-example-only",
+  "spans": [
+    {
+      "span_id": "root0000",
+      "parent_span_id": null,
+      "span_name": "main",
+      "span_kind": "Internal",
+      "status_code": "Unset",
+      "span_attributes": {},
+      "child_spans": [
+        {
+          "span_id": "answer00",
+          "parent_span_id": "root0000",
+          "span_name": "answer_single_question",
+          "span_kind": "Internal",
+          "status_code": "Unset",
+          "span_attributes": {},
+          "logs": [
+            {
+              "body": {
+                "function.arguments": {
+                  "example": { "task_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" }
+                }
+              }
+            }
+          ],
+          "child_spans": []
+        }
+      ]
+    }
+  ]
+}"#;
+
+#[test]
+fn convert_str_extracts_the_gaia_task_id() {
+    let converted = trail::convert_str(TRAIL_TRACE_WITH_TASK_ID).unwrap();
+    assert_eq!(
+        converted.meta.gaia_task_id.as_deref(),
+        Some("11111111-2222-3333-4444-555555555555"),
+    );
+}
+
+#[test]
+fn the_task_id_can_come_from_the_answered_example_alone() {
+    let converted = trail::convert_str(TRAIL_TRACE_EXAMPLE_ONLY).unwrap();
+    assert_eq!(
+        converted.meta.gaia_task_id.as_deref(),
+        Some("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+    );
+}
+
+#[test]
+fn a_trace_without_a_harness_span_has_no_task_id() {
+    // The S1 fixture is a bare agent trace with no smolagents dataset-load harness, so there is no
+    // task_id to lift — a trace we cannot join, which is data (protocol rule 4), never a failure.
+    let converted = trail::convert_str(TRAIL_TRACE).unwrap();
+    assert_eq!(converted.meta.gaia_task_id, None);
+}
+
+#[test]
+fn only_the_task_id_is_lifted_never_the_gated_content_beside_it() {
+    // The harness log body holds the GAIA question, true answer, and annotator steps next to the
+    // task_id. Only the UUID may reach `TrailMeta`; the gated content must never ride into the
+    // trajectory. The `SECRET-*` markers appear ONLY in that log body, so their absence from the
+    // serialized run is the guard.
+    let converted = trail::convert_str(TRAIL_TRACE_WITH_TASK_ID).unwrap();
+    assert_eq!(
+        converted.meta.gaia_task_id.as_deref(),
+        Some("11111111-2222-3333-4444-555555555555"),
+    );
+
+    let serialized = serde_json::to_string(&converted.run).expect("run serializes");
+    for gated in [
+        "SECRET-HARNESS-QUESTION",
+        "SECRET-GOLD-ANSWER",
+        "SECRET-STEPS",
+    ] {
+        assert!(
+            !serialized.contains(gated),
+            "gated harness-log content {gated} leaked into the trajectory",
+        );
+    }
+}
+
+#[test]
+fn convert_str_normalizes_the_trajectory_like_the_content_only_path() {
+    // `convert_str` layers task-id extraction over the same normalization the content-only
+    // `from_trace_json_str` does. The run and its warnings must be byte-identical — the meta seam
+    // adds a join key beside the run and changes nothing inside it.
+    let converted = trail::convert_str(TRAIL_TRACE).unwrap();
+    let ingested = trail::from_trace_json_str(TRAIL_TRACE).unwrap();
+    assert_eq!(converted.run, ingested.run);
+    assert_eq!(converted.warnings, ingested.warnings);
+}

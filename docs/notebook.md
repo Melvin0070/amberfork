@@ -2015,3 +2015,72 @@ single-trajectory, so the reference is cross-system (HAL/TapeAgents → murky go
 Mode-B consensus; this is where #41 may still null, honest either way. Then S5 = pre-registered
 metric (earliest-resolved-gold-step and/or predicted-∈-gold, windowed, Wilson CIs, the malformed
 file among the exclusions-as-data) + committed results doc + `report` snapshot.
+
+## 046 · 2026-07-25 · TRAIL's GAIA task_id join key (#41 S4a) + the HAL reference-overlap measurement
+
+Two things this session: the S4a code slice (the join key) and the reference-feasibility
+measurement that decides how #41 sources its reference side — the "hard, uncertain part" S1–S3
+kept flagging. The measurement came back far better than the 016 null predicted, and reshaped the
+plan from "likely null" to "a well-powered offline experiment."
+
+**S4a — the GAIA `task_id` join key (shipped).** A TRAIL trace's `Run.id` is the opaque Patronus
+`trace_id` and its `task` is `None` — the underlying GAIA identity lives only in gated content. But
+inspecting the real bytes found the canonical GAIA `task_id` (a UUID) embedded in the smolagents
+harness spans' structured `logs`: `get_examples_to_answer` carries the loaded dataset row under
+`logs[].body["function.output"]`, and `answer_single_question` carries the answered example under
+`logs[].body["function.arguments"].example`. That UUID is a *non-gated* identifier — it sits beside
+the gated question/true_answer/annotator-steps but is itself just a key. So `amberfork_ingest::trail`
+gained a `TrailMeta { gaia_task_id }` returned beside the run via `convert_str`/`convert_file`,
+mirroring `tape::TapeMeta` exactly (identity beside the run, never inside the trajectory). The
+`RawTrailSpan` parse — which had dropped `logs` — now reads them for this one purpose;
+`task_id_in_log_body` lifts **only** the UUID (example first as the more precise source, then the
+dataset row), never the content around it. Tests (5, extending `tests/trail.rs`): extraction from
+each of the two locations, `None` when no harness span is present (data, not a failure),
+normalization-parity with the content-only `from_trace_json_str`, and a **gating guard** — `SECRET-*`
+markers placed only in the harness log body are asserted absent from the serialized run. Full gate
+green (smoke + fmt + clippy `-D warnings` + `cargo test --workspace`).
+
+**The failing set, at scale.** Ran the extractor over all 117 real GAIA traces (from the pinned
+tarball): **117/117 carry a task_id** (the join is universal), the 1 known-malformed gold file stays
+excluded-as-data (045), **113 traces have ≥1 annotated error → 112 distinct failing task_ids**, and 3
+are clean (0-error) — different tasks, so not same-task references. One task_id is duplicated inside
+TRAIL (116 distinct of 117), a lone possible internal pair, noted not used.
+
+**The reference-overlap measurement (the go/no-go).** The reference must be a *passing* run of the
+same GAIA task. HAL (`hal.cs.princeton.edu/gaia`) embeds a per-task success matrix inline (Plotly
+`heatmap_data`: x = 165 GAIA task ids, y = 33 agent configs, z = fraction of runs solved). TRAIL's
+112 failing task_ids are **all** within GAIA-165 (same UUID namespace, no mapping needed). Overlap of
+TRAIL-failing with tasks each family *passed* (z>0):
+
+| reference family | tasks passed | ∩ TRAIL failing (112) |
+|---|---|---|
+| **HF Open Deep Research** (smolagents, same agent) | 152 | **105** |
+| HAL Generalist Agent | 158 | 108 |
+| any agent (upper bound) | 160 | 109 |
+
+**The finding that matters — same *agent*, not merely same framework.** TRAIL's GAIA traces use HF
+Open Deep Research's exact signature toolset across all 117 files (`web_search`, `visit_page`,
+`find_on_page_ctrl_f`, `page_down`, `inspect_file_as_text`, `SearchInformationTool` 701×,
+`TextInspectorTool` 585×, `managed_agent`/`search_agent`) on **o3-mini** (`llm.model_name` = o3-mini,
+1507×). TRAIL's traces *are* HF Open Deep Research runs. So the HAL "HF Open Deep Research" configs
+are the **same agent implementation**, differing only in the backing model (no o3-mini ODR config on
+HAL). This largely dissolves the 016 step-0 wall: both runs share the ODR scaffolding (same tool
+loop, same sub-agent structure), so they stay structurally synced until the model makes a different
+decision — which is where a meaningful fork lives. #41 goes from "likely null, n=4" to ~105 natural
+same-agent pairs, **offline, zero API cost**.
+
+**Honest caveats (the remaining, much-reduced risk).** (1) *Different model* — o3-mini vs the HAL ODR
+configs' models is the new gold-quality threat, but it is cross-*model within one agent*, not
+cross-*system*; whether it is small enough to separate from random is exactly what S5 will measure,
+now with the N to detect it (gold distributed at steps ~14–43 on the long traces, so random is weak —
+043/044). (2) The reference *trajectories* still have to be fetched: HAL zips are free but
+Fernet-encrypted (`hal1234`, PBKDF2 480k) and sizeable, and likely need a HAL-format ingest adapter —
+that is S4b. (3) z>0 = ≥1 of N runs passed; take one passing run, or a **consensus of passing ODR
+runs** (Mode B) to wash out model-specific quirks and align against the shared ODR structure. The
+record-mode exact-config o3-mini re-run drops to an *optional precision arm*, not the primary path.
+
+**Next (S4b).** Source the passing HF ODR reference trajectories from HAL — download + decrypt the
+ODR zips, group by GAIA task_id, ingest to canonical `Run` — then S4c (the TRAIL pairing builder, the
+`build.rs` analogue joining failing-trace + resolved-gold ↔ passing same-task reference on the
+task_id) and S5 (scoring, Wilson CIs, committed results, `report` snapshot). First step of S4b:
+verify one HF ODR GAIA zip's format/access before scoping the adapter.

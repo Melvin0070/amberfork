@@ -61,6 +61,120 @@ pub fn load_file(path: impl AsRef<Path>) -> Result<Ingested, IngestError> {
     from_trace_json_str(&text).map_err(|err| err.with_path(path))
 }
 
+// --- Pairing metadata -----------------------------------------------------------------------
+//
+// Every TRAIL GAIA trace is a smolagents run that embeds its canonical GAIA `task_id` (a UUID)
+// inside the harness spans' structured `logs`. This is the join key a same-task reference is
+// matched on (issue #41). It sits *beside* the gated GAIA question/answer/annotator-steps in the
+// same log body, so extraction lifts only the UUID — never the content around it — mirroring the
+// `tape` adapter, whose `TapeMeta` carries the join key beside the run rather than inside it.
+
+/// The pairing metadata shipped alongside a converted TRAIL trace: which GAIA task it answers.
+/// Kept beside the [`Run`], never merged into it — a trace's identity is its trajectory, not the
+/// benchmark bookkeeping around it, exactly as the `tape` adapter's [`crate::tape::TapeMeta`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TrailMeta {
+    /// The canonical GAIA `task_id` (a UUID) the trace answers — the key a same-task reference is
+    /// matched on. `None` when the trace carries no smolagents harness span naming one, in which
+    /// case the trace simply cannot be joined: data (protocol rule 4), never a parse failure.
+    pub gaia_task_id: Option<String>,
+}
+
+/// A converted TRAIL trace: the canonical trajectory, its pairing metadata, and the warnings the
+/// normalization raised. The `tape`-style companion to [`from_trace_json_str`]'s content-only
+/// [`Ingested`], for the pairing layer that needs the join key beside the run.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ConvertedTrail {
+    pub run: Run,
+    pub meta: TrailMeta,
+    pub warnings: Vec<Warning>,
+}
+
+/// Convert a TRAIL/Patronus trace tree and lift its GAIA pairing metadata in one pass.
+///
+/// This is [`from_trace_json_str`] plus the join key: the same normalization yields the run and
+/// warnings, and the trace's canonical GAIA `task_id` is extracted beside them (see [`TrailMeta`]).
+///
+/// # Errors
+/// Returns [`IngestError::Parse`] if the string is not valid TRAIL JSON. Past a successful parse
+/// everything is forgiving — an absent task id yields `None`, never an error.
+pub fn convert_str(s: &str) -> Result<ConvertedTrail, IngestError> {
+    let trace: RawTrace =
+        serde_json::from_str(s).map_err(|source| IngestError::Parse { path: None, source })?;
+    let gaia_task_id = extract_gaia_task_id(&trace.spans);
+    let Ingested { run, warnings } = normalize(trace);
+    Ok(ConvertedTrail {
+        run,
+        meta: TrailMeta { gaia_task_id },
+        warnings,
+    })
+}
+
+/// Convert a TRAIL/Patronus trace tree from a file on disk, with its pairing metadata.
+///
+/// # Errors
+/// Returns [`IngestError::Io`] if the file cannot be read, or [`IngestError::Parse`] (with the path
+/// attached) if its contents are not valid TRAIL JSON.
+pub fn convert_file(path: impl AsRef<Path>) -> Result<ConvertedTrail, IngestError> {
+    let path = path.as_ref();
+    let text = std::fs::read_to_string(path).map_err(|source| IngestError::Io {
+        path: path.to_path_buf(),
+        source,
+    })?;
+    convert_str(&text).map_err(|err| err.with_path(path))
+}
+
+/// Walk the span tree in the trajectory's pre-order, returning the first GAIA `task_id` found in
+/// any span's structured logs. `None` when no harness log carries one.
+fn extract_gaia_task_id(spans: &[RawTrailSpan]) -> Option<String> {
+    for span in spans {
+        if let Some(id) = span
+            .logs
+            .iter()
+            .find_map(|log| task_id_in_log_body(&log.body))
+        {
+            return Some(id);
+        }
+        if let Some(id) = extract_gaia_task_id(&span.child_spans) {
+            return Some(id);
+        }
+    }
+    None
+}
+
+/// Pull the GAIA `task_id` out of one harness log body, taking *only* the UUID and none of the
+/// gated content beside it. Two known locations: the answered example under
+/// `function.arguments.example` (the specific task the agent ran, preferred as the more precise
+/// source), then the loaded dataset row(s) under `function.output`; both carry the same id.
+fn task_id_in_log_body(body: &Value) -> Option<String> {
+    let obj = body.as_object()?;
+
+    let from_example = obj
+        .get("function.arguments")
+        .and_then(Value::as_object)
+        .and_then(|args| args.get("example"))
+        .and_then(Value::as_object)
+        .and_then(|example| example.get("task_id"))
+        .and_then(Value::as_str)
+        .and_then(nonempty_string);
+    if from_example.is_some() {
+        return from_example;
+    }
+
+    obj.get("function.output")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|row| row.get("task_id").and_then(Value::as_str))
+        .find_map(nonempty_string)
+}
+
+/// `Some(owned)` only for a non-empty string — an empty task_id is treated as absent, matching the
+/// `nonempty` guard the sibling adapters hold.
+fn nonempty_string(s: &str) -> Option<String> {
+    (!s.is_empty()).then(|| s.to_string())
+}
+
 // --- Gold annotations -----------------------------------------------------------------------
 //
 // TRAIL ships error annotations *beside* the traces, one `processed_annotations_gaia/<id>.json`
@@ -234,6 +348,7 @@ fn flatten(spans: Vec<RawTrailSpan>, parent_idx: Option<usize>, out: &mut Vec<Fl
             duration,
             span_attributes,
             child_spans,
+            logs: _,
         } = span;
         out.push(FlatSpan {
             idx,
@@ -288,7 +403,8 @@ struct RawTrace {
 
 /// One Patronus span. Only the fields the adapter reads are named; `parent_span_id` (redundant
 /// with the nesting), `span_kind` (always `"Internal"` — the semantic kind is an attribute),
-/// `status_code`, `logs`, `events`, and the rest are ignored by serde, never a parse failure.
+/// `status_code`, `events`, and the rest are ignored by serde, never a parse failure. `logs` is
+/// read for the GAIA `task_id` join key alone (not the trajectory) — see [`task_id_in_log_body`].
 #[derive(Deserialize)]
 struct RawTrailSpan {
     #[serde(default)]
@@ -303,6 +419,18 @@ struct RawTrailSpan {
     span_attributes: Map<String, Value>,
     #[serde(default)]
     child_spans: Vec<RawTrailSpan>,
+    /// Structured log entries. Not part of the trajectory — scanned only for the GAIA `task_id`
+    /// the smolagents harness records here (`get_examples_to_answer` / `answer_single_question`).
+    #[serde(default)]
+    logs: Vec<RawLog>,
+}
+
+/// One structured log entry on a span. Only its `body` is read (for the GAIA `task_id`); the
+/// severity, timestamp, and the rest are ignored by serde, never a parse failure.
+#[derive(Deserialize)]
+struct RawLog {
+    #[serde(default)]
+    body: Value,
 }
 
 /// A TRAIL annotation file: the trace's errors plus a `scores` block. Only the errors are read;
