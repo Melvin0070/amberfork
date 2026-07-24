@@ -1950,3 +1950,68 @@ network test the ingest crate's std-fs purity keeps out of S1/S2. S4 = the hard,
 sourcing a *reference* run per failing TRAIL trace (single-trajectory means the reference is
 cross-system or a consensus; the 016 wall is unchanged). S5 = scoring + committed results doc +
 `report` snapshot + the honest null-or-not writeup.
+
+## 045 · 2026-07-24 · TRAIL pinned into `fetch` + the real-bytes integrity test (#41, v0.8 slice S3)
+
+Third slice of #41. S1/S2 built the TRAIL adapter + gold resolver in `amberfork-ingest` (std-fs
+pure, no network). S3 teaches the bench `fetch` harness where the real bytes live and lands the
+committed integrity test that the ingest crate's purity deliberately keeps out. Pure manifest
+thickening: `SOURCES` went `[Source; 2] → [Source; 4]`, no `Source`-struct change, no `main.rs`
+change (`fetch_all` iterates `SOURCES`; `--out` already defaults to the gitignored `bench/data`),
+no `.gitignore` change.
+
+**The pin.** `patronus-ai/trail-benchmark` **@ `0ffbed9d`** (main HEAD, resolved via `git
+ls-remote`), MIT via GitHub — never the gated HF copy (same rule as tapes/whowhen). TRAIL is *one*
+repo split across two upstream dirs, so it is **two** `Source` entries pinned to the *same* commit:
+`benchmarking/data/GAIA/` → `trail-traces/` (117 traces) and
+`benchmarking/processed_annotations_gaia/` → `trail-gold/` (117 annotation files). Kept the flat
+single-component `dest` contract (the `manifest_pins_are_well_formed` invariant) rather than nesting
+under `trail/` — the `trail-` name prefix groups them, and the important structure is that a trace
+and its gold **share a `<trace-id>.json` basename** across the two dests (verified in the tree),
+which is the join key S4 pairing reads. Appended last: smallest-pull-first fail-fast (8 tapes → 184
+Who&When → 234 TRAIL).
+
+**A design fact the tests surfaced.** Both TRAIL sources share repo+commit ⇒ **one** recursive
+tree URL. The real fetch lists the whole tree once *per source* and each filters to its own prefix
+(one extra identical GET of an immutable tree — harmless, not worth refactoring the one-source-one-
+fetch architecture for). The provenance test caught this the honest way: two *partial* canned
+listings under the same key collided in the fake HTTP map (last wins), so the traces source filtered
+a gold-only listing to nothing → `NothingToFetch`. Fix = one combined listing under the shared key,
+which is what reality returns anyway.
+
+**The finding that mattered — one malformed upstream gold file.** The live `#[ignore]`d e2e
+(`network_fetch_trail_end_to_end`) pulls all 234 real files and strict-parses each through the
+S1/S2 adapters. It found that **1 of 117 gold files** (`a96c6811…json`) is **not valid JSON** — a
+trailing comma before the end of an array that even Python's own `json.load` rejects (surveyed all
+234 files against the pinned tarball to confirm scope: **117/117 traces** parse, **116/117 gold**;
+exactly this one fails). So it is a genuine *upstream data defect*, not an amberfork adapter gap.
+
+Decision (founder, this session): **exclude-as-data, keep the adapter strict** — the crate's
+forgiveness is for *unknown fields*, not *malformed syntax*; tolerating a trailing comma would mean
+adopting a lenient JSON dialect crate-wide for one upstream typo, softening a contract that should
+stay strict. This *is* BENCHMARK.md's exclusions-as-data rule. The e2e therefore pins the known-bad
+set `MALFORMED_GOLD = {a96c6811…}` and asserts `excluded == known` + `parsed == 116`: a strict
+parser never silently drops the file, the defect is visible in code, and a future pin bump that
+changes which files are malformed fails the test loudly (the "reviewed manifest edit" discipline).
+
+**What the e2e proved on real bytes (reported, this run):** `trail: 116/117 gold parsed (1
+excluded); resolve 580/580 error location(s) mapped to a step`. So across **all 116** parseable gold
+files, **every one of the 580 gold error `location`s resolved to a real step** — 100% span-id
+resolution, not just the 2 spot-checked pairs of 044. That settles at scale that the span-id join is
+genuine (annotation `location`s really are trace span ids) and confirms 044's "gold distributed
+through the run" claim over the whole set — the pre-registered reason #41 *could* separate from
+random (S4/S5 measure whether it does). The resolution *rate* is `eprintln`'d, never asserted — it
+is data S5 pre-registers, not a fetch invariant.
+
+**Tests (2 added, `fetch.rs`):** `trail_manifest_pins_the_two_gaia_dirs` (pure — pins repo/commit/
+prefixes/dests/MIT; red→green anchor) and the live `network_fetch_trail_end_to_end` (`#[ignore]`,
+operator-run). The existing `manifest_pins_are_well_formed` covers the new rows' 40-hex/dest-shape
+invariants for free; `fetch_all_writes_the_provenance_record` extended to drive all four sources.
+Full gate green (smoke + fmt + clippy `-D warnings` + `cargo test --workspace`: 61 bench tests, 2
+ignored network e2es kept off CI as designed).
+
+**Still ahead.** S4 (the hard, uncertain part) — a *reference* run per failing TRAIL trace. TRAIL is
+single-trajectory, so the reference is cross-system (HAL/TapeAgents → murky gold, the 016 wall) or a
+Mode-B consensus; this is where #41 may still null, honest either way. Then S5 = pre-registered
+metric (earliest-resolved-gold-step and/or predicted-∈-gold, windowed, Wilson CIs, the malformed
+file among the exclusions-as-data) + committed results doc + `report` snapshot.

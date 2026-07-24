@@ -47,9 +47,11 @@ pub struct Source {
     pub notice: &'static str,
 }
 
-/// The fetch manifest. Tapes first: 8 small files fail fast on a broken network before the
-/// 184-file Who&When pull starts.
-pub const SOURCES: [Source; 2] = [
+/// The fetch manifest, smallest pull first so a broken network fails fast: 8 tapes, then the
+/// 184-file Who&When set, then TRAIL last (117 traces + 117 error-annotation files, the
+/// biggest pull). TRAIL is one repo split across two upstream dirs, so it is two entries
+/// pinned to a single commit — the traces and the gold that resolves into them must agree.
+pub const SOURCES: [Source; 4] = [
     Source {
         name: "tapeagents-gaia",
         repo: "ServiceNow/TapeAgents",
@@ -68,6 +70,28 @@ pub const SOURCES: [Source; 2] = [
         dest: "whowhen",
         license: "MIT",
         notice: "Who&When failure logs (MIT, sourced from GitHub — never the unlicensed HF \
+                 mirror). GAIA lineage: local benchmarking only — never commit or \
+                 redistribute the fetched files.",
+    },
+    Source {
+        name: "trail-gaia-traces",
+        repo: "patronus-ai/trail-benchmark",
+        commit: "0ffbed9db859b4a66250dc783fa4dccf86869595",
+        prefix: "benchmarking/data/GAIA/",
+        dest: "trail-traces",
+        license: "MIT",
+        notice: "TRAIL GAIA traces (MIT, sourced from GitHub — never the gated HF mirror). \
+                 GAIA lineage: local benchmarking only — never commit or redistribute the \
+                 fetched files.",
+    },
+    Source {
+        name: "trail-gaia-gold",
+        repo: "patronus-ai/trail-benchmark",
+        commit: "0ffbed9db859b4a66250dc783fa4dccf86869595",
+        prefix: "benchmarking/processed_annotations_gaia/",
+        dest: "trail-gold",
+        license: "MIT",
+        notice: "TRAIL GAIA error annotations (MIT, sourced from GitHub — never the gated HF \
                  mirror). GAIA lineage: local benchmarking only — never commit or \
                  redistribute the fetched files.",
     },
@@ -470,6 +494,20 @@ mod tests {
             .expect("manifest names the whowhen source")
     }
 
+    fn trail_traces_source() -> &'static Source {
+        SOURCES
+            .iter()
+            .find(|source| source.name == "trail-gaia-traces")
+            .expect("manifest names the trail traces source")
+    }
+
+    fn trail_gold_source() -> &'static Source {
+        SOURCES
+            .iter()
+            .find(|source| source.name == "trail-gaia-gold")
+            .expect("manifest names the trail gold source")
+    }
+
     fn listing(truncated: bool, entries: &[(&str, &str)]) -> TreeResponse {
         TreeResponse {
             truncated,
@@ -538,6 +576,37 @@ mod tests {
             raw_url(whowhen_source(), "Who&When/Hand-Crafted/1.json").ends_with(
                 "/f4d2b6da464a826580e59b3a0eae15ea2d642d7c/Who&When/Hand-Crafted/1.json"
             )
+        );
+    }
+
+    #[test]
+    fn trail_manifest_pins_the_two_gaia_dirs() {
+        let traces = trail_traces_source();
+        let gold = trail_gold_source();
+        // TRAIL is one repo split across two upstream dirs: the traces and the error
+        // annotations must be pinned to the *same* commit, or a resolve() would join gold
+        // against a different snapshot of the traces it points into.
+        assert_eq!(traces.repo, "patronus-ai/trail-benchmark");
+        assert_eq!(gold.repo, traces.repo);
+        assert_eq!(gold.commit, traces.commit);
+        // The two upstream dirs, each landing in its own flat single-component dest.
+        assert_eq!(traces.prefix, "benchmarking/data/GAIA/");
+        assert_eq!(traces.dest, "trail-traces");
+        assert_eq!(gold.prefix, "benchmarking/processed_annotations_gaia/");
+        assert_eq!(gold.dest, "trail-gold");
+        // MIT via GitHub — never the gated HF mirror (BENCHMARK.md data & licensing rule).
+        assert_eq!(traces.license, "MIT");
+        assert_eq!(gold.license, "MIT");
+        // A trace and its gold share a `<trace-id>.json` basename under their two prefixes, so
+        // each addresses cleanly at the shared pin — the shape S4 pairing joins on by basename.
+        assert_eq!(
+            raw_url(
+                traces,
+                "benchmarking/data/GAIA/0035f455b3ff2295167a844f04d85d34.json"
+            ),
+            "https://raw.githubusercontent.com/patronus-ai/trail-benchmark/\
+             0ffbed9db859b4a66250dc783fa4dccf86869595/\
+             benchmarking/data/GAIA/0035f455b3ff2295167a844f04d85d34.json"
         );
     }
 
@@ -701,11 +770,34 @@ mod tests {
         let who_listing = r#"{"truncated": false, "tree": [
                 {"path": "Who&When/Hand-Crafted/1.json", "type": "blob"}
             ]}"#;
+        // Both TRAIL sources share one repo+commit, hence one recursive tree URL: the real
+        // fetch lists the whole tree once per source and each filters to its own prefix. So the
+        // canned listing carries both dirs under the single shared key (two partial listings
+        // would collide). The two files share the `<trace-id>.json` basename that ties a trace
+        // to its gold — the join key S4 pairing reads across the two dests.
+        let trail_tree = tree_url(trail_traces_source());
+        assert_eq!(
+            trail_tree,
+            tree_url(trail_gold_source()),
+            "one pin => one tree URL for both TRAIL dirs"
+        );
+        let traces_raw = raw_url(trail_traces_source(), "benchmarking/data/GAIA/abc123.json");
+        let gold_raw = raw_url(
+            trail_gold_source(),
+            "benchmarking/processed_annotations_gaia/abc123.json",
+        );
+        let trail_listing = r#"{"truncated": false, "tree": [
+                {"path": "benchmarking/data/GAIA/abc123.json", "type": "blob"},
+                {"path": "benchmarking/processed_annotations_gaia/abc123.json", "type": "blob"}
+            ]}"#;
         let fake = FakeHttp::new(&[
             (tape_tree.as_str(), tape_listing.as_str()),
             (tape_raw.as_str(), "{}"),
             (who_tree.as_str(), who_listing),
             (who_raw.as_str(), "{}"),
+            (trail_tree.as_str(), trail_listing),
+            (traces_raw.as_str(), "{}"),
+            (gold_raw.as_str(), "{}"),
         ]);
         let out = tempfile::tempdir().expect("tempdir");
 
@@ -730,6 +822,16 @@ mod tests {
             out.path().join("whowhen/Hand-Crafted/1.json").is_file(),
             "whowhen layout keeps the split subdir build-pairs reads"
         );
+        // TRAIL's two dirs land in their flat dests under the same shared basename, so a later
+        // consumer can pair `trail-traces/<id>.json` with `trail-gold/<id>.json`.
+        assert!(
+            out.path().join("trail-traces/abc123.json").is_file(),
+            "trail traces land flat in their dest"
+        );
+        assert!(
+            out.path().join("trail-gold/abc123.json").is_file(),
+            "trail gold lands flat in its dest, basename-aligned with the trace"
+        );
     }
 
     /// The operator's end-to-end check: pull the real pinned tapes (8 small files) and
@@ -749,5 +851,107 @@ mod tests {
             amberfork_ingest::tape::convert_file(&path)
                 .unwrap_or_else(|err| panic!("{} must parse: {err}", path.display()));
         }
+    }
+
+    /// The operator's TRAIL integrity check: pull the real pinned traces (117) and gold (117),
+    /// strict-parse every file through the S1/S2 adapters, and confirm the two dirs are
+    /// basename-aligned 1:1 — the join S4 pairing depends on.
+    ///
+    /// Malformed gold is excluded-and-counted, never a hard failure (BENCHMARK.md's
+    /// exclusions-as-data rule): one upstream file has a trailing comma even Python's own
+    /// `json.load` rejects, so a strict parser must exclude it rather than crash. At a pinned
+    /// commit that exclusion set is immutable, so the test pins it — a future pin bump that
+    /// changes which files are malformed fails here and forces a human to re-examine.
+    ///
+    /// The span-id resolution *rate* is reported, never asserted: an annotation may point at a
+    /// span the run lacks — data per protocol rule 4 that S5 pre-registers and measures, not a
+    /// pass/fail invariant of the fetch.
+    #[test]
+    #[ignore = "network: pulls pinned files from GitHub"]
+    fn network_fetch_trail_end_to_end() {
+        use std::collections::{BTreeMap, BTreeSet};
+
+        // Gold files that are not valid JSON at the pinned commit — excluded, not tolerated.
+        const MALFORMED_GOLD: &[&str] = &["a96c6811716c0473b86a23321db79c34.json"];
+
+        let out = tempfile::tempdir().expect("tempdir");
+        let traces = fetch_source(&GithubClient, trail_traces_source(), out.path())
+            .expect("live trace fetch works");
+        let gold = fetch_source(&GithubClient, trail_gold_source(), out.path())
+            .expect("live gold fetch works");
+        assert_eq!(
+            traces.files, 117,
+            "the pinned commit publishes 117 GAIA traces"
+        );
+        assert_eq!(
+            gold.files, 117,
+            "the pinned commit publishes 117 GAIA annotation files"
+        );
+
+        let by_basename = |dir: &str| -> BTreeMap<String, PathBuf> {
+            std::fs::read_dir(out.path().join(dir))
+                .expect("dest dir")
+                .map(|entry| {
+                    let path = entry.expect("entry").path();
+                    let name = path
+                        .file_name()
+                        .expect("named file")
+                        .to_string_lossy()
+                        .into_owned();
+                    (name, path)
+                })
+                .collect()
+        };
+        let trace_files = by_basename("trail-traces");
+        let gold_files = by_basename("trail-gold");
+        // Faithful fetch: both dirs land the same 117 basenames (a malformed file still fetches
+        // — the exclusion below is about parsing, not about a missing file).
+        assert_eq!(
+            trace_files.keys().collect::<Vec<_>>(),
+            gold_files.keys().collect::<Vec<_>>(),
+            "traces and gold are basename-aligned 1:1 — the key S4 pairing joins on"
+        );
+
+        let mut excluded = BTreeSet::new();
+        let mut parsed = 0usize;
+        let mut errors = 0usize;
+        let mut resolved = 0usize;
+        for (name, trace_path) in &trace_files {
+            // A trace parse failure is a real adapter regression, not upstream data — hard fail.
+            let run = amberfork_ingest::trail::load_file(trace_path)
+                .unwrap_or_else(|err| panic!("{} must parse: {err}", trace_path.display()))
+                .run;
+            // Gold parses strictly; a malformed file is excluded-and-counted, never a crash.
+            match amberfork_ingest::trail::load_annotations(&gold_files[name]) {
+                Ok(annotations) => {
+                    parsed += 1;
+                    let steps = annotations.resolve(&run);
+                    errors += steps.len();
+                    resolved += steps.iter().filter(|step| step.step.is_some()).count();
+                }
+                Err(_) => {
+                    excluded.insert(name.clone());
+                }
+            }
+        }
+
+        let known: BTreeSet<String> = MALFORMED_GOLD
+            .iter()
+            .map(|name| (*name).to_string())
+            .collect();
+        assert_eq!(
+            excluded, known,
+            "gold exclusions must be exactly the known upstream-malformed set at this pin"
+        );
+        assert_eq!(
+            parsed,
+            trace_files.len() - MALFORMED_GOLD.len(),
+            "every gold file but the known-malformed exclusion(s) parses strictly"
+        );
+        eprintln!(
+            "trail: {parsed}/117 gold parsed ({} excluded: {excluded:?}); resolve \
+             {resolved}/{errors} error location(s) mapped to a step",
+            excluded.len(),
+        );
     }
 }
