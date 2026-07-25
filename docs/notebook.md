@@ -2084,3 +2084,67 @@ ODR zips, group by GAIA task_id, ingest to canonical `Run` — then S4c (the TRA
 `build.rs` analogue joining failing-trace + resolved-gold ↔ passing same-task reference on the
 task_id) and S5 (scoring, Wilson CIs, committed results, `report` snapshot). First step of S4b:
 verify one HF ODR GAIA zip's format/access before scoping the adapter.
+
+## 047 · 2026-07-25 · HAL ODR reference format resolved + the Weave→Run adapter (#41 S4b)
+
+Two things: the S4b feasibility spike (where the reference trajectories live and what shape they
+are) came back GO with a shape *different* from what 046 assumed, and the first S4b code slice —
+the HAL→canonical `Run` ingest adapter — shipped test-first against it.
+
+**Feasibility (GO), and the shape 046 got half-right.** The reference trajectories are not behind
+Princeton's Fernet wall: HAL's `/gaia` page links straight to a public Hugging Face dataset
+(`agent-evals/hal_traces`), one `gaia_hf_open_deep_research_<model>_…_UPLOAD.zip` per backing model
+(~290–575 MB each). Each zip holds a *single* `.json.encrypted` member — so 046's "Fernet-encrypted"
+intuition was right, just delivered via HF. The recipe is HAL's own published `hal-decrypt.sh` (not
+guessed): the member is a JSON envelope `{salt, encrypted_data}`, and
+`key = urlsafe_b64(PBKDF2-HMAC-SHA256(salt=b64d(salt), iters=480000).derive("hal1234"))`, then
+`Fernet(key).decrypt(b64d(encrypted_data))` yields one traces JSON *per agent config* (all GAIA
+tasks in one blob). Verified end-to-end on the gpt-4.1 ODR zip (290 MB → 228 MB decrypted JSON).
+Range-read the zip tail first to learn the container without pulling 290 MB; the Fernet token is one
+MAC'd blob, so the schema probe did need the full download.
+
+**The inner schema — a W&B Weave export, and the double-log.** Top level:
+`{config, results, raw_eval_results, raw_logging_results, total_usage, total_cost, git_info}`.
+`results.successful_tasks`/`failed_tasks` and `raw_eval_results.<task>.score` (bool) grade each task,
+all keyed by GAIA UUID — the *same namespace* TRAIL's S4a join key lifts, so the two sides join with
+no mapping. `raw_logging_results` is the trajectory: a **flat** list of Weave call records, each
+tagged `attributes.weave_task_id`, ordered by RFC3339 `started_at`. Not a deep span tree — a turn
+stream, and **double-logged 1:1**: every model call appears as a `litellm.completion` wrapper over
+the `openai.chat.completions.create` leaf it delegates to (verified: exactly paired across all 164
+tasks, 0 exceptions). The openai leaf is content-complete (`inputs.messages` in, `output.choices`
+out); message counts grow 1→4→6→8 across a task, so each leaf is one agent turn. gpt-4.1 numbers:
+165 GAIA-165 tasks, 83 pass / 82 fail, 5726 records → **2863 turns** (leaves), median **13 turns/task**.
+
+**S4b-ingest slice — `amberfork_ingest::hal` (shipped, test-first).** `convert_str(decrypted_json)
+-> Vec<ConvertedHal>`, one canonical `Run` per GAIA task (sorted by task id), each with
+`HalMeta { gaia_task_id, model, passed }` beside it — the `trail`/`tape` sidecar pattern. Design
+decisions: (1) **keep only the openai leaves as turns, drop the redundant litellm wrappers** — a
+task's step count is its turn count, the granularity a fork lives at (proper normalization, like
+`trail` collapses transport `span_kind`). (2) **Whitelist content across the seam**: `inputs` keep
+`{model, messages}`, `outputs` `{choices, usage}`; the request's `self`/`extra_headers`/`extra_body`
+and the response's transport ids are dropped — fidelity *and* a safety guard, so an `extra_headers`
+auth token can never ride into a committed `Run` (#43). (3) **`Run.outcome` stays `None`** — the HAL
+pass/fail rides in `HalMeta.passed` (from `successful_tasks`), never asserted on the trajectory
+(trace-format rule). (4) **Emit all tasks with a `passed` flag** (not passing-only): ingest
+normalizes, the S4c pairing layer selects — benchmark policy stays out of the adapter. Turns form a
+linear chain (`parent_idx = None`); `started_at`/`ended_at` land natively in `t_start`/`t_end`; the
+source Weave call/trace ids ride in `attrs` as provenance. 8 unit tests on a synthetic Weave fixture
+(no gated content: wrapper-drop, RFC3339 ordering, whitelist+secret-drop, verdict-in-meta,
+content-absent advisory, config-scoped ids). Full gate green (smoke + fmt + clippy `-D warnings` +
+`cargo test --workspace`, chimera_parity included). Validated out-of-band against the real decrypted
+gpt-4.1 blob (throwaway, not committed): `convert_str` → 164 runs / 83 passed / 2863 turns /
+median 13, every invariant holding on data we did not construct.
+
+**The honest risk (S5, flagged not fixed).** HAL's Weave export logged **only LLM turns**, while
+TRAIL's o3-mini ODR trace (OpenInference) carries the full tool/sub-agent span tree. So the two
+sides of a pair sit at *different granularities* — a real threat to whether alignment separates from
+random, and the sharpest thing S5 must measure. The adapter's job is a faithful HAL `Run`, which
+this is; the granularity reconciliation is the pairing/scoring question, not an ingest one. This is
+distinct from the (already-known) cross-*model* gold caveat: the reference is a same-agent,
+different-model (gpt-4.1/o3/…) ODR run, `HalMeta.model` carries which.
+
+**Next.** S4b-fetch (the second S4b slice): a Rust HF-pinned fetch + Fernet/PBKDF2 decrypt of the ODR
+zips to plaintext JSON, tested offline with a synthetic envelope round-trip (the live pull `#[ignore]`d
+like `fetch.rs`) — adds `fernet`/`pbkdf2`/`sha2` deps. Then S4c (pair TRAIL-failing + resolved-gold ↔
+HAL-passing same-task run on the task_id, consensus-of-passing-runs to wash out model quirks) and S5
+(scoring, Wilson CIs, committed results, `report` snapshot).
