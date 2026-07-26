@@ -75,6 +75,8 @@ enum Command {
     Fetch(FetchArgs),
     /// Decrypt a HAL reference-trace zip into the plaintext dump `hal` ingest reads (issue #41).
     HalDecrypt(HalDecryptArgs),
+    /// Fetch the pinned HAL Open Deep Research reference zips from Hugging Face (issue #41 S4b).
+    HalFetch(HalFetchArgs),
     /// GAIA-sanitize Who&When-derived logs/pairs for redistribution (issues #11/#17).
     Sanitize(SanitizeArgs),
 }
@@ -162,6 +164,19 @@ struct HalDecryptArgs {
     /// hundreds of MB — redirect or pipe it into `amberfork-ingest` rather than a terminal).
     #[arg(long, value_name = "FILE")]
     out: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct HalFetchArgs {
+    /// Directory to cache the reference zips under (gitignored: GAIA-lineage data, never
+    /// committed). A re-run skips zips already present; delete one to refetch it.
+    #[arg(long, value_name = "DIR", default_value = "bench/data/hal")]
+    out: PathBuf,
+
+    /// Only fetch zips whose filename or model label contains this substring (e.g. `gpt41`,
+    /// `o3mini`, `claudesonnet45`). Repeatable. Omit to fetch the whole set (~10.8 GB).
+    #[arg(long, value_name = "SUBSTR")]
+    model: Vec<String>,
 }
 
 #[derive(Args)]
@@ -257,6 +272,7 @@ fn main() -> ExitCode {
         Command::BuildPairs(args) => build_pairs(&args),
         Command::Fetch(args) => fetch_data(&args),
         Command::HalDecrypt(args) => hal_decrypt(&args),
+        Command::HalFetch(args) => hal_fetch_data(&args),
         Command::Sanitize(args) => sanitize_data(&args),
     };
     outcome.unwrap_or_else(|err| {
@@ -506,6 +522,61 @@ fn hal_decrypt(args: &HalDecryptArgs) -> Result<ExitCode, Box<dyn std::error::Er
         }
         None => std::io::Write::write_all(&mut std::io::stdout(), &json)?,
     }
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+/// Fetch the pinned HAL Open Deep Research reference zips from Hugging Face (issue #41 S4b) — the
+/// passing-run side of a natural pair. Selection is by `--model` substring; the notice and
+/// per-zip receipts go to stderr. The cached zips feed `hal-decrypt` → `hal` ingest.
+fn hal_fetch_data(args: &HalFetchArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let selected: Vec<hal_fetch::HalZip> = hal_fetch::HAL_ODR_ZIPS
+        .iter()
+        .copied()
+        .filter(|zip| {
+            args.model.is_empty()
+                || args
+                    .model
+                    .iter()
+                    .any(|needle| zip.file.contains(needle) || zip.model.contains(needle))
+        })
+        .collect();
+    if selected.is_empty() {
+        eprintln!(
+            "amberfork-bench: no reference zip matches --model {:?}; available models:",
+            args.model,
+        );
+        for zip in &hal_fetch::HAL_ODR_ZIPS {
+            eprintln!("  {}", zip.model);
+        }
+        return Ok(ExitCode::from(EXIT_TROUBLE));
+    }
+
+    let total: u64 = selected.iter().map(|zip| zip.bytes).sum();
+    eprintln!("amberfork-bench: {}", hal_fetch::HAL_NOTICE);
+    eprintln!(
+        "amberfork-bench: fetching {} reference zip(s) (~{:.1} GB) -> {}",
+        selected.len(),
+        total as f64 / 1e9,
+        args.out.display(),
+    );
+    let stats = hal_fetch::fetch_hal_zips(&hal_fetch::HfClient, &selected, &args.out)?;
+    for stat in &stats {
+        eprintln!(
+            "amberfork-bench: {} {} [{}] (~{:.0} MB)",
+            if stat.downloaded {
+                "downloaded"
+            } else {
+                "cached   "
+            },
+            stat.file,
+            stat.model,
+            stat.bytes as f64 / 1e6,
+        );
+    }
+    eprintln!(
+        "amberfork-bench: next: amberfork-bench hal-decrypt --zip {}/<file> --out <plaintext.json>",
+        args.out.display(),
+    );
     Ok(ExitCode::from(EXIT_OK))
 }
 
