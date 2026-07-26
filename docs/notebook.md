@@ -2192,3 +2192,63 @@ and un-optimized (no `[profile.dev.package]` tweak) rather than fake-fast.
 a networked seam like `fetch.rs`'s `Http`, `#[ignore]`d live pull, feeding `decrypt_traces` → `convert`.
 Then S4c (pair TRAIL-failing + resolved-gold ↔ HAL-passing same-task run on the task_id) and S5
 (scoring, Wilson CIs, committed results, `report` snapshot).
+
+## 049 · 2026-07-27 · HAL reference zips: pinned Hugging Face fetch + content-verified download (#41 S4b, slice 2 of 2)
+
+S4b-fetch's second half. Slice 1 (048) decrypted a zip already on disk; this slice *acquires* it,
+so the whole reference-side path is now one reproducible command — `hal-fetch` (pull the pinned
+zips) → `hal-decrypt` (048) → `hal` ingest (047). The passing-run side of every #41 natural pair no
+longer depends on a hand-download.
+
+**The manifest, pinned from a live HF lookup (not guessed).** The HAL Open Deep Research GAIA
+reference set is a **public, ungated** Hugging Face dataset (`agent-evals/hal_traces`) — verified via
+the datasets API (`gated: False`), so no token. Pinned to revision `e7dcedc8…c71e`. It publishes **16
+GAIA ODR zips**, one per backing-model run, **106 MB (o3mini-high) → 2.36 GB (claudesonnet45)**,
+~10.8 GB total. `HAL_ODR_ZIPS` carries all 16 sorted **smallest-first** (a broken network or manifest
+typo fails on the cheapest pull; the live test hits the 106 MB file). One faithful entry per run —
+the full pool S4c's cross-model consensus draws from; *selection* is a `--model` substring filter on
+the CLI, never baked into the adapter (benchmark policy stays downstream, per the S1 rule).
+
+**Content verification, because the commit-pin alone can't catch a bad 500 MB transfer.** `fetch.rs`
+leans on strict-JSON-parse downstream as its integrity net — impossible for a binary zip, and a
+truncated half-gigabyte download is a *real* failure mode. HF exposes each file's **LFS SHA-256** (the
+`x-linked-etag`), so the manifest pins it and the download is checked two ways before it may land:
+byte count == `bytes` (truncation → `ShortRead`) **and** streamed SHA-256 == `sha256` (corruption/wrong
+body → `Sha256`), *then* the `.part` → final atomic rename. This is also what makes skip-if-present
+sound: a file under its final name was verified before it got there. Cross-checked the recipe against
+the server — a `HEAD` on the smallest zip's `resolve` URL 302s to the CDN and its `x-linked-etag`
+equals the pinned `sha256` byte-for-byte.
+
+**The seam — `HalHttp::get_to(url, max_bytes, &mut dyn Write)`, separate from `fetch::Http` on
+purpose.** That seam buffers a whole body into a `Vec` under a 64 MB cap and speaks GitHub's API;
+a HAL zip is 106 MB–2.3 GB and streams straight to disk. `HfClient` (ureq 3, blocking — tokio stays
+quarantined) copies `body.as_reader().take(max_bytes)` into the sink; `as_reader()` is unlimited (the
+10 MB default cap only applies to the buffered `read_*` helpers), so `.take` is what actually bounds
+the stream to the pinned size — the streaming analogue of `fetch`'s response cap. A `HashingWriter`
+folds bytes into the SHA-256 *as they land*, so verification is single-pass, no re-read of the file.
+
+**Decisions.** (a) Lives in `hal_fetch` beside the decrypt (048) and `fetch` (the HTTP/zip/crypto
+deps already sit there); ingest stays the lean serde-only loader. (b) Reuses `fetch::HttpError` (same
+crate, same shape) rather than a parallel type. (c) A `provenance.json` lands beside the cache
+(dataset, revision, GAIA-lineage notice, per-zip file+sha256) — the honesty-in-artifacts rule; the
+notice prints *before* any bytes move. (d) `bench/data/hal` is already under the gitignored
+`bench/data` — GAIA-lineage data, never committed. No new deps: `zip`/`sha2`/`ureq` were all present.
+
+**Tests — 9 offline + 1 `#[ignore]`d live.** Offline (fake streaming `HalHttp`, no network):
+manifest well-formed (16 entries, unique files/models, 64-hex-lowercase shas, sorted smallest-first,
+40-hex revision), `resolve_url` pinned shape, download→verify→land (real content hash of a fixed KAT
+payload, pinned like the decrypt vector), skip-cached (no GET), **sha mismatch** and **truncated
+short-read** and **http error** all leave no `.part`, provenance records revision+shas. The live pull
+(`#[ignore]`d, operator-only) fetches the 106 MB smallest zip → `decrypt_traces` → `hal::convert_str`,
+asserting ≥1 GAIA run, ≥1 passing, turns present — the whole path this slice exists to enable. Full
+gate green (smoke + fmt + clippy `-D warnings` + `cargo test --workspace`, chimera_parity included).
+
+**Unchanged risk (still S5's job).** This slice makes the reference *acquirable*; it does nothing
+about the 047 granularity mismatch — HAL's Weave export is LLM-turns-only while TRAIL's o3-mini ODR
+trace carries the full tool/sub-agent span tree, so the two sides of a pair still sit at different
+granularities. That reconciliation is the pairing/scoring question S4c/S5 must measure, not a fetch
+one.
+
+**Next.** S4c — the TRAIL pairing builder (the `build.rs` analogue): join TRAIL-failing +
+resolved-gold ↔ HAL-passing same-task run on the GAIA `task_id` (S4a), consensus-of-passing across
+models to wash out model quirks. Then S5 (scoring, Wilson CIs, committed results, `report` snapshot).
