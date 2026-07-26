@@ -29,6 +29,12 @@ toml = { workspace = true }
 # The one networked seam in the workspace: `fetch` pulls raw upstream bench data. Blocking
 # client on purpose — the tokio quarantine (CLAUDE.md) keeps async out of engine/harness code.
 ureq = { workspace = true }
+# HAL reference-trace decrypt (`hal_fetch`, issue #41 S4b): unwrap the Fernet-encrypted config
+# dump HAL publishes so the `amberfork-ingest::hal` adapter can read it.
+base64 = { workspace = true }
+fernet = { workspace = true }
+pbkdf2 = { workspace = true }
+zip = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

@@ -31,6 +31,7 @@ mod arms;
 mod build;
 mod calibration;
 mod fetch;
+mod hal_fetch;
 mod hash;
 mod pairs;
 mod params;
@@ -72,6 +73,8 @@ enum Command {
     BuildPairs(BuildPairsArgs),
     /// Fetch the pinned raw upstream data `build-pairs` consumes (issue #7).
     Fetch(FetchArgs),
+    /// Decrypt a HAL reference-trace zip into the plaintext dump `hal` ingest reads (issue #41).
+    HalDecrypt(HalDecryptArgs),
     /// GAIA-sanitize Who&When-derived logs/pairs for redistribution (issues #11/#17).
     Sanitize(SanitizeArgs),
 }
@@ -146,6 +149,19 @@ struct FetchArgs {
     /// delete a source's subdirectory to refetch it.
     #[arg(long, value_name = "DIR", default_value = "bench/data")]
     out: PathBuf,
+}
+
+#[derive(Args)]
+struct HalDecryptArgs {
+    /// The encrypted HAL config zip (a `gaia_hf_open_deep_research_*_UPLOAD.zip`), holding one
+    /// Fernet-encrypted `.json.encrypted` member.
+    #[arg(long, value_name = "FILE")]
+    zip: PathBuf,
+
+    /// Where to write the decrypted traces JSON. Omit to stream it to stdout (the dump can be
+    /// hundreds of MB — redirect or pipe it into `amberfork-ingest` rather than a terminal).
+    #[arg(long, value_name = "FILE")]
+    out: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -240,6 +256,7 @@ fn main() -> ExitCode {
         Command::Aggregate(args) => aggregate_documents(&args),
         Command::BuildPairs(args) => build_pairs(&args),
         Command::Fetch(args) => fetch_data(&args),
+        Command::HalDecrypt(args) => hal_decrypt(&args),
         Command::Sanitize(args) => sanitize_data(&args),
     };
     outcome.unwrap_or_else(|err| {
@@ -467,6 +484,28 @@ fn fetch_data(args: &FetchArgs) -> Result<ExitCode, Box<dyn std::error::Error>> 
         "amberfork-bench: next: amberfork-bench build-pairs --tapes {out}/tapes \
          --logs {out}/whowhen --out {out}/pairs_real",
     );
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+/// Decrypt a hand-downloaded HAL reference-trace zip into the plaintext dump the `hal` ingest
+/// adapter reads (issue #41 S4b). The pinned network fetch of the zip is the next slice; today
+/// the operator supplies the zip and this unwraps it. The decrypted JSON is the artifact (stdout
+/// or `--out`); the receipt goes to stderr.
+fn hal_decrypt(args: &HalDecryptArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let zip = std::fs::read(&args.zip)?;
+    let json = hal_fetch::decrypt_traces(&zip, hal_fetch::HAL_PASSWORD)?;
+    match &args.out {
+        Some(path) => {
+            std::fs::write(path, &json)?;
+            eprintln!(
+                "amberfork-bench: decrypted {} -> {} ({} bytes)",
+                args.zip.display(),
+                path.display(),
+                json.len(),
+            );
+        }
+        None => std::io::Write::write_all(&mut std::io::stdout(), &json)?,
+    }
     Ok(ExitCode::from(EXIT_OK))
 }
 
