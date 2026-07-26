@@ -2148,3 +2148,47 @@ zips to plaintext JSON, tested offline with a synthetic envelope round-trip (the
 like `fetch.rs`) — adds `fernet`/`pbkdf2`/`sha2` deps. Then S4c (pair TRAIL-failing + resolved-gold ↔
 HAL-passing same-task run on the task_id, consensus-of-passing-runs to wash out model quirks) and S5
 (scoring, Wilson CIs, committed results, `report` snapshot).
+
+## 048 · 2026-07-26 · HAL zip decrypt → plaintext JSON (#41 S4b, slice 1 of 2)
+
+S4b-fetch, split. Notebook 047 framed "S4b-fetch" as one slice (HF-pinned fetch + Fernet/PBKDF2
+decrypt). Built as two: the **decrypt** (this slice, no network, all the crypto-correctness risk)
+and the **HF fetch** (next slice, I/O plumbing mirroring `fetch.rs`). Merging them would put crypto
+and HTTP orchestration in one diff — the decrypt earns its own tight red→green, and it's usable
+alone today: an operator hand-downloads a zip (as the feasibility spike did) and gets ingestable JSON.
+
+**What shipped — `amberfork_bench::hal_fetch::decrypt_traces(zip, password) -> Vec<u8>`.** Unwraps
+one HAL config zip to the plaintext dump `amberfork_ingest::hal::convert_str` already reads, per HAL's
+own `hal-decrypt.sh` recipe (047): the lone `.json.encrypted` member is a `{salt, encrypted_data}`
+envelope; `key = urlsafe_b64(PBKDF2-HMAC-SHA256("hal1234", b64d(salt), 480_000))`, plaintext =
+`Fernet(key).decrypt(b64d(encrypted_data))`. Typed `HalDecryptError` for every failure (bad zip,
+wrong member count, non-envelope, bad base64, non-UTF8 token, MAC failure) — no panics on the lib path.
+
+**The two layerings that bite, both pinned.** (1) The key is *derived*, not stored — PBKDF2 output
+is urlsafe-b64 (padded), the encoding `Fernet(key)` consumes. (2) `encrypted_data` is *double*-base64:
+a Fernet token is already urlsafe-b64 text, HAL b64-encodes it again; one standard-b64 decode yields
+the token string `fernet` then unwraps. Getting either wrong reads as a generic decrypt failure, so
+the test pins them separately.
+
+**Correctness = cross-implementation KAT, not a self-round-trip.** Minted a vector once from Python's
+`cryptography` (the library HAL uses) and pinned both layers offline: `derives_the_pinned_fernet_key`
+asserts the derived key equals Python's byte-for-byte (a PBKDF2 rounds/hash/alphabet drift fails
+*there*, localized); `decrypts_the_python_cryptography_known_answer` decrypts a genuine Python Fernet
+token to its plaintext (end-to-end HAL-format proof). Five error-path tests: wrong password (MAC
+rejects → `Decrypt`, never plausible-but-wrong bytes), 0/2 members (`Member{count}` — exactly one is
+the format, never pick-the-first), non-envelope, non-base64 salt, non-zip.
+
+**Decisions.** (a) Lives in `bench`, not `ingest`: ingest stays the lean serde-only forgiving loader;
+decryption (and next slice's fetch) is data acquisition — it sits beside `fetch.rs` with the zip/crypto
+deps and hands plaintext to `hal::convert_str`. (b) Crypto never hand-rolled — the `fernet` crate
+(RustCrypto AES-CBC+HMAC) authenticates, so a bad password/dump fails at the MAC. (c) A thin
+`hal-decrypt` subcommand is the operator seam (and the caller a binary crate's `pub fn` needs, or
+`clippy -D warnings` flags dead code). Deps added: `fernet`/`pbkdf2`/`base64`/`zip` (deflate-only, no
+default codecs); `sha2` was already in. Full gate green (smoke + fmt + clippy -D warnings + workspace
+tests, chimera_parity included). Debug tests ~6.5s — three run the real 480k-iter PBKDF2; left honest
+and un-optimized (no `[profile.dev.package]` tweak) rather than fake-fast.
+
+**Next.** S4b-2: the pinned Hugging Face fetch (`agent-evals/hal_traces`, one zip per backing model) —
+a networked seam like `fetch.rs`'s `Http`, `#[ignore]`d live pull, feeding `decrypt_traces` → `convert`.
+Then S4c (pair TRAIL-failing + resolved-gold ↔ HAL-passing same-task run on the task_id) and S5
+(scoring, Wilson CIs, committed results, `report` snapshot).
