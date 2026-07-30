@@ -2252,3 +2252,47 @@ one.
 **Next.** S4c — the TRAIL pairing builder (the `build.rs` analogue): join TRAIL-failing +
 resolved-gold ↔ HAL-passing same-task run on the GAIA `task_id` (S4a), consensus-of-passing across
 models to wash out model quirks. Then S5 (scoring, Wilson CIs, committed results, `report` snapshot).
+
+## 050 · 2026-07-30 · TRAIL↔HAL natural pair builder (#41 S4c)
+
+The `build.rs` analogue for the second natural-pair source: `amberfork_bench::build_trail` joins a
+TRAIL failing trace to a HAL passing reference on shared GAIA `task_id`, writing the same
+`pair_*.json` + `a_*`/`b_*` triples [`pairs::load_pairs`] already reads. Same "exclusions are data"
+shape as Mode A′ — a trace or dump that cannot anchor a pair is a counted drop, never a silent skip.
+
+**Gold step = earliest resolved TRAIL error, settled by the existing contract, not a new call.**
+`pairs.rs`/`score.rs` carry and score one `usize` per pair, windowed ±1/±3 — 044 already flagged
+"earliest resolved gold step" as the metric that fits that shape. So `build_trail` resolves a trace's
+full `Vec<GoldStep>` (043/044) and keeps the minimum step; the full multi-error list stays available
+for S5's separate predicted-∈-gold reading if that metric earns its place later, but this slice does
+not carry it into the manifest — the seam stays single-`gold_step`, honest about what it does today.
+
+**One reference per failing trace — a founder call, not assumed.** A GAIA task can have several
+passing HAL models; pairing all of them would reuse the same failing trace across multiple rows,
+breaking the i.i.d. assumption `score::wilson95` relies on. Asked and decided: **one reference per
+failing trace**, lowest model name wins a multi-model collision (a deterministic tie-break with no
+other meaning, mirroring `build::match_pairs`'s lowest-stem rule) — not the fan-out alternative, which
+would have maximized N at the cost of a correlated-N problem S5 isn't designed to correct for yet.
+Cross-model gold-quality risk (o3-mini TRAIL vs whichever model wins the tie) stays a later optional
+arm, exactly as 046/047 flagged, not folded into this slice.
+
+**Shipped:** `Reference`/`Failing`/`BuiltPair`/`FailingDrop` (mirroring `build.rs`'s `Reference`/
+`Failing`/`BuiltPair`/`Drop`), `match_pairs` (pure, 7 unit tests: shared-task match carries the
+earliest gold, a failing HAL run never serves as reference, an unmatched task is a counted drop, the
+lowest-model-name tie-break including a passing-beats-higher-sorting-name case and a no-model-name
+fallback to stem, and determinism under shuffled input), and `build_pairs` (reads a TRAIL traces dir +
+matching gold dir by shared basename per 045's pinned layout, plus a directory of already-decrypted
+HAL dumps — one file per backing model, `hal-fetch`→`hal-decrypt` output — writes the triples).
+`cross_system: false` in the manifest, unlike Mode A′: both sides share the ODR scaffolding
+(046/047), so this is a same-agent pair, not a cross-system one. Wired as
+`amberfork-bench build-trail-pairs --traces --gold --hal --out`, the same shape as `build-pairs`.
+Full gate green (smoke + fmt + clippy `-D warnings` + `cargo test --workspace` + `ui/` workspace).
+
+**Not in this slice, on purpose.** No CLI integration test yet (`build_cli.rs` covers `build-pairs`
+but not `build-trail-pairs` — worth adding before this runs for real) and no live end-to-end run
+against the real ~105-pair overlap (046) — that needs actual `hal-fetch`/`hal-decrypt` output on disk,
+an operator step, not a unit-test fixture.
+
+**Next.** S5 — scoring, Wilson CIs, committed results, `report` snapshot, and the pre-registered
+predicted-∈-gold metric choice 044 deferred. That is also where the cross-model gold-quality caveat
+gets measured rather than just flagged.

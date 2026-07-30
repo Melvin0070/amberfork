@@ -29,6 +29,7 @@
 mod aggregate;
 mod arms;
 mod build;
+mod build_trail;
 mod calibration;
 mod fetch;
 mod hal_fetch;
@@ -71,6 +72,9 @@ enum Command {
     Aggregate(AggregateArgs),
     /// Construct a cross-system Mode A′ pair set from raw TapeAgents + Who&When data (issue #7).
     BuildPairs(BuildPairsArgs),
+    /// Construct a natural pair set from TRAIL failing traces + HAL passing references,
+    /// matched on GAIA task_id (issue #41 S4c).
+    BuildTrailPairs(BuildTrailPairsArgs),
     /// Fetch the pinned raw upstream data `build-pairs` consumes (issue #7).
     Fetch(FetchArgs),
     /// Decrypt a HAL reference-trace zip into the plaintext dump `hal` ingest reads (issue #41).
@@ -138,6 +142,27 @@ struct BuildPairsArgs {
     /// Who&When logs (the failing side).
     #[arg(long, value_name = "DIR")]
     logs: PathBuf,
+
+    /// Directory to write the `pair_*.json` + `a_*`/`b_*` triples into (created if absent).
+    #[arg(long, value_name = "DIR")]
+    out: PathBuf,
+}
+
+#[derive(Args)]
+struct BuildTrailPairsArgs {
+    /// Directory of raw TRAIL trace JSON files (the failing side; `fetch`'s `trail-traces/`).
+    #[arg(long, value_name = "DIR")]
+    traces: PathBuf,
+
+    /// Directory of TRAIL error-annotation JSON files, one per trace, sharing its basename
+    /// (`fetch`'s `trail-gold/`).
+    #[arg(long, value_name = "DIR")]
+    gold: PathBuf,
+
+    /// Directory of decrypted HAL dump JSON files, one per backing model (the reference side;
+    /// `hal-fetch` + `hal-decrypt` output).
+    #[arg(long, value_name = "DIR")]
+    hal: PathBuf,
 
     /// Directory to write the `pair_*.json` + `a_*`/`b_*` triples into (created if absent).
     #[arg(long, value_name = "DIR")]
@@ -270,6 +295,7 @@ fn main() -> ExitCode {
         Command::Report(args) => report(&args),
         Command::Aggregate(args) => aggregate_documents(&args),
         Command::BuildPairs(args) => build_pairs(&args),
+        Command::BuildTrailPairs(args) => build_trail_pairs(&args),
         Command::Fetch(args) => fetch_data(&args),
         Command::HalDecrypt(args) => hal_decrypt(&args),
         Command::HalFetch(args) => hal_fetch_data(&args),
@@ -481,6 +507,30 @@ fn build_pairs(args: &BuildPairsArgs) -> Result<ExitCode, Box<dyn std::error::Er
         stats.tapes_read,
         stats.logs_read,
         stats.logs_without_gold,
+    );
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+/// Construct a natural TRAIL/HAL pair set (issue #41 S4c). Like `build-pairs`, a data-prep step:
+/// no table, only the pair triples and a coverage summary on stderr. Building zero pairs is a
+/// legitimate outcome, not an error — only an unreadable input or output path is trouble.
+fn build_trail_pairs(args: &BuildTrailPairsArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let stats = build_trail::build_pairs(&args.traces, &args.gold, &args.hal, &args.out)?;
+    for dropped in &stats.drops {
+        eprintln!(
+            "amberfork-bench: unpaired trace {}: {}",
+            dropped.stem, dropped.reason
+        );
+    }
+    eprintln!(
+        "amberfork-bench: built {} natural pair(s) -> {} \
+         (TRAIL traces: {}, {} without a usable gold step; HAL dumps: {}, {} runs read)",
+        stats.pairs,
+        args.out.display(),
+        stats.traces_read,
+        stats.traces_without_gold,
+        stats.hal_dumps_read,
+        stats.hal_runs_read,
     );
     Ok(ExitCode::from(EXIT_OK))
 }
