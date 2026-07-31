@@ -77,9 +77,19 @@ subset today, not a blanket claim.
   preserved to `attrs` + an `unmapped-attributes` warning. `outcome` is **never** inferred from
   span status. Deferred: reconstructing structured messages from flattened `llm.input_messages.*`
   (they ride in `attrs` meanwhile); RFC3339 timing (raw nanos are preserved in `attrs`).
-- **OTel GenAI** (native `gen_ai.*` spans) — **planned** (next slice). Same OTLP/JSON envelope as
-  the OpenInference adapter, different attribute vocabulary: `gen_ai.operation.name` → `kind`/`name`,
-  opt-in content events → `inputs`/`outputs` (absent content ⇒ metadata-only step + banner).
+- **OTel GenAI** (native `gen_ai.*` spans) — **implemented** (`amberfork_ingest::genai`, same
+  `otlp` envelope as the OpenInference adapter — one `Run` per `traceId`, start-time ordered,
+  `outcome` never inferred from span status — a different attribute vocabulary). Covered:
+  `gen_ai.operation.name` `chat`/`text_completion`/`generate_content` → `kind=llm`,
+  `execute_tool` → `kind=tool` (named by `gen_ai.tool.name`), `create_agent`/`invoke_agent` →
+  `kind=agent` (named by `gen_ai.agent.name`); everything else (`embeddings`, …) folds to `other`.
+  Content carrier is kind-conditional: `gen_ai.input.messages`/`output.messages` for LLM/agent/other
+  spans, `gen_ai.tool.call.arguments`/`tool.call.result` for tool spans — structured (object/array)
+  or a pre-serialized JSON string, either way; a `messages` array wraps to a field-diffable
+  `{"messages": [...]}` object rather than an opaque blob. Absent content ⇒ metadata-only step +
+  `content-absent` warning; a non-`gen_ai.*` attribute is preserved to `attrs` + an
+  `unmapped-attributes` warning. Deferred: the superseded per-role event convention
+  (`gen_ai.user.message`/… ) is not read, only the current span-attribute convention.
 - **TRAIL / Patronus trace trees** — **implemented** (`amberfork_ingest::trail`, one `Run` per
   trace file). A *different envelope* — a nested `child_spans` tree, not a flat OTLP export — over
   the *same* OpenInference vocabulary, so it shares the mapping above (`openinference.span.kind` →

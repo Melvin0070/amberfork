@@ -38,17 +38,27 @@ const CONVERSION_GUIDE_URL: &str = concat!(
 
 /// Framework source adapters. Unlike the canonical loader above, these map a foreign trace shape
 /// onto [`Run`]; each is namespaced so its quirks stay isolated from the canonical format.
+pub mod genai;
 pub mod hal;
 pub mod openinference;
 pub mod tape;
 pub mod trail;
 pub mod whowhen;
 
+/// The shared OTLP/JSON span-export envelope reader (resource/scope flattening, `AnyValue`
+/// decoding, start-time ordering), used by the `openinference` and `genai` adapters — the two
+/// OTLP-envelope vocabularies. Crate-internal — adapters call it, callers use the adapters.
+mod otlp;
+
 /// The OpenInference **vocabulary** layer, shared by the `openinference` (OTLP envelope) and
 /// `trail` (Patronus tree envelope) adapters: the span-attribute → canonical-[`Step`] mapping,
 /// independent of how spans are found on the wire. Crate-internal — adapters call it, callers
 /// use the adapters.
 mod oivocab;
+
+/// The native OTel GenAI **vocabulary** layer (`gen_ai.*`), the [`genai`] adapter's counterpart
+/// to [`oivocab`]. Crate-internal — the adapter calls it, callers use the adapter.
+mod genaivocab;
 
 /// A loaded run together with any non-fatal diagnostics raised while normalizing it. The
 /// warnings flow onward into [`amberfork_model::DiffResult::warnings`].

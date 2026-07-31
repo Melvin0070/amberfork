@@ -2375,3 +2375,81 @@ No cost-model change was attempted (see above).
 
 **Next.** #41's epic is at a natural close for now: a real, honestly-measured (still null) result
 is committed. #39 slice B (gen_ai) is next in the tracked epic order.
+
+## 052 · 2026-07-31 · Native OTel GenAI ingest adapter ships (#39 slice B)
+
+**What changed.** `amberfork_ingest::genai` closes the slice boundary 042 drew before either
+adapter existed ("OpenInference now, native `gen_ai.*` next — same envelope, additive
+vocabulary; not folded in"). It reuses the exact same OTLP/JSON envelope as `openinference`
+(resource/scope flattening, `AnyValue` decoding, start-time ordering, `parentSpanId` →
+`parent_idx`, `outcome` never inferred from span status) over a different attribute vocabulary:
+`gen_ai.operation.name` `chat`/`text_completion`/`generate_content` → `kind=llm`,
+`execute_tool` → `kind=tool` (named by `gen_ai.tool.name`), `create_agent`/`invoke_agent` →
+`kind=agent` (named by `gen_ai.agent.name`); everything else (`embeddings`, and anything the
+spec adds later) folds to `other` — the same "land on the canonical set, don't invent finer
+structure" rule 042 applied to OpenInference's CHAIN/RETRIEVER/EMBEDDING.
+
+**Two founder decisions, taken before writing code (per the collaboration-mode discipline: slice
+boundaries proposed and decided before building).**
+1. **Extract the shared envelope now, not later.** `openinference.rs`'s `RawExport`/
+   `decode_any_value`/`normalize`/`build_run` moved into a new `otlp.rs`, generic over a
+   `SpanToStep` function pointer (the vocabulary layer's mapping signature — `oivocab` and the
+   new `genaivocab` both match it exactly). This is the envelope's *second* consumer, the same
+   circumstance notebook 043 named for factoring out the vocabulary layer when TRAIL became its
+   second consumer — so the same "factor out on the second consumer, not speculatively" rule
+   argues for extracting, not duplicating. `openinference.rs` shrank to a two-function shell
+   (`otlp::from_otlp_json_str(s, oivocab::map_span_to_step)`); its own 7 tests stayed green
+   unchanged, proving the refactor behavior-preserving before any new code was added.
+2. **Wrap a `messages` array as `{"messages": [...]}`.** `gen_ai.input.messages`/
+   `output.messages` are spec-typed `any` — structured arrays of `{role, parts}` objects, or (on
+   an SDK without structured-attribute support) a pre-serialized JSON string carrying the same
+   array. `Payload` only field-diffs `Object`; a bare array would fall to `Payload::Other` and
+   diff as an opaque blob. Wrapping keeps content field-diffable like every other structured
+   carrier this crate handles, at the cost of an invented `messages` key not on the wire.
+
+**A genuinely new mapping shape: the content carrier is kind-conditional.** Unlike
+OpenInference's uniform `input.value`/`output.value` on every span, `gen_ai.*` splits the
+carrier by operation: LLM/agent/other spans read `input.messages`/`output.messages`, but a TOOL
+span reads `tool.call.arguments`/`tool.call.result` instead — `genaivocab::map_span_to_step`
+branches on the already-computed `kind` to pick the right pair before decoding. `decode_content`
+handles both carriers uniformly once selected: a structured array or object decodes directly, a
+string is tried as JSON first (the SDK-fallback case) and falls back to `Payload::Text` only if
+that fails.
+
+**Fixture provenance — honest, and a flagged tension.** Like 042's OpenInference fixture, the
+test export is spec-faithful but hand-authored, not sourced from a real instrumentation library —
+parser correctness against a documented wire shape is not a "true by construction" risk the way
+localization is. Worth flagging: the design doc's normalization-layer rationale (line 671) says
+"pin to instrumentation-library versions, not the spec," because the GenAI semconv is
+"Development," unversioned, and had 4+ breaking changes in 12 months — exactly the churn that
+made the old per-role event convention (`gen_ai.user.message`/…) obsolete before this slice even
+started (confirmed live against the current spec: consolidated into span attributes,
+`gen_ai.client.inference.operation.details` replacing the per-role events). This slice targets
+the current spec directly rather than a specific library's emitted shape, because no widely-used
+gen_ai.*-native library trace was sourced to pin against (native `gen_ai.*` emitters are still
+rare — PydanticAI, Semantic Kernel — per the design doc's own note). If a real one surfaces, it
+is the fixture to validate against next, the same way TRAIL later validated the OpenInference
+vocabulary against real logs.
+
+**Tests (8, mirroring the `openinference` discipline plus one for the array-wrap):** kind/name/
+idx/parent wiring under out-of-order + multi-trace spans, including the `embeddings` → `other`
+fold; the kind-conditional carrier switch (LLM/agent read messages, tool reads call
+arguments/result) with both a structured-array and a pre-serialized-JSON-string input each
+decoding the same way; a dedicated test pinning the array→`{"messages": [...]}` wrap; recognized-
+vs-foreign attribute split + warning; content-absent advisory; the canonical round-trip guard;
+parse-error and empty-export paths. All 8 passed on the first run. Full gate green (fmt, clippy
+`-D warnings`, `cargo test --workspace` incl. `ui/`).
+
+**Docs reconciled.** `docs/trace-format.md` Mappings: `gen_ai.*` moved from "planned" (with the
+stale "opt-in content events" phrasing, superseded by the spec consolidation above) to
+"implemented" with the actual kind-conditional carrier mapping. Design doc Current State: "native
+`gen_ai.*` is the next slice" → "native `gen_ai.*` ingestion shipped 2026-07-31."
+
+**Not in this slice, on purpose.** CLI auto-detection (`amberfork diff trace.otlp`) — same
+deferral 042 drew for OpenInference. Structured-message reconstruction beyond the wrap (e.g.
+per-message field diffing inside the array) — the wrap makes the whole array one field-diffable
+unit, not per-message. RFC3339 timing — same as OpenInference, raw nanos only.
+
+**Next.** #39 is closed: both the OpenInference and native GenAI on-ramps now exist. Remaining
+v0.8 "credibility pass" items per the tracker: #44 (real-provider `--verify` e2e), #43 (cassette
+redaction).
