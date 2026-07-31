@@ -16,7 +16,9 @@
       "Bash(gh issue list:*)",
       "Bash(gh issue view:*)",
       "Bash(gh run list:*)",
-      "Bash(gh run view:*)"
+      "Bash(gh run view:*)",
+      "Bash(scripts/verify.sh)",
+      "Bash(scripts/verify.sh --full)"
     ]
   },
   "hooks": {
@@ -28,6 +30,19 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/session-context.sh\"",
             "timeout": 15,
             "statusMessage": "Loading amberfork project state…"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash",
+            "args": ["$CLAUDE_PROJECT_DIR/.claude/hooks/format-rust.sh", "${tool_input.file_path}"],
+            "timeout": 15
           }
         ]
       }

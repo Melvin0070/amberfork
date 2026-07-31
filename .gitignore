@@ -28,5 +28,8 @@ ui/dist/
 .gstack/
 .claude/settings.local.json
 
+# Claude Code worktrees (`claude --worktree <name>`, subagent isolation)
+.claude/worktrees/
+
 # OS
 .DS_Store

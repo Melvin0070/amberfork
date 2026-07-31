@@ -1,123 +1,49 @@
 # amberfork
 
-Local, all-Rust developer tool that diffs two AI-agent run trajectories, finds the fork
-point, and attributes the regression. Architecture is locked in
-`docs/design/design-run-diff-debugger.md` (hybrid passive+record execution model, phased
-Cargo workspace — 10 crates at v0.7.0, new crates added with the slice that needs them (doc
-Amendments 2026-07-11 … -21), explainable semantic move-typed alignment + counterfactual-causal
-attribution, embedded Leptos SVG/DOM web UI). Positioning/personas: `docs/design/POSITIONING.md`.
-Benchmark protocol: `BENCHMARK.md`. Engineering notebook (spikes, measurements, dead ends):
-`docs/notebook.md`. Canonical plain-JSON trace input: `docs/trace-format.md`.
+Local all-Rust tool that diffs two AI-agent run trajectories, finds the fork point, and
+attributes the regression. 10 crates at v0.7.0. `ui/` is a SEPARATE workspace (`exclude`d).
 
-## Operating manual (AI-native workflow)
+## Commands
 
-> A `SessionStart` hook (`.claude/session-context.sh`) prints live state — branch, working
-> tree, open issues + milestone, latest notebook entry — into context at the start of every
-> session. This section is the durable working agreement behind it.
+- Gate (every turn, auto via Stop hook): `scripts/verify.sh` — fmt, smoke, clippy, unit tests.
+- Before committing: `scripts/verify.sh --full` — the exact CI ritual + the `ui/` workspace.
+- Single test: `cargo test --workspace --lib --bins -- <name> --exact --nocapture`
+- Clippy is the typecheck; there is no `cargo check` in CI.
+- `amberfork-bench` resolves `bench/params.toml` from CWD — run it only from the repo root.
 
-**Start of a session (do this before writing code):** read the injected state block; if a task
-isn't already named, pick the lowest-numbered unblocked issue in the current milestone
-(`gh issue list`); skim the issue body for the doc section that governs it. If resuming, run the
-verify command to confirm a green baseline before changing anything.
+## Hard constraints
 
-**Collaboration mode (founder chose 2026-07-08 — "I build, you review"):** the founder is
-learning proper software dev, so work ONE vertical slice at a time and teach through it:
-(1) state the contract + the test you'll write, (2) test-first: red → green → refactor,
-(3) show the diff and the WHY behind each choice, (4) WAIT for the founder to review/approve
-before committing or merging, (5) next slice. Keep commits small and reviewable. Never batch
-multiple issues silently. This is a learning collaboration, not autonomous delivery.
+- Engine crates are sync + pure. `tokio`/`reqwest` stay quarantined to I/O edges (record, replay, server, ingest). Never introduce async into model/align/layout/attrib.
+- `DiffResult` + trace-format is the versioned seam (`schema_version`). Never fork it per
+  consumer; bump the version deliberately.
+- `serde_json`'s `preserve_order` feature is load-bearing for byte-parity, not a convenience.
+- Exit codes are diff(1)-style: `diff` 0=converged, 1=forked, 2=trouble. `demo` exits 1 on success; `record` propagates the *agent's* exit code instead.
+- Commit straight to `main` — no branches, no PRs. `(#N)` in a message is a GitHub *issue* ref.
+- One vertical slice at a time; WAIT for founder review before committing. See CONTRIBUTING.md.
 
-**State:** pre-v1. Tracker = GitHub issues + milestones (`gh issue list`). Milestones encode the
-cut line: **v0.1 = walking skeleton** (#1 model → #2 ingest → #3 align → #4 CLI → #5 demo),
-**v0.2 = offline benchmark** (#6 bench, #7 Mode A′). Decisions and measurements live in
-`docs/notebook.md` (append-only; every experiment gets an entry). Benchmark numbers are governed
-by BENCHMARK.md's pre-registered protocol — never publish a number outside it.
+## Gotchas that have already cost time
 
-**Verify before commit (non-negotiable):** `python3 spike/test_smoke.py && cargo fmt --all
---check && cargo clippy --all-targets -- -D warnings && cargo test --workspace`. CI runs
-exactly these; a red CI is a stop-the-line event. Commit or push only when the user asks. The
-quantitative fork-localization gate is **CI-visible** (issue #11, notebook 013):
-`chimera_parity` runs on the committed, GAIA-sanitized dev set in
-`bench/fixtures/chimera_noise_seed42_dev/` and `cargo test --workspace` covers it — an
-`amberfork-align` change that tanks parity is a red CI, no longer only caught by local
-discipline. The GAIA sanitizer itself is Rust (`amberfork-bench sanitize`, issue #17; byte
-parity with the retired Python proven in notebook 019). To audit/regenerate the fixture from
-raw upstream data, follow the recipe in that dir's README (`convert_whowhen →
-amberfork-bench sanitize canonical → make_pairs → amberfork-bench sanitize pairs`, seed 42).
+- `cargo test --workspace` does NOT cover `ui/`, and `ui.yml` runs on every PR. Green locally
+  can still be a red CI. `scripts/verify.sh --full` covers both.
+- `amberfork serve` ALWAYS fails in a dev checkout (`ui-dist/` is gitignored → `BundleMissing`,
+  exit 2). A test asserts this. To see the UI: `cd ui && trunk serve`.
+- Under the Claude Code Bash sandbox, binding 127.0.0.1 is denied, so 25 socket tests fail for
+  reasons unrelated to the code. `scripts/verify.sh` detects this and says so.
+- `python3` is a hard dep of `cargo test`: two CLI tests read `spike/fixtures/smoke/`.
+- Render output depends on `NO_COLOR`/`TERM`/`COLORTERM`; insta snapshots pin the no-color form.
+- Only 3 tests are `#[ignore]`d (all network, all in `amberfork-bench`), so a bad upstream pin
+  looks green in CI. Validate pin changes by running them by hand.
 
-**Engineering standards (build like a senior engineer):**
-- **Optimize for the artifact, not the effort.** When weighing a technical decision, give
-  essentially NO weight to development cost — solo-dev hours, time pressure, how hard something is
-  to write. Weigh quality, simplicity, modern industry practice, robustness, scalability, and
-  long-term maintainability. Choose the correct, durable design over the expedient one: the proper
-  abstraction, the right data structure, the type-safe API, the honest error path — even when a
-  shortcut would ship sooner. "It's just a solo project / that's faster to hack" is not a valid
-  reason to pick the lesser option. (This governs HOW each slice is built, not WHICH slices exist:
-  it is NOT license to gold-plate, add speculative features, or break the vertical-slice/scope
-  discipline below. Simplicity is itself a quality goal — pick the highest-quality *simplest*
-  implementation of the thing actually needed now, and reach for complexity only when the problem
-  genuinely demands it.)
-- **Vertical slices, not horizontal layers.** Keep `amberfork diff <bad> --against <good>` working
-  end-to-end at every commit; thicken the slice. Never build a crate ahead of the need it serves.
-- **Contracts first.** The `DiffResult`/trace-format schema is the seam every consumer reads;
-  change it deliberately, version it (`schema_version`), never fork it per-consumer.
-- **Types over stringly-typed.** Prefer enums/newtypes and `Result` over panics on the library
-  path; `tokio` stays quarantined to I/O edges (ingest/serve), engine crates stay sync + pure.
-- **Tests are part of done.** New behavior ships with a test (unit / `proptest` invariant /
-  `insta` snapshot). The self-align invariant (a run vs itself = no fork) is the canonical guard.
-- **Honesty in artifacts.** Report the number you measured, the caveat, the coverage. A flake is
-  a failure, not a retry. Correct a flattering number when a fuller run contradicts it (see the
-  70%→~50% correction in notebook 002).
-- **Small, conventional commits** (`feat:`/`fix:`/`bench:`/`docs:`/`chore:`), one logical change
-  each, message says why.
-- **No scope creep.** Planning freeze until v0.1 ships: new thinking goes to `docs/notebook.md`
-  or an issue, not a new root-level doc. `spike/` is throwaway Python — port findings to Rust,
-  never import the code.
+## Settled — do not relitigate
 
-**Empirical decisions already locked (don't relitigate; see `docs/design/…` Amendment 2026-07-08):**
-- Fork criterion = "first non-sync BLOCK the alignment does not recover from" (resync-k, default
-  k=2) — NOT "first non-sync move" (that measured 0%).
-- Cost model starts lexical/tf-idf (deterministic, no ONNX); embeddings must beat lexical on dev
-  fixtures to earn default status. ONNX/T25 is optional, off the critical path.
-- Benchmark = controlled-injection (primary, reproducible) + Mode A′ cross-system pairs (v0.2
-  co-primary, windowed metrics only — cross-system gold is murky).
+- Fork rule = first non-sync BLOCK that never re-syncs (resync-k, k=2). "First non-sync move"
+  measured 0.00. k=1 and k=3 both measured worse.
+- Cost model is lexical/tf-idf. Embeddings already lost a fair test against it — do not add
+  ONNX/`ort`. Bar to change: beat lexical on the dev fixtures.
+- Benchmark numbers only via BENCHMARK.md's pre-registered protocol. The test split is sealed:
+  scored once per release tag, never tuned on.
 
-## Design System
-Always read `DESIGN.md` before making any visual or UI decisions.
-All font choices, colors, spacing, layout, and aesthetic direction are defined there.
-The north star is "sameness recedes, divergence glows": color is reserved for divergence
-(the fork + divergent path in amber `#FF7A1A`); red/green only inside the content-diff pane.
-Render with DOM/SVG (never canvas/wgpu) so text stays selectable and accessible.
-Do not deviate without explicit user approval. In QA mode, flag any code that doesn't match DESIGN.md.
+## Deeper docs
 
-**frontend-design skill (autonomous, DESIGN.md-subordinate).** For ANY work that builds or
-restyles UI — `ui/` Leptos components, the web app shell, HTML mockups, README hero visuals —
-proactively invoke the `frontend-design` skill (vendored at `.claude/skills/frontend-design/`,
-Anthropic, Apache-2.0) WITHOUT waiting to be asked. It is the anti-slop execution layer: use
-its plan-then-critique process, typography discipline, CSS-specificity hygiene, copy-as-design
-voice, and quality floor (responsive, visible focus, reduced motion — which DD4 already
-mandates). Precedence is built into the skill itself ("where the brief pins down a visual
-direction, follow it exactly — the brief's own words always win"): **DESIGN.md is the brief
-and always wins.** The skill must never introduce a new palette, typeface, or signature
-element — amberfork's signature is the amber fork ignition, already chosen.
-
-## Skill routing
-
-When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
-
-Key routing rules:
-- Product ideas/brainstorming → invoke /office-hours
-- Strategy/scope → invoke /plan-ceo-review
-- Architecture → invoke /plan-eng-review
-- Design system/plan review → invoke /design-consultation or /plan-design-review
-- Full review pipeline → invoke /autoplan
-- Bugs/errors → invoke /investigate
-- QA/testing site behavior → invoke /qa or /qa-only
-- Code review/diff check → invoke /review
-- Visual polish → invoke /design-review
-- Building or styling web UI (ui/, app shell, HTML mockups) → invoke /frontend-design
-  proactively, no need to ask (autonomous; DESIGN.md wins all conflicts)
-- Ship/deploy/PR → invoke /ship or /land-and-deploy
-- Save progress → invoke /context-save
-- Resume context → invoke /context-restore
-- Author a backlog-ready spec/issue → invoke /spec
+`docs/design/design-run-diff-debugger.md` (architecture, dated Amendments win) · `docs/notebook.md`
+(append-only decisions/measurements) · `BENCHMARK.md` · `DESIGN.md` · `docs/trace-format.md` · `CONTRIBUTING.md`.

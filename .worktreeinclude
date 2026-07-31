@@ -1,0 +1,9 @@
+# Gitignored files copied into every worktree Claude Code creates (.gitignore syntax;
+# only paths that are BOTH matched here AND gitignored are copied).
+#
+# Deliberately empty. Checked 2026-07-28:
+#   - no .env / credential file exists in this repo, and no test reads an API key
+#   - scripts/verify.sh needs only committed data (bench/fixtures/, spike/fixtures/smoke/)
+#   - crates/amberfork-server/ui-dist/ is the one useful candidate but is empty locally;
+#     rebuild it per-worktree with `cd ui && trunk build` if you need `amberfork serve`
+#   - bench/data/ (7.4M) and spike/data/ (27M) are fixture-REGENERATION inputs only
