@@ -2,16 +2,19 @@
 //! payload of one `agent-evals/hal_traces` zip) becomes canonical [`amberfork_model::Run`]s, one per
 //! GAIA task, for the natural-pair benchmark's reference side (issue #41 S4b).
 //!
-//! The fixture exercises every mapping decision the adapter makes (notebook 047):
+//! The fixture exercises every mapping decision the adapter makes (notebook 047, granularity fix
+//! S5):
 //! - `raw_logging_results` is a flat, double-logged turn stream — a `litellm.completion` wrapper 1:1
 //!   over an `openai.chat.completions.create` leaf. The adapter keeps the content-bearing openai
-//!   leaves as turns and drops the redundant litellm wrappers, so a task's step count is its turn
-//!   count, not its record count;
+//!   leaves as turns and drops the redundant litellm wrappers;
 //! - turns are grouped by `attributes.weave_task_id` (a GAIA UUID — the same join key TRAIL's S4a
 //!   lifts) and ordered by `started_at` (RFC3339), NOT by array position;
 //! - each turn is an `LLM` step whose `inputs` keep only `{model, messages}` and `outputs` only
 //!   `{choices, usage}` — client/transport internals (`self`, `extra_headers`, …) are dropped, both
 //!   as fidelity and so a leaked auth header can never ride into a canonical `Run` (issue #43);
+//! - a later turn's newly appended, non-assistant `inputs.messages` (the tool/environment reply
+//!   Weave never logs as its own record) become a synthesized `Tool` step between the two turns
+//!   that bracket it — closing the granularity gap against TRAIL's step-per-action export;
 //! - the run's verdict is never asserted on the trajectory: `Run.outcome` stays `None` and the
 //!   HAL pass/fail rides beside it in `HalMeta.passed`, keyed off `results.successful_tasks`;
 //! - a turn with neither input nor output content degrades to a metadata-only step plus a
@@ -136,13 +139,57 @@ fn one_run_per_task_sorted_by_task_id() {
 fn litellm_wrappers_dropped_openai_leaves_are_turns() {
     let runs = hal::convert_str(HAL_DUMP).unwrap();
     let a = &runs[0];
-    // task-aaaa has 4 records (2 litellm + 2 openai) but only 2 turns.
-    assert_eq!(a.run.steps.len(), 2, "only openai leaves become steps");
-    for step in &a.run.steps {
-        assert_eq!(step.kind, StepKind::Llm);
+    // task-aaaa has 4 records (2 litellm + 2 openai) but only 2 LLM turns; the other 2 steps are
+    // the synthesized tool-result steps between them (see `appended_...` below).
+    let llm_steps: Vec<_> = a
+        .run
+        .steps
+        .iter()
+        .filter(|s| s.kind == StepKind::Llm)
+        .collect();
+    assert_eq!(llm_steps.len(), 2, "only openai leaves become LLM steps");
+    for step in &llm_steps {
         assert_eq!(step.name, "openai.chat.completions.create");
+    }
+    for step in &a.run.steps {
         assert_eq!(step.parent_idx, None, "turns form a linear chain");
     }
+}
+
+#[test]
+fn appended_non_assistant_messages_become_tool_steps() {
+    let runs = hal::convert_str(HAL_DUMP).unwrap();
+    let a = &runs[0];
+    // turn2's inputs.messages is turn1's [sys] plus [u1 (user), a1 (assistant), u2 (user)]. The
+    // assistant message is the model's own prior output (already the turn1 LLM step) and must not
+    // get a second step; the two user messages are the environment's replies and must.
+    assert_eq!(
+        a.run.steps.len(),
+        4,
+        "2 LLM turns + 2 synthesized tool-result steps"
+    );
+    assert_eq!(a.run.steps[0].kind, StepKind::Llm, "turn1");
+    assert_eq!(a.run.steps[1].kind, StepKind::Tool);
+    assert_eq!(a.run.steps[1].name, "tool_result");
+    assert_eq!(
+        a.run.steps[1].outputs,
+        Some(Payload::Text("u1".to_string()))
+    );
+    assert_eq!(a.run.steps[2].kind, StepKind::Tool);
+    assert_eq!(
+        a.run.steps[2].outputs,
+        Some(Payload::Text("u2".to_string()))
+    );
+    assert_eq!(a.run.steps[3].kind, StepKind::Llm, "turn2");
+    assert_eq!(
+        a.run
+            .steps
+            .iter()
+            .filter(|s| s.kind == StepKind::Tool)
+            .count(),
+        2,
+        "the echoed assistant message never earns its own step"
+    );
 }
 
 #[test]
@@ -160,7 +207,7 @@ fn turns_ordered_by_started_at_not_array_position() {
         Some("2025-04-16T23:46:18.029466+00:00")
     );
     assert_eq!(
-        a.run.steps[1].t_start.as_deref(),
+        a.run.steps[3].t_start.as_deref(),
         Some("2025-04-16T23:46:20.000000+00:00")
     );
 }
@@ -168,8 +215,8 @@ fn turns_ordered_by_started_at_not_array_position() {
 #[test]
 fn inputs_keep_only_model_and_messages_no_secrets() {
     let runs = hal::convert_str(HAL_DUMP).unwrap();
-    // turn2 is the leaf that carried `self` + `extra_headers` with a secret token.
-    let Some(Payload::Object(inputs)) = &runs[0].run.steps[1].inputs else {
+    // turn2 (now steps[3]) is the leaf that carried `self` + `extra_headers` with a secret token.
+    let Some(Payload::Object(inputs)) = &runs[0].run.steps[3].inputs else {
         panic!("turn2 inputs should be a field-diffable object");
     };
     let mut keys: Vec<&str> = inputs.keys().map(String::as_str).collect();

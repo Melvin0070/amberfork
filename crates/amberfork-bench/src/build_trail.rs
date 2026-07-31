@@ -235,29 +235,61 @@ fn read_failings(
             without_gold += 1;
             continue;
         };
-        let gold =
-            trail::annotations_from_json_str(&gold_text).map_err(|source| BuildError::Convert {
-                path: gold_path,
-                source,
-            })?;
-        let earliest = gold
-            .resolve(&converted.run)
-            .into_iter()
-            .filter_map(|g| g.step)
-            .min();
+        // A gold file that exists but fails to parse (TRAIL ships one upstream file with a
+        // trailing comma even Python's own `json.load` rejects) reads the same as an
+        // unresolvable gold: a counted exclusion, never a crash (BENCHMARK.md's
+        // exclusions-as-data rule; the fetch integrity test documents this exact file).
+        let Ok(gold) = trail::annotations_from_json_str(&gold_text) else {
+            without_gold += 1;
+            continue;
+        };
+        // TRAIL's Patronus SDK faithfully logs the smolagents harness's own orchestration spans
+        // (`main`, `get_examples_to_answer`, `create_agent_hierarchy`, …) ahead of the first real
+        // model/tool content; HAL's Weave export never captures that layer at all, so the
+        // reference side has no counterpart for it (measured: 69/69 real traces, S5). Trimmed here
+        // — not in the general `trail` adapter, which stays a faithful full-tree export for every
+        // other consumer — mirroring the boundary `hal`'s own adapter already draws for its
+        // `litellm.completion` wrapper: drop the content-free bookkeeping prefix, keep the
+        // content-bearing steps. Gold is resolved AFTER trimming so `GoldStep::step` already reads
+        // in the trimmed run's index space; no manual offset arithmetic.
+        let run = trim_leading_content_free(converted.run);
+        let earliest = gold.resolve(&run).into_iter().filter_map(|g| g.step).min();
         let Some(gold_step) = earliest else {
             without_gold += 1;
             continue;
         };
 
         eligible.push(Failing {
-            stem: converted.run.id.clone(),
-            run: converted.run,
+            stem: run.id.clone(),
+            run,
             task_id,
             gold_step,
         });
     }
     Ok((eligible, total, without_gold))
+}
+
+/// Drop a TRAIL run's leading content-free steps (harness/orchestration spans with neither input
+/// nor output captured — see [`read_failings`]'s call site for why), re-indexing what remains so
+/// `idx` stays a contiguous `0..len` and `parent_idx` stays internally consistent: a kept step
+/// whose parent was trimmed becomes a root (`None`); a kept step whose parent survived is
+/// remapped to the parent's new index. A run with no leading content-free steps is returned
+/// unchanged (the common case for a task that starts directly with model content).
+fn trim_leading_content_free(mut run: Run) -> Run {
+    let n = run
+        .steps
+        .iter()
+        .take_while(|step| step.inputs.is_none() && step.outputs.is_none())
+        .count();
+    if n == 0 {
+        return run;
+    }
+    run.steps.drain(..n);
+    for step in &mut run.steps {
+        step.idx -= n;
+        step.parent_idx = step.parent_idx.filter(|&p| p >= n).map(|p| p - n);
+    }
+    run
 }
 
 /// Read every decrypted HAL dump in `dir` and convert each into its per-task [`Reference`]
@@ -435,7 +467,23 @@ impl std::error::Error for BuildError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use amberfork_model::{Outcome, SchemaVersion};
+    use amberfork_model::{Outcome, Payload, SchemaVersion, Step, StepKind};
+
+    /// A minimal step for [`trim_leading_content_free`] tests: `content` toggles whether it counts
+    /// as content-bearing (`Some(text)` sets `outputs`, `None` leaves both `inputs`/`outputs` unset).
+    fn step(idx: usize, content: Option<&str>, parent_idx: Option<usize>) -> Step {
+        Step {
+            idx,
+            kind: StepKind::Other,
+            name: format!("step{idx}"),
+            inputs: None,
+            outputs: content.map(|text| Payload::Text(text.to_string())),
+            attrs: serde_json::Map::new(),
+            t_start: None,
+            t_end: None,
+            parent_idx,
+        }
+    }
 
     fn run(id: &str) -> Run {
         Run {
@@ -585,5 +633,49 @@ mod tests {
         );
         assert_eq!(outcome.pairs.len(), 1);
         assert_eq!(outcome.pairs[0].reference_stem, "aaa/gaia-1");
+    }
+
+    #[test]
+    fn trim_leading_content_free_drops_only_the_content_free_prefix() {
+        let mut r = run("trace");
+        // Two content-free harness steps, then real content, then a content-free step in the
+        // MIDDLE (must survive — trimming is a prefix operation, not a filter).
+        r.steps = vec![
+            step(0, None, None),
+            step(1, None, Some(0)),
+            step(2, Some("real"), Some(1)),
+            step(3, None, Some(2)),
+        ];
+        let trimmed = trim_leading_content_free(r);
+        assert_eq!(trimmed.steps.len(), 2, "only the leading pair is dropped");
+        assert_eq!(trimmed.steps[0].idx, 0);
+        assert_eq!(trimmed.steps[0].outputs, Some(Payload::Text("real".into())));
+        assert_eq!(
+            trimmed.steps[0].parent_idx, None,
+            "its parent (old idx 1) was trimmed, so it becomes a root"
+        );
+        assert_eq!(trimmed.steps[1].idx, 1);
+        assert_eq!(
+            trimmed.steps[1].parent_idx,
+            Some(0),
+            "its parent (old idx 2) survived and is remapped to the new index"
+        );
+    }
+
+    #[test]
+    fn trim_leading_content_free_is_a_no_op_when_the_first_step_has_content() {
+        let mut r = run("trace");
+        r.steps = vec![step(0, Some("real"), None), step(1, None, Some(0))];
+        let trimmed = trim_leading_content_free(r);
+        assert_eq!(trimmed.steps.len(), 2, "nothing to trim");
+        assert_eq!(trimmed.steps[1].parent_idx, Some(0));
+    }
+
+    #[test]
+    fn trim_leading_content_free_on_an_all_content_free_run_drops_everything() {
+        let mut r = run("trace");
+        r.steps = vec![step(0, None, None), step(1, None, Some(0))];
+        let trimmed = trim_leading_content_free(r);
+        assert!(trimmed.steps.is_empty());
     }
 }

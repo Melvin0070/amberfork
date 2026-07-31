@@ -2296,3 +2296,82 @@ an operator step, not a unit-test fixture.
 **Next.** S5 — scoring, Wilson CIs, committed results, `report` snapshot, and the pre-registered
 predicted-∈-gold metric choice 044 deferred. That is also where the cross-model gold-quality caveat
 gets measured rather than just flagged.
+
+## 051 · 2026-07-31 · S5 real run: two granularity bugs found and fixed, still an honest null (#41 S5)
+
+**The operator run.** `amberfork-bench fetch` pulled the real TRAIL GAIA traces + gold (117/117,
+GitHub, MIT) and Who&When/TapeAgents (already cached). For the HAL side, picked the backing model
+by actual GAIA accuracy rather than the first zip in the manifest: HAL's own leaderboard puts
+**GPT-5 Medium (`gpt520250807`) at 62.8%** — best of every Open Deep Research entry, ~103 passing
+tasks vs the 54 the BENCHMARK.md o3-mini example covers — for an 880 MB download (sha256-verified
+against the pinned LFS hash) instead of the full ~10.8 GB set. `hal-decrypt` → `build-trail-pairs`
+against the fetched traces immediately hard-crashed: `read_failings` propagated a malformed-gold
+parse failure as a `BuildError` instead of counting it, so the one upstream gold file with a
+trailing comma (documented in `fetch.rs`'s own integrity test, notebook 050) took the whole build
+down. Fixed — malformed gold now falls into the same `without_gold` bucket a missing file or an
+unresolvable gold already does (`build_trail.rs`, one `Ok(gold) else { without_gold += 1; continue }`
+swap); `build_trail_cli.rs` gained a third fixture trace with a trailing-comma gold file asserting
+the drop, never a crash. Real build: **69 natural pairs** from 117 TRAIL traces (4 without a usable
+gold step: the 3 known clean traces + the 1 malformed file; 44 unpaired — no passing GPT-5 run on
+that task).
+
+**First score was alarming, not just null.** All three real arms measured **0.00 exact/±1/±3**
+against `random`'s 0.03/0.13/0.41 — the engine was *worse than guessing*. `amberfork diff` on one
+pair showed why: origin step 00, conf 0.97 — sustained divergence from the very first step, no
+recovery. Two distinct, stacked causes, both root-caused before touching anything:
+
+1. **HAL logs the request, never the reply.** Weave records what the model was *asked*, but a
+   tool/environment result is never its own record — it only exists as the extra messages a later
+   turn's `inputs.messages` carries beyond what the previous turn already had. TRAIL's smolagents
+   export, by contrast, gives every micro-action (llm decision, tool execution, harness log) its
+   own step. A HAL reference was structurally ~half the effective step count of the TRAIL trace it
+   was scored against, with no tool-result content anywhere to match. Fixed in
+   `amberfork-ingest::hal`: for each turn, diff its `inputs.messages` against the previous turn's,
+   and synthesize a `Tool` step (name `tool_result`, generic — the specific tool name is not
+   reconstructed, not this slice's job) for every newly appended *non-assistant* message (the
+   assistant's own message is skipped — it is already the previous turn's own step, just echoed
+   back in history). Both OpenAI content shapes handled (`content: string` and the multimodal
+   `content: [{type: "text", text: …}]` array TRAIL's tool-error turns use). Module docs and all 9
+   `tests/hal.rs` cases updated; new `appended_non_assistant_messages_become_tool_steps` locks the
+   dedup (the echoed assistant message must never earn a second step).
+2. **TRAIL logs the harness, HAL doesn't.** Measured, not assumed: **69/69** TRAIL failing traces
+   start with ≥1 content-free orchestration step (`main`, `get_examples_to_answer`,
+   `create_agent_hierarchy`, …) — the Patronus SDK faithfully captures the smolagents harness's own
+   bookkeeping spans; Weave never logs that layer at all. Every pair was therefore guaranteed to
+   start misaligned (empty vs. real content) before any semantic comparison had a chance. Fixed —
+   *only* inside `build-trail-pairs`, not the general `trail` adapter (which must stay a faithful
+   full-tree export for every other consumer) — by trimming a run's leading content-free steps and
+   re-resolving gold against the *trimmed* run, so `GoldStep::step` already reads in the trimmed
+   index space with no manual offset arithmetic. `trim_leading_content_free` re-indexes `idx`
+   sequentially and remaps `parent_idx` (a kept step whose parent was trimmed becomes a root; one
+   whose parent survived is remapped to its new index) — 3 unit tests cover a mixed-position
+   content-free step (must survive; trimming is a prefix operation, not a filter), the no-op case,
+   and the all-content-free case. Mirrors the exact boundary `hal`'s own adapter already draws for
+   its `litellm.completion` wrapper: drop the bookkeeping prefix, keep the content-bearing steps.
+
+**Final measured result (both fixes applied, real 69-pair set, frozen params):**
+exact 0.00 [0.00, 0.05], ±1 0.00 [0.00, 0.05], **±3 0.35 [0.25, 0.47]** — vs. random's
+0.14/0.36/0.61 (n=69, split=all: 23 dev / 46 test). Real, non-zero signal now exists at the ±3
+window where there was none before either fix — but the headline metric is still a genuine null,
+and the engine still trails random at every window. Going further would mean changing the cost
+model itself (how step similarity is scored), which BENCHMARK.md gates behind beating lexical on
+dev fixtures first — a separate, larger piece of work, deliberately out of scope here. Honesty note
+on protocol discipline: the diagnosis that motivated both fixes came from an all-split run and one
+inspected test-split pair (`pair_00`); both changes are data-construction/ingest-fidelity fixes, not
+cost-model or engine-parameter tuning, so they sit outside rule 1's "tuning happens on dev only"
+prohibition — but the provenance is recorded here in the spirit of rule 3 regardless.
+
+**Committed:** `bench/results/trail_hal_natural_all.json` (all 69 pairs, split=all, same-agent so
+`cross_system: 0` and the ordinary chimera protocol, never the Mode A′ banner) plus
+`report_reproduces_the_committed_trail_hal_natural_results_offline` (insta snapshot,
+`bench_cli.rs`) proving it re-renders byte-for-byte offline. Full gate green (fmt, clippy
+`-D warnings`, `cargo test --workspace`; the only failures are the pre-existing sandbox
+127.0.0.1-bind ones CLAUDE.md already documents as unrelated to any code path touched here).
+
+**Not in this slice, on purpose.** The predicted-∈-gold metric 044 deferred is still deferred. The
+cross-model gold-quality caveat (GPT-5 reference vs whatever model TRAIL's own o3-mini ODR run used)
+is flagged, not measured — a second, later arm if the natural-pair source earns further investment.
+No cost-model change was attempted (see above).
+
+**Next.** #41's epic is at a natural close for now: a real, honestly-measured (still null) result
+is committed. #39 slice B (gen_ai) is next in the tracked epic order.

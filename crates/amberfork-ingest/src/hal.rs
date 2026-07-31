@@ -11,13 +11,23 @@
 //!   wrapper and the `openai.chat.completions.create` leaf it delegates to (verified: exactly paired
 //!   across all tasks, notebook 047). The leaf is content-complete (`inputs.messages` in,
 //!   `output.choices` out); the wrapper is redundant. So the adapter keeps only the openai leaves as
-//!   turns and drops the wrappers — a task's step count is its turn count, the granularity a fork
-//!   between two same-agent runs actually lives at.
+//!   turns and drops the wrappers.
 //! - **Grouping is by GAIA task, ordering is by wall-clock.** Each record carries its GAIA
 //!   `task_id` under `attributes.weave_task_id` (the same UUID namespace TRAIL's S4a join key lifts),
 //!   so one blob fans out into one [`Run`] per task. A Weave record's `started_at` is RFC3339, so
 //!   the turns of a task sort into execution order by string comparison — no dependence on the
-//!   (arbitrary) array position. Turns form a linear chain, so `parent_idx` stays `None`.
+//!   (arbitrary) array position.
+//! - **A turn's `output` is not the whole turn (notebook 047's granularity risk, measured and fixed
+//!   in S5).** Weave logs the *request* to the model, never what the tool/environment handed back —
+//!   that result only exists as the extra messages the *next* call's `inputs.messages` carries beyond
+//!   what the previous call already had. TRAIL's smolagents export, by contrast, gives the tool result
+//!   its own step. Left alone, a HAL run is roughly half the step count of the TRAIL run it is scored
+//!   against for no reason but a logging artifact, and the aligner sees no tool-result content to
+//!   match against at all. So each turn's *newly appended, non-assistant* messages (the environment's
+//!   reply) are materialized as their own `Tool` step, named generically (`tool_result` — the specific
+//!   tool name is not reconstructed, since it is not this slice's job) between the two `Llm` turns
+//!   that bracket it. Turns and synthesized steps together still form a linear chain, `parent_idx`
+//!   stays `None`.
 //!
 //! Three boundaries the adapter makes explicit, each mirroring an existing rule:
 //! - **Only semantic content crosses into a step.** `inputs` keeps `{model, messages}` and `outputs`
@@ -145,11 +155,34 @@ fn convert_dump(dump: RawHalDump) -> Vec<ConvertedHal> {
             // RFC3339 timestamps sort lexically into execution order; array position is arbitrary.
             records.sort_by(|a, b| a.started_at.cmp(&b.started_at));
             let mut warnings = Vec::new();
-            let steps: Vec<Step> = records
-                .into_iter()
-                .enumerate()
-                .map(|(idx, record)| record.into_step(idx, &mut warnings))
-                .collect();
+            let mut steps: Vec<Step> = Vec::new();
+            let mut prev_messages_len = 0usize;
+            for (turn_idx, record) in records.into_iter().enumerate() {
+                let messages = message_array(&record.inputs);
+                if turn_idx > 0 {
+                    for msg in messages.iter().skip(prev_messages_len) {
+                        if msg.get("role").and_then(Value::as_str) == Some("assistant") {
+                            continue;
+                        }
+                        if let Some(text) = message_text(msg) {
+                            steps.push(Step {
+                                idx: steps.len(),
+                                kind: StepKind::Tool,
+                                name: "tool_result".to_string(),
+                                inputs: None,
+                                outputs: Some(Payload::Text(text)),
+                                attrs: Map::new(),
+                                t_start: None,
+                                t_end: None,
+                                parent_idx: None,
+                            });
+                        }
+                    }
+                }
+                prev_messages_len = messages.len();
+                let idx = steps.len();
+                steps.push(record.into_step(idx, &mut warnings));
+            }
             let id = if run_prefix.is_empty() {
                 task_id.clone()
             } else {
@@ -174,6 +207,41 @@ fn convert_dump(dump: RawHalDump) -> Vec<ConvertedHal> {
             }
         })
         .collect()
+}
+
+/// The `messages` array a turn's raw `inputs` carries (chat history sent to the model), or empty
+/// when absent/malformed. Used only to diff consecutive turns and recover what the environment
+/// appended between them — never kept on the [`Step`] itself (that stays `{model, messages}` via
+/// [`project`], the existing fidelity boundary).
+fn message_array(inputs: &Value) -> Vec<Value> {
+    inputs
+        .get("messages")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+}
+
+/// The human-readable text of one chat message, whichever of the two shapes OpenAI's wire format
+/// uses: a plain string, or an array of content blocks (`{"type": "text", "text": "..."}`) — the
+/// multimodal form some tool/user turns carry. Non-text blocks (images, etc.) are dropped; a
+/// message with no text content of either shape yields `None`.
+fn message_text(msg: &Value) -> Option<String> {
+    match msg.get("content") {
+        Some(Value::String(s)) if !s.is_empty() => Some(s.clone()),
+        Some(Value::Array(items)) => {
+            let mut buf = String::new();
+            for item in items {
+                if let Some(text) = item.get("text").and_then(Value::as_str) {
+                    if !buf.is_empty() {
+                        buf.push('\n');
+                    }
+                    buf.push_str(text);
+                }
+            }
+            (!buf.is_empty()).then_some(buf)
+        }
+        _ => None,
+    }
 }
 
 /// Copy just the trajectory-content fields (`keys`) out of a request/response object into a

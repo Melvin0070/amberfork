@@ -501,6 +501,35 @@ fn report_reproduces_the_committed_mode_a_prime_results_offline() {
     insta::assert_snapshot!("report_committed_mode_a_prime", stdout);
 }
 
+/// The committed TRAIL↔HAL natural-pair results document (issue #41 S5): all 69 real pairs a
+/// TRAIL failing trace shares with a passing HAL GPT-5 reference on the same GAIA task_id, under
+/// the frozen params — same-agent (never cross-system), so it scores through the ordinary
+/// chimera protocol, not the Mode A′ banner. Identifiers only: pair names, TRAIL trace ids, and
+/// the HAL model label — no GAIA question/answer content (notebook 001/T30, mirroring Mode A′).
+fn committed_trail_hal_natural_results() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bench/results/trail_hal_natural_all.json")
+}
+
+#[test]
+fn report_reproduces_the_committed_trail_hal_natural_results_offline() {
+    // Same offline-reproduction guarantee as the other committed documents, plus: this is a
+    // same-agent natural pair (both sides share the Open Deep Research scaffolding), so the
+    // rendered table must carry the ordinary chimera protocol, never the cross-system banner.
+    let output = bench()
+        .arg("report")
+        .arg("--results")
+        .arg(committed_trail_hal_natural_results())
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("chimera protocol"));
+    let stdout = String::from_utf8(output.get_output().stdout.clone()).expect("utf-8 stdout");
+    assert!(
+        stdout.contains("coverage: 69/69 pairs evaluated"),
+        "the committed table must carry the full evaluated set"
+    );
+    insta::assert_snapshot!("report_committed_trail_hal_natural", stdout);
+}
+
 /// The repo root — `aggregate`'s committed artifact records its sources as repo-relative
 /// paths (the same convention as `params.source`), so the reproduction test must invoke the
 /// binary from the root with relative paths, exactly as the operator did.

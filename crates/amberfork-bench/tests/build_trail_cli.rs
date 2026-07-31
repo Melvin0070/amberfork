@@ -113,6 +113,31 @@ const GOLD_XYZ: &str = r#"{
   ]
 }"#;
 
+/// A third TRAIL trace, on GAIA task `gaia-bad-gold` — its gold file exists but fails to parse
+/// (a trailing comma, the same shape as the one real upstream file TRAIL ships that even
+/// Python's own `json.load` rejects). It must be an excluded "without a usable gold step" case,
+/// never a hard build failure.
+const TRACE_BAD_GOLD: &str = r#"{
+  "trace_id": "trace-gaia-0003",
+  "spans": [
+    {
+      "span_id": "root0000",
+      "span_name": "get_examples_to_answer",
+      "timestamp": "2025-03-19T16:42:00.000000Z",
+      "span_attributes": {},
+      "logs": [ { "body": { "function.output": [ { "task_id": "gaia-bad-gold" } ] } } ],
+      "child_spans": []
+    }
+  ]
+}"#;
+
+const GOLD_MALFORMED: &str = r#"{
+  "trace_id": "trace-gaia-0003",
+  "errors": [
+    { "category": "Wrong Tool Use", "location": "step0001", "impact": "MEDIUM" },
+  ]
+}"#;
+
 /// A decrypted HAL config dump (one backing model, `gpt-4o`) that passed GAIA task `gaia-abc` —
 /// the reference side of the natural pair.
 const HAL_DUMP_GPT4O: &str = r#"{
@@ -149,10 +174,13 @@ fn build_trail_pairs_constructs_a_natural_set_that_flows_through_the_seam() {
     write(&gold.join("trace_0001.json"), GOLD_ABC);
     write(&traces.join("trace_0002.json"), TRACE_XYZ);
     write(&gold.join("trace_0002.json"), GOLD_XYZ);
+    write(&traces.join("trace_0003.json"), TRACE_BAD_GOLD);
+    write(&gold.join("trace_0003.json"), GOLD_MALFORMED);
     write(&hal.join("gpt4o.json"), HAL_DUMP_GPT4O);
 
     // Build: the gaia-abc trace pairs with the gpt-4o reference; the gaia-xyz trace has no
-    // passing HAL reference and is a counted, named drop.
+    // passing HAL reference and is a counted, named drop; the gaia-bad-gold trace's gold file
+    // fails to parse and is counted as "without a usable gold step", never a hard failure.
     bench()
         .arg("build-trail-pairs")
         .arg("--traces")
@@ -167,7 +195,7 @@ fn build_trail_pairs_constructs_a_natural_set_that_flows_through_the_seam() {
         .success()
         .stderr(predicate::str::contains("built 1 natural pair(s) -> "))
         .stderr(predicate::str::contains(
-            "TRAIL traces: 2, 0 without a usable gold step; HAL dumps: 1, 1 runs read",
+            "TRAIL traces: 3, 1 without a usable gold step; HAL dumps: 1, 1 runs read",
         ))
         .stderr(predicate::str::contains(
             "unpaired trace trace-gaia-0002: no passing HAL reference shares this trace's task_id",
@@ -179,7 +207,9 @@ fn build_trail_pairs_constructs_a_natural_set_that_flows_through_the_seam() {
         serde_json::from_slice(&fs::read(out.join("pair_00.json")).expect("pair_00.json written"))
             .expect("pair_00.json is valid JSON");
     assert_eq!(manifest["cross_system"], false);
-    assert_eq!(manifest["gold_step"], 1);
+    // TRACE_ABC's root0000 span carries no input/output content (only `logs`), so it is trimmed;
+    // step0001 (gold's location) shifts from index 1 to index 0 in the written run.
+    assert_eq!(manifest["gold_step"], 0);
     assert_eq!(manifest["failing"], "a_00.json");
     assert_eq!(manifest["reference"], "b_00.json");
     assert_eq!(manifest["meta"]["task_id"], "gaia-abc");
@@ -188,6 +218,17 @@ fn build_trail_pairs_constructs_a_natural_set_that_flows_through_the_seam() {
         out.join("a_00.json").is_file() && out.join("b_00.json").is_file(),
         "both run files are written beside the manifest"
     );
+    let failing: serde_json::Value =
+        serde_json::from_slice(&fs::read(out.join("a_00.json")).expect("a_00.json written"))
+            .expect("a_00.json is valid JSON");
+    let steps = failing["steps"].as_array().expect("steps array");
+    assert_eq!(
+        steps.len(),
+        1,
+        "the content-free root0000 harness span is trimmed from the written run"
+    );
+    assert_eq!(steps[0]["idx"], 0);
+    assert_eq!(steps[0]["name"], "LiteLLMModel.__call__");
 
     // Score the generated set: a natural pair carries no cross-system flag, so the seam reads it
     // as the ordinary chimera protocol — no Mode A′ banner.
