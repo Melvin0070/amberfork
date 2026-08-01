@@ -30,6 +30,7 @@ pub fn App(document: Document) -> impl IntoView {
     // reaches into the rows, and the header's `#fork` anchor still lands on the canvas fork row.
     let model = document.view.clone();
     let attribution = model.attribution.clone();
+    let deltas = model.deltas.clone();
     let verdict = model.verdict;
     // The run names the content-diff copy bakes into its repro command: observed (bad) run vs
     // reference (good), the DiffResult side convention — cloned before `model` moves into Canvas.
@@ -58,6 +59,7 @@ pub fn App(document: Document) -> impl IntoView {
             </main>
             <Attribution
                 attribution=attribution
+                deltas=deltas
                 verdict=verdict
                 selected=selected
                 field_diffs=field_diffs
@@ -133,8 +135,8 @@ pub fn DisconnectBanner(bad: String, good: String) -> impl IntoView {
 mod tests {
     use super::*;
     use amberfork_layout::{
-        AlignedStep, AttributionView, FieldDiffView, ForkRow, Row, RunHeader, RunRole, SlotText,
-        ViewModel,
+        AlignedStep, AttributionView, DeltasView, FieldDiffView, ForkRow, Row, RunHeader, RunRole,
+        SlotText, ViewModel,
     };
 
     /// Render a component to an HTML string exactly as the browser's SSR peer would — inside
@@ -195,9 +197,10 @@ mod tests {
                 // field exists on the contract so payloads carrying one still deserialize.
                 verdict: None,
             }),
-            // The web pane does not render deltas yet (#40's own later slice); the field
-            // exists on the contract so payloads carrying one still deserialize.
-            deltas: None,
+            deltas: Some(DeltasView {
+                total: Some("+5.20s · +300 tok".to_string()),
+                at_fork: Some("+1.20s".to_string()),
+            }),
             warnings: vec![],
         })
     }
@@ -290,6 +293,18 @@ mod tests {
         assert!(
             html.contains("row row--fork row--selected"),
             "the fork opens selected: {html}"
+        );
+    }
+
+    #[test]
+    fn app_threads_deltas_from_the_document_into_the_pane() {
+        // Proof the App component actually clones `model.deltas` through to `<Attribution>`,
+        // not just that the pane can render one in isolation (attribution.rs's own tests cover
+        // that half already).
+        let html = render(forked_doc());
+        assert!(
+            html.contains("+5.20s") && html.contains("+1.20s"),
+            "deltas render as part of the whole app, not just the pane in isolation: {html}"
         );
     }
 

@@ -437,6 +437,18 @@
         line-height: 1.6;
       }
 
+      /* A division of the SAME pane (issue #40), not a new one — a hairline divider plus a
+             heading-level step-down (h3, still styled as .attr-title) carry the hierarchy, so
+             this reads as "more of the same voice," never a competing header. */
+      .attr-section {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--hair);
+      }
+      .attr-section .attr-title {
+        margin-bottom: 10px;
+      }
+
       /* --- Content-diff pane: the selected pair's field-level -/+ evidence (issue #27). The
              ONLY red/green in any surface (DESIGN.md containment) — removed red, added green,
              kept deliberately distinct from the amber fork. Lives inside the attribution aside,

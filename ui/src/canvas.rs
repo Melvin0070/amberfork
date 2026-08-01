@@ -455,8 +455,8 @@ mod tests {
             rows,
             verdict,
             attribution: None,
-            // The web pane does not render deltas yet (#40's own later slice); the field
-            // exists on the contract so payloads carrying one still deserialize.
+            // These fixtures test canvas geometry, not the attribution pane's deltas
+            // subsection (attribution.rs's own tests cover that).
             deltas: None,
             warnings: vec![],
         }
