@@ -34,6 +34,7 @@ use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+mod html_export;
 mod load;
 mod render;
 mod verify;
@@ -138,6 +139,13 @@ struct DiffArgs {
     /// `--json`: the AI layer is not part of the machine contract.
     #[arg(long, value_enum, default_value_t = JudgeMode::Off)]
     judge: JudgeMode,
+
+    /// Write a self-contained static HTML export of the fork view to this path (issue #29) —
+    /// the same information the terminal renders, laid out with the web view's CSS so it opens
+    /// cold from a CI artifact or a pasted attachment. No JS, no wasm, not interactive.
+    /// Independent of --json/--verify/--judge; always attempted when given.
+    #[arg(long, value_name = "FILE")]
+    html: Option<PathBuf>,
 
     #[command(flatten)]
     output: OutputArgs,
@@ -277,6 +285,7 @@ fn run_diff(args: &DiffArgs) -> Result<ExitCode, LoadError> {
                 &args.output,
                 None,
                 args.judge,
+                args.html.as_deref(),
             ))
         }
         Ok(Some(config)) => {
@@ -330,13 +339,20 @@ fn run_diff_verify(args: &DiffArgs, config: &verify::VerifyConfig) -> Result<Exi
             return Ok(ExitCode::from(EXIT_TROUBLE));
         }
     }
-    Ok(report(&result, &good_run, &bad_run, &args.output, None))
+    Ok(report(
+        &result,
+        &good_run,
+        &bad_run,
+        &args.output,
+        None,
+        args.html.as_deref(),
+    ))
 }
 
 fn run_demo(args: &DemoArgs) -> ExitCode {
     let (good, bad) = demo_pair();
-    // `demo` has no `--judge` flag of its own (issue #10 first slice scopes the flag to `diff`,
-    // where a real reference/observed pair exists to narrate).
+    // `demo` has no `--judge`/`--html` flags of its own (both scope to `diff`, where a real
+    // reference/observed pair exists — issue #10's precedent for narrowing a flag's first slice).
     diff_and_report(
         good,
         bad,
@@ -344,6 +360,7 @@ fn run_demo(args: &DemoArgs) -> ExitCode {
         &args.output,
         Some(DEMO_HINT),
         JudgeMode::Off,
+        None,
     )
 }
 
@@ -580,13 +597,14 @@ fn diff_and_report(
     output: &OutputArgs,
     footer: Option<&str>,
     judge: JudgeMode,
+    html: Option<&Path>,
 ) -> ExitCode {
     let mut result = match run_engine(&good, &bad, max_steps) {
         Ok(result) => result,
         Err(code) => return code,
     };
     result.warnings = merged_warnings(good.warnings, bad.warnings);
-    let code = report(&result, &good.run, &bad.run, output, footer);
+    let code = report(&result, &good.run, &bad.run, output, footer, html);
     print_judge_explanation(judge, &result, &good.run, &bad.run, output);
     code
 }
@@ -667,6 +685,7 @@ fn report(
     bad_run: &Run,
     output: &OutputArgs,
     footer: Option<&str>,
+    html: Option<&Path>,
 ) -> ExitCode {
     if output.json {
         let json = serde_json::to_string_pretty(result)
@@ -696,6 +715,20 @@ fn report(
         // everything about producing it.
         for warning in &result.warnings {
             eprintln!("amberfork: warning: {}", warning.msg);
+        }
+    }
+
+    if let Some(path) = html {
+        // A second, independent `ViewModel::compute` — not the one just rendered above. Routing
+        // that one through `Document::new` would apply the browser wire envelope's 4 KiB-per-slot
+        // truncation to the terminal's input, which must stay byte-identical to before (`ui.md`'s
+        // "two unrelated truncation mechanisms" note). The export gets its own, freshly enveloped
+        // like `serve`'s document — appropriate here too, since this file is exactly the kind of
+        // shareable artifact the envelope guards against blowing up.
+        let document = Document::new(ViewModel::compute(result, good_run, bad_run));
+        if let Err(err) = std::fs::write(path, html_export::render(&document)) {
+            eprintln!("amberfork: --html {}: {err}", path.display());
+            return ExitCode::from(EXIT_TROUBLE);
         }
     }
 
