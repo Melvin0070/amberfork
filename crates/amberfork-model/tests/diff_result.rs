@@ -2,7 +2,8 @@
 
 use amberfork_model::{
     Attribution, AttributionMode, Counterfactual, DiffResult, FieldDiff, FieldDiffKind, Fork, Meta,
-    Move, MoveKind, Outcome, Recovery, RunPair, RunRef, Source, Warning, WarningCode,
+    Move, MoveKind, Outcome, Recovery, ResourceDelta, ResourceDeltas, RunPair, RunRef, Source,
+    Warning, WarningCode,
 };
 use serde_json::json;
 
@@ -53,6 +54,16 @@ fn diagnosed() -> DiffResult {
             cause_label: Some("used unofficial source".into()),
             confidence: 0.8,
         }),
+        deltas: Some(ResourceDeltas {
+            total: ResourceDelta {
+                latency_ms: Some(5_000),
+                tokens: Some(300),
+            },
+            at_fork: Some(ResourceDelta {
+                latency_ms: Some(1_200),
+                tokens: None,
+            }),
+        }),
         warnings: vec![Warning {
             code: WarningCode::ContentAbsent,
             msg: "step 1 had no captured content".into(),
@@ -92,12 +103,14 @@ fn converged_result_omits_fork_and_roundtrips() {
         fork: None,
         field_diffs: vec![],
         attribution: None,
+        deltas: None,
         warnings: vec![],
         meta: Meta::current(Source::Passive),
     };
     let value = serde_json::to_value(&converged).unwrap();
     assert!(value.get("fork").is_none(), "converged diff must omit fork");
     assert!(value.get("attribution").is_none());
+    assert!(value.get("deltas").is_none());
     let back: DiffResult = serde_json::from_value(value).unwrap();
     assert_eq!(converged, back);
 }
@@ -213,6 +226,17 @@ fn fork_step_observed_clamps_a_trailing_gap_to_the_last_step() {
         confidence: 0.5,
     });
     assert_eq!(result.fork_step_observed(), Some(1));
+}
+
+#[test]
+fn resource_delta_omits_a_none_field_rather_than_nulling_it() {
+    let value = serde_json::to_value(diagnosed()).unwrap();
+    let at_fork = &value["deltas"]["at_fork"];
+    assert_eq!(at_fork["latency_ms"], json!(1_200));
+    assert!(
+        at_fork.get("tokens").is_none(),
+        "no token data at the fork step must be omitted, not `null`"
+    );
 }
 
 #[test]

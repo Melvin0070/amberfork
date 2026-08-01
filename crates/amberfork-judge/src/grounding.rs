@@ -85,6 +85,7 @@ mod tests {
             fork,
             field_diffs: Vec::new(),
             attribution: None,
+            deltas: None,
             warnings: Vec::new(),
             meta: Meta::current(Source::Passive),
         }

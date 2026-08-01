@@ -76,6 +76,20 @@ impl StepBuilder {
         self.outputs(Payload::Text(out.into()))
     }
 
+    /// Set the RFC3339 start timestamp.
+    #[must_use]
+    pub fn t_start(mut self, t: impl Into<String>) -> Self {
+        self.step.t_start = Some(t.into());
+        self
+    }
+
+    /// Set the RFC3339 end timestamp.
+    #[must_use]
+    pub fn t_end(mut self, t: impl Into<String>) -> Self {
+        self.step.t_end = Some(t.into());
+        self
+    }
+
     #[must_use]
     pub fn build(self) -> Step {
         self.step

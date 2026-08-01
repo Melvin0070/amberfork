@@ -200,6 +200,30 @@ pub struct Attribution {
     pub confidence: f64,
 }
 
+/// A single latency/token measurement, always `b − a` (observed minus reference) — positive
+/// means `b` used more. Cost is deliberately absent: no adapter in this workspace attributes a
+/// dollar figure to a step yet (issue #40's own follow-up, not this one).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResourceDelta {
+    /// Wall-clock delta in milliseconds, when both sides carry the timestamps to compute it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latency_ms: Option<i64>,
+    /// Token-count delta, when both sides carry an extractable `outputs.usage`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens: Option<i64>,
+}
+
+/// Resource deltas between the two runs, at two granularities: the whole-run totals, and —
+/// when the fork lands on a synchronous pair — the delta at just that one diverging step.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResourceDeltas {
+    pub total: ResourceDelta,
+    /// `None` when there is no fork, the fork has no counterpart step on one side
+    /// (log/model-only), or neither step carries any of the underlying data.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub at_fork: Option<ResourceDelta>,
+}
+
 /// A non-fatal diagnostic emitted while building the diff (e.g. unmapped attributes, content
 /// absent from a metadata-only trace).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -265,6 +289,10 @@ pub struct DiffResult {
     /// Regression attribution, if computed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attribution: Option<Attribution>,
+    /// Latency / token deltas between the two runs (issue #40). Additive field: `None` when
+    /// neither run carries any of the underlying data — omitted, never fabricated as zero.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deltas: Option<ResourceDeltas>,
     /// Non-fatal diagnostics.
     #[serde(default)]
     pub warnings: Vec<Warning>,

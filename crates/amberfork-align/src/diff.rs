@@ -9,6 +9,7 @@
 
 use crate::attribution::static_attribution;
 use crate::cost::CostModel;
+use crate::deltas::resource_deltas;
 use crate::field_diff::field_diffs;
 use crate::fork::{ForkParams, find_fork};
 use crate::nw::{AlignParams, align};
@@ -37,6 +38,7 @@ pub fn diff(
     let alignment = align(&reference.steps, &observed.steps, cost_model, &params.align)?;
     let fork = find_fork(&alignment, &params.fork);
     let field_diffs = field_diffs(&reference.steps, &observed.steps, &alignment);
+    let deltas = resource_deltas(&reference.steps, &observed.steps, fork.as_ref());
     let mut result = DiffResult {
         runs: RunPair {
             a: run_ref(reference),
@@ -46,6 +48,7 @@ pub fn diff(
         fork,
         field_diffs,
         attribution: None,
+        deltas,
         warnings: Vec::new(),
         meta: Meta::current(Source::Passive),
     };

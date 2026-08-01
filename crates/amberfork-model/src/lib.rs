@@ -23,7 +23,8 @@ use serde_json::{Map, Value};
 mod diff;
 pub use diff::{
     Attribution, AttributionMode, Counterfactual, DiffResult, FieldDiff, FieldDiffKind, Fork, Meta,
-    Move, MoveKind, Recovery, RunPair, RunRef, Source, Warning, WarningCode,
+    Move, MoveKind, Recovery, ResourceDelta, ResourceDeltas, RunPair, RunRef, Source, Warning,
+    WarningCode,
 };
 
 // Test-only fixture builders; the `test-support` feature is enabled exclusively from
