@@ -2629,3 +2629,49 @@ grounding guard, CLI flag, real local provider, all edge cases from the issue (c
 unreachable, `--json`) handled. The issue's own growth path (A→C: `narrative` as a schema field;
 C→B: `amberfork chat`) stays documented, not built — next milestone work is #40 (cost/token/latency
 deltas), the other open v0.9 issue.
+
+## 056 · 2026-08-01 · Latency/token deltas land on `DiffResult` (#40 slice A of 3)
+
+Issue #40 asked for cost/token/latency deltas "already carried in `Step.attrs`" — that framing
+turned out wrong on inspection. No adapter in this workspace attaches a dollar figure to
+anything; token usage lives in `outputs.usage` (HAL/OpenAI-shaped adapters), not `attrs`; latency
+is real via `Step.t_start`/`t_end` but most adapters (`whowhen`, `tape`, `build_trail`, `record`)
+leave those `None`, and `otlp.rs` deliberately declines to fabricate RFC3339 from raw nanos.
+Proposed a 3-slice split before building (compute+schema / terminal / web UI) with cost deferred
+to its own follow-up — no pricing-table design exists anywhere yet, and inventing one wasn't this
+slice's job. Founder picked that split over folding in a hardcoded price table or cutting to
+latency-only.
+
+**What shipped (slice A).** `DiffResult.deltas: Option<ResourceDeltas>` — additive, no
+`schema_version` bump, same pattern as `Attribution.counterfactual`. Two granularities, both
+`b − a` (observed minus reference, matching `FieldDiff`'s before/after convention): `total`
+(whole-run wall clock + summed tokens) and `at_fork` (the single diverging step pair, only when
+the fork lands on a synchronous move — a log/model-only fork has no counterpart step, so
+`at_fork` is `None` by construction, never a fabricated `0`). Lives in `amberfork-align/src/
+deltas.rs`, computed alongside `field_diffs`/`fork` in the crate's one assembly point
+(`diff.rs`), no second pass needed (unlike attribution, which needs the already-assembled
+result).
+
+**The RFC3339 question.** Nothing in this codebase parses timestamps today — confirmed by
+reading every ingest adapter; `otlp.rs`'s own comment says raw nanos ride in `attrs` specifically
+*because* the crate declined to synthesize RFC3339. Latency needed a parser to exist at all.
+Chose to hand-roll one (`Z`-suffix-only, Howard Hinnant's public-domain `days_from_civil` for the
+calendar math) over adding `chrono`/`time` — both carry real transitive deps, and this workspace's
+own precedent (`amberfork-judge`'s Ollama slice: "no new mandatory dependency lands in the default
+path") reads as a standing anti-dependency bias, not just a per-slice call. Correctness
+cross-checked in tests against Python's `datetime` on five reference dates spanning both leap-year
+rules (2000 is one, 1900 isn't). Anything outside `Z`-suffixed UTC (an explicit offset, a
+malformed field) returns `None` — degrades to "no latency signal for that step," never a wrong
+answer. Flagged this choice explicitly for founder review rather than assuming it; approved as-is.
+
+**Tests.** 11 new unit tests in `amberfork-align::deltas` (parser correctness, total/at-fork
+computation, the log-only-fork-has-no-counterpart case, the prompt+completion-tokens fallback).
+`amberfork-model/tests/diff_result.rs` gained a populated `deltas` in the schema's "exercises
+every branch" fixture, plus dedicated coverage that a `None` sub-field (e.g. `at_fork.tokens`) is
+omitted from the wire form, not serialized as `null`. Every existing `DiffResult` test-literal
+across 8 files needed a mechanical `deltas: None`. Full gate green (`fmt`, `clippy -D warnings`,
+`cargo test --workspace`, `ui/` workspace).
+
+**Not in this slice, on purpose.** Terminal rendering and the web fork view (slices B and C) —
+the field exists and computes correctly but nothing prints it yet. Cost stays deferred to its own
+issue pending a pricing-table design decision.
