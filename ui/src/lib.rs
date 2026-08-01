@@ -195,6 +195,9 @@ mod tests {
                 // field exists on the contract so payloads carrying one still deserialize.
                 verdict: None,
             }),
+            // The web pane does not render deltas yet (#40's own later slice); the field
+            // exists on the contract so payloads carrying one still deserialize.
+            deltas: None,
             warnings: vec![],
         })
     }
@@ -207,6 +210,7 @@ mod tests {
             rows: vec![],
             verdict: Verdict::Identical { steps: 25 },
             attribution: None,
+            deltas: None,
             warnings: vec![],
         })
     }

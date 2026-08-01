@@ -41,7 +41,7 @@ use std::fmt;
 
 use amberfork_model::{
     Attribution, AttributionMode, Counterfactual, DiffResult, FieldDiffKind, Payload, Recovery,
-    Run, Step,
+    ResourceDelta, ResourceDeltas, Run, Step,
 };
 use serde::{Deserialize, Serialize};
 
@@ -189,6 +189,11 @@ pub struct ViewModel {
     pub verdict: Verdict,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attribution: Option<AttributionView>,
+    /// Latency / token deltas between the two runs (issue #40), already formatted in the
+    /// designed wording. `None` when [`DiffResult::deltas`] is `None` (nothing to show), not
+    /// when a delta happens to be zero — a real zero still renders `+0ms`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deltas: Option<DeltasView>,
     /// Pass-through of the result's warnings so a painter never reaches back into
     /// [`DiffResult`]: the CLI keeps warnings on stderr, the web UI surfaces them inline.
     pub warnings: Vec<Warning>,
@@ -391,6 +396,19 @@ pub struct AttributionView {
     pub verdict: Option<String>,
 }
 
+/// Latency / token deltas, already in the designed wording (`+5.20s`, `-300 tok`) so no
+/// painter reinvents the sign/units convention. Mirrors [`AttributionView`]'s split: the
+/// terminal flattens the parts to one line, the web pane can lay them out as separate elements.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeltasView {
+    /// Whole-run totals, when at least one of latency/tokens has data on both sides.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<String>,
+    /// The delta at just the diverging step, when the fork lands on a synchronous pair.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub at_fork: Option<String>,
+}
+
 impl ViewModel {
     /// Build the semantic view. Pure and total: any `DiffResult` over its two runs yields a
     /// view, and nothing here inspects the output medium.
@@ -484,6 +502,7 @@ impl ViewModel {
                 .attribution
                 .as_ref()
                 .map(|a| attribution_view(a, idx_width)),
+            deltas: result.deltas.as_ref().and_then(deltas_view),
             warnings: result.warnings.clone(),
         }
     }
@@ -628,6 +647,45 @@ fn verdict_text(counterfactual: &Counterfactual) -> String {
     let runs = counterfactual.runs;
     let unit = if runs == 1 { "run" } else { "runs" };
     format!("{outcome} · {runs} {unit}")
+}
+
+/// Resolve a [`ResourceDeltas`] to its designed wording, or `None` when neither granularity
+/// has anything to say (both fields empty on both `total` and `at_fork`).
+fn deltas_view(deltas: &ResourceDeltas) -> Option<DeltasView> {
+    let total = delta_text(&deltas.total);
+    let at_fork = deltas.at_fork.as_ref().and_then(delta_text);
+    (total.is_some() || at_fork.is_some()).then_some(DeltasView { total, at_fork })
+}
+
+/// One measurement's designed wording: `+5.20s`, `-300 tok`, or both joined — `None` when
+/// neither latency nor tokens is present on this delta.
+fn delta_text(delta: &ResourceDelta) -> Option<String> {
+    let parts: Vec<String> = [
+        delta.latency_ms.map(latency_text),
+        delta.tokens.map(token_text),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    (!parts.is_empty()).then(|| parts.join(" · "))
+}
+
+/// A millisecond delta, signed: sub-second deltas stay in `ms` (`+120ms`) so a fast local step
+/// doesn't round to `+0.00s`; anything at or past a second switches to `s` (`+5.20s`).
+fn latency_text(ms: i64) -> String {
+    let sign = if ms < 0 { '-' } else { '+' };
+    let abs = ms.unsigned_abs();
+    if abs >= 1000 {
+        format!("{sign}{:.2}s", abs as f64 / 1000.0)
+    } else {
+        format!("{sign}{abs}ms")
+    }
+}
+
+/// A token-count delta, signed: `+300 tok`, `-40 tok`.
+fn token_text(tokens: i64) -> String {
+    let sign = if tokens < 0 { '-' } else { '+' };
+    format!("{sign}{} tok", tokens.unsigned_abs())
 }
 
 /// A step list in the gutter's zero-padded style: `none`, `step 03`, a contiguous
@@ -863,6 +921,99 @@ mod tests {
         assert_eq!(verdict(Recovery::NotRecovered, 3), "not recovered · 3 runs");
         assert_eq!(verdict(Recovery::Unverified, 3), "unverified · 3 runs");
         assert_eq!(verdict(Recovery::Recovered, 1), "recovered · 1 run");
+    }
+
+    #[test]
+    fn compute_carries_deltas_from_the_result_into_the_view() {
+        let (a, b, mut res) = forked(0.47);
+        res.deltas = Some(ResourceDeltas {
+            total: ResourceDelta {
+                latency_ms: Some(5_200),
+                tokens: Some(300),
+            },
+            at_fork: Some(ResourceDelta {
+                latency_ms: Some(1_200),
+                tokens: None,
+            }),
+        });
+        let view = ViewModel::compute(&res, &a, &b);
+
+        assert_eq!(
+            view.deltas,
+            Some(DeltasView {
+                total: Some("+5.20s · +300 tok".to_string()),
+                at_fork: Some("+1.20s".to_string()),
+            })
+        );
+    }
+
+    #[test]
+    fn compute_leaves_deltas_none_when_the_result_has_none() {
+        let (a, b, res) = forked(0.47);
+        let view = ViewModel::compute(&res, &a, &b);
+        assert_eq!(view.deltas, None);
+    }
+
+    #[test]
+    fn latency_deltas_switch_units_at_one_second() {
+        assert_eq!(latency_text(120), "+120ms");
+        assert_eq!(latency_text(-40), "-40ms");
+        assert_eq!(latency_text(5_200), "+5.20s");
+        assert_eq!(latency_text(-1_000), "-1.00s");
+        assert_eq!(latency_text(0), "+0ms");
+    }
+
+    #[test]
+    fn token_deltas_are_signed() {
+        assert_eq!(token_text(300), "+300 tok");
+        assert_eq!(token_text(-40), "-40 tok");
+    }
+
+    #[test]
+    fn a_delta_with_only_tokens_omits_the_latency_segment() {
+        let delta = ResourceDelta {
+            latency_ms: None,
+            tokens: Some(300),
+        };
+        assert_eq!(delta_text(&delta).as_deref(), Some("+300 tok"));
+    }
+
+    #[test]
+    fn an_empty_delta_has_no_text() {
+        let delta = ResourceDelta {
+            latency_ms: None,
+            tokens: None,
+        };
+        assert_eq!(delta_text(&delta), None);
+    }
+
+    #[test]
+    fn deltas_view_joins_total_and_at_fork() {
+        let deltas = ResourceDeltas {
+            total: ResourceDelta {
+                latency_ms: Some(5_200),
+                tokens: Some(300),
+            },
+            at_fork: Some(ResourceDelta {
+                latency_ms: Some(1_200),
+                tokens: None,
+            }),
+        };
+        let view = deltas_view(&deltas).expect("both granularities carry data");
+        assert_eq!(view.total.as_deref(), Some("+5.20s · +300 tok"));
+        assert_eq!(view.at_fork.as_deref(), Some("+1.20s"));
+    }
+
+    #[test]
+    fn deltas_view_is_none_when_nothing_has_data() {
+        let deltas = ResourceDeltas {
+            total: ResourceDelta {
+                latency_ms: None,
+                tokens: None,
+            },
+            at_fork: None,
+        };
+        assert!(deltas_view(&deltas).is_none());
     }
 
     #[test]

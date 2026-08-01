@@ -108,6 +108,24 @@ pub fn render(view: &ViewModel, opts: &RenderOpts) -> String {
         });
     }
 
+    // Latency/token deltas (#40): independent of fork/converged state — a converged diff can
+    // still be worth showing as "same behavior, cheaper" or "same behavior, slower".
+    if let Some(deltas) = &view.deltas {
+        rows.push(Row::blank());
+        let mut segments = Vec::new();
+        if let Some(total) = &deltas.total {
+            segments.push(format!("total {total}"));
+        }
+        if let Some(at_fork) = &deltas.at_fork {
+            segments.push(format!("at fork {at_fork}"));
+        }
+        rows.push(Row {
+            role: Role::Footer,
+            prefix: String::new(),
+            body: format!("  deltas · {}", segments.join(" · ")),
+        });
+    }
+
     let mut out = String::new();
     for row in &rows {
         let _ = writeln!(out, "{}", row.paint(opts.color, opts.width));
@@ -457,7 +475,8 @@ mod tests {
     use super::*;
     use amberfork_model::{
         Attribution, AttributionMode, Counterfactual, DiffResult, FieldDiff, FieldDiffKind, Fork,
-        Meta, Move, Outcome, Recovery, Run, RunPair, RunRef, Source, Step, test_support,
+        Meta, Move, Outcome, Recovery, ResourceDelta, ResourceDeltas, Run, RunPair, RunRef, Source,
+        Step, test_support,
     };
     use serde_json::json;
 
@@ -725,6 +744,62 @@ mod tests {
             "  attribution · counterfactual · origin step 02 · propagation step 03 · conf 0.47 · recovered · 3 runs",
             "the verdict is a trailing segment on the same dotted line"
         );
+    }
+
+    #[test]
+    fn forked_render_prints_total_and_at_fork_deltas_after_attribution() {
+        let (a, b, mut res) = forked(0.47);
+        res.deltas = Some(ResourceDeltas {
+            total: ResourceDelta {
+                latency_ms: Some(5_200),
+                tokens: Some(300),
+            },
+            at_fork: Some(ResourceDelta {
+                latency_ms: Some(1_200),
+                tokens: None,
+            }),
+        });
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
+
+        let lines: Vec<&str> = out.lines().collect();
+        let attribution_at = lines
+            .iter()
+            .position(|l| l.starts_with("  attribution"))
+            .expect("attribution line present");
+        assert_eq!(
+            lines[attribution_at + 2],
+            "  deltas · total +5.20s · +300 tok · at fork +1.20s",
+            "deltas trail attribution, one blank row apart, like every other footer block"
+        );
+        assert_eq!(
+            lines.last(),
+            Some(&"  deltas · total +5.20s · +300 tok · at fork +1.20s"),
+            "deltas is the last line when present"
+        );
+    }
+
+    #[test]
+    fn converged_render_still_shows_a_total_delta() {
+        // A converged diff can still be worth showing: same behavior, cheaper (or slower).
+        let (a, b, mut res) = converged();
+        res.deltas = Some(ResourceDeltas {
+            total: ResourceDelta {
+                latency_ms: Some(-800),
+                tokens: None,
+            },
+            at_fork: None,
+        });
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
+
+        let last = out.lines().last().expect("non-empty render");
+        assert_eq!(last, "  deltas · total -800ms");
+    }
+
+    #[test]
+    fn no_deltas_means_no_deltas_line() {
+        let (a, b, res) = forked(0.47);
+        let out = paint(&res, &a, &b, &opts(ColorMode::Plain));
+        assert!(!out.contains("deltas ·"));
     }
 
     #[test]
