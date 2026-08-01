@@ -2453,3 +2453,46 @@ unit, not per-message. RFC3339 timing — same as OpenInference, raw nanos only.
 **Next.** #39 is closed: both the OpenInference and native GenAI on-ramps now exist. Remaining
 v0.8 "credibility pass" items per the tracker: #44 (real-provider `--verify` e2e), #43 (cassette
 redaction).
+
+## 053 · 2026-08-01 · Real-provider `--verify` e2e closes notebook 038's coverage hole (#44)
+
+**What prompted it.** Notebook 038 named the one deliberate testing boundary in counterfactual
+attribution: no test had ever driven `diff --verify` through a real subprocess *and* a real network
+provider. Every mechanism piece (patch → drive → oracle → consensus) was covered offline with
+in-process stubs; the CLI's own two production seams — `SubprocessDriver` and `LiveUpstream`
+(`crates/amberfork/src/verify.rs`) — had never actually run.
+
+**What shipped.** `crates/amberfork/tests/verify_cli.rs`, one `#[ignore]`d, network-gated test
+(same discipline as `amberfork-bench`'s three ignored network tests) plus a toy stdlib-only Python
+agent (`tests/fixtures/verify_agent.py`) that talks to a local Ollama server's `/api/generate`.
+The agent's second-turn prompt embeds the first turn's answer verbatim, so once `--verify` patches
+turn 0's response, turn 1's request genuinely changes and cache-misses the replay tape — forcing
+the live relay to a real upstream, the one code path the offline suite structurally cannot reach.
+
+**Decisions worth keeping.**
+- *Local Ollama, not a paid API.* The issue's own wording ("real — or realistic local — provider")
+  and the project's local/offline trust story both point the same way: no API key, no cost, no
+  rate limit, and `--upstream`/`--base-url-env` are already provider-agnostic by design (confirmed
+  against `main.rs`'s help text) — Ollama's OpenAI-compatible-in-spirit `/v1`-adjacent surface is
+  just another origin. `smollm2:135m` (270 MB) keeps the pull cheap.
+- *The fork must come from real sampling variance, never a scripted difference.* `patch_cassette`
+  (patch.rs) only ever swaps a *response* onto an unchanged *request* — grafting the good run's
+  answer onto the bad run's identical question. So `good` and `bad` run the exact same prompts;
+  divergence has to come from the model itself, which is also the honest scenario `--verify`
+  exists for (a flaky agent, not a scripted one). Temperature is turned up and the `bad` recording
+  retries up to 6× if the model happens to answer identically — a bounded, honest allowance for
+  real nondeterminism, not a flaky test papered over.
+- *The test asserts the pipeline ran, not what the model decided.* It checks `attribution.mode ==
+  Counterfactual` and `counterfactual.runs == 3` — proof the real subprocess + real network path
+  produced *some* tri-state verdict — but never asserts `Recovered` vs `NotRecovered`. Asserting a
+  specific verdict would be asserting a fact about the model's sampling, not about the pipeline;
+  the tri-state's whole point (notebook 038) is that `Unverified` is an honest value, not a bug.
+- *Recipe lives in the test file's own doc comment*, matching how `record_cli.rs` and
+  `driver.rs` already document their own test rigs inline rather than in a separate doc.
+
+**Verified.** Ran twice against a real local Ollama server (`smollm2:135m`): both times a genuine
+fork was found within the retry budget and the pipeline returned a real verdict (`Recovered` both
+times, 3.8s and 35.7s). `cargo test --workspace` (the new test excluded by default, 0 failures) and
+`scripts/verify.sh --full` both green.
+
+**Next.** #44 closes; the last open v0.8 "credibility pass" item is #43 (cassette redaction).
