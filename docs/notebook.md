@@ -2496,3 +2496,66 @@ times, 3.8s and 35.7s). `cargo test --workspace` (the new test excluded by defau
 `scripts/verify.sh --full` both green.
 
 **Next.** #44 closes; the last open v0.8 "credibility pass" item is #43 (cassette redaction).
+
+## 054 · 2026-08-01 · v0.8.0 released; amberfork-judge skeleton — trait, scripted double, grounding guard (#10 slice A)
+
+**v0.8.0 released.** All four milestone issues (#39, #41, #42, #44) were closed but unreleased —
+still tagged `v0.7.0`, empty `CHANGELOG.md` `[Unreleased]` section. Cut properly: workspace version
+0.7.0 → 0.8.0 (`Cargo.toml` + the 8 internal path-dep pins), a `CHANGELOG.md` entry summarizing the
+milestone's actual measured results (041's 5/6 exact ReAct generalization, 042/052's OpenInference
++ native `gen_ai.*` adapters, 051's 69-pair TRAIL↔HAL result — honest null on exact/±1, real signal
+at ±3 — 053's real-provider `--verify` e2e), `CLAUDE.md`/`CONTRIBUTING.md`'s "10 crates at vX.Y.0"
+line bumped, tag `v0.8.0` pushed (commit `cd760c8`). `release.yml`'s tag guard + both platform
+builds + `gh release create` all green; binaries attached. (053's own "last open v0.8 item is #43"
+line is now read as loose phrasing, not milestone scope — #43 was filed un-milestoned backlog per
+notebook 040, and the GitHub milestone shows exactly #39/#41/#42/#44, matching 041's explicit "v0.8
+now = #42 → #39 → #41, plus #44" scope statement.)
+
+**v0.9 — the explain layer, slice A.** #10 is the lower-numbered of the milestone's two open
+issues (#40 is the other). Slice boundary proposed and founder-approved before building: crate
+skeleton only — trait + in-process test double + grounding logic — no CLI flag, no live provider,
+no network. That is slices B and C.
+
+**What shipped.** `amberfork-judge`, the 11th crate. Three pieces:
+
+- **`ExplainContext::windowed(result, a, b, k)`** (`context.rs`) — the *only* content a judge can
+  ever see: the fork step + `k` neighbours on each side that has one (`Fork::a_step`/`b_step`),
+  never the two full trajectories. A converged result windows to empty. This is guardrail #3 from
+  the issue (a judge can't hunt for a different fork) enforced by what the type *can* hold, not by
+  convention.
+- **`Judge`** (`judge.rs`) — one method, `explain(&ExplainContext) -> Result<Explanation,
+  JudgeError>`, written as a native async trait (return-position `impl Future`, not
+  `async-trait`) — the exact shape `amberfork-replay::Upstream` already established for this
+  workspace's "pick the implementation at compile time, no `dyn`" I/O-edge pattern. `Explanation`
+  carries a claimed `fork_index`, a narrative, and a `speculative_fix` kept in its own field so a
+  future CLI slice can label it separately from the grounded narrative, per the issue's guardrail
+  #4.
+- **`ground(result, explanation)`** (`grounding.rs`) — the actual enforcement of guardrail #1
+  ("the aligner stays the headline; the AI layer never localizes"). Not a parser over free text:
+  `Explanation::fork_index` is a structured claim, checked by equality against
+  `DiffResult.fork.map(|f| f.index)`. Four cases, all tested: matching claim on a real fork →
+  grounded; wrong index → rejected; silence on a real fork → rejected; a fabricated fork on a
+  converged result → rejected. A real provider (slice C) has to emit a fork index as data, not
+  prose the CLI would need to regex — cheaper and more honest than the "parse model output"
+  wording in the issue's own draft suggested.
+- **`ScriptedJudge`** (`scripted.rs`) — FIFO in-process double, same shape as `ScriptedUpstream`
+  (`Mutex<VecDeque<...>>`, `Exhausted` on underrun), so this crate's own tests and slice B's CLI
+  tests stay offline.
+
+**Decision taken, not yet needed.** `GroundingError` started as an enum with one variant
+(`Ungrounded { claimed, actual }`) to mirror `UpstreamError`'s shape, then was flattened to a plain
+struct once it was clear there was only ever going to be the one failure mode — a single-variant
+enum was ceremony, not a real closed set (unlike `JudgeError`, which already has two: `Exhausted`
+and the future `Unreachable`).
+
+**Tests.** 11 unit tests (`context`: converged-empty, k-neighbour coverage, bounds-clamping,
+model-only-fork windows only the `a` side; `grounding`: the four cases above; `scripted`: FIFO
+order, exhausted). No new dependency beyond `amberfork-model`; `tokio` is a dev-dependency only
+(`.await` in tests), matching how `amberfork-attrib`/`amberfork-replay` scope their test-only
+runtime. Full gate green (`fmt`, `clippy -D warnings`, `cargo test --workspace` incl. the new
+crate, `ui/` workspace) — `amberfork diff` output is untouched, nothing wired to it yet.
+
+**Next.** Slice B: `--judge local|off` on `diff`/`demo`, off by default, rendered under an `AI
+(unverified):` label below the deterministic fork, using `ScriptedJudge` so CLI tests stay offline.
+Slice C (later): a live provider — founder's call was Ollama (a local server), not a bundled
+model, so no new mandatory dependency lands in the default (`--judge off`) path.
