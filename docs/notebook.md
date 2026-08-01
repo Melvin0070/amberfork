@@ -2748,3 +2748,62 @@ change can pass one and silently break the shipped wasm build). Full gate green.
 **#40 is closed.** Cost stays out of scope, tracked separately: no adapter in this workspace
 attributes a dollar figure to a step, and building one needs its own pricing-table design
 decision this issue never asked for.
+
+## 059 · 2026-08-02 · `amberfork diff --html` ships — self-contained static export (#29)
+
+With v0.9 empty, went to the tracker's lowest-numbered unblocked backlog issue: #29, deferred
+since v0.5 (notebook 1506 area) once the view-model seam (#21/#24) it depends on landed.
+
+**The dependency question, asked before building.** The obvious implementation reuses
+`amberfork-ui`'s real Leptos component tree — its `ssr` feature already runs natively for host
+tests, so `App` renders to an HTML string with no wasm involved. But pulling `amberfork-ui` into
+`crates/amberfork` means `leptos` — a full reactive framework, ~40 transitive crates including
+`wasm-bindgen-futures`/`js-sys` even under `ssr` — lands in the *shipped* `amberfork` binary,
+which today carries none of it. Ran `cargo tree` to confirm the size before asking, then asked:
+reuse the real component tree (guaranteed parity, new dependency) or hand-roll a standalone
+renderer (zero new dependency, a second implementation to keep in sync). Founder chose hand-roll.
+
+**What shipped.** `crates/amberfork/src/html_export.rs` — plain `format!`/`write!` HTML
+generation over the same `ViewModel` seam `amberfork-layout` already computes, reusing the real
+CSS class names (`row--fork`, `attr-list`, `content-diff-del`, …) so the export looks identical
+to the live view without executing any of its component code. CSS itself is `include_str!`'d
+straight from `ui/index.html` at compile time — the export can't visually drift from the live
+view's actual stylesheet, only from its component logic (which this hand-written version
+deliberately re-derives, the one place drift risk actually lives). `--html <path>` on `diff`
+only (not `demo`, matching `--judge`'s precedent for scoping a flag to where a real
+reference/observed pair exists); independent of `--json`/`--verify`/`--judge`, always attempted
+when given; a write failure is `EXIT_TROUBLE`, not swallowed — the file was explicitly requested.
+
+**Scope line: terminal fidelity, not SPA fidelity.** The export mirrors what the terminal
+already renders — rows, the fork's field-diff evidence, attribution, deltas — not the full
+interactive canvas (no SVG spine geometry, no per-row selection). That's a deliberate cut, not
+laziness: replicating `canvas.rs`'s precise geometry (`row_ys`, the amber connector path) by hand
+would be real scope creep for a "paste into a GitHub issue" artifact whose value is the same
+information the terminal already carries, just as browsable, stylable HTML.
+
+**No interactivity, and no pretending otherwise.** A second UX question, asked before building:
+the exported markup has no JS at all, so a literal copy of the live view's markup would carry
+`tabindex`/`role="option"`/a Copy button that visually invite clicks and do nothing. Founder's
+answer (asked when scoping, before this hand-roll decision even changed the mechanism): add an
+honest note rather than silently leaving dead affordances. Landed on the cleaner version once
+hand-rolling was already decided: omit the affordances that would be fake (no tabindex, no
+`role="option"`, no Copy button — it would need bespoke inline JS to work, out of scope) and add
+a `.static-note` banner up top naming `amberfork serve` as the live-view path. Same honesty
+principle, better execution once the constraint set changed.
+
+**One fidelity call beyond pure terminal mirroring:** the counterfactual verdict segment
+(`recovered · 3 runs`) the terminal already appends to the attribution line but the *web* pane
+doesn't render yet (058's own deferred slice) — the export renders it anyway, since it's
+following the terminal's fidelity bar, not blocked on the web SPA catching up.
+
+**Tests.** 6 unit tests in `html_export.rs`: HTML-escaping of untrusted trace content (a step
+name containing `<script>` must not break the page), self-containment (no `<link>`, no
+`<script>`, no network URL — verified against the real rendered output, not assumed), converged
+vs. forked rendering, and a subtlety worth naming — asserting "no fork row" or "no copy button"
+by bare substring search fails, because the shared CSS itself *defines* `.row--fork`/
+`.content-diff-copy` as selectors whether or not any element uses them; the tests check for the
+actual `<li class="row row--fork"` / `<button` markup, not the class name in isolation. 3 CLI
+e2e tests in `html_export_cli.rs`: the file writes alongside an unaffected terminal render,
+`--html` combines cleanly with `--json` (both outputs land, neither suppresses the other), and an
+unwritable path exits `EXIT_TROUBLE` with the path named on stderr. Full gate green, `ui/`
+workspace untouched (this slice never depends on it).
