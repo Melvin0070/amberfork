@@ -2704,3 +2704,47 @@ warnings`, `cargo test --workspace`, `ui/` workspace).
 
 **Next.** Slice C: the web fork view actually renders `DeltasView`, mirroring how
 `ui/src/attribution.rs` renders `AttributionView` as a `<dl>`.
+
+## 058 · 2026-08-01 · Web fork view renders deltas — #40 closed (slice C of 3)
+
+Slice C, the last of the 3-slice split from 056. The attribution pane gets a "Deltas"
+subsection below "Attribution"; #40 is now fully shipped end to end (compute → terminal → web).
+
+**Design call, made deliberately.** Pulled in the `frontend-design` skill first — this is new
+visual surface, and `.claude/rules/ui.md` asks for it proactively even for small additions. The
+question that mattered: how does a second, subordinate section under an existing pane title read
+as "supplementary evidence" rather than a competing header? The wrong answer is a new, fainter
+type style for "subsections" — that's exactly how a design system quietly grows a second voice
+over time. Landed instead on: reuse `.attr-title`'s type rule verbatim for "Deltas" (identical
+size/weight/case/color to "Attribution"), and carry the hierarchy through structure alone — a
+hairline divider using the pane's own existing `--hair` border token (not a new value) plus a
+semantic step-down to `<h3>`. Zero new colors, typefaces, or signature elements.
+
+**What shipped.** `Attribution` component gains `deltas: Option<DeltasView>`; a new
+`deltas_section()` renders `total`/`at fork` as `.attr-row`s inside a `.attr-section` wrapper,
+reusing `.attr-list` verbatim so `tabular-nums` applies for free (DESIGN.md's requirement for
+timing/cost/tokens). `App` threads `model.deltas.clone()` through the same way it already does
+`attribution`. Shown independent of `attribution`/`verdict`, matching the terminal's call: a
+converged diff still has a total delta worth seeing.
+
+**Verified live, not just by tests.** `trunk serve` alone can't show real data — the `csr` app
+fetches `/api/document` from a running `amberfork serve` backend, which always fails in this dev
+checkout (`ui-dist/` gitignored → `BundleMissing`). Built a throwaway example
+(`ui/examples/deltas_preview.rs`, deleted after use) that renders the real `App` component via
+the same SSR path the test suite uses, over a fixture carrying both attribution and deltas, and
+wrapped the output in `index.html`'s actual `<head>` — a real browser screenshot of the real
+component tree and the real CSS, not a mockup. Confirmed the divider + heading-level treatment
+reads as intended and DR2's containment holds (amber only the fork, red/green only the field
+diff).
+
+**Tests.** 4 new unit tests in `attribution.rs` (both rows render, no section when the view is
+`None`, a converged diff still shows its total). 1 new App-level integration test
+(`app_threads_deltas_from_the_document_into_the_pane`) proving the prop actually threads through
+`App` → `Attribution`, not just that the pane renders one in isolation — the same gap-check
+pattern `app_opens_on_the_attribution_answer` already covers for attribution. Clippy clean on
+both `ssr` and `csr` feature sets (the two-mutually-exclusive-builds gotcha `ui.md` flags — a
+change can pass one and silently break the shipped wasm build). Full gate green.
+
+**#40 is closed.** Cost stays out of scope, tracked separately: no adapter in this workspace
+attributes a dollar figure to a step, and building one needs its own pricing-table design
+decision this issue never asked for.
