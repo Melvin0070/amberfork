@@ -2675,3 +2675,32 @@ across 8 files needed a mechanical `deltas: None`. Full gate green (`fmt`, `clip
 **Not in this slice, on purpose.** Terminal rendering and the web fork view (slices B and C) —
 the field exists and computes correctly but nothing prints it yet. Cost stays deferred to its own
 issue pending a pricing-table design decision.
+
+## 057 · 2026-08-01 · Terminal renders latency/token deltas (#40 slice B of 3)
+
+Slice B of the 3-slice split from 056: `DiffResult.deltas` now reaches the terminal.
+
+**What shipped.** `amberfork-layout::ViewModel` gains `deltas: Option<DeltasView>`, built the
+same way `AttributionView` is — pre-formatted strings so no painter reinvents the sign/units
+convention (`+5.20s`, `+120ms` below the one-second mark so a fast local step doesn't round to
+`+0.00s`, `+300 tok`). `amberfork/src/render.rs` prints it as its own footer block, right after
+the attribution line when both are present, styled identically (plain, no color — DR2's
+"structure carries the signal" rule holds here too). Deliberately independent of fork state: a
+converged diff still prints its total delta alone, since "same behavior, cheaper" is a real
+answer to UC1, not just "same behavior, regressed."
+
+**Mechanical fallout.** `ui/`'s `ViewModel` literals needed `deltas: None` to keep compiling —
+same pattern the counterfactual-verdict field set: "the web pane doesn't render this yet, its own
+slice; the field exists on the contract so payloads carrying one still deserialize." No rendering
+logic added to `ui/` (that's slice C).
+
+**Tests.** 8 new unit tests in `amberfork-layout` (formatting edge cases for both units, an
+empty-delta-has-no-text case, and two end-to-end `ViewModel::compute` checks — deltas carried
+through and deltas absent). 3 new tests in `amberfork`'s render suite via the existing
+`paint()` pipeline: forked with both total and at-fork segments, converged with a total-only
+delta, and a no-deltas-means-no-line negative case. Existing insta snapshots untouched (none of
+their fixtures set `deltas`, so nothing to regenerate). Full gate green (`fmt`, `clippy -D
+warnings`, `cargo test --workspace`, `ui/` workspace).
+
+**Next.** Slice C: the web fork view actually renders `DeltasView`, mirroring how
+`ui/src/attribution.rs` renders `AttributionView` as a `<dl>`.
