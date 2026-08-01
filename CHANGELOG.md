@@ -2,6 +2,45 @@
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-08-01
+
+v0.8 — the credibility pass (milestone issues #39, #41, #42, #44): the localization number no
+longer rests solely on data we constructed ourselves. Every strong result so far ran on
+Who&When-derived chimera pairs, where sustained-divergence-at-gold is true by construction; this
+milestone tests the frozen fork rule against an unseen agent shape, a real third-party ingest
+format, and a genuinely natural (not injected) pair set — plus closes the one untested production
+seam in counterfactual `--verify`.
+
+- **Held-out generalization probe (#42).** The frozen `resync_k=2`/`τ=0.3` params, calibrated once
+  on the chimera family and never re-tuned, run against a structurally different held-out fixture —
+  a single-agent ReAct tool loop instead of multi-agent orchestration: **5/6 exact, 6/6 ±3**. First
+  evidence the fork rule transfers to an unseen trajectory shape without retuning; still a small,
+  hand-authored fixture, not a substitute for the natural-pair result below.
+- **OpenInference / OTel-GenAI ingest adapter (#39, two slices).** A real on-ramp for traces
+  already emitted by LangSmith/Phoenix/Langfuse: an OpenInference OTLP/JSON adapter, then a
+  native `gen_ai.*` adapter sharing the same envelope over a different attribute vocabulary
+  (kind-conditional content carriers: `input.messages`/`output.messages` for LLM/agent spans,
+  `tool.call.arguments`/`tool.call.result` for tool spans). Reconciles the design doc's
+  "framework-agnostic" claim with what's actually built, and doubles as the TRAIL fixture format
+  the natural-pair bench below consumes.
+- **TRAIL↔HAL natural-pair benchmark (#41).** The first evaluation on pairs nobody injected: 69
+  same-agent pairs built by joining TRAIL's real GAIA failing traces against HAL's real passing
+  Open Deep Research references (GPT-5 Medium backend) on task ID. Two real ingest-fidelity bugs
+  found and fixed along the way (HAL never logs tool replies as their own step; TRAIL logs harness
+  bookkeeping steps HAL doesn't) — without either fix the engine scored *worse than random* on
+  this set. Final measured result, frozen params, no cost-model tuning: exact 0.00, ±1 0.00,
+  **±3 0.35** [0.25, 0.47] vs. random's 0.14/0.36/0.61 (n=69). Honestly still a null on the
+  headline metric, with real non-zero signal at ±3 where there was none before the fixes —
+  reported as measured, per BENCHMARK.md's protocol, not smoothed over.
+- **Real-provider `--verify` e2e (#44).** Closes the one documented coverage hole in counterfactual
+  attribution: a network-gated test now drives `diff --verify` through a real subprocess and a real
+  local Ollama server, forcing the live-relay path the offline stub suite structurally couldn't
+  reach. `cargo test --workspace` stays offline by default; the new test is opt-in.
+
+Offline invariant held throughout: default `amberfork diff` is unchanged, and `cargo test
+--workspace` stays offline and deterministic — the new natural-pair and e2e evidence come from
+maintainer-run, explicitly-gated paths, not the default test suite.
+
 ## [0.7.0] — 2026-07-21
 
 v0.7 — counterfactual attribution (milestone issues #35–#38): the REPLAY + re-execution half the
