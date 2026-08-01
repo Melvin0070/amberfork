@@ -1,0 +1,28 @@
+[package]
+name = "amberfork-judge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Local, offline-capable explain layer over a computed DiffResult for amberfork — narrates the fork the aligner already found; never localizes."
+keywords.workspace = true
+categories = ["development-tools::debugging"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# The frozen output contract. A judge reads `DiffResult`/`Run` to build its fork-region window,
+# and the grounding guard checks a claimed explanation against `DiffResult.fork` — the same seam
+# every other consumer reads, so a judge can never assert a fork the aligner did not already
+# reach.
+amberfork-model = { workspace = true }
+
+[dev-dependencies]
+# `Judge::explain` is a native async fn (return-position `impl Future`, mirroring
+# `amberfork-replay::Upstream`); tests await it directly.
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+# `test_support::{run, step}` fixture builders — the same featured dev-dep the other engine
+# crates use so nothing test-only ships in a normal build.
+amberfork-model = { workspace = true, features = ["test-support"] }
