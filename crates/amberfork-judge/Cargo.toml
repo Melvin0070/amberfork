@@ -18,6 +18,14 @@ workspace = true
 # every other consumer reads, so a judge can never assert a fork the aligner did not already
 # reach.
 amberfork-model = { workspace = true }
+# The live provider (`OllamaJudge`) posts to a local Ollama server's `/api/generate`, the same
+# endpoint/shape `crates/amberfork/tests/verify_cli.rs` (#44) already established as this
+# workspace's local-provider convention. `rustls-tls` keeps the no-system-OpenSSL property the
+# single-binary claim rests on elsewhere.
+reqwest = { workspace = true }
+# Ollama's response body (`{"response": "..."}`) is decoded through it.
+serde_json = { workspace = true }
+serde = { workspace = true }
 
 [dev-dependencies]
 # `Judge::explain` is a native async fn (return-position `impl Future`, mirroring

@@ -33,6 +33,7 @@ dependencies = [
  "amberfork-align",
  "amberfork-attrib",
  "amberfork-ingest",
+ "amberfork-judge",
  "amberfork-layout",
  "amberfork-model",
  "amberfork-record",
@@ -110,6 +111,9 @@ name = "amberfork-judge"
 version = "0.8.0"
 dependencies = [
  "amberfork-model",
+ "reqwest",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 

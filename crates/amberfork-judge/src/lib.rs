@@ -13,17 +13,21 @@
 //!   about before the result is trusted; an explanation that contradicts the aligner is
 //!   rejected, never rendered.
 //!
-//! This slice is the crate skeleton only: the [`Judge`] trait, [`ScriptedJudge`] (the in-process
-//! test double that keeps `cargo test --workspace` offline), and the grounding guard. No CLI
-//! wiring, no live provider, no network — those are later slices (`--judge local|off` and an
-//! `Ollama`-backed implementation).
+//! Alongside the trait: [`ScriptedJudge`] (the in-process test double that keeps `cargo test
+//! --workspace` offline) and [`OllamaJudge`] (the live provider — a local Ollama server, no
+//! cloud call, no API key). `tokio` is deliberately absent from this crate's own dependencies:
+//! `Judge::explain` is a plain async fn, and the runtime that drives it belongs to the caller
+//! (the CLI), the same I/O-edge quarantine `amberfork-replay` uses.
 
 mod context;
 mod grounding;
 mod judge;
+mod ollama;
+mod prompt;
 mod scripted;
 
 pub use context::{ExplainContext, Side, StepSnapshot};
 pub use grounding::{Grounded, GroundingError, ground};
 pub use judge::{Explanation, Judge, JudgeError};
+pub use ollama::OllamaJudge;
 pub use scripted::ScriptedJudge;

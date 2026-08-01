@@ -22,6 +22,7 @@
 
 use amberfork_align::{AlignParams, DiffParams, LexicalCost, diff};
 use amberfork_ingest::Ingested;
+use amberfork_judge::{ExplainContext, Judge, OllamaJudge, ground};
 use amberfork_layout::{Document, ViewModel};
 use amberfork_model::{DiffResult, Run, Warning};
 use amberfork_record::{CaptureProxy, Cassette};
@@ -40,6 +41,14 @@ mod verify;
 const EXIT_CONVERGED: u8 = 0;
 const EXIT_FORKED: u8 = 1;
 const EXIT_TROUBLE: u8 = 2;
+
+/// `--judge local`'s provider (issue #10): a local Ollama server, no key, no cost — the same
+/// local-provider convention `crates/amberfork/tests/verify_cli.rs` (#44) established.
+const JUDGE_OLLAMA_URL: &str = "http://127.0.0.1:11434";
+const JUDGE_DEFAULT_MODEL: &str = "smollm2:135m";
+/// Neighbours either side of the fork step a judge is shown — enough content to narrate, never
+/// the full trajectory (issue #10 guardrail #3).
+const JUDGE_WINDOW_K: usize = 2;
 
 /// The bundled demo pair (issue #5): a synthetic, hand-authored refund-triage divergence,
 /// embedded so `demo` works before any trace of the user's own exists. Parse success and the
@@ -78,6 +87,14 @@ enum Command {
     Record(RecordArgs),
 }
 
+/// `--judge`'s two states (issue #10). `Off` is the default and is byte-identical to a build
+/// without this feature: no `Judge` is constructed, no network call is attempted.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+enum JudgeMode {
+    Off,
+    Local,
+}
+
 #[derive(Args)]
 struct DiffArgs {
     /// The failing/observed run trace (side `b` of the result).
@@ -113,6 +130,14 @@ struct DiffArgs {
     /// these. Only meaningful with --verify.
     #[arg(long, value_name = "N", default_value_t = 3, value_parser = clap::value_parser!(u32).range(1..))]
     runs: u32,
+
+    /// Narrate the fork with a local model (issue #10). `off` (default) is the untouched
+    /// deterministic path — no network, no new dependency reached. `local` asks a local Ollama
+    /// server (`http://127.0.0.1:11434`, model `smollm2:135m`) to describe the fork-region
+    /// content, printed under `AI (unverified):` below the deterministic render. Never affects
+    /// `--json`: the AI layer is not part of the machine contract.
+    #[arg(long, value_enum, default_value_t = JudgeMode::Off)]
+    judge: JudgeMode,
 
     #[command(flatten)]
     output: OutputArgs,
@@ -251,9 +276,18 @@ fn run_diff(args: &DiffArgs) -> Result<ExitCode, LoadError> {
                 args.max_steps,
                 &args.output,
                 None,
+                args.judge,
             ))
         }
-        Ok(Some(config)) => run_diff_verify(args, &config),
+        Ok(Some(config)) => {
+            // Not silently ignored: `--judge` has no effect on the `--verify` path yet (issue
+            // #10's first slice scopes it to the passive `diff`), so an explicit request for it
+            // is worth a warning rather than quiet nothing.
+            if !matches!(args.judge, JudgeMode::Off) {
+                eprintln!("amberfork: warning: --judge has no effect with --verify yet");
+            }
+            run_diff_verify(args, &config)
+        }
         Err(message) => {
             eprintln!("amberfork: {message}");
             Ok(ExitCode::from(EXIT_TROUBLE))
@@ -301,12 +335,15 @@ fn run_diff_verify(args: &DiffArgs, config: &verify::VerifyConfig) -> Result<Exi
 
 fn run_demo(args: &DemoArgs) -> ExitCode {
     let (good, bad) = demo_pair();
+    // `demo` has no `--judge` flag of its own (issue #10 first slice scopes the flag to `diff`,
+    // where a real reference/observed pair exists to narrate).
     diff_and_report(
         good,
         bad,
         AlignParams::DEFAULT_MAX_STEPS,
         &args.output,
         Some(DEMO_HINT),
+        JudgeMode::Off,
     )
 }
 
@@ -533,20 +570,91 @@ fn run_engine(good: &Ingested, bad: &Ingested, max_steps: usize) -> Result<DiffR
 
 /// The shared back half of `diff`/`demo`: run the engine on a loaded pair, emit the result
 /// (render or `--json`), and map it to the `diff(1)` exit code. `footer` is an optional
-/// trailing line for the human render only — `--json` stays the pure machine contract.
+/// trailing line for the human render only — `--json` stays the pure machine contract. `judge`
+/// prints the AI explain layer (issue #10) after the deterministic result; it never changes
+/// `report`'s own output or the exit code.
 fn diff_and_report(
     good: Ingested,
     bad: Ingested,
     max_steps: usize,
     output: &OutputArgs,
     footer: Option<&str>,
+    judge: JudgeMode,
 ) -> ExitCode {
     let mut result = match run_engine(&good, &bad, max_steps) {
         Ok(result) => result,
         Err(code) => return code,
     };
     result.warnings = merged_warnings(good.warnings, bad.warnings);
-    report(&result, &good.run, &bad.run, output, footer)
+    let code = report(&result, &good.run, &bad.run, output, footer);
+    print_judge_explanation(judge, &result, &good.run, &bad.run, output);
+    code
+}
+
+/// `--judge local`'s CLI surface: build the fork-region window, ask a local Ollama server to
+/// narrate it, and print the grounded result under an `AI (unverified):` label. A no-op for
+/// `off` and for `--json` (the AI layer never joins the machine contract — issue #10's Approach
+/// A→C growth note names the schema change that would be needed, deliberately not made here).
+/// Any failure (provider unreachable, an ungrounded claim) degrades to a stderr warning — the
+/// diff already succeeded before this runs, and stays succeeded (issue #10 edge cases).
+fn print_judge_explanation(
+    mode: JudgeMode,
+    result: &DiffResult,
+    good: &Run,
+    bad: &Run,
+    output: &OutputArgs,
+) {
+    if matches!(mode, JudgeMode::Off) || output.json {
+        return;
+    }
+    match judge_explanation(result, good, bad) {
+        Ok(grounded) => {
+            let color = resolve_color_mode(
+                output.no_color,
+                std::io::stdout().is_terminal(),
+                std::env::var("NO_COLOR").ok().as_deref(),
+                std::env::var("TERM").ok().as_deref(),
+                std::env::var("COLORTERM").ok().as_deref(),
+            );
+            println!(
+                "{}",
+                color.dim(&format!("AI (unverified): {}", grounded.narrative))
+            );
+            if let Some(fix) = grounded.speculative_fix {
+                println!("{}", color.dim(&format!("AI (speculative fix): {fix}")));
+            }
+        }
+        Err(message) => eprintln!("amberfork: warning: judge: {message}"),
+    }
+}
+
+/// The one async edge `--judge local` needs: a current-thread runtime wraps one Ollama call, the
+/// same tokio quarantine `--verify`/`serve` observe.
+fn judge_explanation(
+    result: &DiffResult,
+    good: &Run,
+    bad: &Run,
+) -> Result<amberfork_judge::Grounded, String> {
+    // `enable_time` is required by `connect_timeout` below (reqwest's connector schedules a
+    // timer on the runtime) — omitting it doesn't fail to build, it panics on the first
+    // connection attempt, so this pairing is load-bearing, not decorative.
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .build()
+        .map_err(|err| format!("cannot start the async runtime: {err}"))?;
+    let client = reqwest::Client::builder()
+        // A firewall silently dropping the connection would otherwise hang `diff` indefinitely;
+        // "server not running" (the common case — Ollama is opt-in) fails fast either way.
+        .connect_timeout(std::time::Duration::from_secs(2))
+        .build()
+        .map_err(|err| err.to_string())?;
+    let judge = OllamaJudge::new(client, JUDGE_OLLAMA_URL, JUDGE_DEFAULT_MODEL);
+    let ctx = ExplainContext::windowed(result, good, bad, JUDGE_WINDOW_K);
+    runtime.block_on(async {
+        let explanation = judge.explain(&ctx).await.map_err(|err| err.to_string())?;
+        ground(result, explanation).map_err(|err| err.to_string())
+    })
 }
 
 /// Emit an already-computed result — `--json` machine contract, or the rendered view — and map it

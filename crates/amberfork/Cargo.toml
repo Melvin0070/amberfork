@@ -31,14 +31,19 @@ amberfork-record = { workspace = true }
 amberfork-attrib = { workspace = true }
 amberfork-replay = { workspace = true }
 amberfork-server = { workspace = true }
+# `diff --judge local` (issue #10): the explain layer over an already-computed `DiffResult`.
+# Stays behind the flag — default `diff` never constructs a `Judge`.
+amberfork-judge = { workspace = true }
 clap = { workspace = true }
 # The `LiveUpstream` client `diff --verify` hands the re-run; featureless like the rest of the CLI.
 reqwest = { workspace = true }
 serde_json = { workspace = true }
 terminal_size = { workspace = true }
-# The runtime lives at the async edges (`serve`, `record`, `diff --verify`); engine paths never
-# touch it. `process` runs the agent as a child while the capture/replay proxy serves.
-tokio = { workspace = true, features = ["rt", "process"] }
+# The runtime lives at the async edges (`serve`, `record`, `diff --verify`, `diff --judge`);
+# engine paths never touch it. `process` runs the agent as a child while the capture/replay
+# proxy serves; `time` backs `--judge local`'s connect timeout (reqwest schedules a timer on
+# the runtime — required, not decorative, see `judge_explanation`'s doc comment).
+tokio = { workspace = true, features = ["rt", "process", "time"] }
 webbrowser = { workspace = true }
 
 [dev-dependencies]
