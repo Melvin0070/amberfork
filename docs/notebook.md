@@ -2559,3 +2559,73 @@ crate, `ui/` workspace) — `amberfork diff` output is untouched, nothing wired 
 (unverified):` label below the deterministic fork, using `ScriptedJudge` so CLI tests stay offline.
 Slice C (later): a live provider — founder's call was Ollama (a local server), not a bundled
 model, so no new mandatory dependency lands in the default (`--judge off`) path.
+
+## 055 · 2026-08-01 · `--judge local|off` ships — Ollama explain layer on diff (#10 slice B, first slice closes)
+
+Merged what 054 called slices B and C into one: the founder's call (asked before building) was
+that landing `--judge local` without a working provider behind it would be dishonest UX — a flag
+in `--help` that silently does nothing until a later slice. So this slice pairs the CLI flag with
+`OllamaJudge`, the real local provider, in one commit (9e20446).
+
+**What shipped.**
+
+- **`OllamaJudge`** (`amberfork-judge/src/ollama.rs`) — POSTs to a local Ollama server's
+  `/api/generate`, the exact endpoint/shape `verify_cli.rs` (#44) already established as this
+  workspace's local-provider convention, reusing that precedent rather than inventing a second
+  one. Converged results never dial out (`fork_index: None` short-circuits before a request is
+  built). `Explanation::fork_index` is set from the `ExplainContext` the caller already has, never
+  parsed from the model's answer — the model is never even asked to name a location, so 054's
+  grounding guard is enforcing an invariant the provider can't violate by construction, not just
+  catching it after the fact.
+- **`prompt.rs`** — pure, offline-tested prompt builder. Caps each step's payload preview at 400
+  chars (a local model's context window is small; an unbounded tool payload could both blow up the
+  prompt and bury the actual divergence content) and never prints a step index in the rendered
+  text, tested directly (`the_prompt_never_mentions_a_step_index`).
+- **CLI** — `--judge local|off` on `diff` only (not `demo`/`serve`; keeps the vertical slice to the
+  one place a real reference/observed pair exists to narrate). Default `off` is verified
+  byte-identical: the full pre-existing `diff_cli.rs` suite runs unmodified and green. Printed
+  under `AI (unverified):`, dimmed like the demo hand-off line — `ColorMode::dim` was already
+  crate-visible for exactly this "main styles chrome" case. Skipped entirely under `--json` (the
+  explain layer stays outside the machine contract, per 054's Approach A→C growth note — no
+  `schema_version` bump here) and under `--verify` (an explicit stderr warning, not silent
+  nothing: "`--judge` has no effect with `--verify` yet").
+- **A real bug, caught by manually running the built binary against your own Ollama server before
+  calling this done** (CLAUDE.md: type-check the intent, not just the types): `reqwest`'s
+  `connect_timeout` schedules a timer on the tokio runtime, and the first runtime builder here only
+  had `.enable_io()` — worked until the very first real HTTP call, then panicked
+  (`"A Tokio 1.x context was found, but timers are disabled"`) instead of degrading. Fixed with
+  `.enable_time()` + the `time` tokio feature on the CLI crate. Caught by running `amberfork diff
+  --judge local` against the demo fixture by hand, not by any test — worth remembering next time a
+  slice adds a new runtime/client construction, since `cargo test` alone did not catch it (the
+  offline tests never reach a real connect attempt).
+
+**Verified live, twice.** Founder's machine already had Ollama + `smollm2:135m` pulled from #44's
+setup. Ran the built binary directly: a real forked diff produced a real (rambling, as expected
+from a 135M model — quality isn't this slice's job) narrative under `AI (unverified):`; a self-diff
+answered "no divergence to explain" with no network call; `--json --judge local` stayed pure JSON.
+Then ran the new `#[ignore]`d `judge_local_narrates_a_real_fork_against_a_real_local_provider` test
+for real (`cargo test -p amberfork --test judge_cli -- --ignored`) — passed.
+
+**Tests.** 2 new unit tests in `amberfork-judge` (`ollama::tests`) targeting `http://127.0.0.1:1`
+— nothing listens there without root, so "provider unreachable" is deterministic regardless of
+whether the test machine happens to have a real Ollama server running (unlike port 11434, which it
+does). 3 new offline CLI tests in `judge_cli.rs` (default-off, converged-needs-no-network,
+json-is-a-no-op) plus the 1 ignored real-provider e2e. Full gate green (`fmt`, `clippy -D
+warnings`, `cargo test --workspace`, `ui/` workspace).
+
+**Known gap, named rather than silently covered.** The `--verify --judge local` stderr warning has
+no dedicated test — wiring a full cassette-backed `--verify` scenario just to check one warning
+line felt like more scaffolding than the message is worth. Verified by manual read of the code
+path, not automated.
+
+**Not in this slice, on purpose.** `demo`/`serve` don't get `--judge`. No configurable
+Ollama URL/model (hardcoded to the #44 convention: `127.0.0.1:11434`, `smollm2:135m`) — a one-line
+addition later if wanted, deliberately not built ahead of a real request for it. `speculative_fix`
+stays unpopulated (`OllamaJudge` never asks for one; "one call, one paragraph" per the issue's own
+Approach A scoping).
+
+**#10's first slice (issue's own "Approach A — minimal") is now fully closed**: crate, trait,
+grounding guard, CLI flag, real local provider, all edge cases from the issue (converged,
+unreachable, `--json`) handled. The issue's own growth path (A→C: `narrative` as a schema field;
+C→B: `amberfork chat`) stays documented, not built — next milestone work is #40 (cost/token/latency
+deltas), the other open v0.9 issue.
