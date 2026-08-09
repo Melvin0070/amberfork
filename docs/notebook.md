@@ -2868,3 +2868,37 @@ original — including the wrinkle that a field-diff slot's "full text" is its c
 form (quotes included), not the bare payload — and returns `None` for a stale or malformed
 address rather than panicking (out-of-range row, a fork-only kind against a plain step row, a
 field path that was never in that row's diffs). Full gate green.
+
+## 062 · 2026-08-09 · Expand-on-demand payload endpoint — #30 slice B of 3
+
+Slice B of the 3-slice split from 061: the server side. `Server::bind`/`bind_with_assets` now
+take the pre-envelope `ViewModel` alongside the `Document`, both held behind a new `ServerState`.
+A new route, `POST /api/payload`, accepts a `SlotAddress` JSON body — the exact type a truncated
+slot already carries — and resolves it against the full view via slice A's `ViewModel::full_text`,
+answering `{"text": "..."}` or `404`.
+
+**Design call, made deliberately.** `POST` with a JSON body rather than a `GET` with path
+segments: a field-diff `SlotAddress`'s path is an arbitrary string that doesn't URL-encode
+cleanly, and `SlotAddress` already has `Serialize`/`Deserialize` — the web painter can echo back
+the exact object it read off the document rather than the server inventing a second encoding for
+the same data. `404` is one status for every way an address fails to resolve (stale, wrong kind,
+out of range) — none is actionable differently by a client that only ever sends addresses it just
+read off a real document.
+
+**Security, checked not assumed.** The payload route sits inside the same
+`.layer(require_local_host)` as every other route — it exists specifically to serve content the
+document endpoint deliberately withholds, so it's the highest-value thing that DNS-rebinding
+guard protects, and it now has its own test proving that rather than inheriting the assumption.
+
+**The caller.** `run_serve` in `crates/amberfork/src/main.rs` clones the view before
+`Document::new` consumes and truncates its own copy — one line, exactly the shape slice A's own
+tests and doc comments already described.
+
+**Tests.** 3 new e2e tests in `amberfork-server/tests/serve.rs`, over the real HTTP wire like the
+rest of that suite: resolve a genuinely truncated slot end-to-end (read the served document, pull
+a real address off it, POST it back, get the exact original text), 404 on an address that doesn't
+resolve, 403 from a foreign `Host` header. The other 11 pre-existing tests needed only mechanical
+signature updates (`document()` split into `full_view()` + `document()`) and passed unchanged
+once a refactor slip in the shared request-sending helper was caught by the pre-existing ETag
+test (a dropped `extra`-headers parameter — the fast feedback loop of running the suite after
+each edit earned its keep here). Full gate green.
