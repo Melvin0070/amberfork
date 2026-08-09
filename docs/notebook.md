@@ -2807,3 +2807,32 @@ e2e tests in `html_export_cli.rs`: the file writes alongside an unaffected termi
 `--html` combines cleanly with `--json` (both outputs land, neither suppresses the other), and an
 unwritable path exits `EXIT_TROUBLE` with the path named on stderr. Full gate green, `ui/`
 workspace untouched (this slice never depends on it).
+
+## 060 · 2026-08-09 · Record-time privacy warning ships — #43 closed (minimum scope)
+
+Picked over the other three open backlog issues deliberately: #43 is `safety`-tagged, and unlike
+#30/#31/#45 (UX polish or a new capability), it names a real gap in something already shipped —
+`amberfork record` has captured full, unredacted provider bodies since v0.6 with no warning that
+a cassette isn't secret-safe to share.
+
+**Scope check, before building.** The issue offers two bars: minimum (a loud warning + a
+documented privacy contract) and better (an opt-in redaction pass over bodies). Headers were
+already fully allowlisted (`cassette.rs`'s `credential_headers_never_survive_capture` test
+predates this slice). The remaining gap is bodies, which are captured raw by design — full input
+fidelity is the record path's entire reason to exist over the passive OTel path. Redacting bodies
+is a real design problem of its own (secret-pattern matching over arbitrary JSON: a false
+negative is a live leak, a false positive corrupts replay) and the issue's acceptance criteria
+already treats it as conditional ("if built"). Shipped the minimum bar as its own complete slice;
+the redaction pass stays a separate, later decision rather than scope creep onto this one.
+
+**What shipped.** `run_record` in `crates/amberfork/src/main.rs` prints a stderr warning
+immediately after the capture proxy binds and before the wrapped agent runs — its own line, ahead
+of any output the agent produces, so it can't get scrolled past. `docs/cassette-format.md`'s
+existing body-redaction disclosure (previously a paragraph buried mid-document under "Credentials
+are never recorded") is promoted to a named `## Privacy contract` section the warning links to by
+anchor, wording matched between the two ("do not share... without scrubbing").
+
+**Tests.** One new CLI e2e test in `record_cli.rs`
+(`warns_that_the_cassette_is_unredacted_before_the_agent_runs`) driving a real `record` session
+against a stub upstream and asserting the warning lands on stderr. Full gate green (`fmt`,
+`clippy -D warnings`, unit tests, CLI e2e, `ui/` workspace).
