@@ -88,32 +88,52 @@ impl Document {
 /// size; the cut backs off to a UTF-8 char boundary.
 pub const SLOT_TEXT_LIMIT: usize = 4096;
 
-/// Cut every payload-derived slot in the view down to [`SLOT_TEXT_LIMIT`], marking the cut.
-/// The fork adds its own resolved sides on top; the field-level evidence rides on the aligned
-/// step now, so [`envelope_step`] bounds it uniformly for every row.
+/// Cut every payload-derived slot in the view down to [`SLOT_TEXT_LIMIT`], marking the cut and
+/// stamping a [`SlotAddress`] the served view can be asked to resolve back to full text with
+/// (issue #30). The fork adds its own resolved sides on top; the field-level evidence rides on
+/// the aligned step now, so [`envelope_step`] bounds it uniformly for every row.
 fn envelope(view: &mut ViewModel) {
-    for row in &mut view.rows {
-        match row {
-            Row::Step(step_row) => envelope_step(&mut step_row.step),
+    for (row, r) in view.rows.iter_mut().enumerate() {
+        match r {
+            Row::Step(step_row) => envelope_step(row, &mut step_row.step),
             Row::Fork(fork) => {
-                envelope_step(&mut fork.step);
-                fork.side_a.truncate_to(SLOT_TEXT_LIMIT);
-                fork.side_b.truncate_to(SLOT_TEXT_LIMIT);
+                envelope_step(row, &mut fork.step);
+                fork.side_a.truncate_to(SLOT_TEXT_LIMIT, || SlotAddress {
+                    row,
+                    kind: SlotKind::ForkSide { side: Side::A },
+                });
+                fork.side_b.truncate_to(SLOT_TEXT_LIMIT, || SlotAddress {
+                    row,
+                    kind: SlotKind::ForkSide { side: Side::B },
+                });
             }
         }
     }
 }
 
-fn envelope_step(step: &mut AlignedStep) {
-    for side in [&mut step.a, &mut step.b].into_iter().flatten() {
-        side.summary.truncate_to(SLOT_TEXT_LIMIT);
+fn envelope_step(row: usize, step: &mut AlignedStep) {
+    for (side, view) in [(Side::A, &mut step.a), (Side::B, &mut step.b)] {
+        if let Some(view) = view {
+            view.summary.truncate_to(SLOT_TEXT_LIMIT, || SlotAddress {
+                row,
+                kind: SlotKind::StepSummary { side },
+            });
+        }
     }
     for fd in &mut step.field_diffs {
         if let Some(removed) = &mut fd.removed {
-            removed.truncate_to(SLOT_TEXT_LIMIT);
+            let path = fd.path.clone();
+            removed.truncate_to(SLOT_TEXT_LIMIT, || SlotAddress {
+                row,
+                kind: SlotKind::FieldRemoved { path },
+            });
         }
         if let Some(added) = &mut fd.added {
-            added.truncate_to(SLOT_TEXT_LIMIT);
+            let path = fd.path.clone();
+            added.truncate_to(SLOT_TEXT_LIMIT, || SlotAddress {
+                row,
+                kind: SlotKind::FieldAdded { path },
+            });
         }
     }
 }
@@ -129,6 +149,10 @@ pub struct SlotText {
     /// mark visibly — a silently shortened payload reads as the payload.
     #[serde(default, skip_serializing_if = "is_false")]
     pub truncated: bool,
+    /// Where to find this slot's full text again (issue #30: expand-on-demand). `Some` iff
+    /// `truncated` — an unmarked slot already carries its full text, so it needs no address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub address: Option<SlotAddress>,
 }
 
 impl SlotText {
@@ -137,6 +161,7 @@ impl SlotText {
         Self {
             text: text.into(),
             truncated: false,
+            address: None,
         }
     }
 
@@ -145,8 +170,11 @@ impl SlotText {
         &self.text
     }
 
-    /// Cut to the largest char boundary within `limit` bytes and mark the cut.
-    fn truncate_to(&mut self, limit: usize) {
+    /// Cut to the largest char boundary within `limit` bytes and mark the cut, stamping
+    /// where the full text can be found again. `address` is a closure rather than a value so
+    /// building one (a field-diff address clones a path string) costs nothing on the
+    /// overwhelmingly common under-limit path.
+    fn truncate_to(&mut self, limit: usize, address: impl FnOnce() -> SlotAddress) {
         if self.text.len() <= limit {
             return;
         }
@@ -156,7 +184,41 @@ impl SlotText {
             .unwrap_or(0);
         self.text.truncate(cut);
         self.truncated = true;
+        self.address = Some(address());
     }
+}
+
+/// Which of a row's two runs a slot belongs to — the `DiffResult` side convention (`a` is the
+/// reference, `b` the observed run), reused here rather than a second vocabulary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Side {
+    A,
+    B,
+}
+
+/// Which slot within a row's [`AlignedStep`] (or [`ForkRow`]) a [`SlotAddress`] names.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SlotKind {
+    /// [`StepView::summary`] on the named side.
+    StepSummary { side: Side },
+    /// [`ForkRow::side_a`] / `side_b`.
+    ForkSide { side: Side },
+    /// [`FieldDiffView::removed`] at the named field path.
+    FieldRemoved { path: String },
+    /// [`FieldDiffView::added`] at the named field path.
+    FieldAdded { path: String },
+}
+
+/// A stable pointer to one payload-derived slot, good for the life of one `Document` (rows
+/// are positional, so this does not survive a re-diff). Round-trips over the wire so the web
+/// painter can hand one straight back to the server to ask for the full text (issue #30).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SlotAddress {
+    /// Index into [`ViewModel::rows`].
+    pub row: usize,
+    pub kind: SlotKind,
 }
 
 impl fmt::Display for SlotText {
@@ -504,6 +566,50 @@ impl ViewModel {
                 .map(|a| attribution_view(a, idx_width)),
             deltas: result.deltas.as_ref().and_then(deltas_view),
             warnings: result.warnings.clone(),
+        }
+    }
+
+    /// Resolve a [`SlotAddress`] back to full text (issue #30: expand-on-demand). Only
+    /// meaningful called on a pre-envelope view — [`ViewModel::compute`]'s own output, never a
+    /// [`Document`]'s already-truncated one — so the caller must hold onto that view itself;
+    /// nothing here re-derives it. `None` means the address does not resolve against this view
+    /// (a stale address from a different diff, a malformed request), not that the slot is empty.
+    #[must_use]
+    pub fn full_text(&self, address: &SlotAddress) -> Option<&str> {
+        let row = self.rows.get(address.row)?;
+        match &address.kind {
+            SlotKind::StepSummary { side } => {
+                let step = match side {
+                    Side::A => row.step().a.as_ref(),
+                    Side::B => row.step().b.as_ref(),
+                }?;
+                Some(step.summary.as_str())
+            }
+            SlotKind::ForkSide { side } => {
+                let Row::Fork(fork) = row else {
+                    return None;
+                };
+                Some(match side {
+                    Side::A => fork.side_a.as_str(),
+                    Side::B => fork.side_b.as_str(),
+                })
+            }
+            SlotKind::FieldRemoved { path } => row
+                .step()
+                .field_diffs
+                .iter()
+                .find(|fd| &fd.path == path)?
+                .removed
+                .as_ref()
+                .map(SlotText::as_str),
+            SlotKind::FieldAdded { path } => row
+                .step()
+                .field_diffs
+                .iter()
+                .find(|fd| &fd.path == path)?
+                .added
+                .as_ref()
+                .map(SlotText::as_str),
         }
     }
 
@@ -1314,21 +1420,168 @@ mod tests {
         let Some(Row::Fork(fork)) = doc.view.rows.first() else {
             panic!("one fork row");
         };
-        // The same over-limit payload feeds side_a and the a-side summary; both arrive cut.
-        for slot in [&fork.side_a, &fork.step.a.as_ref().unwrap().summary] {
-            assert!(slot.truncated);
-            assert_eq!(slot.text.len(), SLOT_TEXT_LIMIT);
-            assert!(huge.starts_with(&slot.text));
-        }
+        // The same over-limit payload feeds side_a and the a-side summary; both arrive cut,
+        // each with its OWN address (issue #30) — they are two distinct slots, not aliases.
+        assert!(fork.side_a.truncated);
+        assert_eq!(fork.side_a.text.len(), SLOT_TEXT_LIMIT);
+        assert!(huge.starts_with(&fork.side_a.text));
+        assert_eq!(
+            fork.side_a.address,
+            Some(SlotAddress {
+                row: 0,
+                kind: SlotKind::ForkSide { side: Side::A },
+            })
+        );
+        let a_summary = &fork.step.a.as_ref().unwrap().summary;
+        assert!(a_summary.truncated);
+        assert_eq!(a_summary.text.len(), SLOT_TEXT_LIMIT);
+        assert!(huge.starts_with(&a_summary.text));
+        assert_eq!(
+            a_summary.address,
+            Some(SlotAddress {
+                row: 0,
+                kind: SlotKind::StepSummary { side: Side::A },
+            })
+        );
+
         assert!(!fork.side_b.truncated);
+        assert_eq!(fork.side_b.address, None);
         let removed = fork.step.field_diffs[0].removed.as_ref().unwrap();
         assert!(removed.truncated);
         assert!(removed.text.len() <= SLOT_TEXT_LIMIT);
-        assert!(!fork.step.field_diffs[0].added.as_ref().unwrap().truncated);
+        assert_eq!(
+            removed.address,
+            Some(SlotAddress {
+                row: 0,
+                kind: SlotKind::FieldRemoved {
+                    path: "outputs".to_string()
+                },
+            })
+        );
+        let added = fork.step.field_diffs[0].added.as_ref().unwrap();
+        assert!(!added.truncated);
+        assert_eq!(added.address, None);
 
         // The marker itself survives the wire.
         let back: Document = serde_json::from_str(&serde_json::to_string(&doc).unwrap()).unwrap();
         assert_eq!(back, doc);
+    }
+
+    #[test]
+    fn full_text_resolves_every_truncated_slot_kind_back_to_the_untruncated_view() {
+        // Issue #30: the server keeps ViewModel::compute's own (pre-envelope, full-fidelity)
+        // output around so it can answer an expand-on-demand request. Every address stamped
+        // by envelope() on the served Document must resolve against that full view.
+        let huge = "x".repeat(SLOT_TEXT_LIMIT + 100);
+        let a = run("good", Outcome::Pass, vec![step(0, "fetch", &huge)]);
+        let b = run("bad", Outcome::Fail, vec![step(0, "fetch", &huge)]);
+        let fork = Fork {
+            index: 0,
+            a_step: Some(0),
+            b_step: Some(0),
+            confidence: 0.9,
+        };
+        let mut res = result(&a, &b, vec![Move::sync(0, 0, 0.9, 0.1)], Some(fork));
+        res.field_diffs = vec![FieldDiff {
+            step: 0,
+            path: "outputs".to_string(),
+            before: Some(json!(huge.clone())),
+            after: Some(json!(huge.clone())),
+            kind: FieldDiffKind::Changed,
+        }];
+        // The full view is exactly what a server would hold onto before calling Document::new.
+        let full_view = ViewModel::compute(&res, &a, &b);
+        let doc = Document::new(full_view.clone());
+
+        let Some(Row::Fork(fork)) = doc.view.rows.first() else {
+            panic!("one fork row");
+        };
+        // side_a/side_b and both step summaries carry the raw step text verbatim.
+        let raw_text_addresses = [
+            fork.side_a.address.clone().unwrap(),
+            fork.side_b.address.clone().unwrap(),
+            fork.step
+                .a
+                .as_ref()
+                .unwrap()
+                .summary
+                .address
+                .clone()
+                .unwrap(),
+            fork.step
+                .b
+                .as_ref()
+                .unwrap()
+                .summary
+                .address
+                .clone()
+                .unwrap(),
+        ];
+        for address in &raw_text_addresses {
+            assert_eq!(
+                full_view.full_text(address),
+                Some(huge.as_str()),
+                "address {address:?} must resolve to the full, untruncated payload"
+            );
+        }
+        // Field-diff slots hold the value in its display form (compact JSON) — a JSON string
+        // literal, quotes included — not the bare payload text.
+        let quoted = format!("\"{huge}\"");
+        for address in [
+            fork.step.field_diffs[0]
+                .removed
+                .as_ref()
+                .unwrap()
+                .address
+                .clone()
+                .unwrap(),
+            fork.step.field_diffs[0]
+                .added
+                .as_ref()
+                .unwrap()
+                .address
+                .clone()
+                .unwrap(),
+        ] {
+            assert_eq!(
+                full_view.full_text(&address),
+                Some(quoted.as_str()),
+                "address {address:?} must resolve to the full, untruncated field value"
+            );
+        }
+    }
+
+    #[test]
+    fn full_text_is_none_for_an_address_that_does_not_resolve() {
+        let (a, b, res) = forked(0.47);
+        let view = ViewModel::compute(&res, &a, &b);
+
+        // Row out of range.
+        assert_eq!(
+            view.full_text(&SlotAddress {
+                row: 99,
+                kind: SlotKind::ForkSide { side: Side::A },
+            }),
+            None
+        );
+        // A step-row address asking for a fork-only slot.
+        assert_eq!(
+            view.full_text(&SlotAddress {
+                row: 0,
+                kind: SlotKind::ForkSide { side: Side::A },
+            }),
+            None
+        );
+        // A field path that was never in this row's diffs.
+        assert_eq!(
+            view.full_text(&SlotAddress {
+                row: 2,
+                kind: SlotKind::FieldRemoved {
+                    path: "no-such-field".to_string(),
+                },
+            }),
+            None
+        );
     }
 
     #[test]
