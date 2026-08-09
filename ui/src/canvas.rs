@@ -356,8 +356,13 @@ fn cell_view(step: Option<&StepView>, full: &'static str, empty: &'static str) -
 }
 
 /// A payload slot as selectable text. A slot the envelope cut ([`SlotText::truncated`]) keeps
-/// its honest mark — a silently shortened payload would read as the payload. The web UI is the
-/// first surface to see a cut slot; it reuses the project's `…` truncation glyph.
+/// its honest mark — a silently shortened payload would read as the payload. The row's `.sum`
+/// cell is a deliberately narrow one-line gist (`overflow: hidden; text-overflow: ellipsis`),
+/// which clips a real click target right off along with the overflow — verified live: a
+/// pointer click on it timed out (unreachable), and a shipped-looking button nobody can
+/// actually click is worse than the honest inert mark it replaces. So unlike the content-diff
+/// pane's [`crate::slot::Slot`], the canvas keeps this mark inert (issue #30 — full text stays
+/// reachable via the pane or the terminal, never truncated there).
 fn slot_view(slot: &SlotText) -> AnyView {
     let text = slot.text.clone();
     if slot.truncated {

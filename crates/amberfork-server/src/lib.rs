@@ -6,7 +6,7 @@
 //! serialized once at bind time, then served as immutable bytes — re-polls are answered
 //! with a strong `ETag`/304 pair, which is all the UI's disconnect detection needs.
 
-use amberfork_layout::{Document, SlotAddress, ViewModel};
+use amberfork_layout::{Document, PayloadResponse, SlotAddress, ViewModel};
 use axum::Router;
 use axum::body::Bytes;
 use axum::extract::{Json, Request, State};
@@ -15,7 +15,6 @@ use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use rust_embed::{EmbeddedFile, RustEmbed};
-use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
 use std::fmt;
@@ -258,14 +257,6 @@ async fn serve_document(State(state): State<Arc<ServerState>>, headers: HeaderMa
         .into_response()
 }
 
-/// The wire form of one resolved [`SlotAddress`] — deliberately just the text: the caller
-/// already has the `truncated` marker and every other field from the document it read the
-/// address off of, so echoing those back would only invite the two copies to drift.
-#[derive(Serialize)]
-struct Payload {
-    text: String,
-}
-
 /// Expand-on-demand (issue #30): resolve one [`SlotAddress`] against the pre-envelope view.
 /// `404` covers every way an address can fail to resolve — out of range, the wrong kind for
 /// that row, a field path that was never in this diff — without distinguishing them; none is
@@ -277,7 +268,7 @@ async fn serve_payload(
     Json(address): Json<SlotAddress>,
 ) -> Response {
     match state.full_view.full_text(&address) {
-        Some(text) => Json(Payload {
+        Some(text) => Json(PayloadResponse {
             text: text.to_string(),
         })
         .into_response(),

@@ -221,6 +221,16 @@ pub struct SlotAddress {
     pub kind: SlotKind,
 }
 
+/// The wire form of one resolved [`SlotAddress`] (issue #30) — deliberately just the text, no
+/// echo of the address or the `truncated` marker: the caller already has both from the
+/// document it read the address off, so restating them here would only invite the two copies
+/// to drift. Shared by `amberfork-server`'s handler and the web painter's fetch, the same way
+/// [`Document`] is — one wire contract, not one redeclared per consumer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PayloadResponse {
+    pub text: String,
+}
+
 impl fmt::Display for SlotText {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.text)

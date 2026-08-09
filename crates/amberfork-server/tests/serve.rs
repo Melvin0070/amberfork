@@ -7,7 +7,8 @@
 
 use amberfork_align::{DiffParams, LexicalCost, diff};
 use amberfork_layout::{
-    DOCUMENT_VERSION, Document, SLOT_TEXT_LIMIT, Side, SlotAddress, SlotKind, ViewModel,
+    DOCUMENT_VERSION, Document, PayloadResponse, SLOT_TEXT_LIMIT, Side, SlotAddress, SlotKind,
+    ViewModel,
 };
 use amberfork_model::test_support::{run, step};
 use amberfork_server::{DOCUMENT_ROUTE, PAYLOAD_ROUTE, ServeError, Server};
@@ -380,12 +381,9 @@ fn payload_endpoint_resolves_a_truncated_slots_full_text() {
         content_type.starts_with("application/json"),
         "payload endpoint is JSON, got {content_type:?}"
     );
-    let payload: serde_json::Value =
-        serde_json::from_str(&response.body).expect("payload body is JSON");
-    assert_eq!(
-        payload["text"], huge,
-        "the full, untruncated text comes back"
-    );
+    let payload: PayloadResponse =
+        serde_json::from_str(&response.body).expect("payload body deserializes");
+    assert_eq!(payload.text, huge, "the full, untruncated text comes back");
 }
 
 #[test]

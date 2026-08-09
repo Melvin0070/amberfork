@@ -33,7 +33,10 @@ const STATIC_NOTE: &str = "Static export — rows aren't clickable and there's n
 /// surfaces never say this differently.
 const EMPTY_FIELD_DIFF: &str = "no field changes for this pair — payloads identical on the wire";
 
-/// The truncation title, matching `ui/src/canvas.rs`'s `TRUNC_TITLE` verbatim.
+/// The truncation title. Deliberately its own wording, not shared with `ui/`'s live view
+/// (issue #30 gave that one a click-to-expand affordance backed by a real server; this export
+/// has no server and no JS at all — "click to load" would be a fake promise here, so this
+/// stays "full text in the terminal", the one place that's actually true from a static file).
 const TRUNC_TITLE: &str = "payload truncated — full text in the terminal";
 
 /// Render a document to one self-contained HTML page: no external `<link>`/`<script src>`, no

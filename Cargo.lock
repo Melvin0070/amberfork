@@ -169,7 +169,6 @@ dependencies = [
  "axum",
  "mime_guess",
  "rust-embed",
- "serde",
  "serde_json",
  "sha2 0.10.9",
  "tokio",

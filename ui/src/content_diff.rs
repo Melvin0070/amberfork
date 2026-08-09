@@ -14,14 +14,13 @@
 
 use std::fmt::Write as _;
 
+use crate::slot::Slot;
 use amberfork_layout::{FieldDiffView, SlotText};
 use leptos::prelude::*;
 
 /// The pinned empty-diff line (issue #27): a selected pair whose payloads matched on the wire —
 /// honest now that the layout only leaves this empty when the engine truly found no change.
 const EMPTY: &str = "no field changes for this pair — payloads identical on the wire";
-/// The truncation title, shared verbatim with the canvas so a cut slot reads the same everywhere.
-const TRUNC_TITLE: &str = "payload truncated — full text in the terminal";
 
 /// The copied evidence for a selected pair: its field diff in the grayscale-safe terminal
 /// unified `-`/`+` format, then the repro command so pasted evidence is re-runnable (DESIGN.md
@@ -163,18 +162,17 @@ fn field_view(fd: &FieldDiffView) -> AnyView {
 /// One diff line. The `-`/`+` sign is the grayscale-safe, colorblind-safe cue (color is never the
 /// only signal — DESIGN.md), decorative to assistive tech; the line's accessible name carries the
 /// side in words so a screen reader hears "removed …"/"added …" without relying on the color. A
-/// slot the envelope cut keeps its honest `…` mark — a silently shortened payload reads as the
-/// payload.
+/// slot the envelope cut keeps its honest `…` mark and, when addressed, a real expand
+/// affordance (issue #30) via [`Slot`] — this pane's own; the canvas keeps its mark inert
+/// (`canvas.rs::slot_view`'s doc comment has why).
 fn line_view(sign: char, class: &'static str, label: &str, slot: &SlotText) -> AnyView {
-    let text = slot.text.clone();
     let aria = format!("{label} {}", slot.text);
-    let trunc = slot.truncated.then(|| {
-        view! { <span class="slot-trunc" title=TRUNC_TITLE>"…"</span> }
-    });
     view! {
         <div class=class aria-label=aria>
             <span class="content-diff-sign" aria-hidden="true">{sign}</span>
-            <span class="content-diff-val">{text}{trunc}</span>
+            <span class="content-diff-val">
+                <Slot value=slot.clone() />
+            </span>
         </div>
     }
     .into_any()

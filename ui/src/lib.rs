@@ -18,6 +18,7 @@ use leptos::prelude::*;
 mod attribution;
 mod canvas;
 mod content_diff;
+mod slot;
 use attribution::Attribution;
 use canvas::Canvas;
 

@@ -297,8 +297,42 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      /* The honest cut mark (issue #17) and, when the slot carries a resolvable address, a real
+         click-to-expand affordance (issue #30) — same element, same class, so idle appearance
+         never changes: only interaction reveals whether there's anything behind it to fetch.
+         Never amber (DESIGN.md) — this is not divergence, and must not compete with the fork's
+         one scarce accent. */
       .slot-trunc {
-        color: var(--muted); /* the honest cut mark — never silently shortened */
+        border: none;
+        background: none;
+        padding: 0;
+        margin: 0;
+        font: inherit;
+        color: var(--muted);
+      }
+      button.slot-trunc {
+        cursor: pointer;
+        transition: color 150ms ease-out;
+      }
+      button.slot-trunc:hover {
+        color: var(--text);
+        text-decoration: underline dotted;
+      }
+      button.slot-trunc:focus-visible {
+        color: var(--text);
+        text-decoration: underline dotted;
+        outline: 2px solid var(--muted);
+        outline-offset: 1px;
+      }
+      button.slot-trunc:disabled {
+        cursor: default;
+        opacity: 0.6;
+        text-decoration: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        button.slot-trunc {
+          transition: none;
+        }
       }
 
       /* Divergence glows: the fork and every downstream row in one uniform amber (no intensity
