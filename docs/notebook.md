@@ -2954,3 +2954,38 @@ not-yet-disabled button. All 50 pre-existing UI tests pass unchanged. Full gate 
 **#30 is closed** — all three slices (addressable slots, the server route, the UI affordance)
 shipped and independently verified, the last one against a real running server in a real browser,
 not just SSR strings.
+
+## 064 · 2026-08-10 · Light mode via `prefers-color-scheme` ships — #31 closed
+
+CSS-only, `ui/index.html`. Every color in the shell already routed through a `--token` custom
+property except the content-diff pane's red/green, which was hardcoded hex — pulled those into
+new `--error`/`--success` (+ `-bg` alpha) tokens alongside the existing `--warning`, then added a
+`@media (prefers-color-scheme: light)` block overriding `:root` with DESIGN.md's spec: bg
+`#F7F7F5`, surface `#FFFFFF`, hairline `#E2E2DD`, text `#16161A`, muted `#6B6B72`, amber
+`#E0570B`, diff `#C7382F`/`#1E9E6A`. Dark stays the `:root` default (DD5), no manual toggle — the
+OS preference alone decides. Dropped the `data-theme="dark"` attribute on `<html>`: nothing read
+it, and it would've been wrong half the time once light mode existed.
+
+**Two tokens had no explicit spec and needed a derived value**, flagged to the founder before
+committing rather than picked silently:
+- `--raised` (light) = `--surface` (`#FFFFFF`). Dark's `bg < surface < raised` brightness ladder
+  has no headroom above white, so the selected-row "elevated" surface just becomes the same
+  white as `surface`.
+- `--faint` (light) = `#A3A39C`. DD4 restricts `faint` to decorative-only use (spine lines/dots,
+  never readable text) at a low, ~2.8:1-ish contrast against `bg` in dark; picked to land at
+  roughly that same low contrast against the light `bg` rather than reuse `muted`.
+
+Founder approved both as proposed, no changes requested.
+
+**Verification.** No Rust changed (zero inline styles in `ui/src/*.rs` — confirmed by grep before
+starting), so no new unit tests; `trunk build` succeeds and `scripts/verify.sh --full` is green
+(fmt, clippy on both `ssr` and `csr`/wasm32, all 50 pre-existing UI ssr tests unchanged). Visual
+check via the `browse` skill against `trunk serve`: headless Chromium's own default preference is
+light, so the boot-shell screenshot exercised the new light tokens directly (computed
+`--bg`/`--amber` matched `#f7f7f5`/`#e0570b` exactly); forced a dark-token override via injected
+stylesheet for a side-by-side. Did not walk the full state matrix (selected row, fork glow,
+content-diff cards) — `trunk serve` has no backend behind it, so those states need real trace
+fixtures through `amberfork serve` to exercise, not just the static shell. Everything in that
+matrix routes through the same tokens verified here, but a real state-matrix pass with genuine
+fork/converged/truncated data is worth a follow-up look before calling the light palette fully
+QA'd end-to-end.

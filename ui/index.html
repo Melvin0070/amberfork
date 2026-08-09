@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -17,7 +17,8 @@
     />
 
     <style>
-      /* DESIGN.md tokens — dark is the primary theme (DD5). Fonts are the metrics-compatible
+      /* DESIGN.md tokens — dark is the primary/default theme (DD5); light follows the OS via
+         prefers-color-scheme (#31), no manual toggle. Fonts are the metrics-compatible
          fallbacks; the latin-subset Monaspace/General Sans woff2 land in a later slice with
          no layout shift. */
       :root {
@@ -31,8 +32,35 @@
         --faint: #55555c;
         --amber: #ff7a1a;
         --warning: #f5a623;
+        --error: #ff5c5c;
+        --error-bg: #ff5c5c14;
+        --success: #46d39a;
+        --success-bg: #46d39a14;
         --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
         --sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      }
+
+      /* Light palette (DESIGN.md "Light mode"). --raised coincides with --surface (both read
+         as the elevated/white layer against the --bg canvas — the dark scale's bg<surface<raised
+         progression has no headroom above white). --faint has no explicit light spec; it's
+         decorative-only (DD4), so it's picked for a low, ~faint-in-dark contrast against --bg
+         rather than lifted from the doc. */
+      @media (prefers-color-scheme: light) {
+        :root {
+          color-scheme: light;
+          --bg: #f7f7f5;
+          --surface: #ffffff;
+          --raised: #ffffff;
+          --hair: #e2e2dd;
+          --text: #16161a;
+          --muted: #6b6b72;
+          --faint: #a3a39c;
+          --amber: #e0570b;
+          --error: #c7382f;
+          --error-bg: #c7382f14;
+          --success: #1e9e6a;
+          --success-bg: #1e9e6a14;
+        }
       }
 
       * {
@@ -522,12 +550,12 @@
         overflow-wrap: anywhere;
       }
       .content-diff-del {
-        color: #ff5c5c;
-        background: #ff5c5c14;
+        color: var(--error);
+        background: var(--error-bg);
       }
       .content-diff-add {
-        color: #46d39a;
-        background: #46d39a14;
+        color: var(--success);
+        background: var(--success-bg);
       }
       .content-diff-sign {
         flex: 0 0 auto;
