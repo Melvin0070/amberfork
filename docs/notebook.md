@@ -2902,3 +2902,55 @@ signature updates (`document()` split into `full_view()` + `document()`) and pas
 once a refactor slip in the shared request-sending helper was caught by the pre-existing ETag
 test (a dropped `extra`-headers parameter — the fast feedback loop of running the suite after
 each edit earned its keep here). Full gate green.
+
+## 063 · 2026-08-10 · Click-to-expand ships in the content-diff pane — #30 closed (slice C of 3)
+
+Slice C, the last of the 3-slice split from 061: the web painter. `Slot` (`ui/src/slot.rs`)
+renders a payload's text plus, when it's truncated and carries a real `SlotAddress`, a genuine
+`<button>` that `POST`s the address to `/api/payload` on click, swaps the truncated text for the
+full response, and removes itself — never leaves a dead affordance next to text that no longer
+needs expanding.
+
+**A real finding from live testing, not assumed correctness.** First pass wired `Slot` into both
+consumers — the canvas's row summaries and the content-diff pane's field values, which rendered
+byte-identical inert markup before this issue. SSR tests (the crate's usual bar) passed for both.
+But this feature's whole point is a real click firing a real fetch, which SSR strings can't
+exercise — so built the actual wasm bundle with `trunk build --release`, staged it into
+`amberfork-server`'s (gitignored) `ui-dist/`, and ran a real `amberfork serve` against fixtures
+with genuinely oversized payloads (crafted by hand per `docs/trace-format.md`), driven through a
+headless browser via the `browse` skill. Result: a real pointer click on the canvas button timed
+out. Root cause, confirmed via computed styles: the row's `.sum` cell is `overflow: hidden;
+text-overflow: ellipsis; white-space: nowrap` — a deliberate one-line-gist layout (`StepView`'s
+own doc comment calls it that) — which clips a real click target away along with the overflow.
+Not a regression (the old inert mark had the identical clipping problem, just invisibly, since
+nothing was ever interactive there before), but shipping a button that looks clickable and mostly
+isn't is worse than the honest inert mark it would replace — the same "no fake affordances"
+principle 059's `--html` export slice already established. Flagged it with the screenshot and a
+concrete recommendation rather than picking a direction unilaterally; founder chose scoping the
+live affordance to the content-diff pane only, which has no such clipping (`.content-diff-val`
+carries none of those three properties) and is the surface actually built to show full evidence.
+Re-verified after the fix: a real (non-programmatic) click on the pane's button worked cleanly —
+text grew from truncated to the full original, the button disappeared, DR2 red/green containment
+held, zero console errors, confirmed by screenshot.
+
+**Wire contract.** `PayloadResponse { text }` moved into `amberfork-layout` next to `SlotAddress`
+rather than living as a locally-declared struct in `amberfork-server` — one shared type between
+server and UI, the same pattern `Document` already set. That let the `serde` dependency slice B
+had tentatively added to `amberfork-server` come back out; it was never actually needed once the
+type lives in the shared crate.
+
+**CSS.** `.slot-trunc` stays visually identical at rest whether it's the canvas's inert span or
+the pane's real button — same muted color, nothing new — so idle appearance never changes; only
+interaction (hover, focus-visible, disabled-while-loading) reveals which is which. Buttons are
+never amber (DESIGN.md); this isn't divergence and must not compete with the fork's one scarce
+accent.
+
+**Tests.** 3 new SSR tests in `slot.rs`: untruncated passes through as plain text, truncated with
+no address stays the old inert mark (back-compat with several other tests in this crate that
+hand-set `.truncated` directly without an address), truncated with an address renders a real,
+not-yet-disabled button. All 50 pre-existing UI tests pass unchanged. Full gate green on both
+`ssr` and the `csr`/wasm32 clippy target.
+
+**#30 is closed** — all three slices (addressable slots, the server route, the UI affordance)
+shipped and independently verified, the last one against a real running server in a real browser,
+not just SSR strings.
