@@ -15,6 +15,8 @@
 //!   a failed run is precisely the one worth recording.
 
 use assert_cmd::Command;
+use predicates::prelude::PredicateBooleanExt;
+use predicates::str::contains;
 use std::io::{Read, Write};
 use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 
@@ -141,6 +143,21 @@ fn records_the_provider_exchange_into_a_cassette() {
         exchanges[0]["response"]["body"]["content"][0]["text"],
         "stub upstream ok"
     );
+}
+
+#[test]
+fn warns_that_the_cassette_is_unredacted_before_the_agent_runs() {
+    // Issue #43: a cassette is a shareable artifact, but its bodies are never redacted (only
+    // headers are). The warning must be loud and early — printed before the agent's own output
+    // has a chance to bury it — not just folded into the closing "recorded → path" line.
+    let upstream = spawn_stub_upstream();
+    let dir = tempfile::tempdir().expect("tempdir");
+    let out = dir.path().join("run.cassette.json");
+
+    amberfork_record(upstream, &out, &agent_src(0))
+        .assert()
+        .code(0)
+        .stderr(contains("unredacted").and(contains("do not share")));
 }
 
 #[test]

@@ -500,6 +500,15 @@ async fn record_session(args: &RecordArgs) -> ExitCode {
         }
     };
 
+    // Printed before the agent runs, on its own line: the agent's own stdout/stderr is about to
+    // start flowing and would bury a warning appended later. Only headers are redacted (an
+    // allowlist, per cassette.rs) — bodies are captured in full, on purpose, so this is not a
+    // gap to close quietly but a standing fact to repeat every time (issue #43).
+    eprintln!(
+        "amberfork: recording unredacted request/response bodies — do not share a cassette \
+         without scrubbing it first (see docs/cassette-format.md#privacy-contract)"
+    );
+
     // clap guarantees at least the program name (`num_args = 1..`).
     let (program, program_args) = args
         .command

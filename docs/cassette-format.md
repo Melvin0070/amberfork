@@ -72,7 +72,11 @@ reads. Nothing forks the trace contract per-consumer.
 An exchange that never completed upstream is not recorded — a request that failed to reach the
 provider has no round trip to describe.
 
-## Credentials are never recorded
+## Privacy contract
+
+**Headers are redacted. Bodies are not.** A cassette is not safe to share until you have
+scrubbed it yourself — `amberfork record` prints this same warning at the top of every
+recording session, before the agent it wraps produces any output of its own.
 
 **Headers are captured by allowlist, not denylist**, and that is a contract promise, not an
 implementation detail. A cassette is meant to be shared — committed as a fixture, attached to a
@@ -87,8 +91,11 @@ Kept today: `content-type` and `accept` on requests, `content-type` on responses
 Your **credential still reaches the provider** — the proxy relays it. The allowlist governs
 what reaches disk, which is a different question.
 
-What is *not* redacted: the bodies. Capturing them is the entire point, and they are your
-content. A prompt containing a secret puts that secret in the cassette.
+**What is *not* redacted: the bodies.** Capturing them is the entire point, and they are your
+content — the full prompt, tool arguments, and model output, verbatim. A prompt containing an
+embedded secret, a customer's PII, or any other sensitive data puts it in the cassette in the
+clear. Treat a cassette as sensitive as the conversation it recorded: read it before you attach
+it to a bug report, before you commit it as a fixture, before you hand it to anyone.
 
 ## Fidelity limits (stated, not discovered)
 
