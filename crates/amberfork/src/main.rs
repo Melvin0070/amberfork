@@ -398,8 +398,12 @@ fn run_serve(args: &ServeArgs) -> Result<ExitCode, LoadError> {
         Err(code) => return Ok(code),
     };
     result.warnings = merged_warnings(good.warnings, bad.warnings);
-    let document = Document::new(ViewModel::compute(&result, &good.run, &bad.run));
-    Ok(serve_document(&document, args))
+    // Cloned before Document::new, which truncates its own copy in place: the server needs
+    // BOTH the served (truncated) document and this untouched view, to answer an
+    // expand-on-demand request for a slot the document cut (issue #30).
+    let view = ViewModel::compute(&result, &good.run, &bad.run);
+    let document = Document::new(view.clone());
+    Ok(serve_document(&document, &view, args))
 }
 
 /// The human label for what a `serve` invocation is showing: the bundled pair for `--demo`,
@@ -419,7 +423,7 @@ fn serve_source(args: &ServeArgs) -> String {
 /// The ONE async edge in this crate: a current-thread runtime wrapping the server's
 /// lifetime, so the engine path above it stays sync (design doc: tokio is quarantined to
 /// I/O edges).
-fn serve_document(document: &Document, args: &ServeArgs) -> ExitCode {
+fn serve_document(document: &Document, view: &ViewModel, args: &ServeArgs) -> ExitCode {
     let runtime = match tokio::runtime::Builder::new_current_thread()
         .enable_io()
         .build()
@@ -431,7 +435,7 @@ fn serve_document(document: &Document, args: &ServeArgs) -> ExitCode {
         }
     };
     runtime.block_on(async {
-        let server = match Server::bind(document, args.port.unwrap_or(0)).await {
+        let server = match Server::bind(document, view, args.port.unwrap_or(0)).await {
             Ok(server) => server,
             Err(err) => {
                 eprintln!("amberfork: {err}");

@@ -6,15 +6,16 @@
 //! serialized once at bind time, then served as immutable bytes — re-polls are answered
 //! with a strong `ETag`/304 pair, which is all the UI's disconnect detection needs.
 
-use amberfork_layout::Document;
+use amberfork_layout::{Document, SlotAddress, ViewModel};
 use axum::Router;
 use axum::body::Bytes;
-use axum::extract::{Request, State};
+use axum::extract::{Json, Request, State};
 use axum::http::{HeaderMap, HeaderValue, StatusCode, Uri, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use rust_embed::{EmbeddedFile, RustEmbed};
+use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
 use std::fmt;
@@ -25,6 +26,13 @@ use tokio::net::TcpListener;
 
 /// The one content endpoint (D12): the versioned view-model document, whole.
 pub const DOCUMENT_ROUTE: &str = "/api/document";
+
+/// Expand-on-demand (issue #30): `POST` a [`SlotAddress`] taken from a truncated slot on the
+/// document, get its full text back. A second route rather than a query string on the first —
+/// a `SlotAddress`'s field-diff path can contain arbitrary characters, and it already has a
+/// `Serialize`/`Deserialize` impl the web painter can round-trip verbatim without inventing an
+/// encoding of its own.
+pub const PAYLOAD_ROUTE: &str = "/api/payload";
 
 /// The app shell every SPA route lands on; its presence is what makes a bundle a bundle.
 const INDEX_HTML: &str = "index.html";
@@ -40,6 +48,14 @@ struct UiAssets;
 struct Content {
     body: Bytes,
     etag: HeaderValue,
+}
+
+/// Everything a request handler can reach: the served (truncated) snapshot, plus the
+/// pre-envelope view it was truncated from — the one thing [`Document`] itself no longer
+/// carries, and the only way [`serve_payload`] can answer an expand-on-demand request.
+struct ServerState {
+    content: Content,
+    full_view: ViewModel,
 }
 
 /// A bound-but-not-yet-serving server: bind and serve are split so the caller can print
@@ -87,7 +103,11 @@ impl std::error::Error for ServeError {
 }
 
 impl Server {
-    /// Bind `127.0.0.1:port` (`0` = OS-assigned) around a snapshot of `document`.
+    /// Bind `127.0.0.1:port` (`0` = OS-assigned) around a snapshot of `document`, answering
+    /// expand-on-demand requests against `full_view` — the same [`ViewModel`] `document` was
+    /// built from, before its payload envelope truncated anything. The caller keeps that
+    /// pre-envelope copy around (typically a clone taken right before [`Document::new`]); this
+    /// crate cannot reconstruct it from `document` alone, since truncation is destructive.
     ///
     /// Loopback is not a default, it is the only path: no widen flag exists in this crate
     /// (D6 — traces carry prompts, tool args, and whatever secrets leaked into them, so
@@ -95,8 +115,12 @@ impl Server {
     ///
     /// # Errors
     /// [`ServeError::Bind`] when the loopback bind fails (port in use).
-    pub async fn bind(document: &Document, port: u16) -> Result<Self, ServeError> {
-        Self::bind_with_assets::<UiAssets>(document, port).await
+    pub async fn bind(
+        document: &Document,
+        full_view: &ViewModel,
+        port: u16,
+    ) -> Result<Self, ServeError> {
+        Self::bind_with_assets::<UiAssets>(document, full_view, port).await
     }
 
     /// [`bind`](Self::bind), generic over the embedded bundle — the seam that lets tests
@@ -108,6 +132,7 @@ impl Server {
     /// the bundle has no `index.html`.
     pub async fn bind_with_assets<A: RustEmbed + 'static>(
         document: &Document,
+        full_view: &ViewModel,
         port: u16,
     ) -> Result<Self, ServeError> {
         if A::get(INDEX_HTML).is_none() {
@@ -122,7 +147,7 @@ impl Server {
             .map_err(|source| ServeError::Bind { addr, source })?;
         Ok(Self {
             listener,
-            router: router::<A>(document),
+            router: router::<A>(document, full_view),
             local_addr,
         })
     }
@@ -143,22 +168,28 @@ impl Server {
     }
 }
 
-fn router<A: RustEmbed + 'static>(document: &Document) -> Router {
+fn router<A: RustEmbed + 'static>(document: &Document, full_view: &ViewModel) -> Router {
     let json = serde_json::to_string(document)
         .expect("Document serialization is infallible (no non-string map keys)");
     let etag = HeaderValue::from_str(&format!("\"{:x}\"", Sha256::digest(json.as_bytes())))
         .expect("a quoted hex digest is valid header ASCII");
-    let content = Arc::new(Content {
-        body: Bytes::from(json),
-        etag,
+    let state = Arc::new(ServerState {
+        content: Content {
+            body: Bytes::from(json),
+            etag,
+        },
+        full_view: full_view.clone(),
     });
     // The guard is a `.layer` on the whole router so it also wraps the fallback — every
-    // route, the SPA fallback included, is born behind it.
+    // route, the SPA fallback (and the payload endpoint) included, is born behind it. A
+    // cassette-style leak here would be worse than the document endpoint's: the whole point
+    // of the payload route is content the document endpoint deliberately withheld.
     Router::new()
         .route(DOCUMENT_ROUTE, get(serve_document))
+        .route(PAYLOAD_ROUTE, post(serve_payload))
         .fallback(get(serve_ui::<A>))
         .layer(middleware::from_fn(require_local_host))
-        .with_state(content)
+        .with_state(state)
 }
 
 /// The SPA handler over the embedded bundle: an exact asset is served as itself; anything
@@ -205,7 +236,8 @@ fn asset_response(path: &str, asset: EmbeddedFile) -> Response {
     ([(header::CONTENT_TYPE, mime)], body).into_response()
 }
 
-async fn serve_document(State(content): State<Arc<Content>>, headers: HeaderMap) -> Response {
+async fn serve_document(State(state): State<Arc<ServerState>>, headers: HeaderMap) -> Response {
+    let content = &state.content;
     // `no-cache` means "revalidate, don't guess": the browser re-polls with If-None-Match
     // instead of heuristically caching a stale document.
     let revalidate = [
@@ -224,6 +256,37 @@ async fn serve_document(State(content): State<Arc<Content>>, headers: HeaderMap)
         content.body.clone(),
     )
         .into_response()
+}
+
+/// The wire form of one resolved [`SlotAddress`] — deliberately just the text: the caller
+/// already has the `truncated` marker and every other field from the document it read the
+/// address off of, so echoing those back would only invite the two copies to drift.
+#[derive(Serialize)]
+struct Payload {
+    text: String,
+}
+
+/// Expand-on-demand (issue #30): resolve one [`SlotAddress`] against the pre-envelope view.
+/// `404` covers every way an address can fail to resolve — out of range, the wrong kind for
+/// that row, a field path that was never in this diff — without distinguishing them; none is
+/// actionable differently by a client that only ever sends addresses it just read off a real
+/// document, and a stale address from a previous diff should look no different from a
+/// malformed one.
+async fn serve_payload(
+    State(state): State<Arc<ServerState>>,
+    Json(address): Json<SlotAddress>,
+) -> Response {
+    match state.full_view.full_text(&address) {
+        Some(text) => Json(Payload {
+            text: text.to_string(),
+        })
+        .into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            "amberfork: no payload at that address\n",
+        )
+            .into_response(),
+    }
 }
 
 /// DNS-rebinding defense (D6, the vite/Jupyter CVE class): a hostile page can point its own
