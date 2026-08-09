@@ -2836,3 +2836,35 @@ anchor, wording matched between the two ("do not share... without scrubbing").
 (`warns_that_the_cassette_is_unredacted_before_the_agent_runs`) driving a real `record` session
 against a stub upstream and asserting the warning lands on stderr. Full gate green (`fmt`,
 `clippy -D warnings`, unit tests, CLI e2e, `ui/` workspace).
+
+## 061 · 2026-08-09 · Addressable payload slots — #30 slice A of 3
+
+Next by the lowest-numbered-unblocked rule: #30, expand-on-demand for truncated payloads. Scoped
+it before building — the issue only names "server+ui," but truncation turned out to be
+destructive (`Document::new` cuts `SlotText` in place, discarding the original bytes) and no slot
+had a stable address to ask for its full text by, so a real prerequisite piece lives in
+`amberfork-layout` first. Split into three: layout/model (this slice), server (hold the
+pre-envelope view, add a fetch route), UI (wire the inert `.slot-trunc` marker to a click →
+fetch). Confirmed the split and the addressing shape with the founder before writing code.
+
+**What shipped.** `SlotText` gains `address: Option<SlotAddress>`, `Some` exactly when
+`truncated` is. `SlotAddress { row, kind }` names a row index plus a `SlotKind` —
+`StepSummary{side}`, `ForkSide{side}`, `FieldRemoved{path}`, `FieldAdded{path}` — reusing the
+existing side/path vocabulary (`Side` mirrors the `DiffResult` a/b convention;
+`FieldDiffView.path` already existed) rather than inventing per-slot UUIDs. `envelope()` and
+`envelope_step()` now enumerate row index and stamp the right address into `truncate_to` via a
+closure, so building a `SlotAddress` (a field-diff one clones a path string) costs nothing on the
+overwhelmingly common under-limit path. `ViewModel::full_text(&self, &SlotAddress) -> Option<&str>`
+resolves an address back to the untruncated text — but only against the view `ViewModel::compute`
+produced, before `Document::new`'s envelope ever ran. The truncation mechanism itself is
+unchanged: same limit, same in-place cut, same `truncated` marker every existing consumer (CLI,
+`html_export`, the web UI) already reads. This slice only gives the marker a return address; slice
+B decides how the server actually keeps that pre-envelope view around to answer one.
+
+**Tests.** Extended the existing over-limit test to assert each truncated slot gets its own
+distinct address, never aliased between slots that happen to share source text (`side_a` and the
+matching step summary here). Two new tests: `full_text` round-trips every slot kind back to the
+original — including the wrinkle that a field-diff slot's "full text" is its compact-JSON display
+form (quotes included), not the bare payload — and returns `None` for a stale or malformed
+address rather than panicking (out-of-range row, a fork-only kind against a plain step row, a
+field path that was never in that row's diffs). Full gate green.
