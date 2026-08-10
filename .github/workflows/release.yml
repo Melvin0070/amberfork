@@ -84,6 +84,15 @@ jobs:
           cargo package -p amberfork-server --list --allow-dirty \
             | grep -qx 'ui-dist/index.html'
 
+      - name: the CLI crate actually compiles from its own tarball
+        # `--list` above never compiles anything, so it cannot catch a source file reaching
+        # OUTSIDE its crate root — which builds fine in the repo and then fails at package
+        # time, since the tarball carries no path above the crate dir. That is exactly how
+        # `--html`'s `include_str!("../../../ui/index.html")` (#29) shipped broken to
+        # crates.io for a whole release cycle. `cargo package` (no `--list`) builds the
+        # unpacked tarball, so a path escape is a red build here instead of a failed publish.
+        run: cargo package -p amberfork --allow-dirty
+
       - name: package tarball + checksum
         run: |
           ref="${GITHUB_REF_NAME}"

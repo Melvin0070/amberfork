@@ -22,9 +22,12 @@ use amberfork_layout::{
 };
 use std::fmt::Write as _;
 
-/// The `<style>` block `ui/index.html` ships to the browser, embedded at compile time so the
-/// export can never carry a hand-copied, driftable copy of the live view's CSS.
-const UI_INDEX_HTML: &str = include_str!("../../../ui/index.html");
+/// The same stylesheet the browser gets, read from `amberfork-layout` rather than hand-copied,
+/// so the export can never drift from the live view's CSS. It lives there — not in `ui/` — so
+/// this reference is an ordinary dependency: an `include_str!` reaching into the separate `ui/`
+/// workspace builds fine in the repo but escapes this crate's root, and `cargo package` carries
+/// nothing outside it (caught by `cargo publish --dry-run`, not by any test or release build).
+use amberfork_layout::UI_CSS;
 
 const STATIC_NOTE: &str = "Static export — rows aren't clickable and there's no Copy button \
     here; run `amberfork serve` against these two runs for the live view.";
@@ -60,7 +63,7 @@ pub fn render(document: &Document) -> String {
 }
 
 fn page_shell(title: &str, body: &str) -> String {
-    let style = extract_style(UI_INDEX_HTML);
+    let style = UI_CSS;
     format!(
         "<!doctype html>\n\
          <html lang=\"en\">\n\
@@ -82,17 +85,6 @@ fn page_shell(title: &str, body: &str) -> String {
         title = escape_html(title),
         note = escape_html(STATIC_NOTE),
     )
-}
-
-/// The `<style>...</style>` block's inner text, out of the real page the browser ships.
-fn extract_style(index_html: &str) -> &str {
-    index_html
-        .split_once("<style>")
-        .expect("ui/index.html always has a <style> block")
-        .1
-        .split_once("</style>")
-        .expect("ui/index.html's <style> block is always closed")
-        .0
 }
 
 /// Mirrors `ui/src/lib.rs`'s `Header` component: logo, pair identity, verdict, meta — minus the
@@ -445,12 +437,11 @@ mod tests {
     }
 
     #[test]
-    fn extracts_the_real_style_block() {
-        let style = extract_style(UI_INDEX_HTML);
-        assert!(style.contains("--hair"), "a real design token is present");
+    fn embeds_the_real_shared_stylesheet() {
+        assert!(UI_CSS.contains("--hair"), "a real design token is present");
         assert!(
-            !style.contains("<style>"),
-            "no leftover tag in the extracted text"
+            !UI_CSS.contains("<style>") && !UI_CSS.contains("</style>"),
+            "the shared asset is pure CSS, not an HTML fragment"
         );
     }
 

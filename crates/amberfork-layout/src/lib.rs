@@ -51,6 +51,16 @@ use serde::{Deserialize, Serialize};
 // view-model's own type surface — it is the contract, not a barrel re-export of the engine.
 pub use amberfork_model::{MoveKind, Outcome, StepKind, Warning};
 
+/// The design system's stylesheet — the single source both painters dress from.
+///
+/// It lives beside the view-model rather than in `ui/` for a packaging reason: `ui/` is a
+/// separate workspace, so `crates/amberfork/src/html_export.rs` could only reach it with an
+/// `include_str!` that escapes its own crate root, which builds in the repo and then fails
+/// `cargo package` (the tarball carries no path outside the crate). Owning it here makes it a
+/// normal dependency for the static export, while `ui/index.html` inlines the same bytes at
+/// build time via trunk — one stylesheet, no hand-copied second copy to drift.
+pub const UI_CSS: &str = include_str!("../ui.css");
+
 /// The document version this build emits. A bare wire-hygiene marker (issue #24): the web UI
 /// and the server ship in one binary, lockstep by construction, so there is no read-gate —
 /// bump it when the document's shape changes so a stale payload is at least identifiable.
