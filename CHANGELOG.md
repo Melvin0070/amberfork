@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [0.9.1] — 2026-08-10
+
+Packaging fix, no behaviour change: v0.9.0 is the first release published to crates.io since
+0.4.0, and the `amberfork` crate could not actually be packaged.
+
+- **The shared stylesheet moved into `amberfork-layout`.** `diff --html` (#29) read the live CSS
+  with `include_str!("../../../ui/index.html")`, a path that escapes the crate root — fine in the
+  repo and in the release binary, but `cargo package` carries nothing above the crate directory,
+  so the tarball never compiled. `amberfork-layout` now owns `ui.css` and exports it as `UI_CSS`,
+  making the export's reference an ordinary dependency; `ui/index.html` inlines the same bytes at
+  build time via trunk, so the served page is unchanged and there is still exactly one
+  stylesheet.
+- **`release.yml` now runs `cargo package -p amberfork`.** The pre-existing packaging check was
+  `-p amberfork-server --list`, which inspects a different crate and never compiles — which is
+  why the above shipped and survived a release. The new step builds the unpacked tarball, so a
+  path escape fails the release build instead of the publish.
+
 ## [0.9.0] — 2026-08-10
 
 v0.9 — the explain layer and the surfaces around the answer (milestone issues #10 and #40, then
