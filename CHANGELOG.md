@@ -2,6 +2,74 @@
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-08-10
+
+v0.9 — the explain layer and the surfaces around the answer (milestone issues #10 and #40, then
+the backlog that had been waiting on the view-model seam: #29, #30, #31, #43, #45). The engine's
+localization is unchanged; this milestone is about what surrounds it — an optional AI narration
+that structurally cannot move the fork, the resource cost of the divergence, and three new ways
+to read or share the result.
+
+- **`amberfork-judge` + `--judge local|off` (#10).** The 11th crate: an explain layer that
+  narrates the fork without ever locating it. `ExplainContext::windowed` hands a judge the fork
+  step plus `k` neighbours and structurally cannot hold the two full trajectories; `ground()`
+  checks the judge's claimed `fork_index` against the aligner's by equality, rejecting a
+  mismatch, a fabricated fork on a converged result, or silence on a real one. `OllamaJudge`
+  talks to a local Ollama server (`127.0.0.1:11434`) — no key, no cost, and the model is never
+  even asked to name a location, so the grounding guard enforces an invariant the provider can't
+  violate by construction. Default `off` is byte-identical to a build without the flag, `--json`
+  never carries the narration (no `schema_version` bump), and output renders under an
+  `AI (unverified):` label. `--judge` has no effect with `--verify` yet and says so on stderr
+  rather than silently ignoring the flag.
+- **Latency/token deltas (#40, three slices).** `DiffResult.deltas` — additive, no
+  `schema_version` bump — carries `total` (whole-run wall clock plus summed tokens) and `at_fork`
+  (the diverging step pair; `None` by construction when the fork has no counterpart step), both
+  `b − a`. Rendered in the terminal and in the web attribution pane, and shown on converged diffs
+  too, since "same behavior, cheaper" is a real answer. Needed this workspace's first timestamp
+  parser: hand-rolled (`Z`-suffixed UTC only, cross-checked against Python's `datetime` across
+  both leap-year rules) rather than taking on `chrono`/`time`; anything it can't parse degrades
+  to no latency signal, never a wrong one. Per-step dollar cost stays out of scope — no adapter
+  here attributes one, and a pricing table is its own design decision.
+- **`amberfork diff --html <path>` (#29).** A self-contained static export of the fork view — no
+  `<script>`, no `<link>`, no network reference — for pasting into an issue or a PR. Hand-rolled
+  over the same `ViewModel` seam the other painters read, deliberately keeping `leptos` (~40
+  transitive crates under `ssr`) out of the shipped binary; the CSS is `include_str!`'d from
+  `ui/index.html`, so the export can't drift from the live stylesheet. Mirrors terminal fidelity
+  rather than the interactive canvas, and omits the affordances that would be fake without JS
+  instead of rendering dead buttons.
+- **Expand-on-demand for truncated payloads (#30, three slices).** Truncated slots now carry a
+  `SlotAddress` (row index plus kind, reusing the existing side/path vocabulary rather than
+  per-slot UUIDs); `POST /api/payload` resolves one against the pre-envelope view, behind the
+  same local-host guard as every other route and now with its own test proving it; the
+  content-diff pane renders a real button that fetches the full text and then removes itself.
+  Scoped to that pane after live browser testing showed the canvas row's `overflow: hidden`
+  one-line-gist layout clips a click target away — an honest inert mark beats a button that
+  mostly doesn't work.
+- **Light mode (#31).** `@media (prefers-color-scheme: light)` over DESIGN.md's light palette,
+  CSS-only. The content-diff pane's last hardcoded red/green moved into `--error`/`--success`
+  tokens. Dark stays the `:root` default and the OS preference alone decides — no manual toggle,
+  and the stale `data-theme="dark"` attribute nothing read is gone.
+- **Record-time privacy warning (#43).** `amberfork record` captures full provider bodies by
+  design, and now says so on stderr before the wrapped agent runs, linking the promoted
+  `## Privacy contract` section in `docs/cassette-format.md`. Credential headers were already
+  allowlisted out; body redaction stays a separate decision, since a false negative leaks and a
+  false positive corrupts replay.
+- **Multi-reference consensus, and the measured reason not to build on it (#45).**
+  `amberfork_align::consensus` diffs a suspect against N references pairwise and takes the modal
+  fork with a support count — ties break low, converged references abstain rather than vote
+  against, and N=1 is asserted equal to the pairwise answer. The pre-registered comparison then
+  measured a **null**: consensus over ten jittered references reproduced the clean reference's
+  exact prediction on 25 of 25 pairs, booking +0.016 — the entire available headroom, because a
+  single jittered reference already costs just 1.6 points. Published as measured
+  (`docs/notebook.md` 065–066). That kills the partial-order-alignment / consensus-DAG milestone
+  on a stronger argument than a flat null would have: the expensive version has provably no
+  headroom on this class of noise. Library-only by decision — `DiffResult` gains no
+  reference-collection field for a feature the experiment argues against shipping.
+
+Offline invariant held: default `amberfork diff` output is unchanged, `--judge` is off by
+default, and `cargo test --workspace` stays offline and deterministic — the real-provider judge
+test is `#[ignore]`d alongside #44's.
+
 ## [0.8.0] — 2026-08-01
 
 v0.8 — the credibility pass (milestone issues #39, #41, #42, #44): the localization number no

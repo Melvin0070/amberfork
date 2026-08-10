@@ -36,7 +36,7 @@ file is the human-readable summary of the same working agreement.
 
 ## Layout
 
-- `crates/` — the Rust workspace (10 crates at v0.8.0, grown by need; roster + rationale in `docs/design/`).
+- `crates/` — the Rust workspace (11 crates at v0.9.0, grown by need; roster + rationale in `docs/design/`).
 - `spike/` — Python, two kinds. Most is throwaway feasibility work (findings port to Rust, the
   code never ships). The exception is the **maintained benchmark data pipeline** —
   `convert_whowhen.py` → `amberfork-bench sanitize canonical` → `make_pairs.py` →

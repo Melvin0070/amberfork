@@ -31,17 +31,20 @@ The same fork, in your terminal:
 
 ![amberfork demo in the terminal: the two runs align in gray, a rate-limit retry is absorbed as a log-move, and the step where the bad run fetched a stale policy doc glows amber as the fork, closing with a one-line attribution footer.](docs/assets/hero.gif)
 
-> **Status: pre-v1.** The working surface: `diff` (terminal + `--json`), `serve` (the browser
-> view above), `demo`, and — for runs captured under `record` — `diff --verify`, which replays
-> the recorded run with the fork step patched to confirm the cause. The feasibility spike behind
-> the core bet — semantic move-typed alignment beats a positional diff at localizing the decisive
-> step — is done; measurements in [`docs/notebook.md`](docs/notebook.md).
+> **Status: pre-v1.** The working surface: `diff` (terminal, `--json`, `--html` for a
+> self-contained static export, and an optional `--judge local` narration under a local Ollama
+> server), `serve` (the browser view above), `demo`, and — for runs captured under `record` —
+> `diff --verify`, which replays the recorded run with the fork step patched to confirm the
+> cause. The feasibility spike behind the core bet — semantic move-typed alignment beats a
+> positional diff at localizing the decisive step — is done; measurements in
+> [`docs/notebook.md`](docs/notebook.md).
 
 ## What v1 will do
 
 - `amberfork diff <bad> --against <good>` — align two agent-run traces
-  ([plain JSON](docs/trace-format.md) today; OTel GenAI / OpenInference adapters planned), light
-  the fork up in the terminal, `--json` for machines.
+  ([plain JSON](docs/trace-format.md), plus OpenInference and native OTel `gen_ai.*` adapters —
+  see [the format mappings](docs/trace-format.md)), light the fork up in the terminal, `--json`
+  for machines.
 - `amberfork diff <bad> --against <good> --verify` — on a run captured under `amberfork record`,
   replay it with the fork step patched and report whether the run recovers, to *confirm* the
   cause rather than only locate it.
@@ -137,7 +140,7 @@ cargo run -q -p amberfork-bench -- report --results bench/results/mode_a_prime_r
 
 | Artifact | What it is |
 |---|---|
-| [`crates/`](crates/) | The Rust workspace (10 crates): model → ingest → align → layout → server → record → replay → attrib → CLI (`diff` / `demo` / `serve`, and `--verify` on recorded runs), plus the `amberfork-bench` harness and the embedded Leptos web UI |
+| [`crates/`](crates/) | The Rust workspace (11 crates): model → ingest → align → layout → server → record → replay → attrib → judge → CLI (`diff` / `demo` / `serve`, and `--verify` on recorded runs), plus the `amberfork-bench` harness and the embedded Leptos web UI |
 | [`spike/`](spike/) | Throwaway feasibility spike (Python): alignment vs positional baseline on real multi-agent failure logs |
 | [`docs/notebook.md`](docs/notebook.md) | Engineering notebook: questions, measurements, dead ends |
 | [`docs/trace-format.md`](docs/trace-format.md) | The canonical plain-JSON trace format v1 accepts |

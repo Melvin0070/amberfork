@@ -1,7 +1,7 @@
 # amberfork
 
 Local all-Rust tool that diffs two AI-agent run trajectories, finds the fork point, and
-attributes the regression. 10 crates at v0.8.0. `ui/` is a SEPARATE workspace (`exclude`d).
+attributes the regression. 11 crates at v0.9.0. `ui/` is a SEPARATE workspace (`exclude`d).
 
 ## Commands
 
