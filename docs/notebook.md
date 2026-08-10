@@ -3062,3 +3062,91 @@ one agent). That upgrade is deliberately out of scope here and must not be impli
 published 14/25. The shipped number is noised-failing vs *pristine* reference; `single` is
 noised-failing vs *jittered* reference — a strictly harder, newly-introduced condition. Only
 `pristine` is comparable to previously published tables.
+
+## 066 · 2026-08-10 · RESULT: consensus is a NULL — and the reason is the interesting part (#45 slice B)
+
+Registered in 065 (commit `8f77b14`), run once, reported as it fell. Reproduce:
+
+```
+cargo run -p amberfork-bench -- consensus \
+  --pairs bench/fixtures/chimera_noise_seed42_dev \
+  --pairs bench/fixtures/chimera_noise_seed43_dev \
+  --pairs bench/fixtures/chimera_noise_seed44_dev \
+  --split dev --json-out bench/results/consensus_multiref_dev.json
+```
+
+```
+arm         exact  Wilson 95%        ±1     n
+pristine    0.560  [0.371, 0.733]  0.720  25
+single      0.544  [0.482, 0.605]  0.716  250
+consensus   0.560  [0.371, 0.733]  0.720  25
+
+single, per-pair mean (bootstrap): 0.544  [0.372, 0.716]
+paired  mean(d_p) = consensus − E[single]: +0.016  [-0.024, +0.056]  (10000 resamples, 25 pairs)
+mean agreement (support/forked): 0.908
+```
+
+**Verdict by the registered rule: NULL.** The paired 95% CI straddles zero, so the
+partial-order-alignment / consensus-DAG milestone is dead. No re-run, no corpus change, no
+second look — 065 explicitly closed those doors in advance, which is the only reason this
+sentence is worth anything.
+
+**The pristine arm reproduces the shipped number exactly** — 0.560 = 14/25 = the gate's
+6/8 + 2/7 + 6/10. The harness is measuring the engine we ship, not a private variant of it.
+
+**Consensus reproduced the pristine *prediction* on 25 of 25 pairs.** Not merely the same hit
+rate — the identical predicted step, every pair. The modal vote is a *perfect* recovery of the
+clean reference's answer under this noise model. It did not fail. There was nothing to win:
+
+- A single jittered reference already scores 0.544 against the clean reference's 0.560. Jitter
+  costs one draw **1.6 points**.
+- So the maximum gain any aggregation could book over the expected draw is **+0.016**.
+- Consensus booked **+0.016** — the entire available headroom, all of it, and no more.
+
+The CI straddles zero because 1.6 points on 25 pairs is far below what n=25 can resolve, not
+because consensus underperformed. The experiment was ceiling-limited from the moment the noise
+model was fixed, and 065 fixed it before any of this was visible.
+
+**This kills POA on a stronger argument than "it didn't help."** A consensus DAG's ceiling is
+also the clean reference's answer — it cannot beat perfectly recovering the run the references
+are noisy copies of. A trivial modal vote already reaches that ceiling on every pair here. The
+expensive version therefore has *provably* no headroom on this class of noise, which is a
+better reason to skip a milestone than a flat null would have been.
+
+**References did disagree — consensus just resolved it correctly every time.** 17 of 25 pairs
+had at least two distinct predictions among their ten draws; support ran 7–10 of 10 (mean
+agreement 0.908). The minority votes were real, they were simply almost never the difference
+between a hit and a miss. The support count is honest signal about reference agreement; it is
+not, on this corpus, signal that improves localization.
+
+**Where this does NOT generalize** (065's caveat, restated because the result makes it load-
+bearing): the references here are jittered by *our* benign-noise model. Its measured cost to a
+single draw is 1.6 points, and that number is what bounded the whole experiment. Real agent
+non-determinism could degrade a single reference far more, and in that regime consensus would
+have genuine headroom this corpus cannot show. What is established: under rewording + retry
+noise of the kind spike-001 showed breaks positional alignment, **a single reference is already
+within 1.6 points of the clean-reference ceiling, and ten references recover exactly that much.**
+
+**The skeptic's attack gets a measured answer, just not the expected one.** "Your reference is
+one run — how do you know the fork is the regression?" The answer is no longer "we assume it's
+representative"; it is "we measured how much a bad draw costs, and under benign non-determinism
+it costs 1.6 points, which ten-reference consensus recovers in full." That argues you do not
+*need* consensus, which is a better outcome for a tool that ships one — and it cost one spike
+instead of the POA milestone the issue was filed to justify.
+
+**Slice C (`DiffResult` reference-collection + per-fork `support`) is not built.** It was
+conditional on this result paying. Adding a reference-collection to a versioned seam that
+nothing populates, to support a milestone this entry just killed, is contract surface bought
+for a feature we now have evidence not to ship. If real-non-determinism data ever changes the
+picture, it re-enters through a new registration, not this one.
+
+**Engineering notes.** `hash.rs` gained `splitmix64`/`bounded` (moved from `arms.rs`, where the
+random arm still uses them — the chimera gate numbers confirm the stream is unchanged) and
+`unit()` for probability draws. `jitter.rs` re-applies `make_pairs.py`'s constants verbatim
+(reword 0.4 / dropout 0.12 / one retry-dup) with our own in-crate RNG — these are new runs, not
+a regeneration of committed fixtures, so matching CPython's Mersenne Twister would buy nothing;
+what matters is that they rebuild byte-identically here. Jitter keys are namespaced by fixture
+directory: `pair_00` exists in all three dev seeds and a bare name would hand three different
+pairs the same ten variants. The `single` arm's pooled Wilson interval over 250 draws is
+reported but flagged optimistic — ten draws of one suspect are not ten independent
+observations; `single_per_pair`'s pair-resampled bootstrap is the one to read.

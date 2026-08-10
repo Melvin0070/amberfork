@@ -17,7 +17,7 @@
 //! reordered or extended pair set never changes another pair's draw, and no external RNG
 //! crate can shift the numbers under a version bump.
 
-use crate::hash::fnv1a64;
+use crate::hash::{bounded, fnv1a64, splitmix64};
 use crate::pairs::Pair;
 use amberfork_align::{CostModel, DiffParams, LexicalCost, diff};
 use amberfork_model::{Step, StepKind};
@@ -159,24 +159,6 @@ impl CostModel for StructuralCost {
     }
 }
 
-/// One splitmix64 output (Vigna's mixer): advances `state` and returns the next value.
-/// Chosen because it is tiny, public-domain, and fixed for all time — the stream is part of
-/// the reproducibility promise.
-fn splitmix64(state: &mut u64) -> u64 {
-    *state = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
-    let mut z = *state;
-    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-    z ^ (z >> 31)
-}
-
-/// Map a full-width draw onto `[0, len)` by widening multiply (Lemire). Bias is O(len/2⁶⁴) —
-/// immaterial at run lengths — and it needs no rejection loop.
-fn bounded(draw: u64, len: usize) -> usize {
-    let wide = u128::from(draw) * (len as u128);
-    (wide >> 64) as usize
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -209,26 +191,6 @@ mod tests {
             failing,
             gold_step: 0,
             warnings: Vec::new(),
-        }
-    }
-
-    #[test]
-    fn splitmix64_matches_the_published_vectors() {
-        // First outputs for seeds 0 and 1234567, from Vigna's reference implementation.
-        let mut state = 0u64;
-        assert_eq!(splitmix64(&mut state), 0xE220_A839_7B1D_CDAF);
-        let mut state = 1_234_567u64;
-        assert_eq!(splitmix64(&mut state), 0x599E_D017_FB08_FC85);
-    }
-
-    #[test]
-    fn bounded_draws_stay_in_range_and_split_evenly_at_the_edges() {
-        assert_eq!(bounded(0, 10), 0);
-        assert_eq!(bounded(u64::MAX, 10), 9);
-        // Widening multiply: the draw maps proportionally, so mid-range lands mid-interval.
-        assert_eq!(bounded(u64::MAX / 2 + 1, 2), 1);
-        for len in [1, 7, 100] {
-            assert!(bounded(0x9E37_79B9_7F4A_7C15, len) < len);
         }
     }
 

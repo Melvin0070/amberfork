@@ -34,6 +34,8 @@ mod calibration;
 mod fetch;
 mod hal_fetch;
 mod hash;
+mod jitter;
+mod multiref;
 mod pairs;
 mod params;
 mod pyjson;
@@ -83,6 +85,9 @@ enum Command {
     HalFetch(HalFetchArgs),
     /// GAIA-sanitize Who&When-derived logs/pairs for redistribution (issues #11/#17).
     Sanitize(SanitizeArgs),
+    /// Score multi-reference consensus against a single reference draw (issue #45 slice B,
+    /// pre-registered in docs/notebook.md 065).
+    Consensus(ConsensusArgs),
 }
 
 #[derive(Args)]
@@ -97,6 +102,28 @@ struct RunArgs {
 
     /// Frozen engine parameters (protocol rule 2). The file's sha256 publishes with the
     /// table; there is no code-default fallback. The default resolves from the repo root.
+    #[arg(long, value_name = "FILE", default_value = "bench/params.toml")]
+    params: PathBuf,
+
+    /// Also write the full results document as JSON.
+    #[arg(long, value_name = "FILE")]
+    json_out: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct ConsensusArgs {
+    /// One or more directories of pair_*.json manifests. Named repeatedly because the dev
+    /// split lives across three committed seed directories and the experiment is registered
+    /// over all 25 pairs, not one seed's 8.
+    #[arg(long = "pairs", value_name = "DIR", num_args = 1.., required = true)]
+    pairs: Vec<PathBuf>,
+
+    /// Which protocol split to score. Defaults to dev: notebook 065 registers this experiment
+    /// on dev only, and the test split is sealed (rule 1).
+    #[arg(long, value_enum, default_value_t = SplitSelection::Dev)]
+    split: SplitSelection,
+
+    /// Frozen engine parameters (protocol rule 2).
     #[arg(long, value_name = "FILE", default_value = "bench/params.toml")]
     params: PathBuf,
 
@@ -300,6 +327,7 @@ fn main() -> ExitCode {
         Command::HalDecrypt(args) => hal_decrypt(&args),
         Command::HalFetch(args) => hal_fetch_data(&args),
         Command::Sanitize(args) => sanitize_data(&args),
+        Command::Consensus(args) => consensus_experiment(&args),
     };
     outcome.unwrap_or_else(|err| {
         eprintln!("amberfork-bench: {err}");
@@ -446,6 +474,60 @@ fn run(args: &RunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
 
 /// The one serialization of a results document — `run` and `aggregate` both write through
 /// it, so an aggregate artifact is byte-comparable with the run documents it pools.
+/// The multi-reference consensus experiment (issue #45 slice B). Pre-registered in notebook
+/// 065: the corpus, the arms, N, the resample count, the statistic, and the decision rule were
+/// all committed to git before this code existed.
+///
+/// Pairs are keyed `<dir>/<name>` because `pair_00` exists in every committed seed directory
+/// and the jitter stream must not collide across them.
+fn consensus_experiment(args: &ConsensusArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let frozen = params::load(&args.params)?;
+
+    let mut scored: Vec<(String, Pair)> = Vec::new();
+    for dir in &args.pairs {
+        let set = load_pairs(dir)?;
+        for exclusion in &set.exclusions {
+            eprintln!(
+                "amberfork-bench: excluded {}: {}",
+                exclusion.name, exclusion.reason
+            );
+        }
+        let label = dir
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("pairs");
+        for pair in set.pairs {
+            if args.split.admits(pair.split) {
+                scored.push((format!("{label}/{}", pair.name), pair));
+            }
+        }
+    }
+    if scored.is_empty() {
+        return Err(format!("no pairs to score in split {}", args.split.as_str()).into());
+    }
+    // Deterministic order regardless of how the operator ordered `--pairs`: the bootstrap
+    // resamples by index, so a reordered input set must not move the published interval.
+    scored.sort_by(|(a, _), (b, _)| a.cmp(b));
+
+    let results = multiref::run_experiment(&scored, &frozen.params);
+
+    if let Some(path) = &args.json_out {
+        let json = serde_json::to_string_pretty(&results)?;
+        std::fs::write(path, json)
+            .map_err(|err| format!("write results {}: {err}", path.display()))?;
+    }
+
+    eprintln!(
+        "consensus experiment · split={} · {} pairs × N={} references · params {}",
+        args.split.as_str(),
+        results.n_pairs,
+        results.n_references,
+        frozen.sha256,
+    );
+    print!("{}", multiref::render(&results));
+    Ok(ExitCode::SUCCESS)
+}
+
 fn write_results(path: &Path, results: &BenchResults) -> Result<(), Box<dyn std::error::Error>> {
     let json = serde_json::to_string_pretty(results)?;
     std::fs::write(path, json).map_err(|err| format!("write results {}: {err}", path.display()))?;

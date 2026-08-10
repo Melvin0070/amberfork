@@ -1,0 +1,611 @@
+{
+  "n_references": 10,
+  "n_pairs": 25,
+  "pristine": {
+    "exact": {
+      "hits": 14,
+      "n": 25,
+      "rate": 0.56,
+      "ci95_lo": 0.3706733186979878,
+      "ci95_hi": 0.7333436111893266
+    },
+    "w1": {
+      "hits": 18,
+      "n": 25,
+      "rate": 0.72,
+      "ci95_lo": 0.5242339480963842,
+      "ci95_hi": 0.8571614614904344
+    },
+    "w3": {
+      "hits": 25,
+      "n": 25,
+      "rate": 1.0,
+      "ci95_lo": 0.8668077490609515,
+      "ci95_hi": 0.9999999999999999
+    },
+    "no_pred": {
+      "hits": 0,
+      "n": 25,
+      "rate": 0.0,
+      "ci95_lo": 1.3877787807814457e-17,
+      "ci95_hi": 0.13319225093904846
+    }
+  },
+  "consensus": {
+    "exact": {
+      "hits": 14,
+      "n": 25,
+      "rate": 0.56,
+      "ci95_lo": 0.3706733186979878,
+      "ci95_hi": 0.7333436111893266
+    },
+    "w1": {
+      "hits": 18,
+      "n": 25,
+      "rate": 0.72,
+      "ci95_lo": 0.5242339480963842,
+      "ci95_hi": 0.8571614614904344
+    },
+    "w3": {
+      "hits": 25,
+      "n": 25,
+      "rate": 1.0,
+      "ci95_lo": 0.8668077490609515,
+      "ci95_hi": 0.9999999999999999
+    },
+    "no_pred": {
+      "hits": 0,
+      "n": 25,
+      "rate": 0.0,
+      "ci95_lo": 1.3877787807814457e-17,
+      "ci95_hi": 0.13319225093904846
+    }
+  },
+  "single_pooled": {
+    "exact": {
+      "hits": 136,
+      "n": 250,
+      "rate": 0.544,
+      "ci95_lo": 0.48206040323620214,
+      "ci95_hi": 0.6046078664081989
+    },
+    "w1": {
+      "hits": 179,
+      "n": 250,
+      "rate": 0.716,
+      "ci95_lo": 0.6571618753149917,
+      "ci95_hi": 0.768300539302976
+    },
+    "w3": {
+      "hits": 247,
+      "n": 250,
+      "rate": 0.988,
+      "ci95_lo": 0.9653192195729803,
+      "ci95_hi": 0.9959106801194657
+    },
+    "no_pred": {
+      "hits": 0,
+      "n": 250,
+      "rate": 0.0,
+      "ci95_lo": 8.673617379884035e-19,
+      "ci95_hi": 0.015133299495444574
+    }
+  },
+  "single_per_pair": {
+    "mean": 0.544,
+    "ci95_lo": 0.37200000000000005,
+    "ci95_hi": 0.716,
+    "resamples": 10000,
+    "n_pairs": 25
+  },
+  "paired": {
+    "mean": 0.015999999999999997,
+    "ci95_lo": -0.024,
+    "ci95_hi": 0.05600000000000001,
+    "resamples": 10000,
+    "n_pairs": 25
+  },
+  "mean_agreement": 0.9079999999999998,
+  "records": [
+    {
+      "key": "chimera_noise_seed42_dev/pair_03",
+      "gold_step": 6,
+      "pristine": 6,
+      "single": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "consensus": 6,
+      "support": 10,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed42_dev/pair_06",
+      "gold_step": 8,
+      "pristine": 8,
+      "single": [
+        7,
+        8,
+        8,
+        8,
+        3,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "consensus": 8,
+      "support": 8,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed42_dev/pair_09",
+      "gold_step": 23,
+      "pristine": 23,
+      "single": [
+        23,
+        23,
+        23,
+        23,
+        23,
+        23,
+        23,
+        23,
+        23,
+        23
+      ],
+      "consensus": 23,
+      "support": 10,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed42_dev/pair_10",
+      "gold_step": 6,
+      "pristine": 6,
+      "single": [
+        6,
+        6,
+        5,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "consensus": 6,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed42_dev/pair_14",
+      "gold_step": 8,
+      "pristine": 9,
+      "single": [
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        7,
+        9,
+        7
+      ],
+      "consensus": 9,
+      "support": 8,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed42_dev/pair_15",
+      "gold_step": 7,
+      "pristine": 5,
+      "single": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "consensus": 5,
+      "support": 10,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed42_dev/pair_16",
+      "gold_step": 10,
+      "pristine": 10,
+      "single": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "consensus": 10,
+      "support": 10,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed42_dev/pair_18",
+      "gold_step": 25,
+      "pristine": 25,
+      "single": [
+        25,
+        25,
+        25,
+        25,
+        25,
+        24,
+        25,
+        24,
+        24,
+        25
+      ],
+      "consensus": 25,
+      "support": 7,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed43_dev/pair_02",
+      "gold_step": 7,
+      "pristine": 7,
+      "single": [
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        3
+      ],
+      "consensus": 7,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed43_dev/pair_07",
+      "gold_step": 7,
+      "pristine": 5,
+      "single": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "consensus": 5,
+      "support": 10,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed43_dev/pair_08",
+      "gold_step": 20,
+      "pristine": 20,
+      "single": [
+        20,
+        20,
+        20,
+        20,
+        20,
+        20,
+        20,
+        20,
+        20,
+        20
+      ],
+      "consensus": 20,
+      "support": 10,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed43_dev/pair_13",
+      "gold_step": 5,
+      "pristine": 4,
+      "single": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        3
+      ],
+      "consensus": 4,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed43_dev/pair_14",
+      "gold_step": 4,
+      "pristine": 2,
+      "single": [
+        2,
+        2,
+        2,
+        4,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "consensus": 2,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed43_dev/pair_15",
+      "gold_step": 7,
+      "pristine": 5,
+      "single": [
+        5,
+        5,
+        5,
+        5,
+        7,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "consensus": 5,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed43_dev/pair_18",
+      "gold_step": 40,
+      "pristine": 38,
+      "single": [
+        38,
+        38,
+        40,
+        38,
+        38,
+        38,
+        38,
+        38,
+        38,
+        38
+      ],
+      "consensus": 38,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_01",
+      "gold_step": 10,
+      "pristine": 9,
+      "single": [
+        9,
+        8,
+        9,
+        9,
+        9,
+        8,
+        9,
+        9,
+        9,
+        9
+      ],
+      "consensus": 9,
+      "support": 8,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_02",
+      "gold_step": 13,
+      "pristine": 11,
+      "single": [
+        11,
+        11,
+        11,
+        11,
+        11,
+        13,
+        11,
+        11,
+        13,
+        11
+      ],
+      "consensus": 11,
+      "support": 8,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_04",
+      "gold_step": 10,
+      "pristine": 10,
+      "single": [
+        10,
+        10,
+        10,
+        10,
+        8,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "consensus": 10,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_05",
+      "gold_step": 6,
+      "pristine": 6,
+      "single": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "consensus": 6,
+      "support": 10,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_07",
+      "gold_step": 9,
+      "pristine": 8,
+      "single": [
+        8,
+        9,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "consensus": 8,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_10",
+      "gold_step": 6,
+      "pristine": 6,
+      "single": [
+        5,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "consensus": 6,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_15",
+      "gold_step": 5,
+      "pristine": 5,
+      "single": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "consensus": 5,
+      "support": 10,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_16",
+      "gold_step": 11,
+      "pristine": 11,
+      "single": [
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        10,
+        11
+      ],
+      "consensus": 11,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_17",
+      "gold_step": 7,
+      "pristine": 5,
+      "single": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        7,
+        5,
+        5,
+        5,
+        5
+      ],
+      "consensus": 5,
+      "support": 9,
+      "forked": 10
+    },
+    {
+      "key": "chimera_noise_seed44_dev/pair_19",
+      "gold_step": 10,
+      "pristine": 10,
+      "single": [
+        10,
+        10,
+        3,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "consensus": 10,
+      "support": 9,
+      "forked": 10
+    }
+  ]
+}
