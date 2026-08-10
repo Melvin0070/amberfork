@@ -2989,3 +2989,76 @@ fixtures through `amberfork serve` to exercise, not just the static shell. Every
 matrix routes through the same tokens verified here, but a real state-matrix pass with genuine
 fork/converged/truncated data is worth a follow-up look before calling the light palette fully
 QA'd end-to-end.
+
+## 065 · 2026-08-10 · PRE-REGISTRATION: multi-reference consensus vs single reference (#45 slice B)
+
+**Written and committed before the experiment was implemented or run — no number existed when
+this entry was authored.** That ordering is the entry's whole point: #45's stated win condition
+is that a *null* is decisive enough to kill the POA/consensus-DAG milestone, and a null is only
+decisive if the decision rule predates the result.
+
+**The question.** amberfork today compares one bad run against *one* good run. If the reference
+is a lucky sample, the fork we report inherits that luck. Does aggregating over N references —
+modal fork step, plurality wins — localize better than a single reference draw?
+
+**Corpus (fully offline, no fetch, no API).** The 25 committed chimera dev pairs
+(`bench/fixtures/chimera_noise_seed{42,43,44}_dev`, 8 + 7 + 10). For each pair, the committed
+reference `b_NN.json` is jittered N=10 times using `make_pairs.py`'s existing benign-noise model
+verbatim — reword p=0.4, token dropout 0.12, one retry-duplication — with per-variant seeds
+derived deterministically from the pair name, so the corpus regenerates byte-identically and no
+variant's draw depends on another's position.
+
+**Gold is untouched.** `gold_step` indexes the *failing* run; jitter only ever rewrites the
+reference. The retry-duplication that shifts gold +1 in `make_pairs.py` does so because it lands
+in the failing run's prefix — inserting into a reference cannot move an index into the failing
+run. So all three arms below are scored against the identical, unmodified gold.
+
+**Arms (identical fixtures, identical gold, identical frozen params).**
+- `pristine` — align the failing run against the committed, un-jittered reference. One prediction
+  per pair. This is the shipped single-reference engine and reproduces the gate's existing
+  per-seed numbers (42→6/8, 43→2/7, 44→6/10 = 14/25). It is the **ceiling**: consensus over
+  jittered references can at best recover what the clean reference already said.
+- `single` — align against jittered reference *i*. Ten predictions per pair. This is the
+  "unlucky draw" condition the whole issue is about.
+- `consensus` — `amberfork-align::consensus` over all ten jittered references; modal fork step,
+  ties to the lowest step. One prediction per pair.
+
+**Declared before the run, and binding:**
+- N = **10**, fixed. No N-sweep, no best-N column, no reporting of N∈{3,5} even descriptively.
+  If consensus needs a tuned N to win, that fragility is a finding, not a knob.
+- Bootstrap resamples = **10,000**, resampling the 25 *pairs* (the independent unit).
+- Per-pair difference statistic `d_p = consensus_hit[p] − mean_i(single_hit[p][i])`, which folds
+  the pairing and the draw-averaging into one quantity in [−1, 1].
+- Headline metric = **step-level exact match**. Windowed (±1) reported alongside per the metrics
+  section, but exact match alone carries the decision.
+
+**Decision rule.** Consensus **pays** iff the bootstrap 95% CI on `mean(d_p)` excludes 0 *and*
+the point estimate is positive. Anything else — including a positive point estimate whose CI
+straddles 0 — is a **null**, and a null kills the partial-order-alignment / consensus-DAG
+milestone outright. Both outcomes get published here; there is no third "needs more data" branch
+available without changing the corpus, and changing the corpus after seeing the number would
+invalidate this registration.
+
+**Protocol amendment.** This is the first comparison in the project between two arms on shared
+fixtures, and rule 6's overlapping-Wilson test is the wrong instrument for it: at n=25 the
+intervals overlap essentially regardless of the truth, so a real effect and a real null would
+return the same verdict. Added **BENCHMARK.md rule 9** — paired arms on identical fixtures are
+decided by a paired bootstrap interval, with the statistic and resample count declared in
+advance. Rule 6 is unchanged and still governs every per-arm headline rate. Expect the honest
+published shape to be a difference CI that excludes zero while both arms' Wilson intervals
+overlap; that is what a paired design is *for*, not a contradiction.
+
+**The caveat that has to travel with whatever number comes out.** The reference variation here is
+*our own noise model*, not observed agent non-determinism. A positive result establishes that
+consensus survives the specific benign noise we already believe in (rewording + retries — the
+noise spike-001 showed breaks positional alignment); it does **not** establish that it survives
+the noise real agents emit. Nothing on disk supports the stronger claim: the committed chimeras
+carry one reference each, and only one HAL model zip is decrypted locally. Buying the stronger
+claim means `amberfork record`-ing N runs of a genuinely flaky task (real API spend) or fetching
+further HAL model zips (~450MB, and cross-*model* references are not the same thing as re-runs of
+one agent). That upgrade is deliberately out of scope here and must not be implied by this table.
+
+**Also note, to prevent a cross-reading error:** the `single` arm's rate will *not* match the
+published 14/25. The shipped number is noised-failing vs *pristine* reference; `single` is
+noised-failing vs *jittered* reference — a strictly harder, newly-introduced condition. Only
+`pristine` is comparable to previously published tables.

@@ -149,6 +149,18 @@ reviewer — hunting for tuning-on-test, cherry-picking, or flaky "determinism" 
    every arm — including NW alignment with exact-match costs (structure-only, no embeddings), so
    the table isolates what alignment adds over position AND what semantics adds over alignment.
 
+9. **Paired arms get a paired interval** (added 2026-08-10; notebook 065). When two arms are
+   scored on the *identical* fixtures, rule 6's overlapping-Wilson test is the wrong instrument:
+   it discards the pairing and, at our fixture counts (25 dev pairs), is near-guaranteed to
+   return "inconclusive" whatever the truth is — which would let a real null and a real effect
+   produce the same verdict. Such a comparison is decided by a **bootstrap 95% CI on the mean
+   per-pair difference**, resampling *pairs* (the independent unit), with the difference
+   statistic and the resample count declared before the run. Rule 6 is unchanged and still
+   governs every headline rate reported per arm; this rule governs only the *difference between*
+   two arms on shared fixtures. A paired claim must state both intervals — a difference CI that
+   excludes zero while both arms' Wilson intervals overlap is the expected, honest outcome of a
+   paired design, not a contradiction to be hidden.
+
 Status note (2026-07-07): a throwaway feasibility spike (`spike/`) is testing Mode-A pair
 constructibility and semantic-vs-positional on real fixtures before the Rust build. Findings go
 to `docs/notebook.md` entry 001. This protocol governs the real bench; the spike is directional.
