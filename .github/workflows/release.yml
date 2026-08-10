@@ -84,14 +84,20 @@ jobs:
           cargo package -p amberfork-server --list --allow-dirty \
             | grep -qx 'ui-dist/index.html'
 
-      - name: the CLI crate actually compiles from its own tarball
+      - name: every crate actually compiles from its own tarball
         # `--list` above never compiles anything, so it cannot catch a source file reaching
         # OUTSIDE its crate root — which builds fine in the repo and then fails at package
         # time, since the tarball carries no path above the crate dir. That is exactly how
         # `--html`'s `include_str!("../../../ui/index.html")` (#29) shipped broken to
-        # crates.io for a whole release cycle. `cargo package` (no `--list`) builds the
+        # crates.io for a whole release cycle. `cargo package` (no `--list`) builds each
         # unpacked tarball, so a path escape is a red build here instead of a failed publish.
-        run: cargo package -p amberfork --allow-dirty
+        #
+        # `--workspace`, not `-p amberfork`: a single-crate package resolves its siblings from
+        # crates.io, which for an unreleased version does not exist yet, so the check can never
+        # pass BEFORE the publish it is meant to guard. The workspace form stages every member
+        # in a temporary local registry and verifies them against each other — the same
+        # mechanism `cargo publish --workspace` uses.
+        run: cargo package --workspace --allow-dirty
 
       - name: package tarball + checksum
         run: |
