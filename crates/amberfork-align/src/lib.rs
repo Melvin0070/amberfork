@@ -16,6 +16,7 @@
 //! job; this crate is a function from two runs to a diff.
 
 mod attribution;
+mod consensus;
 mod cost;
 mod deltas;
 mod diff;
@@ -24,6 +25,7 @@ mod fork;
 mod nw;
 mod params;
 
+pub use consensus::{Consensus, consensus};
 pub use cost::{CostModel, LexicalCost};
 pub use diff::{DiffParams, diff};
 pub use fork::{ForkParams, find_fork};
