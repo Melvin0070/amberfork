@@ -23,6 +23,12 @@
 //! sha256. The baseline's credibility rests on that question being auditable before it is
 //! paid for.
 //!
+//! `judge-ask` answers one of those questions. Replay-only by default — the answer comes off
+//! disk or the command fails — so no test and no absent-minded invocation can spend money or
+//! reach a provider; `--live` plus a key in the environment is the only path to a real call,
+//! and what comes back is recorded as a cassette keyed on the rendered prompt's hash. The
+//! cassette never stores the prompt itself: TRAIL prompts embed gated GAIA questions.
+//!
 //! Real pair sets are NOT committed: chimera pairs derive from Who&When logs whose questions
 //! originate in GAIA (gated upstream — notebook 001/T30). Regenerate locally with
 //! `python3 spike/make_pairs.py`. The committed sets under `tests/fixtures/` are
@@ -41,7 +47,10 @@ mod fetch;
 mod hal_fetch;
 mod hash;
 mod jitter;
+mod judge_answer;
+mod judge_cassette;
 mod judge_prompt;
+mod judge_provider;
 mod multiref;
 mod pairs;
 mod params;
@@ -54,12 +63,18 @@ mod split;
 use arms::Prediction;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use judge_prompt::{JudgeArm, PromptSet};
+use judge_provider::{Decoding, Gemini, Localizer, Ollama, OpenAi, UreqPost};
 use pairs::{Pair, load_pairs};
 use results::{ArmResult, BenchResults, Coverage, ExclusionRecord, PairRecord, ParamsUsed};
 use split::Split;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+
+/// Wait between retries of a retryable provider failure (notebook 069: three attempts, then
+/// the pair is an exclusion for that arm). Linear, and short enough that a stuck run is
+/// obvious rather than merely slow.
+const RETRY_BACKOFF: std::time::Duration = std::time::Duration::from_millis(500);
 
 const EXIT_OK: u8 = 0;
 const EXIT_TROUBLE: u8 = 2;
@@ -99,6 +114,9 @@ enum Command {
     /// Render the frozen LLM-judge baseline prompt for one pair — exactly the bytes a
     /// provider will be sent (issue #46, pre-registered in docs/notebook.md 069).
     JudgePrompt(JudgePromptArgs),
+    /// Ask a judge one pair's question and read its answer — cassette-replayed by default,
+    /// live only with --live and an API key (issue #46).
+    JudgeAsk(JudgeAskArgs),
 }
 
 #[derive(Args)]
@@ -323,6 +341,70 @@ struct JudgePromptArgs {
     prompts: PathBuf,
 }
 
+#[derive(Args)]
+struct JudgeAskArgs {
+    #[command(flatten)]
+    prompt: JudgePromptArgs,
+
+    /// Which provider answers. `ollama` needs no key; the others read one from the
+    /// environment (`OPENAI_API_KEY`, `GEMINI_API_KEY`) and only when `--live` is given.
+    #[arg(long, value_enum)]
+    provider: ProviderSelection,
+
+    /// The model id, recorded in the cassette key and the published table.
+    #[arg(long, value_name = "MODEL")]
+    model: String,
+
+    /// Cassette directory. Committed, so a published table replays offline forever.
+    #[arg(long, value_name = "DIR", default_value = "bench/cassettes/judge")]
+    cassettes: PathBuf,
+
+    /// Call the provider on a cassette miss and record the answer. Without it, a miss is an
+    /// error: the default posture cannot spend money or reach a network.
+    #[arg(long)]
+    live: bool,
+
+    /// Send no temperature at all — the registered fallback for a model that rejects the
+    /// parameter. What was actually sent is recorded in the cassette.
+    #[arg(long)]
+    no_temperature: bool,
+
+    /// Output token ceiling, sent and recorded.
+    #[arg(long, default_value_t = 2000)]
+    max_output_tokens: u32,
+
+    /// Override the provider's base URL (a local gateway, a proxy, a test double).
+    #[arg(long, value_name = "URL")]
+    base_url: Option<String>,
+}
+
+/// `--provider`'s choices: the three registered places to ask (notebook 069).
+#[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum ProviderSelection {
+    Openai,
+    Gemini,
+    Ollama,
+}
+
+impl ProviderSelection {
+    /// The environment variable holding this provider's key, if it needs one.
+    fn key_var(self) -> Option<&'static str> {
+        match self {
+            Self::Openai => Some("OPENAI_API_KEY"),
+            Self::Gemini => Some("GEMINI_API_KEY"),
+            Self::Ollama => None,
+        }
+    }
+
+    fn default_base_url(self) -> &'static str {
+        match self {
+            Self::Openai => "https://api.openai.com",
+            Self::Gemini => "https://generativelanguage.googleapis.com",
+            Self::Ollama => "http://127.0.0.1:11434",
+        }
+    }
+}
+
 /// `--arm`'s choices: the three conditions notebook 069 registered.
 #[derive(Clone, Copy, ValueEnum)]
 enum JudgeArmSelection {
@@ -382,6 +464,7 @@ fn main() -> ExitCode {
         Command::Sanitize(args) => sanitize_data(&args),
         Command::Consensus(args) => consensus_experiment(&args),
         Command::JudgePrompt(args) => judge_prompt(&args),
+        Command::JudgeAsk(args) => judge_ask(&args),
     };
     outcome.unwrap_or_else(|err| {
         eprintln!("amberfork-bench: {err}");
@@ -819,7 +902,23 @@ fn report(args: &ReportArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
 /// It exists so the question a baseline is asked is auditable *before* anyone spends money on
 /// answering it. A published table that says "we asked a frontier model" is worth exactly as
 /// much as a reader's ability to see what was asked.
-fn judge_prompt(args: &JudgePromptArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+/// One pair's question, ready to ask: the pinned template set, the arm, the pair's name, how
+/// many steps the failing run has (the answer contract's range), and the rendered bytes.
+///
+/// Shared by `judge-prompt` and `judge-ask` so the text that gets shown is provably the text
+/// that gets sent — two render paths would eventually drift, and a cassette keyed on a prompt
+/// nobody can reproduce is worthless.
+struct JudgeQuestion {
+    prompts: PromptSet,
+    arm: JudgeArm,
+    pair: String,
+    failing_steps: usize,
+    rendered: judge_prompt::Rendered,
+}
+
+fn render_judge_question(
+    args: &JudgePromptArgs,
+) -> Result<JudgeQuestion, Box<dyn std::error::Error>> {
     // Prompts before pairs, the same ordering `run` uses for params: an arm that cannot
     // establish which prompt revision it is running has nothing to render.
     let prompts = PromptSet::load(&args.prompts)?;
@@ -845,15 +944,138 @@ fn judge_prompt(args: &JudgePromptArgs) -> Result<ExitCode, Box<dyn std::error::
         JudgeArm::Stepwise => prompts.render_stepwise(&pair.failing, args.candidate),
     }?;
 
-    eprintln!(
-        "{} · {} · template {} sha256 {} · rendered sha256 {} · {} chars",
-        pair.name,
+    Ok(JudgeQuestion {
+        prompts,
         arm,
-        prompts.prompt(arm).source,
-        prompts.prompt(arm).sha256,
-        rendered.sha256,
-        rendered.text.chars().count(),
+        pair: pair.name.clone(),
+        failing_steps: pair.failing.steps.len(),
+        rendered,
+    })
+}
+
+fn judge_prompt(args: &JudgePromptArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let question = render_judge_question(args)?;
+    eprintln!("{}", question.receipt());
+    print!("{}", question.rendered.text);
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+impl JudgeQuestion {
+    fn receipt(&self) -> String {
+        let prompt = self.prompts.prompt(self.arm);
+        format!(
+            "{} · {} · template {} sha256 {} · rendered sha256 {} · {} chars",
+            self.pair,
+            self.arm,
+            prompt.source,
+            prompt.sha256,
+            self.rendered.sha256,
+            self.rendered.text.chars().count(),
+        )
+    }
+}
+
+/// Ask one judge one pair's question (issue #46 slice A2b).
+///
+/// Replay-only by default: the answer comes off disk or the command fails. `--live` is the
+/// only way to reach a provider, and it additionally needs the provider's key in the
+/// environment — so no test, and no absent-minded invocation, can spend money.
+///
+/// A parse failure is NOT an error here. The registration scores it as a miss and counts it,
+/// because a judge that cannot obey its own output contract is worse at the task rather than
+/// un-evaluable; surfacing it as exit 2 would invite the operator to "fix" it by retrying.
+fn judge_ask(args: &JudgeAskArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let question = render_judge_question(&args.prompt)?;
+    let decoding = if args.no_temperature {
+        Decoding {
+            temperature: None,
+            max_output_tokens: args.max_output_tokens,
+        }
+    } else {
+        Decoding::registered(args.max_output_tokens)
+    };
+
+    // The key is read only for a live call: a replay must work on a machine that has none,
+    // which is the whole point of committing cassettes.
+    let api_key = match (args.live, args.provider.key_var()) {
+        (true, Some(var)) => {
+            std::env::var(var).map_err(|_| format!("--live needs {var} in the environment"))?
+        }
+        _ => String::new(),
+    };
+    let base_url = args
+        .base_url
+        .clone()
+        .unwrap_or_else(|| args.provider.default_base_url().to_string());
+
+    let localizer: Box<dyn Localizer> = match args.provider {
+        ProviderSelection::Openai => Box::new(OpenAi::new(
+            UreqPost,
+            base_url,
+            args.model.clone(),
+            api_key,
+            decoding,
+        )),
+        ProviderSelection::Gemini => Box::new(Gemini::new(
+            UreqPost,
+            base_url,
+            args.model.clone(),
+            api_key,
+            decoding,
+        )),
+        ProviderSelection::Ollama => Box::new(Ollama::new(
+            UreqPost,
+            base_url,
+            args.model.clone(),
+            decoding,
+        )),
+    };
+
+    let mode = if args.live {
+        judge_cassette::Mode::Record
+    } else {
+        judge_cassette::Mode::ReplayOnly
+    };
+    let answer = judge_cassette::obtain(
+        &judge_cassette::Cassettes::new(&args.cassettes),
+        mode,
+        localizer.as_ref(),
+        judge_cassette::Question {
+            arm: question.arm,
+            prompt_sha256: &question.prompts.prompt(question.arm).sha256,
+            rendered_prompt_sha256: &question.rendered.sha256,
+            prompt: &question.rendered.text,
+        },
+        RETRY_BACKOFF,
+    )?;
+
+    eprintln!("{}", question.receipt());
+    eprintln!(
+        "{} · {} · cassette {} · {}",
+        localizer.provider(),
+        localizer.model(),
+        answer.key,
+        if answer.replayed {
+            "replayed"
+        } else {
+            "recorded live"
+        },
     );
-    print!("{}", rendered.text);
+
+    let verdict = match question.arm {
+        JudgeArm::Single | JudgeArm::Paired => {
+            match judge_answer::parse_step(&answer.text, question.failing_steps) {
+                Ok(step) => format!("step {step}"),
+                Err(failure) => format!("parse failure (scored as a miss): {failure}"),
+            }
+        }
+        JudgeArm::Stepwise => match judge_answer::parse_decisive(&answer.text) {
+            Ok(decisive) => format!("decisive {decisive}"),
+            Err(failure) => format!("parse failure (scored as a miss): {failure}"),
+        },
+    };
+    println!("{verdict}");
+    println!("--- response ---");
+    print!("{}", answer.text);
     Ok(ExitCode::from(EXIT_OK))
 }

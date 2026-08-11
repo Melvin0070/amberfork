@@ -94,4 +94,15 @@ questions, which BENCHMARK.md's data rules say must never land in this repo. Has
 prompt keeps the cache exact while keeping the questions out.
 
 CI stays network-free: cassette-only is the default, and a live call requires both an explicit
-flag and an API key in the environment.
+flag and an API key in the environment. Cassettes live in `bench/cassettes/judge/<arm>/<key>.json`
+and are committed, so a published judge table replays from the repo alone:
+
+```
+# replay (the default; fails if nothing is cached, never calls out)
+cargo run -p amberfork-bench -- judge-ask \
+  --pairs bench/data/pairs_trail_hal --pair pair_01 --arm paired \
+  --provider openai --model gpt-5.6-sol
+
+# record (the only path to a live call)
+OPENAI_API_KEY=… cargo run -p amberfork-bench -- judge-ask … --live
+```

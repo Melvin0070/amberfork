@@ -45,5 +45,7 @@ tempfile = { workspace = true }
 # recompute the committed file's hash instead of hardcoding it (a changelog edit must not
 # break the test).
 sha2 = { workspace = true }
+# Same reason: `bench_cli.rs` writes cassette fixtures for the judge-ask replay tests.
+serde_json = { workspace = true }
 # Fixture builders only; the normal dependency above stays featureless so nothing ships.
 amberfork-model = { workspace = true, features = ["test-support"] }

@@ -853,3 +853,170 @@ fn judge_prompt_names_the_available_pairs_when_asked_for_a_missing_one() {
         .stderr(predicate::str::contains("no pair named pair_99"))
         .stderr(predicate::str::contains("pair_00"));
 }
+
+/// `judge-ask` (issue #46 slice A2b): the baseline's answer path. Replay-only by default —
+/// the default posture cannot spend money or reach a provider, which is what lets the whole
+/// suite run offline and what makes a published judge table reproducible.
+#[test]
+fn judge_ask_without_live_refuses_to_call_a_provider() {
+    let cassettes = Path::new(env!("CARGO_TARGET_TMPDIR")).join("empty_cassettes");
+
+    bench()
+        .arg("judge-ask")
+        .arg("--pairs")
+        .arg(fixtures_dir())
+        .arg("--pair")
+        .arg("pair_00")
+        .arg("--arm")
+        .arg("single")
+        .arg("--prompts")
+        .arg(judge_prompts_dir())
+        .arg("--cassettes")
+        .arg(&cassettes)
+        .arg("--provider")
+        .arg("openai")
+        .arg("--model")
+        .arg("gpt-5.6-sol")
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("no cassette for"))
+        .stderr(predicate::str::contains(
+            "replay-only mode does not call a provider",
+        ));
+}
+
+/// A cassette on disk answers the question, and the verdict is parsed under the registered
+/// output contract. The cassette's path is *derived from the tool itself* — the replay-only
+/// error names it — so this test cannot drift out of sync with the fixture or the frozen
+/// template the way a hardcoded key would.
+#[test]
+fn judge_ask_replays_a_cassette_and_parses_the_verdict() {
+    let cassettes = Path::new(env!("CARGO_TARGET_TMPDIR")).join("replay_cassettes");
+    let _ = std::fs::remove_dir_all(&cassettes);
+
+    let ask = |dir: &Path| {
+        bench()
+            .arg("judge-ask")
+            .arg("--pairs")
+            .arg(fixtures_dir())
+            .arg("--pair")
+            .arg("pair_00")
+            .arg("--arm")
+            .arg("paired")
+            .arg("--prompts")
+            .arg(judge_prompts_dir())
+            .arg("--cassettes")
+            .arg(dir)
+            .arg("--provider")
+            .arg("ollama")
+            .arg("--model")
+            .arg("qwen3:8b")
+            .assert()
+    };
+
+    // Ask once with nothing cached: the error names exactly where the answer belongs.
+    let miss = ask(&cassettes);
+    let stderr = String::from_utf8(miss.get_output().stderr.clone()).expect("utf8");
+    let path: PathBuf = stderr
+        .split(" at ")
+        .nth(1)
+        .and_then(|rest| rest.split(" —").next())
+        .expect("the miss names the cassette path")
+        .into();
+    let key = path
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .expect("the file is named for its key")
+        .to_string();
+
+    std::fs::create_dir_all(path.parent().expect("arm dir")).expect("mkdir");
+    std::fs::write(
+        &path,
+        serde_json::json!({
+            "cassette_schema_version": "0.1",
+            "key": key,
+            "provider": "ollama",
+            "model": "qwen3:8b",
+            "arm": "judge-paired",
+            "prompt_sha256": "unchecked-here",
+            "rendered_prompt_sha256": "unchecked-here",
+            "decoding": { "temperature": 0.0, "max_output_tokens": 2000 },
+            "recorded_unix": 0,
+            "response": "The run swaps to a greenhouse audit.\n{\"step\": 4}",
+        })
+        .to_string(),
+    )
+    .expect("write cassette");
+
+    let replayed = ask(&cassettes)
+        .code(0)
+        .stderr(predicate::str::contains("replayed"));
+
+    let stdout = String::from_utf8(replayed.get_output().stdout.clone()).expect("utf8");
+    assert!(stdout.starts_with("step 4\n"), "{stdout}");
+    assert!(stdout.contains("--- response ---"), "{stdout}");
+}
+
+/// A judge that breaks its own output contract is scored as a miss, not surfaced as trouble:
+/// the registration counts parse failures as a property of the arm (notebook 069). Exit 2 here
+/// would invite an operator to "fix" the number by re-asking.
+#[test]
+fn judge_ask_reports_a_parse_failure_as_a_miss_not_an_error() {
+    let cassettes = Path::new(env!("CARGO_TARGET_TMPDIR")).join("unparseable_cassettes");
+    let _ = std::fs::remove_dir_all(&cassettes);
+
+    let ask = || {
+        bench()
+            .arg("judge-ask")
+            .arg("--pairs")
+            .arg(fixtures_dir())
+            .arg("--pair")
+            .arg("pair_00")
+            .arg("--arm")
+            .arg("single")
+            .arg("--prompts")
+            .arg(judge_prompts_dir())
+            .arg("--cassettes")
+            .arg(&cassettes)
+            .arg("--provider")
+            .arg("ollama")
+            .arg("--model")
+            .arg("qwen3:8b")
+            .assert()
+    };
+
+    let stderr = String::from_utf8(ask().get_output().stderr.clone()).expect("utf8");
+    let path: PathBuf = stderr
+        .split(" at ")
+        .nth(1)
+        .and_then(|rest| rest.split(" —").next())
+        .expect("the miss names the cassette path")
+        .into();
+    let key = path
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .expect("key")
+        .to_string();
+    std::fs::create_dir_all(path.parent().expect("arm dir")).expect("mkdir");
+    std::fs::write(
+        &path,
+        serde_json::json!({
+            "cassette_schema_version": "0.1",
+            "key": key,
+            "provider": "ollama",
+            "model": "qwen3:8b",
+            "arm": "judge-single",
+            "prompt_sha256": "unchecked-here",
+            "rendered_prompt_sha256": "unchecked-here",
+            "decoding": { "temperature": 0.0, "max_output_tokens": 2000 },
+            "recorded_unix": 0,
+            "response": "I think it goes wrong around the fourth step.",
+        })
+        .to_string(),
+    )
+    .expect("write cassette");
+
+    ask().code(0).stdout(predicate::str::contains(
+        "parse failure (scored as a miss): no JSON object in the response",
+    ));
+}
