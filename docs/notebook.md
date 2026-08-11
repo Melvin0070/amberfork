@@ -3252,3 +3252,94 @@ with `schema_version 0.2`. The CSS move survives the round trip through the regi
 
 `README.md`'s very first instruction — `cargo install amberfork` — is true again, five releases
 after it quietly stopped being.
+
+## 068 · 2026-08-11 · full-project audit, and the v1.0 plan: the baseline that was silently dropped
+
+067 ended with the code finished and the metadata four steps behind. This session asked the next
+question — *where did we compromise, and what is actually left?* — as a full audit: the tracker, the
+design corpus, `BENCHMARK.md`, the notebook arc, the bench arms, the CLI surface, the release
+workflow, and the registry/GitHub state. `scripts/verify.sh` green, 45/45 issues closed, ~25k LOC
+across 11 crates, 557 tests, zero `todo!()`/`unsafe`.
+
+**The finding that matters: the LLM-judge baseline was specified, never built, and never discussed.**
+`BENCHMARK.md` states the project's *purpose* as proving the aligner localizes "at least as well as
+the LLM-judge attribution the SOTA reports". Its Baselines section lists all-in-one and step-by-step
+judges under the heading *"the number is meaningless without them"*. Its Definition of done says the
+README shows amberfork vs shallow-diff vs **LLM-judge** vs random. The shipped bench has four arms —
+`random`, `pos-lexical`, `nw-structural/resync`, `nw-lexical/resync` — and this notebook, 3,254 lines
+of it, contains **zero** occurrences of a judge baseline. Not a recorded decision; a silent drop.
+`amberfork-judge` shipped in #10 as a *narration* layer, which is a different thing wearing the same
+name, and its existence is probably why nobody noticed. Agent-level accuracy (also in Metrics, also
+against a published SOTA number) went the same way — zero occurrences in `crates/`.
+
+The consequence is precise: the headline beats random, an index-diff, and a content-blind aligner.
+The first question a strong engineer asks — *does it beat just asking a model which step went wrong?*
+— has no answer in the repo, despite the protocol saying it must.
+
+**The protocol change: `judge-paired` is the baseline that actually decides the claim.** Replicating
+only the single-trace Who&When methods leaves a hole a skeptic drives straight through — amberfork
+sees two runs, the judge sees one, so the comparison is confounded by information asymmetry. So #46
+runs three conditions: `judge-single` (replicates the SOTA method, comparable to the published 14.2%
+/ ~11%), `judge-stepwise` (the other Who&When method, on a cheap tier because it is ~20x the calls),
+and **`judge-paired`** — both runs in the prompt, the same information the aligner gets. Nobody has
+published that number. It is the one that decides whether the alignment algorithm does real work or
+exploits an information advantage, and it is the headline comparison.
+
+Both outcomes are publishable, which is the point of registering the interpretation first. A tie on
+`judge-paired` reads *"matches a frontier model given identical information — deterministically,
+offline, in milliseconds, no API key"*, which is a stronger claim than beating a positional diff. A
+loss is a real finding about where the ceiling is. This gets written down in #46's pre-registration
+before a token is spent, not after the number lands.
+
+**Models, verified against current sources 2026-08-11** (the knowledge cutoff predates all of them):
+frontier arm `gpt-5.6-sol` ($5/$30 per MTok) so nobody can say a weak judge was picked;
+cross-provider check `gemini-3.6-flash` (free tier) so the result is not OpenAI-specific; local arm
+`qwen3:8b` (Apache 2.0) for the no-API-key condition. `judge-stepwise` on `gpt-5.6-luna` for the call
+volume. Budget ~$20-25 one-time on OpenAI, $0 elsewhere, and cassettes make it free forever after.
+
+**A side-finding the model survey produced:** `--judge local` ships pointing at `smollm2:135m`. A
+135M model narrating a fork cannot be producing useful output — a shipped feature that is
+effectively inert. #47 upgrades it to `qwen3:8b`, riding on the local provider work #46 needs anyway.
+
+**The other three unmeasured things.** `--verify` — the actual moat, the half nobody else ships,
+since the frontier's Causal Agent Replay *requires* re-running and we do not — has an e2e happy-path
+test (053) and **no rate**. No confirmation rate, no ddmin minimal-cause precision, no
+origination/propagation accuracy (#48). The by-construction catch from 040 still stands with three
+nulls against it (016, 051, 066) and no natural-fork win; #49 attacks it differently — record a real
+agent N times, perturb exactly one tool response, and take gold from the *perturbation* rather than
+from splicing logs, so everything between cause and outcome is real agent behaviour. And the O(n*m)
+wall is a projection (022/023), not a measurement (#50).
+
+**Doc drift, recorded rather than fixed here.** `design-run-diff-debugger.md`'s authoritative header
+still says "10 crates shipped at v0.7.0", last Amendment 2026-07-21; all of v0.8/v0.9 has notebook
+entries and no amendment. 040's watch-item 2 was never resolved — `Step` carries `edges`/`parent_idx`
+and the aligner linearizes them, while line 361 still names GumTree tree-diffing as the approach.
+#51 reconciles both. Either answer is fine there; silence is not.
+
+**Founder decisions this session.** (1) Judge models as above — OpenAI paid, Gemini free tier, plus a
+free local arm. (2) Cut line: evidence + doc honesty + distribution surface; `amberfork-store`,
+`fto.md`, `--timings`, tree alignment and failure clustering are deferred with reasons on the
+tracker. (3) The writeup ships the *same day* as v1.0.0, since the sealed reveal happens at the tag
+anyway and the numbers and the story should land together.
+
+**Consensus gets a conditional second look, and only because #49 pays for it.** 066 killed
+multi-reference consensus on a pre-registered null and closed the door explicitly — re-entry requires
+a new registration. Re-reading it for this audit sharpened *why* it was a null: consensus reproduced
+the pristine reference's exact predicted step on 25 of 25 pairs and captured +0.016 of +0.016
+available headroom. It took the entire prize; the prize was 1.6 points, because a single jittered
+reference already scored 0.544 against the clean reference's 0.560. The general form is
+**consensus's value equals the single-draw penalty**. Under our own benign-noise model that penalty
+is small. Under real agent non-determinism — different tool-call orders, different step counts,
+temperature-driven paths — it could be much larger, and #49 records exactly the multiple *real*
+references 065 said would otherwise cost API spend or a ~450MB HAL fetch. Filed as #62 in the
+backlog, decided after #49's numbers, requiring a fresh registration. Null again would be a *stronger*
+published claim than 066 can make.
+
+**Why this entry exists at all.** The audit and the plan lived only in one session's context. The
+SessionStart hook reads open issues plus their milestone, and the tracker was empty and the last
+milestone was v0.9 — so a fresh "build what's next?" would have found nothing and invented something.
+Filed as milestone **v1.0 — the credibility release** (#46-#57, numbered in build order so
+"lowest-numbered unblocked" resolves correctly) and **backlog (post-v1)** (#58-#63, out of the
+current milestone so they stay visible as decided deferrals without being picked up).
+`CONTRIBUTING.md`'s loop still named v0.8/v0.9 as current, and — the gap 067 identified and did not
+fix — **still never said push**. Both corrected here.
