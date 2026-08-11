@@ -7,8 +7,10 @@ file is the human-readable summary of the same working agreement.
 ## The loop
 
 1. **Pick work from the tracker.** `gh issue list` — take the lowest-numbered unblocked issue in
-   the current milestone. Milestones are the cut line (v0.1 walking skeleton and v0.2 offline
-   benchmark shipped; now **v0.8 the credibility pass** → **v0.9 the explain layer**).
+   the current milestone. Milestones are the cut line (v0.1 walking skeleton → v0.2 offline
+   benchmark → v0.8 the credibility pass → v0.9 the explain layer, all shipped; now
+   **v1.0 the credibility release**). Issues in **backlog (post-v1)** are *decided deferrals* —
+   each records why it is not in the current milestone. Don't pull from there without a decision.
 2. **Read the governing doc.** Each issue points at the section of `docs/design/`, `BENCHMARK.md`,
    or `DESIGN.md` that specifies it. The design corpus is authoritative; where it conflicts, the
    dated "Amendment" / "Current State" blocks win.
@@ -22,8 +24,10 @@ file is the human-readable summary of the same working agreement.
    a red CI, not a silent pass (see that dir's README to audit/regenerate the fixture).
 5. **Record decisions.** Every experiment/measurement gets a `docs/notebook.md` entry (append-only).
    Benchmark numbers follow `BENCHMARK.md`'s pre-registered protocol — no number outside it.
-6. **Commit small.** Conventional one-liners (`feat:`/`fix:`/`bench:`/`docs:`/`chore:`), one
-   logical change each.
+6. **Commit small, and push.** Conventional one-liners (`feat:`/`fix:`/`bench:`/`docs:`/`chore:`),
+   one logical change each — then `git push`. Pushing is part of the slice, not a release step:
+   nine slices once sat on one machine for three weeks because this line didn't say so, and
+   nothing looked wrong locally (notebook 067).
 
 ## Standards
 
@@ -36,7 +40,7 @@ file is the human-readable summary of the same working agreement.
 
 ## Layout
 
-- `crates/` — the Rust workspace (11 crates at v0.9.0, grown by need; roster + rationale in `docs/design/`).
+- `crates/` — the Rust workspace (11 crates at v0.9.1, grown by need; roster + rationale in `docs/design/`).
 - `spike/` — Python, two kinds. Most is throwaway feasibility work (findings port to Rust, the
   code never ships). The exception is the **maintained benchmark data pipeline** —
   `convert_whowhen.py` → `amberfork-bench sanitize canonical` → `make_pairs.py` →
