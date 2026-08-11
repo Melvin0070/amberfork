@@ -3343,3 +3343,201 @@ Filed as milestone **v1.0 — the credibility release** (#46-#57, numbered in bu
 current milestone so they stay visible as decided deferrals without being picked up).
 `CONTRIBUTING.md`'s loop still named v0.8/v0.9 as current, and — the gap 067 identified and did not
 fix — **still never said push**. Both corrected here.
+
+## 069 · 2026-08-11 · PRE-REGISTRATION: the LLM-judge baseline arms (#46 slice A1)
+
+**Written and committed before any judge code exists and before any judge number exists.** That
+ordering is the entry's whole point, and it matters more here than it did in 065: this is the one
+baseline whose result can embarrass the project, and a decision rule written after the number would
+be worthless. 068 found this baseline specified in BENCHMARK.md since 2026-07-02, never built, never
+discussed — a silent drop. It is being built now, and registered first.
+
+**The question.** Does amberfork's deterministic, offline, non-LLM alignment localize the decisive
+step at least as well as *just asking a frontier model which step went wrong*? The shipped table
+beats random, an index-diff, and a content-blind aligner. The first question a strong engineer asks
+has no answer in the repo.
+
+### The corpus, and why the obvious one was rejected
+
+**Registered corpus: the TRAIL↔HAL natural pairs, dev split, n = 23 of 69** (`bench/data/pairs_trail_hal`,
+built by #41 S4c, notebook 050; scored in 051). Real TRAIL failing traces vs passing HAL references
+on the same GAIA task, same Open Deep Research scaffolding, differing backing model; gold is TRAIL's
+*human-annotated* error span resolved to a step index. The test split (46 pairs) is a once-per-tag
+event under rule 2 and lands at v1.0.0 (#56).
+
+**The 25 committed chimera dev pairs were considered first — the issue named them — and rejected on
+two measurements taken during this registration.**
+
+1. **The committed fixtures are GAIA-sanitized into hash tokens.** `chimera_noise_seed42_dev/a_03.json`
+   step 0 reads `q929b45f30 q929b45f32 q929b45f33 …?`. The task question is *gone*. The aligner does
+   not care — it is lexical and structural. A judge asked which step went decisively wrong, on a
+   trace whose task statement is a bag of opaque tokens, is being handicapped in a way the product
+   is not. Any resulting win would be an artifact of the handicap.
+2. **The sanitizer marks the splice.** Chimeras are a real prefix from log X plus a real divergent
+   tail from log Y, and the sanitizer hashes per source question — so `pair_03`'s failing run carries
+   `q929b45f3*` tokens through step 9 and `q57d9dc69*` tokens from step 10 (gold is 6). The seam is
+   visible to anything that reads content. On this corpus a judge arm would partly be measuring
+   hash-prefix detection.
+
+Handicap 1 is repairable — the unsanitized Who&When source sits in gitignored `bench/data/`, so
+unsanitized chimera pairs could be regenerated locally with the same reproducibility posture the
+natural pairs already have. Handicap 2 is not: the gold is a splice point, so *any* judge arm on
+chimeras is asked to localize a construction artifact rather than an error. That is 040's
+by-construction critique arriving at the baseline instead of at the product. **Decision: no chimera
+judge arms, in either form.** Recorded here rather than dropped silently, which is the failure mode
+#46 exists to correct.
+
+### What the registered corpus means for the expected result
+
+**On these pairs amberfork currently scores 0.000 exact, 0.000 ±1, 0.348 ±3 (n=69) — below `random`'s
+0.145 / 0.362 / 0.609.** That is 051's honest null, already published, and it is registered here as
+the starting position rather than discovered later. The straightforward expectation is therefore
+that **a frontier judge beats amberfork on this corpus**, and this registration is written expecting
+to publish that.
+
+The comparison is still worth running, because on this corpus **the judge arms are a diagnostic of
+the corpus itself**, and both branches are informative:
+
+- **Judge also lands near zero exact.** The gold or the pair-construction is the problem, not the
+  aligner. 051's null is then substantially a corpus artifact — a frontier model given the same real
+  traces and the real question cannot find the annotated step either — which is a *result*, and the
+  strongest available justification for #49's real-agent perturbation protocol.
+- **Judge lands in the 15–30% band the SOTA reports.** The aligner genuinely does not localize on
+  natural cross-model pairs. v1.0's public claim must then narrow explicitly to the chimera
+  controlled-injection protocol, and say so in the README rather than letting a reader generalize.
+
+Registered explicitly, so neither reading can be manufactured afterwards: **a judge win here does not
+retract the chimera table** (rule 10), and **a judge null here does not vindicate the aligner** — it
+convicts the gold.
+
+### Arms
+
+- **`judge-single`** — failing trace only, one call. Replicates the Who&When all-in-one method; the
+  arm comparable to the published 14.2% / ~11%.
+- **`judge-paired`** — *both* runs in the prompt, the same information the aligner gets. **The
+  headline.** Nobody has published this number. Without it the comparison is confounded: amberfork
+  sees two runs and a single-trace judge sees one, and a win under that asymmetry proves nothing
+  about the algorithm.
+- **`judge-stepwise`** — the Who&When step-by-step method: candidates `0,1,2,…`, first `true` wins,
+  all-`false` is no prediction. ~20× the call volume, hence the cheap tier.
+
+amberfork's four existing arms are re-scored **unchanged**, under the same frozen params
+(`bench/params.toml`, sha256 `8ebd95ce…`), on the identical 23 dev pairs. The dev-subset numbers for
+those arms are not yet known — 051 published the all-69 figures — and are computed for the first
+time in A3. Nothing is tuned; rule 10 forbids a baseline from disturbing the product's parameters.
+
+### Models, verified 2026-08-11
+
+| Arm | Model | Price | Role |
+|---|---|---|---|
+| `judge-single`, `judge-paired` | `gpt-5.6-sol` | $5 / $30 per MTok | Headline. A frontier model so nobody can say a weak judge was picked. |
+| `judge-paired` | `gemini-3.6-flash` | free tier | Cross-provider check — the result must not be OpenAI-specific. |
+| `judge-paired` | `qwen3:8b` via Ollama (Apache 2.0) | $0 | The no-API-key condition: what a reader reproduces without a card on file. |
+| `judge-stepwise` | `gpt-5.6-luna` | $0.20 / $1.20 per MTok | Cheap tier, because the method is ~20× the calls. |
+
+Measured prompt budget on the dev split at the registered 600-char payload cap: `judge-single`
+~144k input tokens total, `judge-paired` ~391k, largest single prompt ~64k tokens. Frontier spend
+lands at **~$3–8 one-time**; cassettes make every later replay free. `judge-stepwise` is ~687 calls
+across the 23 pairs (one per failing-run step) and stays under a dollar on the cheap tier.
+
+### Frozen before the run
+
+Prompts are frozen in `bench/judge_prompts/`, hashed like `params.toml` (rule 2, and rule 10 which
+this slice adds):
+
+| File | sha256 |
+|---|---|
+| `judge_single.md` | `e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61` |
+| `judge_paired.md` | `ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942` |
+| `judge_stepwise.md` | `d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209` |
+
+**One prompt revision, one run, no iteration.** Rewording a prompt after seeing a score is the
+baseline-shaped way to tune on test; if a prompt is ever changed, the new sha256 and the old number
+are published side by side (rule 3), never swapped.
+
+Also frozen, with the full contract in `bench/judge_prompts/README.md`: the step-rendering format
+(`#<idx> [<kind> · <name>] inputs: … | outputs: …`, per-run 0-based indices); the **600-char payload
+cap** as head 400 + tail 200 with an exact elided-count marker, chosen because a tool result's error
+usually sits at its end and its shape at its start, and sized so the largest paired prompt stays
+around 64k tokens and no provider silently truncates a prompt out from under the protocol;
+temperature 0, single sample, no tools, no extra system prompt — and where a reasoning model rejects
+a temperature parameter, the most deterministic setting it accepts, recorded per arm in the results;
+answer parsing as the **last** JSON object in the response, with `step` required to be an integer in
+`0..failing.steps.len()`.
+
+**Parse failures are scored as misses**, counted and reported separately — a judge that cannot obey
+its own output contract is worse at the task, not un-evaluable. **Transport failures are not**: three
+retries, then the pair is an exclusion for that arm under rule 4, tabulated with its reason. One is
+the method failing, the other is our infrastructure failing, and collapsing them would let a flaky
+network flatter a baseline.
+
+**Cassettes** key on sha256 of `{provider, model, arm, prompt_sha256, rendered_prompt_sha256,
+temperature, max_output_tokens}` and store the response, the model id and the run date — **never the
+prompt text**. Not a size optimisation: TRAIL prompts embed verbatim GAIA questions, which
+BENCHMARK.md's data rules bar from this repo. Hashing the rendered prompt keeps the cache exact and
+the questions out. CI stays network-free; a live call needs both an explicit flag and an API key.
+
+### An interface finding, registered because it changes what A2 builds
+
+`amberfork-judge`'s `Judge` trait **cannot** serve as this baseline, and #46's own text saying "behind
+the existing `Judge` trait" is wrong. That trait is a narration interface *by construction*:
+`Explanation::fork_index` is set by the caller from the `DiffResult`, and `prompt::build` explicitly
+forbids the model from naming a step index, so a narration judge structurally cannot mis-localize.
+That guardrail is exactly what makes it useless here — the baseline needs a model that *does* report
+an index, scored against gold with no grounding guard in the way. A2 builds a separate localizer.
+The two must not be merged later: the product's judge should stay unable to invent a location.
+
+### Metrics and the decision rule
+
+- **Headline: step-level exact match** against the TRAIL gold step, per arm, with Wilson 95% CIs
+  (rule 6). ±1 and ±3 reported alongside; 051 established that on this corpus the only non-zero
+  aligner signal lives at ±3, so suppressing it would be the dishonest direction.
+- **Paired comparison (rule 9):** for each judge arm, `d_p = nw_lexical_hit[p] − judge_hit[p]` over
+  the 23 dev pairs, bootstrap 95% CI, **10,000 resamples**, resampling *pairs*. Declared now: the
+  statistic, the resample count, the n.
+- **`judge-paired` vs `nw-lexical/resync` carries the decision.** The CI excluding 0 in either
+  direction is a real difference; a CI straddling 0 is a tie, and at n=23 a tie is the likeliest
+  outcome and must be reported as a tie rather than read in whichever direction flatters us.
+- `random` is reported on the same 23 pairs, because on this corpus it is not a floor anyone clears.
+
+**Trip-wire, declared in advance:** if `judge-single` scores far above the published SOTA band —
+above **0.40 exact** — that is evidence of contamination or a leak in our setup, not a discovery. It
+would be reported as a suspect number and investigated, not published as a baseline.
+
+### Caveats that must travel with whatever number comes out
+
+- **The 600-char cap handicaps the judges, not the aligner.** The cost model reads full payloads;
+  a judge sees at most 600 chars per field. Uncapped `judge-paired` averages ~474k input tokens per
+  pair and peaks past 1M, so the cap is not optional — but it is a thumb on the scale in our favour,
+  and if a judge arm loses, truncation is a live alternative explanation and gets said out loud.
+- **Contamination cuts the other way.** TRAIL is public (arXiv 2505.08638, MIT GitHub) and its traces
+  and annotations may sit in these models' training data. That biases the judge arms *upward*.
+- **The reference is a different backing model** (GPT-5 Medium HAL run vs TRAIL's own ODR run) on the
+  same scaffolding. 051 flagged the resulting gold-quality question as unmeasured; it still is.
+- **Gold is "the annotated decisive error"; the aligner predicts "first meaningful divergence".** The
+  two can legitimately differ by a step or three. Same gold for every arm, so the comparison is fair,
+  but the absolute rates are all depressed by this and none of them is a measure of the tool's
+  usefulness to a human debugging a run.
+- **n = 23.** Nothing here supports a confident ordering of close arms. Report the intervals.
+- **Reproducibility is the natural-pair posture, not the chimera posture.** `bench/data/` is
+  gitignored; the pairs regenerate through `fetch` → `hal-decrypt` → `build-trail-pairs` from pinned
+  upstreams, and cassettes make the judge calls replay offline forever. This is weaker than the
+  committed chimera fixtures, and it is the same posture 051's published number already lives under.
+
+### Slices after this one
+
+A2 — providers (OpenAI, Gemini, Ollama) behind a new localizer interface + the cassette cache;
+scripted doubles keep `cargo test --workspace` offline. A3 — the three arms, scoring integration,
+the dev run, cassettes committed, dev table published. **The result rewrites the README either way.**
+
+### Protocol amendment
+
+Added **BENCHMARK.md rule 10**: a baseline arm is frozen like a parameter and never disturbs the
+product's numbers. Adding a baseline must not edit `params.toml` and must not restate a published
+amberfork number — the product's arms are re-scored unchanged on whatever subset the baseline uses,
+and the earlier tables stand. It exists because a late baseline is the most tempting moment in the
+whole protocol to "just retune": the arm that is losing is the one you did not spend a year building.
+The rule binds symmetrically — a baseline carries its own freeze (model id, prompt sha256, decoding
+params, corpus, split), so "we tried a few prompts" cannot hide inside a baseline the way it cannot
+hide inside `params.toml`. BENCHMARK.md's Baselines section is amended to name the three conditions
+and to record that `judge-paired`, not the SOTA-replicating `judge-single`, is the headline.

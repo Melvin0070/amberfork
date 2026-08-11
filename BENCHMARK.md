@@ -75,8 +75,14 @@ overclaim. If Mode A can't be constructed for a benchmark, say so and report onl
 1. **Random step** (floor).
 2. **Shallow positional diff** — align by index, first mismatch. This is the agent-replay/agx
    approach and the control that demonstrates *why* semantic move-typed alignment is better.
-3. **All-in-one LLM judge** and **step-by-step LLM judge** (the Who&When methods) — via the optional
-   `amberfork-judge` provider trait, network-gated and cassette-cached for reproducibility.
+3. **LLM judge** — network-gated and cassette-cached for reproducibility. Three conditions
+   (registered 2026-08-11, notebook 069, issue #46): `judge-single` (all-in-one, failing trace
+   only — replicates the Who&When method and is what the published 14.2% / ~11% are comparable
+   to), `judge-stepwise` (the Who&When step-by-step method), and **`judge-paired`** — both runs
+   in the prompt, the same information the aligner gets. `judge-paired` is the headline: without
+   it the comparison is confounded by an information asymmetry, since amberfork sees two runs and
+   a single-trace judge sees one. NOT via `amberfork-judge`'s `Judge` trait, which is a narration
+   interface that structurally cannot report a step index; the baseline is a separate localizer.
 
 ## Harness design (Rust; fits the workspace)
 - New crate **`amberfork-bench`** (or an `xtask bench` subcommand): fixture loader → convert to canonical
@@ -160,6 +166,19 @@ reviewer — hunting for tuning-on-test, cherry-picking, or flaky "determinism" 
    two arms on shared fixtures. A paired claim must state both intervals — a difference CI that
    excludes zero while both arms' Wilson intervals overlap is the expected, honest outcome of a
    paired design, not a contradiction to be hidden.
+
+10. **A baseline arm is frozen like a parameter, and never disturbs the product's numbers**
+    (added 2026-08-11; notebook 069). Adding or changing a *baseline* — an arm that is not the
+    product — must not edit `bench/params.toml` and must not restate any previously published
+    amberfork number. The product's arms are re-scored unchanged, under the same frozen params
+    hash, on whatever fixture subset the new baseline runs on; the earlier tables stand as
+    recorded and the new subset's numbers are published as their own row set, with the
+    denominators named. This exists because a late baseline is the most tempting moment in the
+    whole protocol to "just retune" — the arm that is losing is the one you did not spend a year
+    building. Conversely a baseline carries its *own* freeze: model id, prompt file + sha256,
+    decoding parameters, corpus and split, all registered before the run and named in the table,
+    so "we tried a few prompts" cannot hide inside a baseline the way it cannot hide inside
+    `params.toml`.
 
 Status note (2026-07-07): a throwaway feasibility spike (`spike/`) is testing Mode-A pair
 constructibility and semantic-vs-positional on real fixtures before the Rust build. Findings go
