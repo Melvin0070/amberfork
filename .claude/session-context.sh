@@ -13,7 +13,10 @@ status="$(git status --short 2>/dev/null | head -n 20)"
 recent="$(git log --oneline -3 2>/dev/null || echo '(no history)')"
 
 # Open issues + milestone — gh may be offline/unauthenticated; degrade gracefully.
-issues="$(gh issue list --state open --limit 20 \
+# --limit 50, not 20: `gh issue list` sorts newest-first, so a limit truncates the LOWEST-numbered
+# issues — precisely the ones step 1 of the loop tells the next session to pick up. At 18 open
+# issues a limit of 20 was one milestone away from hiding the next slice.
+issues="$(gh issue list --state open --limit 50 \
   --json number,title,milestone \
   -q '.[] | "  #\(.number) [\(.milestone.title // "no milestone")] \(.title)"' \
   2>/dev/null)"
