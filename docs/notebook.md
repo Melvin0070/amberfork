@@ -3150,3 +3150,105 @@ directory: `pair_00` exists in all three dev seeds and a bare name would hand th
 pairs the same ten variants. The `single` arm's pooled Wilson interval over 250 draws is
 reported but flagged optimistic — ten draws of one suspect are not ten independent
 observations; `single_per_pair`'s pair-resampled bootstrap is the one to read.
+
+## 067 · 2026-08-11 · v0.9.0 + v0.9.1 released, and the CLI crate had been unpublishable since #29
+
+Started from a plain question — "is anything left?" — and the tracker said no: all 45 issues
+closed, zero `TODO`/`todo!()`/`unimplemented!()` in `crates/` or `ui/src`, `scripts/verify.sh
+--full` green. The code was finished. The *metadata* was four steps behind reality, and one of
+those steps turned out to be a real defect.
+
+**v0.9.0 was sitting unreleased, and unpushed.** 24 commits past the `v0.8.0` tag — seven issues'
+worth (#10 judge, #29 `--html`, #30 expand-on-demand, #31 light mode, #40 deltas, #43 privacy
+warning, #45 consensus) — with an empty `CHANGELOG.md` `[Unreleased]` and `Cargo.toml` still at
+`0.8.0`. The same shape 054 recorded for v0.8.0, so it was cut the same way: workspace version +
+the 9 internal path-dep pins, both lockfiles, a CHANGELOG entry, and the "N crates at vX.Y.0"
+lines in `CLAUDE.md`/`CONTRIBUTING.md` (10 → 11, `amberfork-judge` landed post-tag). `README.md`
+also still called the OpenInference / `gen_ai.*` adapters "planned" three weeks after 052 shipped
+them, and its working-surface list predated `--html` and `--judge`.
+
+Worse than the missing tag: **`git push` moved `main` from `23c15f8` to `af5afca`** — everything
+after #10 slice B existed only on this machine. The per-slice ritual in CONTRIBUTING.md covers
+verify-then-commit and never says push, so nine slices sat locally without anything looking wrong.
+
+**Then the packaging bug.** With v0.9.0 tagged and released, `cargo install amberfork` still
+served **0.4.0** (2026-07-11) — the registry had `model`/`align`/`ingest` at 0.4.0 and had never
+heard of `layout`/`server`/`record`/`replay`/`attrib`/`judge`. `cargo publish --workspace
+--dry-run` packaged and verified all nine libraries and then died on the tenth:
+
+```
+error[E0432]: unresolved import ... /  couldn't read `src/../../../ui/index.html`
+  --> src/html_export.rs:27
+```
+
+`html_export.rs` reached the live stylesheet with `include_str!("../../../ui/index.html")`. That
+path escapes the crate root. It resolves in the repo, so `cargo build`, the whole test suite, the
+release binary, and every CI job were green — but `cargo package` carries nothing above the crate
+directory, so **the `amberfork` crate has not been packageable since `--html` shipped in #29**,
+and nothing noticed for a full release cycle.
+
+**Why CI structurally could not catch it.** `release.yml`'s packaging check was
+`cargo package -p amberfork-server --list --allow-dirty | grep ui-dist/index.html`. It inspects a
+*different* crate, and `--list` only enumerates filenames — it never compiles. A path escape is
+invisible to it by construction.
+
+**The fix, and the one that actually works.** The founder chose keeping a single canonical
+stylesheet over vendoring a copy. The naive form of that still escapes the crate root, so the
+mechanism had to be ownership: `amberfork-layout` — a crate both painters already depend on —
+now owns `ui.css` and exports `pub const UI_CSS`, making the export's reference an ordinary
+dependency. `ui/index.html` pulls the same bytes back with trunk's `rel="inline"` rather than
+`rel="css"`, deliberately: inlining reproduces the old single `<style>` block, so `dist/` keeps
+its three files, the page makes no extra request, and `rust-embed` has no new asset to carry. One
+stylesheet, no hand-copied second copy, and #29's anti-drift property survives intact.
+
+**The guard was wrong on the first attempt, and CI proved it.** Added `cargo package -p amberfork
+--allow-dirty` (no `--list`, so it compiles) — and the v0.9.1 release run failed on it:
+
+```
+failed to select a version for the requirement `amberfork-align = "^0.9.1"`
+candidate versions found which didn't match: 0.4.0
+```
+
+A single-crate package resolves its siblings from crates.io, and the version being released is by
+definition not there yet — the check could never pass *before* the publish it guards. `cargo
+package --workspace` is the right form: it stages every member in a temporary local registry and
+verifies them against each other, the same mechanism `cargo publish --workspace` uses. Green on
+both platforms now. Worth stating plainly: the guard's own first version was caught by running
+it, not by reasoning about it.
+
+**Two traps that cost real time.**
+
+- **A staged `ui-dist/` and the test suite are mutually exclusive.** `verify.sh --full` hung for
+  ten minutes on `valid_pair_without_a_ui_bundle_refuses_before_binding`: staging the bundle for
+  packaging makes `serve` actually bind, so the test asserting it *refuses* never returns. CI
+  never hits this because `ci.yml` and `release.yml` are separate workflows. Order is forced —
+  verify with `ui-dist/` empty, then stage, then package, then clear it again.
+- **Same version, different content.** After the fix was correct, the dry run failed three more
+  times: first a stale extraction in the tmp-registry's src cache, then a stale compiled rlib in
+  the shared `target/debug/deps`. Cargo keys both on the version string, so iterating on an
+  unpublished `0.9.1` silently reuses the previous build of a different source. Cure:
+  `rm -rf target/package ~/.cargo/registry/src/<tmp-registry-hash>` plus deleting `*amberfork*`
+  from `target/debug/deps` and `.fingerprint`. Roughly forty minutes went into debugging a fix
+  that had already been correct since the first attempt.
+
+**Cut v0.9.1 rather than publishing 0.9.0.** The `v0.9.0` tag points at `af5afca`, which is the
+commit *with* the broken `include_str!` — it cannot be packaged at all. Publishing the fixed
+source as `0.9.0` would have put source on crates.io matching no tag and no release binary. In a
+project where BENCHMARK.md rule 2 makes tags load-bearing, a patch release was the cheaper
+honesty. The `v0.9.1` tag was later re-pointed from `f7e1068` to `cf4adcf` (the CI fix); safe
+because that tag's release run had failed, so no GitHub release or crates.io version ever
+referenced it, and `.github/` is not carried in any crate tarball — the published source is
+byte-identical either way.
+
+**Published, and verified against the registry rather than the repo.** All 10 crates at 0.9.1
+(`amberfork-bench` stays `publish = false`). crates.io rate-limits *new* crate names, so the run
+429'd at `amberfork-attrib` with eight through; the remaining two went in after the window. Then
+the checks that actually matter: the published `amberfork-server` `.crate` carries
+`ui-dist/index.html` (22 KB) plus the `.js`/`.wasm`, so `serve` ships a real UI rather than
+`BundleMissing`; and `cargo install amberfork --version 0.9.1` into a clean root produces a
+binary where `demo` renders the fork and exits 1, and `serve --demo` boots, serves
+`<title>amberfork</title>` with the relocated stylesheet inlined, and answers `/api/document`
+with `schema_version 0.2`. The CSS move survives the round trip through the registry.
+
+`README.md`'s very first instruction — `cargo install amberfork` — is true again, five releases
+after it quietly stopped being.
