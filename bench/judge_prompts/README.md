@@ -17,6 +17,15 @@ Registered in `docs/notebook.md` entry 069, **before** any judge code or number 
 Verify: `shasum -a 256 bench/judge_prompts/*.md`. This README is **not** hashed — it documents the
 contract, it is not part of it.
 
+The pin is enforced in code: `judge_prompt::JudgeArm::registered_sha256` carries these same
+values, and loading a template that hashes to anything else is a hard error, never a fallback.
+See the rendered result for yourself, offline and free:
+
+```
+cargo run -p amberfork-bench -- judge-prompt \
+  --pairs bench/fixtures/chimera_noise_seed42_dev --pair pair_03 --arm paired
+```
+
 ## Why the prompts live here and not in the crate
 
 `amberfork-judge`'s `Judge` trait cannot serve as this baseline. It is a *narration* interface by

@@ -73,6 +73,12 @@ fn frozen_params() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bench/params.toml")
 }
 
+/// The committed frozen judge prompts (issue #46). Named explicitly rather than left to the
+/// in-repo default, because integration tests run with the package as working directory.
+fn judge_prompts_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../bench/judge_prompts")
+}
+
 /// The sha256 hex of the committed params file, recomputed from its exact bytes — what the
 /// published artifact must echo.
 fn frozen_params_sha256() -> String {
@@ -730,4 +736,120 @@ fn an_empty_pairs_dir_is_trouble() {
         .assert()
         .code(2)
         .stderr(predicate::str::contains("no pair manifests"));
+}
+
+/// `judge-prompt` (issue #46): the frozen LLM-judge baseline prompt for one pair, rendered to
+/// stdout exactly as a provider will receive it. It exists so the question a baseline is asked
+/// is auditable before anyone pays to have it answered — a table claiming "we asked a frontier
+/// model" is worth what a reader's ability to see the asking is worth.
+///
+/// The receipt on stderr names both hashes the protocol turns on: the template revision
+/// (pinned in-code against notebook 069) and the rendered prompt (half the cassette key).
+#[test]
+fn judge_prompt_renders_the_paired_prompt_with_both_hashes() {
+    let assert = bench()
+        .arg("judge-prompt")
+        .arg("--pairs")
+        .arg(fixtures_dir())
+        .arg("--pair")
+        .arg("pair_00")
+        .arg("--arm")
+        .arg("paired")
+        .arg("--prompts")
+        .arg(judge_prompts_dir())
+        .assert()
+        .code(0)
+        // The template's registered sha256 (notebook 069, bench/judge_prompts/README.md).
+        .stderr(predicate::str::contains(
+            "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+        ))
+        .stderr(predicate::str::contains("judge-paired"));
+
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).expect("utf8 prompt");
+    // Both runs present, each numbered from its own zero, and nothing left unsubstituted.
+    assert!(stdout.contains("#0 [Llm · planner]"), "{stdout}");
+    assert!(
+        stdout.contains("#5 [Tool · calibrate.schedule]"),
+        "{stdout}"
+    );
+    assert!(stdout.contains("#5 [Tool · supplier.quote]"), "{stdout}");
+    assert!(
+        !stdout.contains("{{"),
+        "unsubstituted placeholder: {stdout}"
+    );
+}
+
+/// The step-by-step arm withholds everything after the candidate — the method's whole point is
+/// that the judge decides without hindsight.
+#[test]
+fn judge_prompt_stepwise_stops_at_the_candidate() {
+    let assert = bench()
+        .arg("judge-prompt")
+        .arg("--pairs")
+        .arg(fixtures_dir())
+        .arg("--pair")
+        .arg("pair_00")
+        .arg("--arm")
+        .arg("stepwise")
+        .arg("--candidate")
+        .arg("4")
+        .arg("--prompts")
+        .arg(judge_prompts_dir())
+        .assert()
+        .code(0);
+
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).expect("utf8 prompt");
+    assert!(stdout.contains("#4 [Llm · planner]"), "{stdout}");
+    assert!(
+        !stdout.contains("#5 "),
+        "steps after the candidate must be withheld: {stdout}"
+    );
+}
+
+/// A prompt directory that is not the registered revision is trouble, not a silent fallback:
+/// the arm cannot say which prompt produced its number, so it must not produce one.
+#[test]
+fn judge_prompt_refuses_an_unregistered_template() {
+    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("reworded_prompts");
+    std::fs::create_dir_all(&dir).expect("create scratch dir");
+    for name in ["judge_single.md", "judge_paired.md", "judge_stepwise.md"] {
+        let mut bytes = std::fs::read(judge_prompts_dir().join(name)).expect("read prompt");
+        if name == "judge_single.md" {
+            bytes.extend_from_slice(b"\nBe concise.\n");
+        }
+        std::fs::write(dir.join(name), bytes).expect("write scratch prompt");
+    }
+
+    bench()
+        .arg("judge-prompt")
+        .arg("--pairs")
+        .arg(fixtures_dir())
+        .arg("--pair")
+        .arg("pair_00")
+        .arg("--arm")
+        .arg("single")
+        .arg("--prompts")
+        .arg(&dir)
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("not the registered revision"));
+}
+
+/// An unknown pair names the ones that exist — the harness's usual posture on operator error.
+#[test]
+fn judge_prompt_names_the_available_pairs_when_asked_for_a_missing_one() {
+    bench()
+        .arg("judge-prompt")
+        .arg("--pairs")
+        .arg(fixtures_dir())
+        .arg("--pair")
+        .arg("pair_99")
+        .arg("--arm")
+        .arg("single")
+        .arg("--prompts")
+        .arg(judge_prompts_dir())
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("no pair named pair_99"))
+        .stderr(predicate::str::contains("pair_00"));
 }

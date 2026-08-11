@@ -17,6 +17,12 @@
 //! reproduces offline, byte for byte, from the repo alone (BENCHMARK.md's definition of
 //! done). The canonical committed document lives under `bench/results/`.
 //!
+//! `judge-prompt` renders the frozen LLM-judge baseline prompt for one pair — the exact bytes
+//! a provider will be sent (issue #46, pre-registered in notebook 069). Offline and free: it
+//! asks nobody anything, it only shows what would be asked, under the template's pinned
+//! sha256. The baseline's credibility rests on that question being auditable before it is
+//! paid for.
+//!
 //! Real pair sets are NOT committed: chimera pairs derive from Who&When logs whose questions
 //! originate in GAIA (gated upstream — notebook 001/T30). Regenerate locally with
 //! `python3 spike/make_pairs.py`. The committed sets under `tests/fixtures/` are
@@ -35,6 +41,7 @@ mod fetch;
 mod hal_fetch;
 mod hash;
 mod jitter;
+mod judge_prompt;
 mod multiref;
 mod pairs;
 mod params;
@@ -46,6 +53,7 @@ mod split;
 
 use arms::Prediction;
 use clap::{Args, Parser, Subcommand, ValueEnum};
+use judge_prompt::{JudgeArm, PromptSet};
 use pairs::{Pair, load_pairs};
 use results::{ArmResult, BenchResults, Coverage, ExclusionRecord, PairRecord, ParamsUsed};
 use split::Split;
@@ -88,6 +96,9 @@ enum Command {
     /// Score multi-reference consensus against a single reference draw (issue #45 slice B,
     /// pre-registered in docs/notebook.md 065).
     Consensus(ConsensusArgs),
+    /// Render the frozen LLM-judge baseline prompt for one pair — exactly the bytes a
+    /// provider will be sent (issue #46, pre-registered in docs/notebook.md 069).
+    JudgePrompt(JudgePromptArgs),
 }
 
 #[derive(Args)]
@@ -288,6 +299,48 @@ struct SanitizePairsArgs {
     ngram: usize,
 }
 
+#[derive(Args)]
+struct JudgePromptArgs {
+    /// Directory of pair_*.json manifests holding the pair to render.
+    #[arg(long, value_name = "DIR")]
+    pairs: PathBuf,
+
+    /// Which pair, by manifest stem (`pair_00`).
+    #[arg(long, value_name = "NAME")]
+    pair: String,
+
+    /// Which registered baseline condition to render.
+    #[arg(long, value_enum)]
+    arm: JudgeArmSelection,
+
+    /// The failing-run step `judge-stepwise` asks about. Ignored by the other arms.
+    #[arg(long, default_value_t = 0)]
+    candidate: usize,
+
+    /// The frozen prompt templates (rule 10). Their sha256s are pinned in-code against
+    /// notebook 069; the default resolves from the repo root.
+    #[arg(long, value_name = "DIR", default_value = "bench/judge_prompts")]
+    prompts: PathBuf,
+}
+
+/// `--arm`'s choices: the three conditions notebook 069 registered.
+#[derive(Clone, Copy, ValueEnum)]
+enum JudgeArmSelection {
+    Single,
+    Paired,
+    Stepwise,
+}
+
+impl From<JudgeArmSelection> for JudgeArm {
+    fn from(selection: JudgeArmSelection) -> Self {
+        match selection {
+            JudgeArmSelection::Single => Self::Single,
+            JudgeArmSelection::Paired => Self::Paired,
+            JudgeArmSelection::Stepwise => Self::Stepwise,
+        }
+    }
+}
+
 /// The `--split` choices — the two protocol sides plus `all` (the whole evaluated set, the
 /// walking-skeleton default; published tables come from `test`).
 #[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -328,6 +381,7 @@ fn main() -> ExitCode {
         Command::HalFetch(args) => hal_fetch_data(&args),
         Command::Sanitize(args) => sanitize_data(&args),
         Command::Consensus(args) => consensus_experiment(&args),
+        Command::JudgePrompt(args) => judge_prompt(&args),
     };
     outcome.unwrap_or_else(|err| {
         eprintln!("amberfork-bench: {err}");
@@ -754,5 +808,52 @@ fn report(args: &ReportArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
         results.coverage.evaluated,
     );
     println!("{}", results::render(&results));
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+/// Render one pair's frozen judge prompt (issue #46). A prep/inspection step, not a scoring
+/// run: stdout carries the exact bytes a provider will be sent, stderr the two hashes that
+/// identify them — the template revision (pinned against notebook 069) and the rendered
+/// prompt (half of the cassette key the next slice writes).
+///
+/// It exists so the question a baseline is asked is auditable *before* anyone spends money on
+/// answering it. A published table that says "we asked a frontier model" is worth exactly as
+/// much as a reader's ability to see what was asked.
+fn judge_prompt(args: &JudgePromptArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    // Prompts before pairs, the same ordering `run` uses for params: an arm that cannot
+    // establish which prompt revision it is running has nothing to render.
+    let prompts = PromptSet::load(&args.prompts)?;
+    let set = load_pairs(&args.pairs)?;
+    let pair = set
+        .pairs
+        .iter()
+        .find(|pair| pair.name == args.pair)
+        .ok_or_else(|| {
+            let available: Vec<&str> = set.pairs.iter().map(|pair| pair.name.as_str()).collect();
+            format!(
+                "no pair named {} in {} (evaluable: {})",
+                args.pair,
+                args.pairs.display(),
+                available.join(", ")
+            )
+        })?;
+
+    let arm = JudgeArm::from(args.arm);
+    let rendered = match arm {
+        JudgeArm::Single => prompts.render_single(&pair.failing),
+        JudgeArm::Paired => prompts.render_paired(&pair.reference, &pair.failing),
+        JudgeArm::Stepwise => prompts.render_stepwise(&pair.failing, args.candidate),
+    }?;
+
+    eprintln!(
+        "{} · {} · template {} sha256 {} · rendered sha256 {} · {} chars",
+        pair.name,
+        arm,
+        prompts.prompt(arm).source,
+        prompts.prompt(arm).sha256,
+        rendered.sha256,
+        rendered.text.chars().count(),
+    );
+    print!("{}", rendered.text);
     Ok(ExitCode::from(EXIT_OK))
 }
