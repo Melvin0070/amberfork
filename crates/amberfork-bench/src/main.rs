@@ -380,6 +380,11 @@ struct JudgeAskArgs {
     /// Override the provider's base URL (a local gateway, a proxy, a test double).
     #[arg(long, value_name = "URL")]
     base_url: Option<String>,
+
+    /// Ollama only: the context window to load the model with, in tokens. Unset means Ollama's
+    /// 4096 default, which silently truncates most `judge-paired` prompts.
+    #[arg(long, value_name = "TOKENS")]
+    num_ctx: Option<u32>,
 }
 
 #[derive(Args)]
@@ -430,6 +435,12 @@ struct JudgeRunArgs {
 
     #[arg(long, value_name = "URL")]
     base_url: Option<String>,
+
+    /// Ollama only: the context window to load the model with, in tokens. Unset means Ollama's
+    /// 4096 default, which silently truncates most `judge-paired` prompts; a pair whose prompt
+    /// fills the window is excluded rather than answered from a truncated question.
+    #[arg(long, value_name = "TOKENS")]
+    num_ctx: Option<u32>,
 
     /// Also write the full results document as JSON.
     #[arg(long, value_name = "FILE")]
@@ -1054,6 +1065,7 @@ fn build_localizer(
     base_url: Option<&str>,
     live: bool,
     decoding: Decoding,
+    num_ctx: Option<u32>,
 ) -> Result<Box<dyn Localizer>, Box<dyn std::error::Error>> {
     let api_key = match (live, provider.key_var()) {
         (true, Some(var)) => {
@@ -1081,7 +1093,11 @@ fn build_localizer(
             decoding,
         )),
         ProviderSelection::Ollama => {
-            Box::new(Ollama::new(UreqPost, base_url, model.to_string(), decoding))
+            let ollama = Ollama::new(UreqPost, base_url, model.to_string(), decoding);
+            Box::new(match num_ctx {
+                Some(num_ctx) => ollama.with_num_ctx(num_ctx),
+                None => ollama,
+            })
         }
     })
 }
@@ -1117,6 +1133,7 @@ fn judge_ask(args: &JudgeAskArgs) -> Result<ExitCode, Box<dyn std::error::Error>
         args.base_url.as_deref(),
         args.live,
         decoding,
+        args.num_ctx,
     )?;
     let mode = cassette_mode(args.live);
     let answer = judge_cassette::obtain(
@@ -1182,6 +1199,7 @@ fn judge_run(args: &JudgeRunArgs) -> Result<ExitCode, Box<dyn std::error::Error>
         args.base_url.as_deref(),
         args.live,
         decoding,
+        args.num_ctx,
     )?;
 
     let mut scored: Vec<(String, Pair)> = Vec::new();

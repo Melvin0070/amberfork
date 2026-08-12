@@ -329,21 +329,31 @@ fn gemini_body(prompt: &str, decoding: Decoding) -> serde_json::Value {
 
 /// Concatenates every text part rather than reading only the first: a response split across
 /// parts would otherwise lose its tail, and the answer contract puts the JSON object *last*.
+///
+/// An answered-but-empty completion returns `Ok("")`, not an error. A thinking model can spend
+/// its whole budget on reasoning tokens and emit no text — `finishReason` `STOP` or
+/// `MALFORMED_RESPONSE` over an empty `content`, with the request itself perfectly successful.
+/// That is the judge failing its own output contract, which 069 scores as a *miss*: "a judge
+/// that cannot obey its own output contract is worse at the task, not un-evaluable." Raising it
+/// as a transport error would make it a rule-4 exclusion instead, dropping a failure out of the
+/// denominator and flattering the arm. A malformed *envelope* — no candidate at all — is still
+/// an error, because that is the provider failing rather than the model.
 fn gemini_text(raw: &[u8]) -> Result<String, String> {
     let value: serde_json::Value =
         serde_json::from_slice(raw).map_err(|err| format!("response is not JSON: {err}"))?;
-    let parts = value
-        .pointer("/candidates/0/content/parts")
+    let candidate = value
+        .pointer("/candidates/0")
+        .ok_or_else(|| format!("no /candidates/0 in response: {value}"))?;
+    let Some(parts) = candidate
+        .pointer("/content/parts")
         .and_then(serde_json::Value::as_array)
-        .ok_or_else(|| format!("no /candidates/0/content/parts in response: {value}"))?;
-    let text: String = parts
+    else {
+        return Ok(String::new());
+    };
+    Ok(parts
         .iter()
         .filter_map(|part| part.get("text").and_then(serde_json::Value::as_str))
-        .collect();
-    if text.is_empty() {
-        return Err(format!("no text parts in response: {value}"));
-    }
-    Ok(text)
+        .collect())
 }
 
 /// The no-API-key arm: a local Ollama server, over the same `/api/generate` shape the rest of
@@ -353,6 +363,7 @@ pub struct Ollama<P: Post> {
     base_url: String,
     model: String,
     decoding: Decoding,
+    num_ctx: Option<u32>,
 }
 
 impl<P: Post> Ollama<P> {
@@ -367,7 +378,20 @@ impl<P: Post> Ollama<P> {
             base_url: base_url.into().trim_end_matches('/').to_string(),
             model: model.into(),
             decoding,
+            num_ctx: None,
         }
+    }
+
+    /// Set the context window Ollama loads the model with, in tokens.
+    ///
+    /// Load-bearing for this baseline, not a tuning knob. Ollama's default window is 4096 and
+    /// it silently drops whatever does not fit — on the dev split 19 of 23 `judge-paired`
+    /// prompts are larger than that, so an unset window answers a question the judge only
+    /// partly saw and reports it as an ordinary miss. 069 froze the payload cap precisely so
+    /// no provider could truncate a prompt out from under the protocol.
+    pub fn with_num_ctx(mut self, num_ctx: u32) -> Self {
+        self.num_ctx = Some(num_ctx);
+        self
     }
 }
 
@@ -383,9 +407,9 @@ impl<P: Post> Localizer for Ollama<P> {
     }
     fn ask(&self, prompt: &str) -> Result<String, PostError> {
         let url = format!("{}/api/generate", self.base_url);
-        let body = ollama_body(&self.model, prompt, self.decoding);
+        let body = ollama_body(&self.model, prompt, self.decoding, self.num_ctx);
         let raw = self.post.post(&url, &[], body.to_string().as_bytes())?;
-        ollama_text(&raw).map_err(|msg| PostError {
+        ollama_text(&raw, self.num_ctx).map_err(|msg| PostError {
             url,
             msg,
             retryable: false,
@@ -393,8 +417,16 @@ impl<P: Post> Localizer for Ollama<P> {
     }
 }
 
-fn ollama_body(model: &str, prompt: &str, decoding: Decoding) -> serde_json::Value {
+fn ollama_body(
+    model: &str,
+    prompt: &str,
+    decoding: Decoding,
+    num_ctx: Option<u32>,
+) -> serde_json::Value {
     let mut options = serde_json::json!({ "num_predict": decoding.max_output_tokens });
+    if let Some(num_ctx) = num_ctx {
+        options["num_ctx"] = serde_json::json!(num_ctx);
+    }
     if let Some(temperature) = decoding.temperature {
         options["temperature"] = serde_json::json!(temperature);
     }
@@ -406,9 +438,28 @@ fn ollama_body(model: &str, prompt: &str, decoding: Decoding) -> serde_json::Val
     })
 }
 
-fn ollama_text(raw: &[u8]) -> Result<String, String> {
+/// Reads the answer, and refuses one the model never fully saw.
+///
+/// Ollama reports how many prompt tokens it actually evaluated. A count that reaches the
+/// window means the prompt was cut to fit, and the reply answers a truncated question. That is
+/// our infrastructure failing, not the method failing, so it must surface as an error the run
+/// tabulates as an exclusion — scoring it as a miss would credit the arm's loss to the judge.
+fn ollama_text(raw: &[u8], num_ctx: Option<u32>) -> Result<String, String> {
     let value: serde_json::Value =
         serde_json::from_slice(raw).map_err(|err| format!("response is not JSON: {err}"))?;
+    if let (Some(num_ctx), Some(evaluated)) = (
+        num_ctx,
+        value
+            .get("prompt_eval_count")
+            .and_then(serde_json::Value::as_u64),
+    ) {
+        if evaluated >= u64::from(num_ctx) {
+            return Err(format!(
+                "prompt filled the {num_ctx}-token context window ({evaluated} evaluated): \
+                 the model saw a truncated prompt"
+            ));
+        }
+    }
     value
         .get("response")
         .and_then(serde_json::Value::as_str)
@@ -605,6 +656,48 @@ mod tests {
         );
     }
 
+    /// Observed live on `pair_50`, reproducibly and across two different API keys: a successful
+    /// request whose candidate carries no content at all. The model answered nothing; it did
+    /// not fail to be reached. Scoring it as a miss keeps the failure in the denominator.
+    #[test]
+    fn an_empty_completion_is_an_unparseable_answer_not_a_transport_failure() {
+        let post = FakePost::ok(
+            r#"{"candidates":[{"content":{},"finishReason":"MALFORMED_RESPONSE","index":0}],"usageMetadata":{"thoughtsTokenCount":62}}"#,
+        );
+        let judge = Gemini::new(
+            &post,
+            "https://gemini.test",
+            "gemini-3.6-flash",
+            "k",
+            Decoding::registered(2000),
+        );
+
+        assert_eq!(
+            judge
+                .ask("PROMPT")
+                .expect("an empty answer is still an answer"),
+            ""
+        );
+    }
+
+    /// The other side of that line: a reply with no candidate at all is the provider failing,
+    /// which stays an error and so stays a rule-4 exclusion.
+    #[test]
+    fn a_reply_with_no_candidate_is_still_an_error() {
+        let post = FakePost::ok(r#"{"promptFeedback":{"blockReason":"OTHER"}}"#);
+        let judge = Gemini::new(
+            &post,
+            "https://gemini.test",
+            "gemini-3.6-flash",
+            "k",
+            Decoding::registered(2000),
+        );
+
+        let err = judge.ask("PROMPT").expect_err("no candidate");
+
+        assert!(err.msg.contains("no /candidates/0"), "got: {}", err.msg);
+    }
+
     #[test]
     fn ollama_speaks_the_workspace_local_provider_shape() {
         let post = FakePost::ok(r#"{"response":"{\"step\": 1}","done":true}"#);
@@ -627,6 +720,46 @@ mod tests {
         assert_eq!(body["stream"], false);
         assert_eq!(body["options"]["temperature"], 0.0);
         assert_eq!(body["options"]["num_predict"], 2000);
+        assert!(
+            body["options"].get("num_ctx").is_none(),
+            "an unset window stays unset: {body}"
+        );
+    }
+
+    #[test]
+    fn ollama_sends_the_context_window_it_was_given() {
+        let post = FakePost::ok(r#"{"response":"{\"step\": 1}","prompt_eval_count":27595}"#);
+        let judge = Ollama::new(
+            &post,
+            "http://local",
+            "qwen3:8b",
+            Decoding::registered(2000),
+        )
+        .with_num_ctx(40960);
+
+        judge.ask("PROMPT").expect("scripted reply");
+
+        assert_eq!(post.call(0).2["options"]["num_ctx"], 40960);
+    }
+
+    /// The whole point of setting a window: a prompt that overflows it must be a loud failure.
+    /// Ollama answers a truncated prompt with a perfectly well-formed reply, so without this
+    /// check the arm would publish a plausible number for a question the model never saw.
+    #[test]
+    fn a_prompt_that_fills_the_window_fails_instead_of_answering_a_truncated_question() {
+        let post = FakePost::ok(r#"{"response":"{\"step\": 3}","prompt_eval_count":40960}"#);
+        let judge = Ollama::new(
+            &post,
+            "http://local",
+            "qwen3:8b",
+            Decoding::registered(2000),
+        )
+        .with_num_ctx(40960);
+
+        let err = judge.ask("A VERY LONG PROMPT").expect_err("truncated");
+
+        assert!(err.msg.contains("truncated prompt"), "got: {}", err.msg);
+        assert!(!err.retryable, "a re-ask cannot make the prompt shorter");
     }
 
     #[test]
