@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "487ce5696e546051e691e0534a1c003dd0c18859e1eb07d8ab6f7b28b61c6be1",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "0fbca6f42920ea6f6cd71baac303e2a7eaf7d4069951d4f785d40eda215cb48d",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524209,
+  "response": "Step 23 is a correct verification attempt using the relevant Wikipedia diff URL and is not itself the cause of failure.\n{\"decisive\": false}"
+}

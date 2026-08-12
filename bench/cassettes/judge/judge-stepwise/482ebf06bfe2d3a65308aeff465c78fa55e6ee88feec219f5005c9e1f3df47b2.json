@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "482ebf06bfe2d3a65308aeff465c78fa55e6ee88feec219f5005c9e1f3df47b2",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "24f3d64a51fd69b990826a460a30eebeff712bacbd45d1bbaf783b38712ae815",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523901,
+  "response": "Step 36 is not the decisive error because it merely repeats an unsuccessful search on an irrelevant document, while the run had already gone wrong by accepting an unverified answer and pursuing the wrong source.  \n{\"decisive\": false}"
+}

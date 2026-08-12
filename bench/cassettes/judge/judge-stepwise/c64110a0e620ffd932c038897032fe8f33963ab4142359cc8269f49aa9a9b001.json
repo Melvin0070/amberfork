@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c64110a0e620ffd932c038897032fe8f33963ab4142359cc8269f49aa9a9b001",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "929da709bfa6aedfea41db2d6f76f6520ef05aa1b981f6ea14f89baf5d099ba8",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524042,
+  "response": "Step 72 is not the decisive error because it correctly restates the answer “A Nightmare on Elm Street,” and no earlier shown step causes the run to fail.  \n{\"decisive\": false}"
+}

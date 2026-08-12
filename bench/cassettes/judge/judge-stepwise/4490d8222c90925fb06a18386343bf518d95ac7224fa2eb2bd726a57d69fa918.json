@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4490d8222c90925fb06a18386343bf518d95ac7224fa2eb2bd726a57d69fa918",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "8bad40d72b582cbb098293db539baa56f1c370a4dc812528c842f840dc408182",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524027,
+  "response": "Step 68 is not a decisive error because it correctly restates the likely answer, “A Nightmare on Elm Street,” rather than introducing a new mistake.\n{\"decisive\": false}"
+}

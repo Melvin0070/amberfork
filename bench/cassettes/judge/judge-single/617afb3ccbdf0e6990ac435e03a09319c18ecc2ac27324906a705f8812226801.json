@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "617afb3ccbdf0e6990ac435e03a09319c18ecc2ac27324906a705f8812226801",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "4a9992c2545f08ae07c561570837e8c9bc5e4fc2ac84a1e1ed5acbada9c25a26",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517365,
+  "response": "Step 4 is the earliest decisive error: before obtaining any tool evidence, the agent falsely asserted that the article used “mis-transcription” rather than “mis-transmission” and prematurely selected “mis-transmission” as the mismatch. The verified source instead uses “veil of print” and “mis-transmission,” so the citation’s incorrect word is “cloak.”\n\n{\"step\":4}"
+}

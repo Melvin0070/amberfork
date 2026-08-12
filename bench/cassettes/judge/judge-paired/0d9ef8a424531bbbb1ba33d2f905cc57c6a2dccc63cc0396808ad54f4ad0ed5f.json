@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "0d9ef8a424531bbbb1ba33d2f905cc57c6a2dccc63cc0396808ad54f4ad0ed5f",
+  "provider": "gemini",
+  "model": "gemini-3.6-flash",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "1e62c3835d892d5e78ff892249e28cbb27ac8fcaba0e7b55b00aae5f141170be",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523637,
+  "response": "In step 54 of the failing run, the agent attempts to inspect the PDF containing the book by calling `inspect_file_as_text` with the relative file name `\"1004106.pdf\"` (and later `\"1004106.pdf?sequence=1&isAllowed=y\"`) instead of supplying the full HTTP URL (`"
+}

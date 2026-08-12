@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "070be1cd42dd4833d4768a00a8393fba6877dc4cfb8d016be4c4a903cc6c8c6e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "ad956ffc472eeb5cd1967a5d45a3f94ef3556bcc89974a3de80dd5725773b941",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524544,
+  "response": "Step 11 merely restates the previously obtained answer, and 1937 is the correct year according to the USGS, so it is not the decisive error.\n{\"decisive\": false}"
+}

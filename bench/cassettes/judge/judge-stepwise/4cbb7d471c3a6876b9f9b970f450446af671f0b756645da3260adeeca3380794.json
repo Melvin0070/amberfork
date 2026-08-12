@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4cbb7d471c3a6876b9f9b970f450446af671f0b756645da3260adeeca3380794",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f350f5f0fb5c4f84917702c025d87deaa692502de4fe8064c929f197d3872540",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524107,
+  "response": "Step 0 is not a decisive error because “Here be dragons” appears to provide the requested phrase without punctuation.  \n{\"decisive\": false}"
+}

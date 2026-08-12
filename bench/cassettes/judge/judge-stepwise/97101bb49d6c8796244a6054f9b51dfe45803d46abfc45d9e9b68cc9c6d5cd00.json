@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "97101bb49d6c8796244a6054f9b51dfe45803d46abfc45d9e9b68cc9c6d5cd00",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "c8738524043adf54cbfbf90caf41be5df591f7425ffef26253cf7bb08d30c28d",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524751,
+  "response": "Step 2 is a reasonable plan to locate and verify the quotation, and it does not itself introduce an error that would cause failure.  \n{\"decisive\": false}"
+}

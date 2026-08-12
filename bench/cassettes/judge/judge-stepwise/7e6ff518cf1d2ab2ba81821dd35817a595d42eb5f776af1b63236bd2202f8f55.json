@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "7e6ff518cf1d2ab2ba81821dd35817a595d42eb5f776af1b63236bd2202f8f55",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "5d8328a3057e22fc6e5272abcb44f4df001f9b4d3f8502dfbc3997e8ab39633b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524356,
+  "response": "Step 1 is a correct preparatory survey that identifies the need to determine the cuneiform signs’ values and apply the appropriate sexagesimal positional rules, without introducing a decisive error.\n{\"decisive\": false}"
+}

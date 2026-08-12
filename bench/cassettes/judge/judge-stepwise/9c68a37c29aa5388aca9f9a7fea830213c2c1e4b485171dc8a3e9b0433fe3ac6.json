@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9c68a37c29aa5388aca9f9a7fea830213c2c1e4b485171dc8a3e9b0433fe3ac6",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "bdd62d86fab70f37b7df98979ab09fd033a08dbeeb01bae2bee5d16c57b1a303",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524644,
+  "response": "False: step 6 merely repeats the unsupported answer “Giovanni Castiglione,” while the decisive error occurred earlier when that answer was asserted without verifying the portrait and consecrators.\n\n{\"decisive\": false}"
+}

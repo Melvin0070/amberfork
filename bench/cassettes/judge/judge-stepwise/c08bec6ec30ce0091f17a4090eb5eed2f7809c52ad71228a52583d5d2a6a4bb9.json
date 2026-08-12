@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c08bec6ec30ce0091f17a4090eb5eed2f7809c52ad71228a52583d5d2a6a4bb9",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7dc50bb69d8bda7ae2cf87160a5fd8c1d9d480f6637ebaab8f1d94fbc6ddffc8",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524312,
+  "response": "Step 51 merely retries searching the diff for deletion markup and is not itself the decisive error; the run had already committed to an insufficiently verified answer earlier.  \n{\"decisive\": false}"
+}

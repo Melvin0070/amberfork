@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "13337f93b737408c332a231c0c838475f8c0720d0175bad7e8c22718dfe23103",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "c6421d5107ff08a6006fe6a726021cb0aa2d53a67f4ca6cc154082447c6188c6",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524352,
+  "response": "Step 0 provides the answer “607,” but there is no evidence in the shown content that this conversion is incorrect, so it is not demonstrably the decisive error.  \n{\"decisive\": false}"
+}

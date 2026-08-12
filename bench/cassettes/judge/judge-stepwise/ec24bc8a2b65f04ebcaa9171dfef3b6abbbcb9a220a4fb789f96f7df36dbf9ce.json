@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "ec24bc8a2b65f04ebcaa9171dfef3b6abbbcb9a220a4fb789f96f7df36dbf9ce",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d2b973f6c406e6bb83001dd763d244de7310fd29a4351a3cfd1ae6fd2aa4fd81",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523458,
+  "response": "Step 3 merely repeats the previously obtained answer “Louvrier,” so any decisive error had already occurred earlier or the answer itself was wrong.  \n{\"decisive\": false}"
+}

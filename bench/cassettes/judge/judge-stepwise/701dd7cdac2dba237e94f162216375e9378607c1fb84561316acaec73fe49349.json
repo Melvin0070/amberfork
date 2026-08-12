@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "701dd7cdac2dba237e94f162216375e9378607c1fb84561316acaec73fe49349",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d2591bf58d04541d767609166f42d4e45c9716f02cb781580194767072e4b625",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524869,
+  "response": "Step 38 is merely an unsuccessful search retry and does not itself introduce a decisive error; the run had already reached the likely answer of Annie Levin earlier.  \n{\"decisive\": false}"
+}

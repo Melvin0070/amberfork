@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "38121f94a0ac28f5d467db9a150ed163d3e0ef7458001f179cfa5169ab46e915",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "81a075c8223b7d689a9e125e51d293d431bcab50aacbbe6f4b456411e008bc06",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786516968,
+  "response": "Step 3 is the first substantive point where the title “A Nightmare on Elm Street” is asserted as fact without textual evidence from Valentina Re’s contribution. The later searches never locate the cited passage, yet this unsupported identification is repeatedly propagated into the final answer.\n\n{\"step\": 3}"
+}

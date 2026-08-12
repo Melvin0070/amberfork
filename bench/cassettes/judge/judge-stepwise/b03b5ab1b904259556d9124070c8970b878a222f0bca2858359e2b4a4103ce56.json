@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b03b5ab1b904259556d9124070c8970b878a222f0bca2858359e2b4a4103ce56",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7e88fef949a67bb3087cecc3b4d8ff9e8195769e9fee2f66a3895a637f74c5ef",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523982,
+  "response": "Step 56 is not the decisive error because it contains no substantive action or conclusion and merely records an empty observation after earlier unsupported searching and repetition.  \n{\"decisive\": false}"
+}

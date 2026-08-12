@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b51913363e418049fcc11e37a4de9c100730f48ab025b2c68622ba565b3169c6",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b60cfbdd8e0efbf0fb6447bf505c737e8bddd8c92bd03615e2498fc03bdc3c20",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524318,
+  "response": "Step 53 is not the decisive error because it merely displays deleted diff content while the run had already identified the likely phrase earlier.  \n{\"decisive\": false}"
+}

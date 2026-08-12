@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d3fd88ce12ed4fce9a8447548acef88506c34d4ea0c1a185e377364144f54c63",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "ef4ad8f6e8b5fa16c176548c2c9d3d9a7deb2b18794efc12cdc508675154b60f",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524920,
+  "response": "Step 1 is a valid preparatory survey that identifies the need to verify the Connected Papers bubble-sizing metric and does not introduce a decisive error.  \n{\"decisive\": false}"
+}

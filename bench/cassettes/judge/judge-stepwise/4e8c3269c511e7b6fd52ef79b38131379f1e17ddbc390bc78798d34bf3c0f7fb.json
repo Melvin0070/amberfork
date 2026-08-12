@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4e8c3269c511e7b6fd52ef79b38131379f1e17ddbc390bc78798d34bf3c0f7fb",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "5dab70677deb2891ebfcccc585ab8d08313ce8e9e1916f2809391ef59b3cdd3e",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523508,
+  "response": "False—step 20 merely summarizes known and outstanding facts, while the run had already failed to verify the answer earlier.  \n{\"decisive\": false}"
+}

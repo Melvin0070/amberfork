@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b6c16e1c8c20f8263527ae52ecb27c7120aaefd9401a180d8714a1b2cc560034",
+  "provider": "gemini",
+  "model": "gemini-3.6-flash",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "76b4931f559dda31c7a9905d9d8cc56fd87aa309489a7975d940b2e5955a6188",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523663,
+  "response": "In step 4 of the failing run, the model attempts to compute the final answer immediately without calling any tools to research Washington state's county seats or retrieve their official 2020 Census populations. It assumes a baseline calculation using an unverified population value of 1007 for the smallest county seat (instead of looking up Cathlamet town, which has a 2020 Census population of 560), leading directly to the wrong final output.\n\n{\"step\": 4}"
+}

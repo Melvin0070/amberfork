@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "2e48bca946cb51cf1a7d5df5ab86d22e3c834983debf683db96ff70ce1b16f70",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "a43efaeb676a800576e2f8362ec0aa7478ceec2851931af6ec1777600c75a384",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523511,
+  "response": "Step 21 is a reasonable recovery plan to search further and does not itself introduce the decisive error; the run had already relied on an unverified surname earlier.  \n{\"decisive\": false}"
+}

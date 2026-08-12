@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "fc6252b1ff3d987825f5403605d7c46876a5e68b4ae4f777be574c395cddd847",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7102ffe08b6b66fbbd6ac6fa2fccc3052dff4cb6b836289890019547a0888f7b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524780,
+  "response": "Step 10 is a correct web-search action and does not introduce a new error; the answer had already been identified as Annie Levin.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6eb6a41f5025218d57a78cb95e2624d59e39c3c70848a3410a07dd654d1c2316",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f56f0edb55b311e749a5545a5dc9633086983baa5bbb461667622be0990d63c3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523823,
+  "response": "Step 16 is not the decisive error because it merely retrieves the page requested in step 15, while the answer had already been asserted earlier.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "1f7fd943c64f3960432d60e585279a0647b40b17c15e4012d36bbcd2073feb57",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "06148987f25bd837a090f255357a02115be7405cadd3a06b94b4332e40e00525",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523703,
+  "response": "Step 5 is correct because it submits “right,” the opposite of “left,” and no earlier step is erroneous.  \n{\"decisive\": false}"
+}

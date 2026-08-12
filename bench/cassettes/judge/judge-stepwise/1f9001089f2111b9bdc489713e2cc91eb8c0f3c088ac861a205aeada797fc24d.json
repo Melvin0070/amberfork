@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "1f9001089f2111b9bdc489713e2cc91eb8c0f3c088ac861a205aeada797fc24d",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "900fc87678b395a57c109cdf0b227f173f05ae043e58a81401931a5c03a19484",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523546,
+  "response": "Step 34 is merely a restatement of known and unresolved facts, while the run had already failed to verify the answer earlier.  \n{\"decisive\": false}"
+}

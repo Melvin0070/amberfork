@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "2a5a650d3790e9f32ab6b58fb4468b1fafb7d0eb855f4ad58fbd60b07cd52229",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "bd1e4d908c49507a09860ddb80a0af5f1cdb7e08fc62cb81021cfafa78b57b9a",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524749,
+  "response": "Step 1 is a correct preparatory survey that identifies the date-specific Merriam-Webster page and the quoted writer as facts to verify, so it does not cause the failure.  \n{\"decisive\": false}"
+}

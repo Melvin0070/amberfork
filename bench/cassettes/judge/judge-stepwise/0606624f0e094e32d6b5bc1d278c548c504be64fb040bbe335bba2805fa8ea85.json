@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "0606624f0e094e32d6b5bc1d278c548c504be64fb040bbe335bba2805fa8ea85",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "8e15d4d1b9e7af599e6874647c6fdb89d83b8fe94972914b5d20d48049d7d0d3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523528,
+  "response": "Step 27 is merely another page-down attempt and is not itself the decisive error; the run had already failed to locate or verify the relevant passage earlier.  \n{\"decisive\": false}"
+}

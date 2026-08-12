@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c76396c14963072a86962c8016c680ac2096e750b24a574c7a5b8637ca127b9f",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "96544839782c072be060288ff76fc63d3408f9caf0cbcde829b09e8bc3180142",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524056,
+  "response": "Step 0 is the decisive error because it answers “Guava” instead of addressing the three listed questions, whose answers are 8, green/cyan, and 24.  \n{\"decisive\": true}"
+}

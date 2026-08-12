@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "7fe6540aedb27de377665df9cedddd6f70ab32f9acd9b31d92a7c144a49c227d",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "afc407a1afa4c8ea6eacaa00eba57d0b5e99ba85c0cf41f063c82988ab907406",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523496,
+  "response": "Step 16 is correct because it accurately reports that the searched phrase is absent; the run had already gone wrong by accepting the unverified surname and likely wrong source page.  \n{\"decisive\": false}"
+}

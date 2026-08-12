@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "42e4f24d3fa6844b46f78e66798786321388cf2ffb4e991358dc2fd229a5ccf3",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "9c2dc676b23c5eedbc80efa984367c93d0540a093006457d40907c2c5becb89c",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524822,
+  "response": "Step 24 merely repeats the attempt to navigate the page and is not itself a decisive error; the earlier search had already identified the writer as Annie Levin.  \n{\"decisive\": false}"
+}

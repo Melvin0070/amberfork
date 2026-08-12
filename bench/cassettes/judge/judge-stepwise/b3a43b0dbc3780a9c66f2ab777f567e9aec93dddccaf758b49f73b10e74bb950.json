@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b3a43b0dbc3780a9c66f2ab777f567e9aec93dddccaf758b49f73b10e74bb950",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "2a5eae2739381666ed67737fc6605675e3766cb176e735da9ac5ce35d676ed13",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523710,
+  "response": "Step 0 is not the decisive error because it provides the apparently correct volume, 0.1777 m³, supported by the cited University of Leicester paper.  \n{\"decisive\": false}"
+}

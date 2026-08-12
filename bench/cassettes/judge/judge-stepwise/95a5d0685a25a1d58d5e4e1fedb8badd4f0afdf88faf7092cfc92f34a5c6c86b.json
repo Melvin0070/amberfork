@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "95a5d0685a25a1d58d5e4e1fedb8badd4f0afdf88faf7092cfc92f34a5c6c86b",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b29f70522c143b0b96d34b2a8c9964d95540a8e46e5848117733a71d070a952a",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523761,
+  "response": "Step 0 is correct because “A Nightmare on Elm Street” is the complete title matching the described film.  \n{\"decisive\": false}"
+}

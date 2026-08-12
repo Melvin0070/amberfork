@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b9e605e5cd65b0ff158612acf6a5e206305b81840e20454126a6b5ab5fbcc3c7",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "c570db4b94c754b33eadd71a11c4c9fbd23b34d9fd3ef6e58fc3197cac344485",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524361,
+  "response": "Step 2 is not a decisive error because it proposes identifying the signs, researching their values, applying the correct positional rules, calculating, and verifying the decimal conversion.  \n{\"decisive\": false}"
+}

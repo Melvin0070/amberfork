@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "dd0eac27160c8f944125a435e688a3e68e1bacab4d28cc2efed50e0834f6d01a",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "01425822bfd31447a37a8f840388f0c06c08f0545a70979221633861c8321759",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524571,
+  "response": "Step 1 is a correct preparatory survey that identifies the required facts and research steps, so it is not itself the decisive error.  \n{\"decisive\": false}"
+}

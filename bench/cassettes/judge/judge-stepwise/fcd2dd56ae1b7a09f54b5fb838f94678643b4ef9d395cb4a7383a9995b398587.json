@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "fcd2dd56ae1b7a09f54b5fb838f94678643b4ef9d395cb4a7383a9995b398587",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "787d0c333a773ca9688cf9c71f24837adc17ea98ee4c7cc3d91f0edde0d2b093",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524239,
+  "response": "Step 31 is merely an unsuccessful page-down attempt and is not the earliest decisive error; the run had already relied on an unverified answer.  \n{\"decisive\": false}"
+}

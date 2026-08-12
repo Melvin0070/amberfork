@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9e0ea38a8d4a620f2bd43b0a4ef9024a3841c6e0b4721d63a75918f65070e826",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "238bbed3149c8f1308f42a93acf9f295544bfca57e3ad91377c032712c1e5b0b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523656,
+  "response": "Step 0 appears to provide the requested semicolon-separated EC numbers in alphabetical order, so it is not a decisive error.\n{\"decisive\": false}"
+}

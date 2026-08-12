@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "702fe458f2be67ef9d0eb64f06c120a7633a79abb1cbbe09ce6b321c8ff7e4d4",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "226b30f1572f410c95c41d1ea194c597af1d6ad8cb3163332d0c5b38c780def8",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523608,
+  "response": "Step 54 merely restates the previously established answer, and the surname “Louvr ier” is supported by the cited exercise text.  \n{\"decisive\": false}"
+}

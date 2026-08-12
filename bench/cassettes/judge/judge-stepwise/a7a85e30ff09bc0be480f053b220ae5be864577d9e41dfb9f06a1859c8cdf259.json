@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "a7a85e30ff09bc0be480f053b220ae5be864577d9e41dfb9f06a1859c8cdf259",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "1cc1f890d994487e55d53d80c21cdbf7ea01aa860f2c982652ba1146ad7ed620",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523666,
+  "response": "Step 2 is a correct, logically ordered plan for locating the paper, identifying the relevant chemicals, verifying their EC numbers, and formatting the result.  \n{\"decisive\": false}"
+}

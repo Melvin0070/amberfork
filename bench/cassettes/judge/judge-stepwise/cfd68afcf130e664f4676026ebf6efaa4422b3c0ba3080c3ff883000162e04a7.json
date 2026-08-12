@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "cfd68afcf130e664f4676026ebf6efaa4422b3c0ba3080c3ff883000162e04a7",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d9b291f1e179952a30caf28fd102ee498726b4f7d7ea7ed3d8d66fdbfa8d1158",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524800,
+  "response": "Step 17 is not the decisive error because the answer “Annie Levin” had already been identified and supported in earlier steps; step 17 merely reflects an unsuccessful search retry.\n\n{\"decisive\": false}"
+}

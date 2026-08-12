@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "490f8dc86981b2a17078fd63b113402b72af7fff75d336dcd5cddba2792e5682",
+  "provider": "ollama",
+  "model": "qwen3:8b",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "1e62c3835d892d5e78ff892249e28cbb27ac8fcaba0e7b55b00aae5f141170be",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786558678,
+  "response": "The failing run's decisive error occurred at step 10, where the agent attempted to search for \"dream world\" on the Academia.edu document but found no results, leading to an inability to locate the specific section discussing metalepsis. This failure to access critical content diverged from the reference run's success in retrieving the exact citation via PDF analysis, committing the run to an incomplete verification process. \n\n{\"step\": 10}"
+}

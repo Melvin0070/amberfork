@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "10e6158a40ecb4ee0ef49f6335c7b19b8b27b63b508720c721c2007d8b353e78",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "ddea1e5fcf35ab9d2caf991b11e0e48434988aa7f369c2da4cc4db525caa4e66",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517374,
+  "response": "Step 4 is the first decisive error: without any successful source extraction, it invents that the article says “mis-transcription” rather than “mis-transmission” and submits “mis-transmission.” The verified source instead uses “veil of print” and retains “mis-transmission,” so the mismatched citation word is “cloak.”\n\n{\"step\":4}"
+}

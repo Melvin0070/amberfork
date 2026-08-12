@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "cfaf9b5f21a45bacfb7b52396ac2eb2ee8cf90f4524110485091b8b78d032a1d",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f7bbf83aca49509e4ea8ce990b2c06f126ecbd5c67e75993bc917bc10b0028cb",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523713,
+  "response": "Step 1 is a correct preparatory survey and does not introduce a decisive error; the earlier step had already supplied the likely answer.  \n{\"decisive\": false}"
+}

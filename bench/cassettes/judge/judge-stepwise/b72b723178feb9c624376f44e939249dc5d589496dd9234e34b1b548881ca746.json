@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b72b723178feb9c624376f44e939249dc5d589496dd9234e34b1b548881ca746",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "e7d7c412d4996aa83c8228a688b94137cc4bf6f12503d4fd6deb9545549167cf",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523705,
+  "response": "Step 6 is correct because it accurately restates the answer “right,” which is the opposite of “left,” and no earlier shown step is erroneous.\n\n{\"decisive\": false}"
+}

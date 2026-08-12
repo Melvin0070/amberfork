@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6f640d7c5fcb0ad575099bb23908ffa356f296db87d01aed335afe1878150fbc",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "6ba4de734a87de32d2e77762aaf8329b70b6d167a40ab6dce99e5c8173fcaf74",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523758,
+  "response": "Step 16 is correct because it concisely restates the previously verified answer, 0.1777 m³, without introducing an error.\n{\"decisive\": false}"
+}

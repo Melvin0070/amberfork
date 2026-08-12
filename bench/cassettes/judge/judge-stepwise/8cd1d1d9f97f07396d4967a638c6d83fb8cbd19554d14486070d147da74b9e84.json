@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "8cd1d1d9f97f07396d4967a638c6d83fb8cbd19554d14486070d147da74b9e84",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "cf782ff84b3fa3b106f30ff1b3f970cebd2ce4a4617bba45cd2d787a04f35204",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523896,
+  "response": "Step 34 merely summarizes known and outstanding facts and does not introduce the decisive error; the run had already relied on an unverified answer earlier.  \n{\"decisive\": false}"
+}

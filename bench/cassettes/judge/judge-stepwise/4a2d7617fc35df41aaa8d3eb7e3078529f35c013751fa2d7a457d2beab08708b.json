@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4a2d7617fc35df41aaa8d3eb7e3078529f35c013751fa2d7a457d2beab08708b",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "35c7faf3d906df1b7e4e430a809fd5acc3636250f70eddcce18559f22e386aa9",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523853,
+  "response": "Step 24 is merely an unproductive search on an unrelated document, while the run had already gone wrong by asserting an unverified answer and pursuing irrelevant sources.  \n{\"decisive\": false}"
+}

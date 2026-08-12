@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "91479ebad0e26d32e565e214a2eaf6d45168a28d942dbe3bc7b9d08cdcd43f36",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "35aa06fd23ac1c2971e7e17be40b77d91377cc055c25cc7504423305a51ed39c",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523742,
+  "response": "Step 11 is not decisive because it contains no substantive action or incorrect content; any failure must have occurred earlier or later.  \n{\"decisive\": false}"
+}

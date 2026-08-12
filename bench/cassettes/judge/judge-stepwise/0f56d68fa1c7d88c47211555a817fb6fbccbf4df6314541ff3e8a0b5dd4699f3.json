@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "0f56d68fa1c7d88c47211555a817fb6fbccbf4df6314541ff3e8a0b5dd4699f3",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "a2be48126b519c2f5880128d326af603e8ae00bd9a53426d1f6c56fa77cc4375",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523820,
+  "response": "False—step 15 merely revisits a page already accessed, while the run’s answer had been identified earlier and no decisive error occurs at step 15.\n{\"decisive\": false}"
+}

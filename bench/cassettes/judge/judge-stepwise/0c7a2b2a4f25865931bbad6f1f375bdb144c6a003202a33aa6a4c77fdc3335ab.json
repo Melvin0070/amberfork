@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "0c7a2b2a4f25865931bbad6f1f375bdb144c6a003202a33aa6a4c77fdc3335ab",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "3fe245e21f851692ee5c0dfa6ff453fdf2192371f3872963bccabd8c00014a91",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523946,
+  "response": "Step 47 merely repeats unsuccessful page-navigation attempts, while the run had already gone wrong by relying on an irrelevant source and an unverified answer.  \n{\"decisive\": false}"
+}

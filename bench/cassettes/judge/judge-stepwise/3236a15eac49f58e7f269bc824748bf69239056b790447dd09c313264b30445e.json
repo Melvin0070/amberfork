@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "3236a15eac49f58e7f269bc824748bf69239056b790447dd09c313264b30445e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "4924815a9a877b5af53c4115e81fbe6d7f4b385d626cb13f165ccaf1bcf1aa5e",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523913,
+  "response": "False—the run had already gone decisively wrong earlier by relying on an unverified answer and then pursuing an unrelated Academia.edu document, so step 39 merely repeats an unsuccessful search.  \n{\"decisive\": false}"
+}

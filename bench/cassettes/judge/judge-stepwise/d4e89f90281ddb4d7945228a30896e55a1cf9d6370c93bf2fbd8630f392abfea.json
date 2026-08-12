@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d4e89f90281ddb4d7945228a30896e55a1cf9d6370c93bf2fbd8630f392abfea",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "92f0110a746c86c8caaf4c9218351d2d5294a2bd62f2f486c05c971a28c2d2cd",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524522,
+  "response": "Step 8 merely repeats earlier unsuccessful requests to the search agent and does not introduce the decisive error, since the run had already failed to obtain or verify the relevant USGS evidence.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "5ae0d9440807b0d84dda59bb795d522b0accc16022afa21ba3955257e6fae8dd",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "fd8795b9ab7605dd643b8b77edef8ac1f7e3d3a84db1d80bbbb6e97de786a680",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524840,
+  "response": "Step 30 is not the decisive error because it merely repeats the page-down action without introducing incorrect information; any failure occurred elsewhere or later.  \n{\"decisive\": false}"
+}

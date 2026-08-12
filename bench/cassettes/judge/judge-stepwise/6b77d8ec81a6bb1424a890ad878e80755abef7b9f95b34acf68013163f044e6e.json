@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6b77d8ec81a6bb1424a890ad878e80755abef7b9f95b34acf68013163f044e6e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "760bf43e85cd6c5dfdfe1241fcb2638378302db6270f27b1a2fbd6882e653e58",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523985,
+  "response": "False—step 57 merely retries the document inspection with a modified file path, while the run had already failed to verify its unsupported answer earlier.  \n{\"decisive\": false}"
+}

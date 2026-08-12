@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "fa62b76b7b1254d80e3a99f48353cadfae45480a4e4c9ac03eebaa587b75af78",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "2d5748739dc5742bf2f74c421df2f09394ecb95974b705525d070bb40a14e596",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524294,
+  "response": "Step 46 merely repeats unsuccessful page navigation and is not the earliest decisive error; the run had already identified the likely answer earlier.  \n{\"decisive\": false}"
+}

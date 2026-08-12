@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "2b217d32ff4d2598b60fd749b264b6812a968627a6d358a5ba151ec154e02fc7",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "638ecb72dbb7829034eed9d9899f75d86697b3f043a1a4f25bc5dd334890a5e3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524112,
+  "response": "Step 1 is not decisively wrong because it accurately identifies the key facts and remaining research needed without providing a false answer.  \n{\"decisive\": false}"
+}

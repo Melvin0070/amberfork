@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6a5567e2c0568255e9cee7f2c9780da7d63563e3912695b045e7be7a525bdbf9",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d6ce640d211b4e5736802bc290d324f8cf5e8f2efdb54b32fd3386263b73bdf2",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523807,
+  "response": "Step 11 is merely an access failure while attempting to verify the source, not the decisive error that caused the run to fail.  \n{\"decisive\": false}"
+}

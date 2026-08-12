@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "775362d1ecf51415efb5e290f422b34daccd2c9b6ae27c774aedebb3e3acaec2",
+  "provider": "gemini",
+  "model": "gemini-3.6-flash",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "3e40b5ded3f9c6fc0609257c1ac4fd370def650dd6408feef75b38715fcca1c5",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523713,
+  "response": "The failing run goes decisively wrong at step 4. Instead of invoking the `search_agent` tool with code like `search_agent(task)` (as done in the reference run), the model merely assigns the query prompt to a Python variable and executes `print(task)`. Because it fails to actually execute the tool call, no web search or USGS database query is performed, leaving the agent without real data and leading it to hallucinate the incorrect year (1937) in step 10.\n\n{\"step\": 4}"
+}

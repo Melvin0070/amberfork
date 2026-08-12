@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "8a692ef285b8e7de5a7b04eef80b7b1d27346d4cbdf17ae1bbf5dae6d15c7789",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "96eedc4cb9322124a4a20da9de3ba9c3a4ac96f16b7143e2124971850f1d05a3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523917,
+  "response": "False—step 40 merely repeats an unsuccessful browsing attempt, while the run had already gone astray by relying on an unverified answer and irrelevant source.  \n{\"decisive\": false}"
+}

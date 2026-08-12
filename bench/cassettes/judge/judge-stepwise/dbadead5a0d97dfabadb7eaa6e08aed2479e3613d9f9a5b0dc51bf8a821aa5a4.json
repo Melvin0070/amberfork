@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "dbadead5a0d97dfabadb7eaa6e08aed2479e3613d9f9a5b0dc51bf8a821aa5a4",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "0ffa958bbeac8ca2215e367dbcd786e6bcc61967b6106ff462a554e47117c764",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523588,
+  "response": "No; step 48 merely summarizes the already established evidence (despite a possible spelling typo) and is not the earliest error causing failure.\n{\"decisive\": false}"
+}

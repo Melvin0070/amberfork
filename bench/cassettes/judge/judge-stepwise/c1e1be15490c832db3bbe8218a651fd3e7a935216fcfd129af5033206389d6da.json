@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c1e1be15490c832db3bbe8218a651fd3e7a935216fcfd129af5033206389d6da",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "c21f7055a34af588a977d20f999950dd06d6c8208073a2b2ab07ff1173147d34",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524215,
+  "response": "Step 25 is not the decisive error because it is merely a correct observation that the literal search term “joke” does not appear on the diff page, while the run’s failure stems from earlier unsupported extraction or verification.  \n{\"decisive\": false}"
+}

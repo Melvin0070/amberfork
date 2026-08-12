@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d50a2648523f57b27da60c96bf1197cdf0cc8f5876f46c01fb4c7f736b63c2ab",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "216af75aa6f06f94f45597415c039bcb6e16b918f5039b8451d8a27e0a63a6ee",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523939,
+  "response": "Step 45 is merely an unproductive page-down retry; the run had already gone wrong earlier by asserting an unverified answer and pursuing an unrelated Academia.edu document.  \n{\"decisive\": false}"
+}

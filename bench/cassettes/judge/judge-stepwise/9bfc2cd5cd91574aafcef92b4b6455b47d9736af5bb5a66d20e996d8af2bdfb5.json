@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9bfc2cd5cd91574aafcef92b4b6455b47d9736af5bb5a66d20e996d8af2bdfb5",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "4a758f66c8232001448e2d512e708b3a1fbaf0af5460614dadf8d96944d689ec",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523568,
+  "response": "Step 41 merely reports that “vet” was not found on the currently loaded page and is not the decisive error; the run had already failed to locate the relevant content earlier.  \n{\"decisive\": false}"
+}

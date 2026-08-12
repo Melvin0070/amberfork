@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "7e79088496c4c08e00cfa465f0ea39a2035f102ab8f07a7b284b7e405fcd7822",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "12577a57984c2616450856bca5b82c98085d2cc4fd0ba7a9c3287d3817447c25",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523622,
+  "response": "Step 1 is not the decisive error because it correctly identifies the given assumptions, the missing article count, and the required \\(0.04\\)-multiplier and rounding operation.  \n{\"decisive\": false}"
+}

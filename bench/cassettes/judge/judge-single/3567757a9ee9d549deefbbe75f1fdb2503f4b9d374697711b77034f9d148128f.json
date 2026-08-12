@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "3567757a9ee9d549deefbbe75f1fdb2503f4b9d374697711b77034f9d148128f",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "107cfaa94352f49baefb56568ac54c363889ede495aed31b678e7abc95c1b586",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786516864,
+  "response": "Step 4 is the decisive error: it omits Senate-confirmed secretary John F. Kelly and misidentifies the relevant westernmost location. Kelly earned his bachelor’s degree from the University of Massachusetts Boston, making Boston the easternmost city, while Janet Napolitano earned hers from Santa Clara University, making Santa Clara the westernmost. The correct pair is therefore “Santa Clara, Boston,” not “Santa Fe, Cambridge.”\n\n{\"step\": 4}"
+}

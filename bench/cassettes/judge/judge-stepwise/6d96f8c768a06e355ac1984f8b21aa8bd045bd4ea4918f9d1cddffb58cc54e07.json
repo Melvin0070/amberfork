@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6d96f8c768a06e355ac1984f8b21aa8bd045bd4ea4918f9d1cddffb58cc54e07",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "2a61bee71f845c983213e6160c23e00f6e5581cb7688c5fb25f7b91c377f9f91",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523691,
+  "response": "No; step 6 merely restates the answer already produced in earlier steps, so any decisive error would have occurred earlier.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "e6986470d0be22562c66a1e44286f3f11ef39e247c4cb00ce5ba6c436a6ddd9c",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "3a501a2c81bc4db70da3a8d6961aef9dedbaa9c8d48a715c6878ca8b52eb010e",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523955,
+  "response": "Step 50 merely repeats an earlier search attempt and is not itself the decisive error; the run had already gone wrong through unsupported identification and irrelevant source searching.  \n{\"decisive\": false}"
+}

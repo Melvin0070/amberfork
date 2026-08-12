@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "2f1beacd1d6d40473de3f954ad66bfe088e7ffd4b5583f0ed52c14530909e606",
+  "provider": "gemini",
+  "model": "gemini-3.6-flash",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "b0664dace28ee1b75b6890f80c303e965ede270fb675c5231c0c8d45534e1a3a",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786558448,
+  "response": "In step 105, after previous attempts to search the Wikipedia article revision history returned inconclusive results, the agent abandoned searching the page history and pivoted to an incorrect strategy: looking up the initial upload date of the image file (`St-thomas-aquinas.jpg`) on Wikimedia Commons instead of when an image of St. Thomas Aquinas was added to the \"Principle of double effect\" Wikipedia article itself. This committed the agent to reporting the file's Commons upload date (21/03/2018) rather than the actual date the picture was first added to the article history (19/02/2009).\n\n{\"step\": 105}"
+}

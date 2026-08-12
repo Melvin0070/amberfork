@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "ccd882405fd34d26d92eb231e1b235d87938f34154f59fd3b0a74b97905ace68",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "9b10676c0c023d9cf06d9b8713c05fc2eca890f4894b4ddd2f3b2c03dd111438",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524218,
+  "response": "Step 26 is merely a reasonable retry after the search term was not found, while the run had already relied on an unverified answer earlier.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "5414f5cefd81a6733558005e3fa6fab33d4e97316dd50ac6c821eec12766e795",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "14830900a242322232b6d313fe548f4041dca92a17f95a47b614ea4022e2045a",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786516724,
+  "response": "The run first decisively fails at step 53, when the main agent chooses to submit the search agent’s lengthy report through `final_answer` instead of returning only the required short surname. Earlier verbosity was recoverable because the manager could still extract “Louvrier,” as the reference run did; this step commits the final response to the wrong format.\n\n{\"step\":53}"
+}

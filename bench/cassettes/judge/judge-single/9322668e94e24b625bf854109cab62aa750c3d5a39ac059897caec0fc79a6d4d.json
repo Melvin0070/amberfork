@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9322668e94e24b625bf854109cab62aa750c3d5a39ac059897caec0fc79a6d4d",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "d21d6ab92f05c409ac491610b83e5fffa61ff228c3e72e7bc6a259242f4252e1",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517019,
+  "response": "Step 1 is the earliest substantive reasoning error: it concludes that the prompt is clear and that “Pineapple” is not triggered, overlooking inconsistencies such as saying there is “one question” while listing three, as well as the questionable phrase “complimentary color.” That mistaken assessment leads directly to the later “Guava” answer.\n\n{\"step\":1}"
+}

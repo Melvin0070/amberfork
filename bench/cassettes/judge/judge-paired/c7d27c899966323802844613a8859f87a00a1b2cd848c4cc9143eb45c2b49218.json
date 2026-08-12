@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c7d27c899966323802844613a8859f87a00a1b2cd848c4cc9143eb45c2b49218",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "47b22f73ad603c2c09b382f6cd1fc6400b8c7d4d970263b8e85dc7570f79c9d1",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786516894,
+  "response": "Step 4 is the first substantive reasoning step that commits to the wrong result: it omits confirmed secretary John F. Kelly and confuses Santa Clara University’s location with Santa Fe. The reference correctly includes Kelly and places Janet Napolitano’s bachelor’s institution in Santa Clara, yielding different geographic extremes.\n\n{\"step\": 4}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d7ce9680d5d3f988021198bd005e9aa91f50be6c3b9df9f3b410162909604ea6",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "c154515160c8f00f5905c0d85807d4a7ff2fde3c6df3cdc19171d693a7e97aff",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524103,
+  "response": "Yes, step 3 is the decisive error because it incorrectly claims that only one qualifying studio album exists, overlooking other albums such as *Corazón libre* (2005).  \n{\"decisive\": true}"
+}

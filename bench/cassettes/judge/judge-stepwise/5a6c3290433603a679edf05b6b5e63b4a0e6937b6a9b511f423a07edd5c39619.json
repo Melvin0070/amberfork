@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "5a6c3290433603a679edf05b6b5e63b4a0e6937b6a9b511f423a07edd5c39619",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "8a40010ec6a88b0e4e1500b9570441333e241bb352939355673a0b3c4e07587e",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523650,
+  "response": "Step 6 is the decisive error because it assumes an unsupported article count and calculates 20 without obtaining or verifying the required source.  \n{\"decisive\": true}"
+}

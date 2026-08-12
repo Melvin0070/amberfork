@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "8cfebb065631a47c4371c1f1aa28baa7340b511d8cddb40d4175ce7d81cd61b8",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "fa5bea4a0fa41d799f922059c01708f6fa8698c6fbe3899cb7bc18b2835fc3c7",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523474,
+  "response": "Step 8 is not the decisive error because it merely repeats the search for a result already identified as “Louvrier,” and does not introduce a new incorrect claim.  \n{\"decisive\": false}"
+}

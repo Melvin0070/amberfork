@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "1c74d2fc3d8f8ce56186c2f893b056f38b6bd7f4a87fdba017dc01c7e7f80b9a",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "fd29f75979d2286ec8aca909f33429a1811c97b13a30d5ae3405dc8dce60628f",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524034,
+  "response": "Step 70 merely restates the answer already reached earlier and is not itself a new decisive error.  \n{\"decisive\": false}"
+}

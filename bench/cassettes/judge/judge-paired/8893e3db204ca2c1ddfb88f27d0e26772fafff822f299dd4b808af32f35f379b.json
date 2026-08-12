@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "8893e3db204ca2c1ddfb88f27d0e26772fafff822f299dd4b808af32f35f379b",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "b0664dace28ee1b75b6890f80c303e965ede270fb675c5231c0c8d45534e1a3a",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517352,
+  "response": "The run first goes decisively wrong at step 105, where it abandons the article’s revision history and substitutes the current image file’s Commons upload history. Those are different events: the reference identifies the picture’s first appearance through the added `{{Thomism}}` template on 19/02/2009, whereas the failing approach produces the unrelated file-upload date 21/03/2018.\n\n{\"step\":105}"
+}

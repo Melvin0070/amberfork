@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "f7a71edd39f827fd9c3f747f6df77bb73ebf52166ef00cf177842493c5221008",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b57191bb434a522fdc360c94d028aa929f5fb0ae42562f642f3681ea6b56f2e2",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524885,
+  "response": "Step 43 merely restates the previously obtained answer, Annie Levin, which appears to be correct and is not the cause of failure.\n{\"decisive\": false}"
+}

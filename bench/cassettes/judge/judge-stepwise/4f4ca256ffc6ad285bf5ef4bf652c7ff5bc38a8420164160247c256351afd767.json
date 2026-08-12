@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4f4ca256ffc6ad285bf5ef4bf652c7ff5bc38a8420164160247c256351afd767",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "fdcf39a6856581a8be184d886f9a1d64f5d5625505347a1ea550b46ec9cbfcfc",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523766,
+  "response": "Step 1 is not a decisive error because it correctly identifies the source and the need to verify the cited horror film and its full title.  \n{\"decisive\": false}"
+}

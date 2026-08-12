@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "654d785d4e7228da18548b633b2506090ed15897e94a5ceb69ca2162e257426a",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "5ab6967901533b3750be4814ec2531608997b7e07e735a2a2e0197d451cb1202",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524510,
+  "response": "Step 5 merely repeats the request for information and does not introduce a new decisive error; any failure was already present in the earlier unsupported or incomplete search process.\n{\"decisive\": false}"
+}

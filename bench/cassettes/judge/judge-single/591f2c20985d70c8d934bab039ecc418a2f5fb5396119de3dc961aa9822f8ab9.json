@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "591f2c20985d70c8d934bab039ecc418a2f5fb5396119de3dc961aa9822f8ab9",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "63ae044bd3b413821e1535d41bd8d2960c775fc8e1ae7cec154313041217afa1",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517513,
+  "response": "Step 3 is the first substantive error: the search agent identifies Annie Levin without adequately distinguishing the article’s attribution/byline from the writer actually quoted on the Merriam-Webster page. This mistaken identification is then accepted and propagated through every later answer.\n\n{\"step\": 3}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "017fb017fc50a74f2371d1484272f59b1bae69879d64cd5da8f2adf3a500d018",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "2e1a812e93f36ae64fc0c918cbd080e1e0a2446de5ebe4d0d7702b432e1b9075",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524819,
+  "response": "Step 23 merely continues navigating the page and is not a decisive error; the earlier extraction identified Annie Levin correctly.  \n{\"decisive\": false}"
+}

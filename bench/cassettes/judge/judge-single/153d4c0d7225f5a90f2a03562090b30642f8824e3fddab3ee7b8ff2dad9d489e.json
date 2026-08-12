@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "153d4c0d7225f5a90f2a03562090b30642f8824e3fddab3ee7b8ff2dad9d489e",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "443b7aca9e9cabf03e21957c18113f9cfec0f1fb6d98e8358a83d1d386d71c3a",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517062,
+  "response": "Step 3 is the first decisive error: the search agent incorrectly concluded that only one qualifying studio album existed, without extracting or verifying the complete studio-album list. This false result was then accepted by the parent agent and propagated into the final answer.\n\n{\"step\":3}"
+}

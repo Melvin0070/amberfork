@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4f1da0df6f63a19d7456b07ae37bfaa46663759473914e39956ed17c73bfd55c",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "5784e26bcbfc685916c7471576df9abdc348f7be16cdf654fb24f0b74ce04ae3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524144,
+  "response": "Step 8 is not a decisive error because it is a reasonable verification search and the run had already identified the likely phrase earlier.  \n{\"decisive\": false}"
+}

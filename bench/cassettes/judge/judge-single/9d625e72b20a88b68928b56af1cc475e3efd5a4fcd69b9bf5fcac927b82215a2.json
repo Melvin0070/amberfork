@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9d625e72b20a88b68928b56af1cc475e3efd5a4fcd69b9bf5fcac927b82215a2",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "9a8428ea2c9e6970b72947adfda3330e6bad0b39122d0ae874665daecaf931bc",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517288,
+  "response": ""
+}

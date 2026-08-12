@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "0dbcd255499ad21ca50df7e6361e92015aacf0d3a5fcbe23a8b05cd8d8a15e39",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "648f7af505167c4f7e7b9d930261ce415cd1a43832389fb90bede4790443eff3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524115,
+  "response": "Step 2 is not the decisive error because it correctly identifies the relevant pre-2008 leap days and proposes examining the Dragon article’s revision history to locate the removal.  \n{\"decisive\": false}"
+}

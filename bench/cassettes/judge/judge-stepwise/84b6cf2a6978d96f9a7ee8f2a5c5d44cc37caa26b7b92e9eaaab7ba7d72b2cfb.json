@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "84b6cf2a6978d96f9a7ee8f2a5c5d44cc37caa26b7b92e9eaaab7ba7d72b2cfb",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "88aa518ed78f1748a10308415a35257610f276d85261d94c0882405ef40b3320",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524420,
+  "response": ""
+}

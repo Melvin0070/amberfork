@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b7a7636d53c9ed26463db048c1f1444652c542e69fd3d0b761a8b6dac46d0081",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "8d526d7537a10bebc182de76c00f68d8149797ca18112c684de0c2979dc3b383",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524864,
+  "response": "False — step 37 merely retries searching for “quote,” while the run had already identified Annie Levin as the quoted writer.  \n{\"decisive\": false}"
+}

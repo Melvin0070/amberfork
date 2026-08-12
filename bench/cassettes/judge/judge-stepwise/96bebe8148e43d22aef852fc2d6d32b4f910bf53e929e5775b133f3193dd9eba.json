@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "96bebe8148e43d22aef852fc2d6d32b4f910bf53e929e5775b133f3193dd9eba",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "9d9be8730a152af6dc7226a944a7c1a596a271bc0b520d7be457ec47c38302a0",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524231,
+  "response": "Step 29 is merely an attempted page navigation and is not the decisive error; the run had already identified the likely answer earlier.  \n{\"decisive\": false}"
+}

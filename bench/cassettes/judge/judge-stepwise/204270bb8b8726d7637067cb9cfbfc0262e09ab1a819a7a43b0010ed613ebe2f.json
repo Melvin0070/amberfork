@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "204270bb8b8726d7637067cb9cfbfc0262e09ab1a819a7a43b0010ed613ebe2f",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "9dc0ef167af5461ed01ca474b6595481c98c24dc8cbc9a1c39086b7ee226d62b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523882,
+  "response": "Step 31 contains no substantive action or conclusion, and the run had already failed to verify its answer earlier.  \n{\"decisive\": false}"
+}

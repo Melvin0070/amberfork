@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9cb198e749c035b597c7189c0bfdcdaf4abf5ac1e5ab5ea9dfb70bd271847309",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "dd3c9668034cf0b876d6cfe991144e849b3796614daefa0c07d4248392f65d30",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524803,
+  "response": "Step 18 merely continues navigating the page to verify the quotation and does not introduce an error; the prior answer was already identified as Annie Levin.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "e5940685eacfeccc89e68b54fb58b815d08e4168945e4eedbc2f93b42008a854",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b4f78d13f6686b933e0b8622ab92ad5a45d091da73e0afb0fc011d3261da6a2b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524722,
+  "response": "Step 5 merely submits the translation already derived earlier, so it is not itself the decisive error.  \n{\"decisive\": false}"
+}

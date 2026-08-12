@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "88f18244df5a3d8ca3434145bf8437556edf0c71ec074c287eb8bb10233a6746",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "b13e317fb3090594facb4873e734c8e70f1bb092fb2aad8cd81c5bf06a15c00a",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517164,
+  "response": "Step 9 is the first decisive error: it introduces the unsupported result `133.7`, whereas the reference figures (556,900 men and 791,800 women) yield 234.9. Step 10 merely rationalizes that already-wrong result using incorrect counts.\n\n{\"step\": 9}"
+}

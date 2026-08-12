@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "f28bd105c565f1e7648d8b945d4d61d5f2ea32cc1335c4352e8c2d9ccda87bc5",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "4eac47b47e3794b47de0a030bc5ead0cd9884537a336e56ee081a10984be1acb",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524857,
+  "response": "Step 35 merely proposes further verification and does not introduce a decisive error; the answer had already been identified as Annie Levin.  \n{\"decisive\": false}"
+}

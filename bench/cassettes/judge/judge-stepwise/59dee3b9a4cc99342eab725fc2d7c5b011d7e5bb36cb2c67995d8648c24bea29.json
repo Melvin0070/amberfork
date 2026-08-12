@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "59dee3b9a4cc99342eab725fc2d7c5b011d7e5bb36cb2c67995d8648c24bea29",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "16bcf21e5386e0dfc34ee9c13cace78d24b474266d52b3a5843960208da48c5e",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524290,
+  "response": "Step 45 merely repeats an unproductive page-down attempt, while the run had already identified the answer earlier, so it is not the decisive error.\n{\"decisive\": false}"
+}

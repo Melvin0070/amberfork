@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "0023ec586230c9f950a5112183596bc14112eaba3b52001f11ac8c1aab7faba2",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "68a6a68c98fabd7d906d35520bf75959195d3d28557c7e233636145a35e00c21",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524128,
+  "response": "Step 4 merely restates the search task and does not introduce the decisive error; the run had already identified the likely answer earlier.  \n{\"decisive\": false}"
+}

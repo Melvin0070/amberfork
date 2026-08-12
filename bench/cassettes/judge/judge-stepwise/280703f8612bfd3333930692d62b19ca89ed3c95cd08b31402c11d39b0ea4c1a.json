@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "280703f8612bfd3333930692d62b19ca89ed3c95cd08b31402c11d39b0ea4c1a",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "9709e741dccf672931bb1b0ca0e8fb7da6513cb3fdd6ac45299a8fef848a825f",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523804,
+  "response": "Step 10 is not the decisive error because it correctly performs a relevant web search and merely repeats the earlier search effort; any failure had already occurred if the unsupported movie identification was wrong.  \n{\"decisive\": false}"
+}

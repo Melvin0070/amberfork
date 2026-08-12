@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "a99977265653c4a7974b6406c5def9e1ee9321fde2e93f5eba0da4a024cc005a",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "1dabf1b5d132990afaa8659d817e1af713f1bfaef76c6424a6413132ca6bffd2",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523486,
+  "response": "Step 12 is a correct verification action that visits the identified LibreTexts exercise page, so any failure would have occurred earlier or later.  \n{\"decisive\": false}"
+}

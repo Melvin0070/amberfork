@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "e9d99a9215e09a5e0ee7aa265005d8ae36a1dfb949d731bbc8d273bf606fdb94",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "759c2cce505a7eb2a0ebae3254fc2996cf534430281eea48246c19fdedde4b5f",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523716,
+  "response": "Step 2 is a sound plan to retrieve, inspect, verify, and report the paper’s calculation, so it is not a decisive error.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "534800e2d1e2b00cc5e9c50777d6e06faa7bbe8c061c0eb28f730821eb3e9939",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "3c4744663026dfa177096d35d9819868b594a3804e5b925546d72d49c14bdefd",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524680,
+  "response": "Step 3 is decisive because the search execution failed to identify the required revision date and incorrectly concluded that the answer was undetermined despite the task requiring a definite date.  \n{\"decisive\": true}"
+}

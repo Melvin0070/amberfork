@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "eb90cac75709f7b20f162a1891fd8198c58643021117d155e582ccab493c0348",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "a5521acb2c22d800d51bb5a66ae8b926aa86e9286ad21e87ee45296492318c90",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524760,
+  "response": "Step 4 is a reasonable verification attempt and contains no decisive error; the run had already identified Annie Levin as the answer.  \n{\"decisive\": false}"
+}

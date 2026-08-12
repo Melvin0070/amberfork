@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b98b740cff111e1da79422d4bfdd3331ec23f67230840ae1376d3beb938cb6f9",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "40fd53ccb9bb959783531df0514db87b8eb967114a61c2d860360a7aa97679c6",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524281,
+  "response": "Step 42 merely repeats an ineffective page-down action and is not the earliest decisive error; the run had already failed to verify the answer earlier.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "7eedfa8b9b57242ba0c817fb397d7d1f66bbf2f4170644197e03efae0935e1b2",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "bf196bdda45d361a424b4d25a8b24781ace344fb994eb5388f8a8aa88cc70b1c",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523532,
+  "response": "Step 29 merely repeats unsuccessful scrolling and is not the decisive error; the run had already failed to locate and verify the relevant passage earlier.  \n{\"decisive\": false}"
+}

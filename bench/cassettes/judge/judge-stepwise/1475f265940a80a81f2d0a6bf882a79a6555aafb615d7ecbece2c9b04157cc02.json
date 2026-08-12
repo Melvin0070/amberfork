@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "1475f265940a80a81f2d0a6bf882a79a6555aafb615d7ecbece2c9b04157cc02",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b11a591f7f408a56c2fa2e58ca6bf079cccfdbb98eb9eed07eb62659a327072e",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523662,
+  "response": "Step 1 is not the decisive error because it correctly identifies the need to locate the 2016 paper, determine the relevant testing chemicals and EC numbers, and alphabetize them.  \n{\"decisive\": false}"
+}

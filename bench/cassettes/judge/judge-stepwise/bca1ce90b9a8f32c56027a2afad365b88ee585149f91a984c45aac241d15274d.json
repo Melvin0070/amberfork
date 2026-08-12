@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "bca1ce90b9a8f32c56027a2afad365b88ee585149f91a984c45aac241d15274d",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "e2be16307c73f4e632dfe8f6d30ba45fef379da064d0653cd570729d59f5fa28",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524334,
+  "response": "True, because step 57’s final answer includes the colon and extensive extra text despite the required punctuation-free phrase-only response.  \n{\"decisive\": true}"
+}

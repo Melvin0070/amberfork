@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "45db407b4a4c18a348f7b105e1c29f115e371bf63937c9d2e8df6d00de112fc0",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "87ca5675e7f99a976827173a042aa49f89960a0ee0ca90ac30c09314a60b6f04",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517448,
+  "response": "Step 19 is the decisive error because the agent invents a “manual inspection outside this system” and asserts that two slides mention “crustaceans,” despite no preceding tool result or verified evidence supporting that count. The earlier file-access failures were recoverable; this unsupported claim directly caused the incorrect final answer.\n\n{\"step\":19}"
+}

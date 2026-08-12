@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "71e5c5f7a960a38b3cc01834700188bc2e9579c9fdc235986c6593b3f8aea44d",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "dbe266bdc82ba44ba047b80ca02750cde8b94564578433cd02d481eb3c827f1c",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523718,
+  "response": "Step 3 merely restates the previously obtained answer and does not introduce a new error, so it is not the decisive error.  \n{\"decisive\": false}"
+}

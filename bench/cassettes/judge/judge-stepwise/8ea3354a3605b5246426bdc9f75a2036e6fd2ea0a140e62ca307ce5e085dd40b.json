@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "8ea3354a3605b5246426bdc9f75a2036e6fd2ea0a140e62ca307ce5e085dd40b",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d00ad00f86d038d8151bc0a1db096352681b13a3d37a501931bd4d190c83dc56",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523472,
+  "response": "Step 7 is a reasonable plan that restates the needed verification steps, so it is not the decisive error.  \n{\"decisive\": false}"
+}

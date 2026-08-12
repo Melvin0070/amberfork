@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "41ceab82dfa4810b77d9caa019aa1d9656d85fee8f7385605f82fcf87c7ef19e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "fd3afd7c2b2e8e4df10f5f21a9ae6f92f10002d8520b7716a1342df819d82ca1",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523680,
+  "response": "Step 4 is correct: it identifies alkaline phosphatase and horseradish peroxidase and gives their EC numbers in alphabetical order, matching the required format.  \n{\"decisive\": false}"
+}

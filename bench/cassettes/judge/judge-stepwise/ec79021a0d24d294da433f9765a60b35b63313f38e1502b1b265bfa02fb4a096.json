@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "ec79021a0d24d294da433f9765a60b35b63313f38e1502b1b265bfa02fb4a096",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "04b7ac6829ae9b7ac43d0620842e3c212262788c2183dd250f9f56e6636eb3c4",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524850,
+  "response": "Step 33 is merely an unsuccessful search attempt and does not itself cause the failure, especially since the writer had already been identified earlier as Annie Levin.\n{\"decisive\": false}"
+}

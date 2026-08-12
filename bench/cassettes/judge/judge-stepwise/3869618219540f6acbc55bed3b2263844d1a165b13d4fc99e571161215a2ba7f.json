@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "3869618219540f6acbc55bed3b2263844d1a165b13d4fc99e571161215a2ba7f",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b741a3aa202d81ba5f2c4b694c7c3d5d52f9e32a2013796057bc51eff7fb75a9",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524063,
+  "response": "The output `736008` is a plausible completed integer answer, and no evidence in the shown step establishes that it is incorrect.  \n{\"decisive\": false}"
+}

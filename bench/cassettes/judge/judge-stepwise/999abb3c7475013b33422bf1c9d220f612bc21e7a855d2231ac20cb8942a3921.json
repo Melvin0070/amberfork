@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "999abb3c7475013b33422bf1c9d220f612bc21e7a855d2231ac20cb8942a3921",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "116fa200fe6eee8cdf94747dd6862103ed2f51741234eb91bb7d69edea61ef49",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524727,
+  "response": "Step 6 merely restates the answer already produced in earlier steps, so it is not the earliest decisive error.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "ecdd1c26f156887c6559f9cfc2b1389258294da7ad3c85947e6e5bd82231176f",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "e7b008c804e4e56a032fa63ca5ac8788ae5b14181ba7ffc50cdf2937bece9da0",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524691,
+  "response": "Step 0 is the decisive error because it provides an unsupported answer without showing the required verification or establishing that “mis-transmission” is the citation mismatch.\n\n{\"decisive\": true}"
+}

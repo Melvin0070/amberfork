@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9632abf440dd3f0b5bd7303f1c0406116faa4ca5503c6adc350ef5e50da5a963",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7a51a42078d11564c84120f87182e14a9dc9e5ec665011eed5bd4b6302bfb252",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524248,
+  "response": "Step 34 is not decisive because it merely restates the known facts and does not introduce an error that causes the run to fail.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9600f6e4f8ed6b2aa2eb74c80bc6a8ecc1876337bf71cf16327453730b0cec4f",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "0bd0338296a4b8f103286f66883cfb009f44e6ebd8518861d478438ff66264c9",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524302,
+  "response": "Step 48 merely restates the information gathered earlier and does not introduce a new error that causes the failure.  \n{\"decisive\": false}"
+}

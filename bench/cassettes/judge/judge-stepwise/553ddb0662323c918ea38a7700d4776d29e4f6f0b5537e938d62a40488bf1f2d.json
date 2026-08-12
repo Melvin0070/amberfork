@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "553ddb0662323c918ea38a7700d4776d29e4f6f0b5537e938d62a40488bf1f2d",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "dd52ab973199c71fa6fa24d5d357319538a93366f5585e678e98930e7cfb4dcb",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524363,
+  "response": "Step 3 contains no substantive reasoning or factual claim, so it is not the decisive error.  \n{\"decisive\": false}"
+}

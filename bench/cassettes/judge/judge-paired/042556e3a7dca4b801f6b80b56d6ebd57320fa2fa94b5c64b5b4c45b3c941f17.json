@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "042556e3a7dca4b801f6b80b56d6ebd57320fa2fa94b5c64b5b4c45b3c941f17",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "df06e67c03f8e370c6c74c70d3293eec99257accc11c7e1addb389b602d6202c",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786516769,
+  "response": "Step 6 is the first decisive error: without receiving any search result, it assumes that Nature published 484 qualifying articles in 2020 and computes 20. The reference establishes 1,002 articles, which yields \\(\\lceil 1002 \\times 0.04\\rceil=41\\).\n\n{\"step\":6}"
+}

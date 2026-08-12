@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b546675d97ae7eb48481a516c5e749407ce1189e14bf6b6a84b0cabd2e80cd20",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d52a79c485a86ffeb0f93c7ec171b6086d932bc8980a1b339ebada9bfcf25b89",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524150,
+  "response": "Step 9 is not the decisive error because it is a valid verification search, while the run had already identified the removed phrase in earlier steps.  \n{\"decisive\": false}"
+}

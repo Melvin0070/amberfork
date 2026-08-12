@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "bbf2cfaef4c88eb4feaf84601482cd263b994a21a56c425e3ea351c086b48837",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "884afce8a54bb39b9206b32d2209485a855dc40380734cfc42dcbe5efaeab3f0",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524940,
+  "response": "Step 6 is not the decisive error because it correctly restates the answer that bubble size reflects citation count.  \n{\"decisive\": false}"
+}

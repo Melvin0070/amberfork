@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d09c5ee4d8f36c5e8e31b10fa5bb29fd635a2f764b69b70a66ceddf5cf7fa93e",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "c4aa15f4bc2a8840d0b7547099ff0fef7f9f3af6a7f85bbebc262c3e4d6f2889",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517039,
+  "response": "Step 4 is the decisive error: it introduces the unsupported and incorrect population value of 1,007 without performing the planned searches or verification. Washington’s smallest county seat by municipal land area is Cathlamet, whose 2020 Census population was 560, not 1,007, so the subtraction and all subsequent answers are wrong.\n\n{\"step\": 4}"
+}

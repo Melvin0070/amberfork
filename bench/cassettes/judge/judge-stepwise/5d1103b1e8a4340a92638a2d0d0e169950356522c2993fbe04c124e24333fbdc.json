@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "5d1103b1e8a4340a92638a2d0d0e169950356522c2993fbe04c124e24333fbdc",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7d8e4925be97dd6e20ef3bd3be3d99233ddf7c9cf62c45472fcf36ab19e85acd",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524251,
+  "response": "Step 35 is not the decisive error because it merely proposes a reasonable continuation for inspecting the diff, while the run’s earlier answer already asserted the phrase without conclusively verifying the deletion.  \n{\"decisive\": false}"
+}

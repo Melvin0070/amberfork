@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c946c9721aabdaf4477fc085c96d3164f8a440034a3f374646c8c99f5e21f32e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "9cf0b6bb7a0ef8e523b92f49aa56963e937f5d02c343784391152c671b0af559",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524169,
+  "response": "Step 14 is merely a repeated, inconclusive search and the run had already committed to an unsupported answer earlier, so it is not the decisive error.\n{\"decisive\": false}"
+}

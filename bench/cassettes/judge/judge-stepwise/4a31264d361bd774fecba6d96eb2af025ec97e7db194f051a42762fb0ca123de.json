@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4a31264d361bd774fecba6d96eb2af025ec97e7db194f051a42762fb0ca123de",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "fb6eabc855c9ed0b431dfba70d6e7c77589bffd55033b3a625cbb77ecda278b6",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523909,
+  "response": "Step 38 merely repeats a search on an already irrelevant Academia.edu document, while the run had already gone astray when it treated that unrelated document as the target source.  \n{\"decisive\": false}"
+}

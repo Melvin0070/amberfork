@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "46f5ce12df37624bfa95725967c782e58823e8447534e6e224a2a5cc2668edcc",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f57ad0846f9dec93636463eb9887b43cf20e94512534e462acc5f3e44a7dd7fb",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523814,
+  "response": "Step 13 is not decisive because it merely retries accessing a JSTOR page blocked by a 403 error, while the run had already identified a plausible answer and could still use other sources.  \n{\"decisive\": false}"
+}

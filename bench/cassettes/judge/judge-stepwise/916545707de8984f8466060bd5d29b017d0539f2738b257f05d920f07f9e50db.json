@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "916545707de8984f8466060bd5d29b017d0539f2738b257f05d920f07f9e50db",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "953c9d6485ae26ddfec832563b77d5ef96b3937966c283d63ea59c76a701b8fb",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524298,
+  "response": "False—step 47 is merely an unsuccessful page-down retry, and the answer had already been identified as “Here be dragons.”  \n{\"decisive\": false}"
+}

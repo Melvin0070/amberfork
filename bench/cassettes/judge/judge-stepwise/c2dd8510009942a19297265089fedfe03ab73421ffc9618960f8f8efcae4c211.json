@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c2dd8510009942a19297265089fedfe03ab73421ffc9618960f8f8efcae4c211",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "0e4d1eeb2cc0038369516cdfdefce61719e3da3386d77cd94d5f4c6f60b42ab0",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524785,
+  "response": "No; step 12 correctly visits the identified Merriam-Webster page and does not introduce an error, while the earlier identification of Annie Levin was already supported.  \n{\"decisive\": false}"
+}

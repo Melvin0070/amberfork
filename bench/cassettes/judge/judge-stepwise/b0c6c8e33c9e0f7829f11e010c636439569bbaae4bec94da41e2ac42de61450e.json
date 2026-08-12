@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b0c6c8e33c9e0f7829f11e010c636439569bbaae4bec94da41e2ac42de61450e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "236214d317c755162c263f9cd9056ac47cf91c21357f04cff36ffbd52fbebc6a",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523951,
+  "response": "False — step 49 merely proposes another verification plan and is not itself an incorrect decisive action; the run’s failure, if any, stems from earlier unsupported assumptions or unproductive searching.  \n{\"decisive\": false}"
+}

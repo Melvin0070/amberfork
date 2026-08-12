@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "fb4488d9fc18046d1a97acbcb8477f82efbaf3759fdbffd066064ce5e02b71ec",
+  "provider": "gemini",
+  "model": "gemini-3.6-flash",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "fbd971dabe7176e899a821ddcea2864723449fa0ab84eaa7b879d0827fed3146",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786558474,
+  "response": "The failing run first goes decisively wrong in **step 4**. \n\nIn step 4, the agent attempts to solve the task by searching strictly for the literal word `\"crustaceans\"` in the presentation text (`keyword = \"crustaceans\"`). However, as revealed by the extracted slide content in the reference run (where slides mention specific crustaceans like crayfish, isopods, Yeti crab, and Spider crab rather than the literal category word \"crustaceans\"), searching for the exact string fails to identify the relevant slides. This fundamental mistake, along with pathing issues when invoking tools, prevents the failing agent from accurately inspecting the slide contents and ultimately causes it to hallucinate a final answer of 2 instead of the correct count of "
+}

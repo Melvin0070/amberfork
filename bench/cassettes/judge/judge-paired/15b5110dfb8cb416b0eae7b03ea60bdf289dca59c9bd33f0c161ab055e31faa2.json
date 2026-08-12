@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "15b5110dfb8cb416b0eae7b03ea60bdf289dca59c9bd33f0c161ab055e31faa2",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "5d33b0dc64abaf035f59b084f59883d56c049cb8b61d0cffaff25e8fb5285991",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517075,
+  "response": "The first decisive error is step 3, where the managed search agent concludes that only one qualifying studio album existed, the 2009 release. The 2022 Wikipedia list actually includes three: *Corazón Libre* (2005), *Cantora 1* (2009), and *Cantora 2* (2009). Later steps merely accept and propagate this incorrect count.\n\n{\"step\":3}"
+}

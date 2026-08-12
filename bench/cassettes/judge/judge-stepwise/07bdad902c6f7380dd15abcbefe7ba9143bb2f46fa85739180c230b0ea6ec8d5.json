@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "07bdad902c6f7380dd15abcbefe7ba9143bb2f46fa85739180c230b0ea6ec8d5",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "1cbe0462700f61b8886a0206159bec0b5c212867c4bb98d934d63fc6a49ccb60",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523560,
+  "response": "Step 38 is not the decisive error because it merely repeats a search on the currently loaded page, while the run had already failed to verify the relevant content earlier.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "09bd827498b7bd73cb5586ef7f6cbbdebe32875bf26751804681eea73ed8a290",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "a0cbde12230682049386bf65744212039105587f0997db1d3bd9248dee4cd8ae",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523829,
+  "response": "Step 17 is not the decisive error because it accurately reports a failed search on an irrelevant page, while the run had already relied on an unsupported conclusion earlier.  \n{\"decisive\": false}"
+}

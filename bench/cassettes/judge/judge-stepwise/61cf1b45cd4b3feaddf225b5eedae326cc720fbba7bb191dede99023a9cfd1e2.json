@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "61cf1b45cd4b3feaddf225b5eedae326cc720fbba7bb191dede99023a9cfd1e2",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7d2cd052c8df62568d165fff4642b3670c6050a6c036e148f6bd1eda0682bc47",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523573,
+  "response": "Step 43 merely retries searching the page for “equine” after earlier searches failed and is not itself a decisive error.  \n{\"decisive\": false}"
+}

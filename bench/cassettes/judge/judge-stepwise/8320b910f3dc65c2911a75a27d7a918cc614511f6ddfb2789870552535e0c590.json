@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "8320b910f3dc65c2911a75a27d7a918cc614511f6ddfb2789870552535e0c590",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "932f2e3bcd96b598aaf9e5a9ea0454567e6ed2ae478e8b1ea27589882dabf5b0",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523796,
+  "response": "Step 8 is a valid search attempt and does not introduce a decisive error; the run had already settled on the likely correct title earlier.  \n{\"decisive\": false}"
+}

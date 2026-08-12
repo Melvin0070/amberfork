@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "e381e1af9da37bc33440705f8e92f1c398c1413cae5c2fecc0b0304c6c6dce35",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d1bde82bd5e8f8e0b56b75a9524ecec78cfde512c8c5f939db966bbe0146a4a5",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523488,
+  "response": "Step 13 is a correct retrieval of the relevant “1.E: Exercises” page and is not itself an error causing the failure.  \n{\"decisive\": false}"
+}

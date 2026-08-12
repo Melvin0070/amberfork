@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "2f4b1c5c040bd13740d83f4514cd2e6f0882dd3353371633af06a73d946ad29a",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "3f3f35182ecf61a873024e0606f840de546952748a19cdeb9dd64bf3cf437266",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524901,
+  "response": "Step 0 merely restates the research task accurately and does not contain a decisive error.  \n{\"decisive\": false}"
+}

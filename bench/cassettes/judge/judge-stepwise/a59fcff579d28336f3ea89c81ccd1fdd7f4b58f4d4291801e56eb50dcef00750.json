@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "a59fcff579d28336f3ea89c81ccd1fdd7f4b58f4d4291801e56eb50dcef00750",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "21f124d05ba498dc33b4257b849f80ae68f9e83cbabd714febc8f78d655ca4c0",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523747,
+  "response": "No—step 12 merely submits the previously established answer, so it is not the earliest decisive error.  \n{\"decisive\": false}"
+}

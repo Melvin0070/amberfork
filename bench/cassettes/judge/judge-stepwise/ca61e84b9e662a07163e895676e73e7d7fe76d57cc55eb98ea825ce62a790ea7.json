@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "ca61e84b9e662a07163e895676e73e7d7fe76d57cc55eb98ea825ce62a790ea7",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "ef8969157fa8ec17ccf5be44a0fa4e638b777beaa98a33b44f0448b50102046e",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524269,
+  "response": "Step 38 merely reports that a search for a nonexistent diff marker failed and does not introduce a new decisive error.  \n{\"decisive\": false}"
+}

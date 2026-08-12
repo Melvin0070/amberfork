@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "bf80436878a9bdcba17cc4fe6e552f7ed580850ae3536337399391f5fd07eb26",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "962784cfe157e2876ba50310d9363c89e80de3f5d6d80e397538f6fc78242e91",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524011,
+  "response": "Step 64 is not decisive because it merely records an empty observation after a planning step, while the run’s failure stems from earlier unsupported or misdirected investigation.  \n{\"decisive\": false}"
+}

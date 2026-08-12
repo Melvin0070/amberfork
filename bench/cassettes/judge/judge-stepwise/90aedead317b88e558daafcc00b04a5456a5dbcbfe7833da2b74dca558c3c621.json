@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "90aedead317b88e558daafcc00b04a5456a5dbcbfe7833da2b74dca558c3c621",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7a0767f319562d0c9aed09a3fc3e30c2238aead6f08c29c1b4eeca6aa15bedcc",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523525,
+  "response": "False; step 26 merely repeats the page-down action and does not introduce a new decisive error, while the run had already failed to verify the answer earlier.  \n{\"decisive\": false}"
+}

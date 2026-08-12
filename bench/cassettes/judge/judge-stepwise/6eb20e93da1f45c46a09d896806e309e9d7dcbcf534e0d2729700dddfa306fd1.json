@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6eb20e93da1f45c46a09d896806e309e9d7dcbcf534e0d2729700dddfa306fd1",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "627d0bc1548dcc58e39bbebafa4a3d5e82f67ca5768241915d18d7e1792ab292",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524284,
+  "response": "False—step 43 merely repeats an unsuccessful page-down attempt, while the run had already identified the answer and no new decisive error occurs there.\n{\"decisive\": false}"
+}

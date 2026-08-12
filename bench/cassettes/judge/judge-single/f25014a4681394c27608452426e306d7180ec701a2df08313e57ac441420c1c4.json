@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "f25014a4681394c27608452426e306d7180ec701a2df08313e57ac441420c1c4",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "98db4594ee92a137ef8e71d175d7afceba7c95e667ec8b7baa5f3e26fa1c96ba",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786516760,
+  "response": "Step 6 is the decisive error: it introduces the unsupported figure of 484 Nature research articles despite the search returning no result or source. The final calculation and answer of 20 depend entirely on this unverified—and evidently incorrect—publication count.\n\n{\"step\": 6}"
+}

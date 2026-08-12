@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "e781fc1c49ef77aecbfc2f0afa59daa79aad0eac4a57c39e8a7b35d262a5287c",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "8e6580d7d1c270e5a780307f4d6defe23c517f6dd1bf6a797d4a0ef058191a1c",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524132,
+  "response": "Step 5 is correct and merely confirms the earlier finding that the removed phrase was “Here be dragons” after removing punctuation.\n{\"decisive\": false}"
+}

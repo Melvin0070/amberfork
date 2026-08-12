@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "bf4b630e0bf7a7a47b619ff0e61470208b8c87ed8cfe3aab0432943362218ab4",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d364f319953570c960542ba58454d93615aad53fcfdb70af8f56397b9b41867d",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523924,
+  "response": "Step 42 is merely an unsuccessful page-down retry, while the run had already gone wrong earlier by asserting an unverified answer and pursuing an unrelated document.  \n{\"decisive\": false}"
+}

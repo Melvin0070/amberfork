@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c624cb666cfe9bb8b01f8ab4d0e900b2614019787bd16d76292b0c68e8577225",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "48f3d2a0c7271e8b2394de2c579e23ad3dec6617333030951667f2d8fabfca8f",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523790,
+  "response": "Step 7 is not the decisive error because it merely proposes another verification plan, while the run had already supplied the likely answer and unsupported context earlier.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "bba54b3725e9c2cfb8a69a2915a5182d6a17b5801708215ebeee57600b8a00d9",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "568f7b02f8b7f37ea0705733ea6a850fa0abf707be0f81fcaeee775d10cbe4af",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524136,
+  "response": "Step 6 is not the decisive error because it merely restates the task and prior findings; any failure would have originated earlier, if at all.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c6a2d433e6ae7a8f6decf1e7f4e7ba3d5c261204667e08b0516f80bc7d30f0e3",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7f95ff77251497d4f8aae74bb908ef4508c4b10e1de8d05645de5a965e462e64",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523585,
+  "response": "Step 47 is correct because it locates the relevant passage mentioning Louvrier and merely confirms the surname rather than introducing an error.  \n{\"decisive\": false}"
+}

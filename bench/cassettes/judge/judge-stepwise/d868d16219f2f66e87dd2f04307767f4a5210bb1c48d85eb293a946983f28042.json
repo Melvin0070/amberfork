@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d868d16219f2f66e87dd2f04307767f4a5210bb1c48d85eb293a946983f28042",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "5f2d84e26d1a919dfdac76f84dec00ae5475985a807aa5b2878405e40d9b2899",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524891,
+  "response": "Step 45 merely restates the already established answer, “Annie Levin,” and is not the decisive error.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6f56c8ecb17abd3e32ae0a3e8c4bf674c0e8a3487f14b0254a93f4068eac73b8",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "76b4931f559dda31c7a9905d9d8cc56fd87aa309489a7975d940b2e5955a6188",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517052,
+  "response": "The run first decisively goes wrong at step 4, where it assumes a population of 1,007 for Cathlamet without performing the planned verification. The reference establishes Cathlamet’s official 2020 Census population as 560, so the correct subtraction is 737,015 − 560 = 736,455, not 736,008.\n\n{\"step\":4}"
+}

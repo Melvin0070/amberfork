@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b1cddfff2e97842a6d338ae7ef5813a414ba6eb2cb63a2533995b0b8ec0d5c0d",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f64ab02843a06003fcbd7600350ed7bc16678a02635b524906ff2d69625802dc",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524861,
+  "response": "Step 36 is not the decisive error because it merely reports an unsuccessful search for “quote” and does not itself introduce a wrong fact or cause the failure.  \n{\"decisive\": false}"
+}

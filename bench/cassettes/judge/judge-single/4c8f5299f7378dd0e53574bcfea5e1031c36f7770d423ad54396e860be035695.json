@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4c8f5299f7378dd0e53574bcfea5e1031c36f7770d423ad54396e860be035695",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "6b1406f05b64719ed2849621557e4051dbfaaa841a3d25371ff70a1ab1cc6c3f",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517150,
+  "response": "Step 9 is the decisive error because the search result returned the incorrect value `133.7` without the requested supporting figures or source, and Step 10 merely adopted and rationalized it with unsupported counts. The 2011 census figures were approximately 556.9 thousand men and 791.8 thousand women with tertiary education, a difference of 234.9 thousand.\n\n{\"step\": 9}"
+}

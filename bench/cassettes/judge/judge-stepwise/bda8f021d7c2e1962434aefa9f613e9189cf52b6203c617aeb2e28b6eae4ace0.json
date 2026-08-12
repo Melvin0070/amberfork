@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "bda8f021d7c2e1962434aefa9f613e9189cf52b6203c617aeb2e28b6eae4ace0",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f5508a480042c99ce34f30e34b6d9ee7805d897fa0f8a3c92876f72e003b13be",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524894,
+  "response": "Step 46 is correct because it accurately states the writer identified in the preceding verification as Annie Levin.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "23fdc7a5f84eba324081d9fb6ca8c58ddfcfc6d590a317075b8870caf1f6c826",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "8355c49c9612954c5fd24a9beb583479e24a79d231a39c35ff0ae8c5106e1af8",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524873,
+  "response": "Step 39 is merely a navigation/extraction step and does not introduce an error; the run had already identified the likely answer earlier.  \n{\"decisive\": false}"
+}

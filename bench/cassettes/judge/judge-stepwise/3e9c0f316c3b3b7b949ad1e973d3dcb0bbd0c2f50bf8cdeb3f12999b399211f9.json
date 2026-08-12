@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "3e9c0f316c3b3b7b949ad1e973d3dcb0bbd0c2f50bf8cdeb3f12999b399211f9",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b163b9f9819e2993a5e4207a6bb034a80fab94e53e1ebaf7cc046b37d51e3aea",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523887,
+  "response": "False—the run had already gone off course by repeatedly investigating an unrelated Academia.edu document, while step 32 merely issued another navigation action.  \n{\"decisive\": false}"
+}

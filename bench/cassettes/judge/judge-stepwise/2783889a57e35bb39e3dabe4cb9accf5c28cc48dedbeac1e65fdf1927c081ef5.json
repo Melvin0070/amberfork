@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "2783889a57e35bb39e3dabe4cb9accf5c28cc48dedbeac1e65fdf1927c081ef5",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b62d49a22f7ca00d1f06822c8c4ec7155f30a03da099a16477ccad87b95d3db0",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523772,
+  "response": "Step 3 is not the decisive error because it merely confirms the likely correct answer, “A Nightmare on Elm Street,” rather than introducing a new error.  \n{\"decisive\": false}"
+}

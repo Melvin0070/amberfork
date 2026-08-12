@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9f09181d21f0038f8cacf1ae29d3a019802f008ffe5fc420b542e2b12de3f926",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "0cb43a04c0be3339afce31d255f08cc9007ca4d237123cb5eccecc14914226fe",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523846,
+  "response": "Step 22 is not the decisive error because it merely continues investigating an apparently unrelated Academia.edu document, while the run had already gone wrong earlier by asserting “A Nightmare on Elm Street” without verifying it in Valentina Re’s contribution.  \n{\"decisive\": false}"
+}

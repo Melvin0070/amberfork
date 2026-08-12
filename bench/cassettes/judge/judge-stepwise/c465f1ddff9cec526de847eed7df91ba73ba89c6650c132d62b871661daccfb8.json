@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c465f1ddff9cec526de847eed7df91ba73ba89c6650c132d62b871661daccfb8",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7d22b5e8dca754eada15168e6936d10447bda956c9c68e262551ec6d8328e526",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523626,
+  "response": "Step 2 is correct because it identifies the needed article count, applies the stated 0.04 rate, and rounds the result upward as requested.\n{\"decisive\": false}"
+}

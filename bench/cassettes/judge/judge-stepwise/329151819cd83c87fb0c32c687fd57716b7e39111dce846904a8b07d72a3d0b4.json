@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "329151819cd83c87fb0c32c687fd57716b7e39111dce846904a8b07d72a3d0b4",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b9f5b64aed6944e2aee5a3064bc2eabd6386488bc3b626d8aebf58d13722335b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523708,
+  "response": "Step 0 is the decisive error because Cambridge is west of Santa Fe, so the cities are listed in the wrong order.  \n{\"decisive\": true}"
+}

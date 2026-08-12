@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c6fb1044893ed1c3acf1ab5cf985d74363f41da4939834001b55077d6352a447",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "337fd95f0b1652400a243b84dc688c6c7e08f3c096fe09a1740d6ea326355f52",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524706,
+  "response": "Step 2 is correct and merely restates the applicable word order and grammatical forms without introducing a decisive error.\n{\"decisive\": false}"
+}

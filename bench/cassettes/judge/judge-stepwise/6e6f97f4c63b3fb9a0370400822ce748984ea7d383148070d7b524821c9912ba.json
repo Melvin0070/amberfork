@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6e6f97f4c63b3fb9a0370400822ce748984ea7d383148070d7b524821c9912ba",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "a1bab09cb7fb69d8294a05abff37f60c8f4fcfe30c7819f0ef0dce2a81b26417",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524153,
+  "response": "Step 10 is merely a repeated web search and is not itself a decisive error; any substantive mistake occurred earlier in the unsupported conclusion about the removed phrase.  \n{\"decisive\": false}"
+}

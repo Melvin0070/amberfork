@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "edce3675228c48644a7ea036d7f34c0c1758486e934fed92d5c7979345c7c912",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "ed283ec8cecc13cbad7743e03c680c2983a6af16db37a2d220d62e5e3700e370",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524157,
+  "response": "Step 11 is merely another reasonable search attempt and is not itself the decisive error.  \n{\"decisive\": false}"
+}

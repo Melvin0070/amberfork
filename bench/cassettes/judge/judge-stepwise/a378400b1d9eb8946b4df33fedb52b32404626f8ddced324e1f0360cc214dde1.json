@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "a378400b1d9eb8946b4df33fedb52b32404626f8ddced324e1f0360cc214dde1",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "67e0f4cb8d5e5a6b642b80befe1373a229f0e323bf3beba08d53626f093f8d1f",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524090,
+  "response": "Step 0 only states the task and provides no incorrect reasoning or answer, so it is not a decisive error.\n{\"decisive\": false}"
+}

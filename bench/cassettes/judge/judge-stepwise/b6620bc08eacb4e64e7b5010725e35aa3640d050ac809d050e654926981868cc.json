@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b6620bc08eacb4e64e7b5010725e35aa3640d050ac809d050e654926981868cc",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "47d62a2836f3abf9f3f47b186501da8f2ded2e47f2c18f5010fb8c511a0a7c01",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524024,
+  "response": "False: step 67 is an empty bookkeeping step that neither introduces an error nor decisively affects the result, so it is merely a retry/restatement after earlier issues.\n\n{\"decisive\": false}"
+}

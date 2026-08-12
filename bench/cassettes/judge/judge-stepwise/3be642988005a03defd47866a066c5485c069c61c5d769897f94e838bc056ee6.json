@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "3be642988005a03defd47866a066c5485c069c61c5d769897f94e838bc056ee6",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "05244c0ebb363f89b9da02f11e7868df6732b760a57e2af6ef7f5dafa5981c5b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524212,
+  "response": "Step 24 is correct because it loads the appropriate Wikipedia diff for the identified revisions and does not introduce a new error.  \n{\"decisive\": false}"
+}

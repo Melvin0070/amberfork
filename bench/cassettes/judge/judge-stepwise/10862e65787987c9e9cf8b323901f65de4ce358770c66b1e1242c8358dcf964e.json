@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "10862e65787987c9e9cf8b323901f65de4ce358770c66b1e1242c8358dcf964e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "8339320524d5b6b32e79f979bf2ee15063b7269cda4d4ff41933ddef60771796",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524565,
+  "response": "Step 0 is not a decisive error because “Giovanni Castiglione” is the correct name of the co-consecrator who never became pope.  \n{\"decisive\": false}"
+}

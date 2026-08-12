@@ -1,0 +1,494 @@
+{
+  "judge_schema_version": "0.1",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "split": "dev",
+  "n_pairs": 23,
+  "params_sha256": "8ebd95ce8f3d50549017b4d381c8d0dc1f76264184ce92e5795895b383f36014",
+  "prompts": {
+    "judge-stepwise": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209"
+  },
+  "arms": [
+    {
+      "arm": "random",
+      "score": {
+        "exact": {
+          "hits": 4,
+          "n": 23,
+          "rate": 0.17391304347826086,
+          "ci95_lo": 0.06978653563062565,
+          "ci95_hi": 0.3713764764022614
+        },
+        "w1": {
+          "hits": 7,
+          "n": 23,
+          "rate": 0.30434782608695654,
+          "ci95_lo": 0.15604024453214022,
+          "ci95_hi": 0.508657562687592
+        },
+        "w3": {
+          "hits": 13,
+          "n": 23,
+          "rate": 0.5652173913043478,
+          "ci95_lo": 0.3681137508501646,
+          "ci95_hi": 0.743653646743258
+        },
+        "no_pred": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        }
+      },
+      "parse_failures": 0,
+      "exclusions": [],
+      "replayed": 0,
+      "recorded": 0
+    },
+    {
+      "arm": "pos-lexical",
+      "score": {
+        "exact": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        },
+        "w1": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        },
+        "w3": {
+          "hits": 8,
+          "n": 23,
+          "rate": 0.34782608695652173,
+          "ci95_lo": 0.1881127593879773,
+          "ci95_hi": 0.55109664622737
+        },
+        "no_pred": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        }
+      },
+      "parse_failures": 0,
+      "exclusions": [],
+      "replayed": 0,
+      "recorded": 0
+    },
+    {
+      "arm": "nw-structural/resync",
+      "score": {
+        "exact": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        },
+        "w1": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        },
+        "w3": {
+          "hits": 8,
+          "n": 23,
+          "rate": 0.34782608695652173,
+          "ci95_lo": 0.1881127593879773,
+          "ci95_hi": 0.55109664622737
+        },
+        "no_pred": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        }
+      },
+      "parse_failures": 0,
+      "exclusions": [],
+      "replayed": 0,
+      "recorded": 0
+    },
+    {
+      "arm": "nw-lexical/resync",
+      "score": {
+        "exact": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        },
+        "w1": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        },
+        "w3": {
+          "hits": 8,
+          "n": 23,
+          "rate": 0.34782608695652173,
+          "ci95_lo": 0.1881127593879773,
+          "ci95_hi": 0.55109664622737
+        },
+        "no_pred": {
+          "hits": 0,
+          "n": 23,
+          "rate": 0.0,
+          "ci95_lo": 0.0,
+          "ci95_hi": 0.14311661845042686
+        }
+      },
+      "parse_failures": 0,
+      "exclusions": [],
+      "replayed": 0,
+      "recorded": 0
+    },
+    {
+      "arm": "judge-stepwise",
+      "score": {
+        "exact": {
+          "hits": 2,
+          "n": 23,
+          "rate": 0.08695652173913043,
+          "ci95_lo": 0.024180004484220363,
+          "ci95_hi": 0.26795981075743663
+        },
+        "w1": {
+          "hits": 2,
+          "n": 23,
+          "rate": 0.08695652173913043,
+          "ci95_lo": 0.024180004484220363,
+          "ci95_hi": 0.26795981075743663
+        },
+        "w3": {
+          "hits": 5,
+          "n": 23,
+          "rate": 0.21739130434782608,
+          "ci95_lo": 0.09663978026586204,
+          "ci95_hi": 0.4190348301626401
+        },
+        "no_pred": {
+          "hits": 11,
+          "n": 23,
+          "rate": 0.4782608695652174,
+          "ci95_lo": 0.29237157416646653,
+          "ci95_hi": 0.6703726266357259
+        }
+      },
+      "parse_failures": 3,
+      "exclusions": [],
+      "replayed": 0,
+      "recorded": 340
+    }
+  ],
+  "paired": [
+    {
+      "judge_arm": "judge-stepwise",
+      "product_arm": "nw-lexical/resync",
+      "delta": {
+        "mean": -0.08695652173913043,
+        "ci95_lo": -0.21739130434782608,
+        "ci95_hi": 0.0,
+        "resamples": 10000,
+        "n_pairs": 23
+      },
+      "verdict": "tie — the interval includes zero"
+    }
+  ],
+  "pairs": [
+    {
+      "name": "pairs_trail_hal/pair_01",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/cabe07ed-9eca-40ea-8ead-410ef5e83f91",
+      "gold_step": 18,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 1
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_03",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/04a04a9b-226c-43fd-b319-d5e89743676f",
+      "gold_step": 6,
+      "predictions": {
+        "judge-stepwise": 6,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 6
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_04",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/2a649bb1-795f-4a01-b3be-9a01868dae73",
+      "gold_step": 4,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 2
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_06",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/2d83110e-a098-4ebb-9987-066c06fa42d0",
+      "gold_step": 2,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 0
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_08",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/65da0822-a48a-4a68-bbad-8ed1b835a834",
+      "gold_step": 2,
+      "predictions": {
+        "judge-stepwise": 0,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 3
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_13",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/5d0080cb-90d7-4712-bc33-848150e917d3",
+      "gold_step": 12,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 2
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_18",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/544b7f0c-173a-4377-8d56-57b36eb26ddf",
+      "gold_step": 32,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 60
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_19",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/a1e91b78-d3d8-4675-bb8d-62741b4b68a6",
+      "gold_step": 9,
+      "predictions": {
+        "judge-stepwise": 0,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 9
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_20",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/4b650a35-8529-4695-89ed-8dc7a500a498",
+      "gold_step": 2,
+      "predictions": {
+        "judge-stepwise": 0,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 6
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_23",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/d1af70ea-a9a4-421a-b9cc-94b5e02f1788",
+      "gold_step": 2,
+      "predictions": {
+        "judge-stepwise": 4,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 1
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_25",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/8e867cd7-cff9-4e6c-867a-ff5ddc2550be",
+      "gold_step": 26,
+      "predictions": {
+        "judge-stepwise": 3,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 12
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_27",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/71345b0a-9c7d-4b50-b2bf-937ec5879845",
+      "gold_step": 12,
+      "predictions": {
+        "judge-stepwise": 57,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 5
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_28",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/e0c10771-d627-4fd7-9694-05348e54ee36",
+      "gold_step": 4,
+      "predictions": {
+        "judge-stepwise": 0,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 0
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_32",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/0bb3b44a-ede5-4db5-a520-4e844b0079c5",
+      "gold_step": 2,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 3
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_38",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/73c1b9fe-ee1d-4cf4-96ca-35c08f97b054",
+      "gold_step": 4,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 2
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_42",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/6b078778-0b90-464d-83f6-59511c811b01",
+      "gold_step": 2,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 2
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_48",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/d5141ca5-e7a0-469f-bf3e-e773507c86e2",
+      "gold_step": 32,
+      "predictions": {
+        "judge-stepwise": 3,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 105
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_49",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/e4e91f1c-1dcd-439e-9fdd-cb976f5293fd",
+      "gold_step": 4,
+      "predictions": {
+        "judge-stepwise": 0,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 8
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_50",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/42576abe-0deb-4869-8c63-225c2d75a95a",
+      "gold_step": 2,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 2
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_60",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/a3fbeb63-0e8c-4a11-bff6-0e3b484c3e9c",
+      "gold_step": 7,
+      "predictions": {
+        "judge-stepwise": 0,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 4
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_62",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/5188369a-3bbe-43d8-8b94-11558f909a08",
+      "gold_step": 19,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 9
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_64",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/114d5fd0-e2ae-4b6d-a65a-870da2d19c08",
+      "gold_step": 4,
+      "predictions": {
+        "judge-stepwise": 4,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 2
+      }
+    },
+    {
+      "name": "pairs_trail_hal/pair_66",
+      "task_key": "gaia_hf_open_deep_research_gpt520250807_1754605128/708b99c5-e4a7-49cb-a5cf-933c8d46470d",
+      "gold_step": 2,
+      "predictions": {
+        "judge-stepwise": null,
+        "nw-lexical/resync": 0,
+        "nw-structural/resync": 0,
+        "pos-lexical": 0,
+        "random": 5
+      }
+    }
+  ]
+}

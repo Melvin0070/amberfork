@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "1773c962d965d523fee9008e37f2c93a715737043a4d6e9f8f7a803641ade976",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "207610fb399f92f162a77781a10f343a328b028c0f34c304df9948a4a436bc89",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524813,
+  "response": "Step 21 is not the decisive error because it proposes reasonable additional navigation and search steps, merely continuing verification rather than introducing a wrong claim.  \n{\"decisive\": false}"
+}

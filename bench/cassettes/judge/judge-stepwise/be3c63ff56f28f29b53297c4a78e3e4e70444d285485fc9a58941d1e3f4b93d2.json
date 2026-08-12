@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "be3c63ff56f28f29b53297c4a78e3e4e70444d285485fc9a58941d1e3f4b93d2",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "30530965aa61196013e08b53bb6f647ac5dc9da4d2e8477d4a44747b20d6c993",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523538,
+  "response": "No; step 31 merely repeats the page-down attempt and the run had already failed to verify the answer earlier.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b98bf2fe194c65b0c57c09a9212822926fc4e955da179535775bd14f1b72260a",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d30f7a39cebfb3f6cad304469af108abf5c10f60c5c5b51d4672e9a403853b1e",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524536,
+  "response": "Step 10 is not the decisive error because it gives the correct year, 1937, and merely restates the result reached earlier.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "f3340aa80e6365006e364bac9727958a86270e846c07997c4be3a956ee53cc4e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7b671a83e81adc1c8f93b429d3e402e18ced59ff9887ad7f8c67392a014ae509",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523630,
+  "response": "Step 3 is not a decisive error because it correctly initiates the necessary search for the article count and merely implements the preceding plan.  \n{\"decisive\": false}"
+}

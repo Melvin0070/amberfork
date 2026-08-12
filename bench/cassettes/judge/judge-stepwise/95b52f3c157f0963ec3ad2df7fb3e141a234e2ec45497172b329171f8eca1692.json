@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "95b52f3c157f0963ec3ad2df7fb3e141a234e2ec45497172b329171f8eca1692",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b5559adc8596ce28f997015d245de2b6376dfe68de8e052a7dcd2e3d7f4c3776",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524595,
+  "response": "Step 3 merely repeats the earlier answer “Giovanni Castiglione” and does not introduce a new decisive error.  \n{\"decisive\": false}"
+}

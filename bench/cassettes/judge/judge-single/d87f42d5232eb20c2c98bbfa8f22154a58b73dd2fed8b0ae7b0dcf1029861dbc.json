@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d87f42d5232eb20c2c98bbfa8f22154a58b73dd2fed8b0ae7b0dcf1029861dbc",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "9e6b987f5aa8102ec096dca0b5f444796f0dd3a4ddf68c75143e5e70c77421a3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786516919,
+  "response": "Step 12 is the decisive error: the search agent asserted **0.1777 m³** as the paper’s value despite having only a generic search-results page and never opening or inspecting the paper itself. This unsupported conclusion was then propagated unchanged by the parent agent.\n\n{\"step\":12}"
+}

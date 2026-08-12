@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "3b53d69c887a3a3dedd9a50d30ded85b8190b56b9b2840e75e0bc125d1bba155",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "406d2d70363f6efba78ea1c8aaefcb8e5bac87175a8bfe6749ff0974c2b02ca5",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523702,
+  "response": "Step 4 is correct because it accurately interprets the reversed instruction and gives “right,” the opposite of “left.”  \n{\"decisive\": false}"
+}

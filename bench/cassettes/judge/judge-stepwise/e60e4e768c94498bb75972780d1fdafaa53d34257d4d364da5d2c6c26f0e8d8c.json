@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "e60e4e768c94498bb75972780d1fdafaa53d34257d4d364da5d2c6c26f0e8d8c",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f66b964e2d1d56a79a219b1fec15a0dedb2f3f1ec369304b24aacb9e141191a3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524504,
+  "response": "Step 4 is not the decisive error because it merely restates the already planned search request without introducing a factual mistake; the run had already produced the answer 1937 earlier.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "ffe526a65dfb5d46db55225696eb8bbe207f2e6527d090690e9a8836e926010a",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d1b2dabaad28c667ff6b2045bc17c1986649e4056ecd6bed23eb2c686d92e0e2",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523563,
+  "response": "Step 39 merely reports another unsuccessful search on the already selected page, while the run had already gone wrong by asserting an unsupported answer and failing to verify the correct material earlier.  \n{\"decisive\": false}"
+}

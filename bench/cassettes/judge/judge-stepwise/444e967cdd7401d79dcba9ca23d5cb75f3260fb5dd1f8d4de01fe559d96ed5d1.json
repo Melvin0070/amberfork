@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "444e967cdd7401d79dcba9ca23d5cb75f3260fb5dd1f8d4de01fe559d96ed5d1",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "c26ea19c9ee5af509c14da79084c5f9bf5d738b13316cd12a236fcf8b517d730",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524004,
+  "response": "Step 62 merely summarizes the outstanding research and does not introduce the decisive error; the run had already stalled in earlier repetitive, unverified searches.  \n{\"decisive\": false}"
+}

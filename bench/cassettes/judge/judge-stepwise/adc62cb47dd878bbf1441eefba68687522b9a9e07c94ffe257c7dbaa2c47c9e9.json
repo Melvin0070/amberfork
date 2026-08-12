@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "adc62cb47dd878bbf1441eefba68687522b9a9e07c94ffe257c7dbaa2c47c9e9",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "dab6e60a59c45eb43df662fb0d1c6f5c9c7adab82bcffa227145c14e342e8ccc",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523671,
+  "response": "Step 3 merely repeats the previously produced answer without adding new reasoning or verification, so it is not the earliest decisive error.  \n{\"decisive\": false}"
+}

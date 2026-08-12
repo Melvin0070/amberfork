@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "0c76091591f3721915143e0ac78fe95df39d31584dad24a7fadf8339ccd9e711",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b5721b5af99ee8eadde87354e0e0270cefb059881074f905e29882e1326e2e68",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523871,
+  "response": "Step 28 is not decisive because it merely continues inspecting an unrelated Academia.edu page, while the run had already lacked reliable verification of the source and answer.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "ca2ad2f610cfff053f4bf3b9254e77eb2bd963ceea095fd96789455032b140bb",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7c8bfab3a4afbc9706c66c5142bef86376e3e6aca5ff050e6cbb138a3a6f00a9",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523542,
+  "response": "False; step 33 merely repeats ineffective page-down attempts, while the run had already gone wrong by asserting an unverified surname earlier.  \n{\"decisive\": false}"
+}

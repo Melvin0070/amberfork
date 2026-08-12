@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "24278e31ca723269b4311c91ca7455eba62f2376f5a004184f32a36b1a88d31e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "85ba57b489ef5c9b5ccf630b5c9b55899543a38791728604fa11984f90b409ea",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523728,
+  "response": "Step 7 is a reasonable plan for locating and verifying the paper’s stated fish-bag volume, so it is not the decisive error.  \n{\"decisive\": false}"
+}

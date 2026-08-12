@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "51991eb38effbb7fa839a2285d6d542da20d3fc09c10df104788c838b50f52c4",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "dd0afddb28cec4e59fb4108ab5f772710c896dc6034d1439ac204baad0eb525b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524824,
+  "response": "Step 25 merely repeats the attempt to scroll the page and produces no result, so it is not the decisive error.  \n{\"decisive\": false}"
+}

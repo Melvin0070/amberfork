@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "1e83976b7fead2c2977762f8dc4afd84eecdedf07fa8c3bd5e846334f2bc01b5",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "c4678d84864e2b60bab748d94fff5689919459ba09969cf304d24ba6576497f3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524315,
+  "response": "False—step 52 merely repeats an unsuccessful search attempt, while the run had already gone wrong earlier by asserting an unverified answer and failing to extract the deletion from the revision diff.\n\n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "2ba5bd6eb221b902b339b57fad033eb6c88e234e5cb7c7e1877015186143d4a0",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "11e4bebfa9e4c5f430ec728bc7b2dfb3bddea14717c19820474a33c2f3a6f415",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523752,
+  "response": "Step 14 merely restates the previously obtained answer, which appears correct, so it is not the decisive error.  \n{\"decisive\": false}"
+}

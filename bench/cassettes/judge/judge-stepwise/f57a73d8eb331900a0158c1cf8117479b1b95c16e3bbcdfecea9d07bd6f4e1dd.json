@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "f57a73d8eb331900a0158c1cf8117479b1b95c16e3bbcdfecea9d07bd6f4e1dd",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "e323a3decc9e19e5537c79c4f62f374d40b9f0bac566786ac937d424cd9f7d5c",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524092,
+  "response": "Step 1 is a correct preparatory survey that identifies the needed source and filtering/counting process, so it is not the decisive error.  \n{\"decisive\": false}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "7424ddf0cf7eaa8c01037cadfd1dfc1791ce6650ed3665533212142e23877411",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "e0394713eecdeadee49d66057c0d92ab8e926c0e00371c2afba331f897b9f1ac",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786516800,
+  "response": "Step 4 is the first decisive error: instead of locating the paper and verifying its ELISA method, the agent assumes the relevant chemicals are the two enzymes typically used in ELISA and immediately submits their EC numbers. Although those numbers happen to match the reference answer, this unsupported shortcut is the first substantive departure from the reference’s evidence-based identification and verification process.\n\n{\"step\":4}"
+}

@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d28d6979b64ab07fba5183e1c2402745696dca5270eb0e94087b0eb1e26acfc9",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b496da4e1115d0434a677b10490e112ceee5e8b58eca572261952ce8d53bc0c9",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524810,
+  "response": "Step 20 is not the decisive error because it correctly summarizes the task and learned facts, while merely leaving the writer’s name to be verified despite the earlier identification of Annie Levin.  \n{\"decisive\": false}"
+}

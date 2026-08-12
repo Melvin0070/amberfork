@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d9c0acf49e097e0a985a61bbb7ec1a3c33d00571fe90b79b6c18960c8901d504",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "a896ab4c30990120ab9b52687e552b453582010189596dfc514d15cc1524983d",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517305,
+  "response": "Step 4 is the first substantive action that commits to the incorrect answer: it claims to “simulate” research without actually invoking the search tool and concludes that Giovanni Castiglione is the non-pope. The reference establishes that the portrait subject is Fernando Niño de Guevara and that the correct co-consecrator is Alfonso Visconti; earlier failing steps only survey facts and propose a valid plan.\n\n{\"step\": 4}"
+}

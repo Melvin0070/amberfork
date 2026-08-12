@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "284eda05bdeb47c6b22593af48b2fd76f9e1763e4d05f771d8e96615e8f3eaa1",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "c04a95afec0fd7a2732bc0b8c76982bb84769130e129bd7b5f35b8fc838e105d",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523591,
+  "response": "Step 49 is a correct verification plan that restates the already identified surname “Louvrier,” so it is not the decisive error.  \n{\"decisive\": false}"
+}

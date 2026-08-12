@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "1bdd0ae49d12a48ab493444cdbfe049d125ef8541def96d279d5c067f4cb8a9e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "593669a68cdcedb2d62400b3cda0a8295f161a99bba6806df9fbe704d46b0b1c",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524036,
+  "response": "Step 71 is not the decisive error because it correctly restates the previously identified answer, “A Nightmare on Elm Street.”  \n{\"decisive\": false}"
+}

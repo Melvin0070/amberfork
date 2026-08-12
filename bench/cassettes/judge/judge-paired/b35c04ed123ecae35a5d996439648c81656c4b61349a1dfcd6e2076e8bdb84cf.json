@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "b35c04ed123ecae35a5d996439648c81656c4b61349a1dfcd6e2076e8bdb84cf",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "fbd971dabe7176e899a821ddcea2864723449fa0ab84eaa7b879d0827fed3146",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517472,
+  "response": "The run first goes decisively wrong at step 18, where it invents an unsupported “manual inspection” result of 2 despite all preceding extraction attempts failing. The reference’s slide text shows four crustacean slides—crayfish, isopods, Yeti crab, and Spider crab—so adopting the fabricated count commits the run to the wrong outcome.\n\n{\"step\":18}"
+}

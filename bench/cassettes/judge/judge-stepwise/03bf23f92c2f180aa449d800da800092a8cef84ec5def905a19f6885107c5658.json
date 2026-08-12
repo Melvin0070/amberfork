@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "03bf23f92c2f180aa449d800da800092a8cef84ec5def905a19f6885107c5658",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f9fe098742e7a4e3a93971e6c301ecd435b6ad184404348d87b4d4ce5b5f1be3",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523448,
+  "response": "Step 0 is not a decisive error because it provides the likely correct surname, Louvrier, in response to the question.  \n{\"decisive\": false}"
+}

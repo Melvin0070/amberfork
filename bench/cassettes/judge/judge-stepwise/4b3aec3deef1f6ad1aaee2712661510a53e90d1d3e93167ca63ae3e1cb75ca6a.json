@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4b3aec3deef1f6ad1aaee2712661510a53e90d1d3e93167ca63ae3e1cb75ca6a",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "4630929dc26c810cdf117ad41ac231d7753c00fd18fe365187c85c7d9fd30581",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523929,
+  "response": "False, because step 43 merely repeats an unproductive page-down after the run had already gone wrong by relying on an unrelated Academia.edu document and an unsupported answer.  \n{\"decisive\": false}"
+}

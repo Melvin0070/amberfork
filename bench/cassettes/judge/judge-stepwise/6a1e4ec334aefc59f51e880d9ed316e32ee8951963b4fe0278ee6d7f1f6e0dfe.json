@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6a1e4ec334aefc59f51e880d9ed316e32ee8951963b4fe0278ee6d7f1f6e0dfe",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f047ddbb1a319d97ffc124db4c3f28b21a966809e7fc656875292db4e75d95cb",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523943,
+  "response": "Step 46 is merely a repeated page-down action and is not the decisive error; the run had already failed to verify the answer and was pursuing an irrelevant source.  \n{\"decisive\": false}"
+}

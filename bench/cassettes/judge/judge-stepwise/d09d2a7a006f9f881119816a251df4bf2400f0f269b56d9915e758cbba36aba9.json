@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d09d2a7a006f9f881119816a251df4bf2400f0f269b56d9915e758cbba36aba9",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "84b3688bfe740e69874c067d4e64409117f1600b9e85b55a88cc9ad4f7a0c83e",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524197,
+  "response": "Step 20 is not the decisive error because it merely summarizes earlier findings, while the relevant phrase and punctuation-removal procedure had already been identified.  \n{\"decisive\": false}"
+}

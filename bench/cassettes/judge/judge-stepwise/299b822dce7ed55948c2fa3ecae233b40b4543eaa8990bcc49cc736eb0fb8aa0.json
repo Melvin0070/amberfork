@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "299b822dce7ed55948c2fa3ecae233b40b4543eaa8990bcc49cc736eb0fb8aa0",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "bcfa8b425c3885daacd28a5c67940232dba1b8ec4dfdc0e0262496458496e35c",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523949,
+  "response": "No; step 48 merely summarizes the unresolved investigation and does not introduce a decisive error, while the run had already proposed the likely correct answer earlier.  \n{\"decisive\": false}"
+}

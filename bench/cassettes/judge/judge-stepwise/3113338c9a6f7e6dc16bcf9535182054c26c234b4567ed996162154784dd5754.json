@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "3113338c9a6f7e6dc16bcf9535182054c26c234b4567ed996162154784dd5754",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "248d815bc4bf2da81ecee13de06ea3d295c914f96f4b817d1e4479383adbcf51",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523841,
+  "response": "No; step 20 merely summarizes known and outstanding facts, while the unsupported conclusion was already introduced earlier by the search agent.  \n{\"decisive\": false}"
+}

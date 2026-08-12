@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6f6d8fe28a3eb560c22b5aab973902a980901d9773c6102a3c620c64871f5937",
+  "provider": "gemini",
+  "model": "gemini-3.6-flash",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "47b22f73ad603c2c09b382f6cd1fc6400b8c7d4d970263b8e85dc7570f79c9d1",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523614,
+  "response": "In step 4, the failing run relies entirely on unverified parametric memory rather than using tools to research the secretaries and their bachelor's degree institutions. As a result, it misses Secretary John F. Kelly (who earned his bachelor's degree at UMass Boston), hallucinates Santa Fe as a university location, and immediately outputs the incorrect final answer without performing any web searches or tool calls.\n\n{\"step\": 4}"
+}

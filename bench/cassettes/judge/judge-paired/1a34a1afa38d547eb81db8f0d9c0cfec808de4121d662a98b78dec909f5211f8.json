@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "1a34a1afa38d547eb81db8f0d9c0cfec808de4121d662a98b78dec909f5211f8",
+  "provider": "gemini",
+  "model": "gemini-3.6-flash",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "5eec5861648cc284441be2f9dff14161fae1db905e20e92fd983a299fa91d386",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786558462,
+  "response": "In Step #1 of the failing run, during the initial facts survey, the model misinterprets the semantic alignment of the verb \"Maktay\" (\"is pleasing to\"). It incorrectly treats \"I\" as the nominative subject (\"Pa\") and \"apples\" as the accusative direct object (\"Zapple\"), concluding that the translation is \"Maktay Zapple Pa\" instead of \"Maktay Mato Apple\". This erroneous deduction commits the run to the wrong answer from that point onward.\n\n{\"step\": 1}"
+}

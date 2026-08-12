@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "68a13673bbac0fe9694bdcdfad558f84e92c7cf511841844507a17f042b82dfd",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "c9b3762e8d364d7a07e58963940ff641895323c42c6f7ba33cc5f72efc51c16b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523891,
+  "response": "Step 33 is merely an ineffective page-down action with no output, not the earliest decisive error causing failure.  \n{\"decisive\": false}"
+}

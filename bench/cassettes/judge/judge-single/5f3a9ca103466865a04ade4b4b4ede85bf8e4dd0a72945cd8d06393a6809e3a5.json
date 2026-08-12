@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "5f3a9ca103466865a04ade4b4b4ede85bf8e4dd0a72945cd8d06393a6809e3a5",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "717a45fa08dbbdf4737058620247554de2eab948e70d2907e9c622e056022e67",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517597,
+  "response": "Step 4 is the decisive error: it asserts, without using any retrieval or verification tools, that Connected Papers bubble size is determined by citation count and immediately finalizes that unsupported conclusion. The later outputs merely repeat this unverified—and evidently incorrect—answer.\n\n{\"step\":4}"
+}

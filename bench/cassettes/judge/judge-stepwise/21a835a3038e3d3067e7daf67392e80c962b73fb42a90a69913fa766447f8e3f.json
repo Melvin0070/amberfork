@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "21a835a3038e3d3067e7daf67392e80c962b73fb42a90a69913fa766447f8e3f",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "21b44b5cce4290aa09215fcc1af80f44f44426df5512a86b40884d3b29189302",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523856,
+  "response": "Step 25 merely repeats the unsuccessful page search, while the run had already gone wrong by asserting “A Nightmare on Elm Street” without verifying it from the correct source.  \n{\"decisive\": false}"
+}

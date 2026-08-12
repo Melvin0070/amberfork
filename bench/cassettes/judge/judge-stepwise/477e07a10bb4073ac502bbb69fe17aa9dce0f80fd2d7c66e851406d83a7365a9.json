@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "477e07a10bb4073ac502bbb69fe17aa9dce0f80fd2d7c66e851406d83a7365a9",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "000c3bf4031fea4aba49a685034a45963d05723f575f0d68472b9c7de6be6797",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524276,
+  "response": "Step 40 merely repeats the unsuccessful page-scrolling attempt and is not the earliest decisive error.  \n{\"decisive\": false}"
+}

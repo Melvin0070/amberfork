@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "56b76cfb896fb1e50cfe3a57965f8c74814dff9b3c7212cb4f27dcefc613f8d5",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "291315e527e3bb33d3cf54df380fb9ea342ae7d929175afbe2329f2bba3c6ed8",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523876,
+  "response": "False—the run had already gone off course by pursuing an unrelated Academia.edu document, so step 29 merely continues that mistaken search rather than being the decisive error.  \n{\"decisive\": false}"
+}

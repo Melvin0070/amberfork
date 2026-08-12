@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "556562887021702a60aa4068c074b3b219ff817c6dda979010696fa960093840",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "784b80ce2284d5a11a3bceaf0a9776ee9933daf229171b682e3152bddec6908b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524051,
+  "response": "Step 0 is decisive because it gives the unsupported answer “27” without showing any verification or analysis of the referenced video.  \n{\"decisive\": true}"
+}

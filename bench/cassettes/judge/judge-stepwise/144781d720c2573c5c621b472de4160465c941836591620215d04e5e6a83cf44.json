@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "144781d720c2573c5c621b472de4160465c941836591620215d04e5e6a83cf44",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "fecb1ef000e98300539857efc82574080c8c6d2c4dd2f7081d976742b22df4b8",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524339,
+  "response": "Step 0 is decisive because it is the only shown step and its final answer, 133.7, is incorrect for the task.  \n{\"decisive\": true}"
+}

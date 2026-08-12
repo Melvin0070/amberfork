@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "fc4ca83cca3799bd829238e050b79dfda9569d7064a09326b4d0cc6b5790b1ac",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "30fb6c57d4be350eae502307c29265f861df0e6535d5421c1f7f4498787d141b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524831,
+  "response": "Step 27 is merely another attempt to scroll the page and is not the decisive error; the answer had already been identified as Annie Levin.  \n{\"decisive\": false}"
+}

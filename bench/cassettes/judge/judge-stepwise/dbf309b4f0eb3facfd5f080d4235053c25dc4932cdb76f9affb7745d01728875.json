@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "dbf309b4f0eb3facfd5f080d4235053c25dc4932cdb76f9affb7745d01728875",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "7c92f8dae910d4d3cde8c0bda39a5733e87b728f947144610a8ebdab98d6fcf1",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524000,
+  "response": "Step 61 merely repeats an unsuccessful file-inspection attempt and is not the earliest substantive error causing the failure.  \n{\"decisive\": false}"
+}

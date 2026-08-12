@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "abac92baf6d0fa23d808ea50feb2af660ac74098ef31a238296d133810ab9431",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "b446644387236d115e2a9782b49205d34c272ea7b0e0c928d9af89cd83814a54",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524909,
+  "response": "Step 3 merely restates the task and does not introduce a substantive error that causes the run to fail.  \n{\"decisive\": false}"
+}

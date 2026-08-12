@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "c9578bc73bb3a10f7f93d9615d976344232b37bb23208eb97909da4a09745551",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "ead3b927c2c2c39fd248005bb854621c34b9666f2584a58be3e8715d641c8aad",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524932,
+  "response": "Step 4 is not a decisive error because it correctly identifies citation count as the feature determining the bubble size and merely restates the earlier conclusion.\n{\"decisive\": false}"
+}

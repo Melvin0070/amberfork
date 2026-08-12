@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "48037b4c694a3ed84c94f7055c65e83292f31c4056d0e89d648d196d9ffc3821",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "3a3820c52c4d6cecd48d0b5ff1d309957446ec7b8aac356199d0b8c3c2422981",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523801,
+  "response": "Step 9 is a valid follow-up search action and does not introduce an error that causes the run to fail.  \n{\"decisive\": false}"
+}

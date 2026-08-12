@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "44152df3a7b0a8dbe86144aaac397332550ca6ac18a64925d7809b33d64f64fa",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "6721b76675230646287619c0bbef679b53984829a49f25f6df68aab17bc0cf6b",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523898,
+  "response": "False: step 35 merely proposes another verification plan, while the run had already gone wrong through the unsupported “A Nightmare on Elm Street” conclusion and irrelevant searches.  \n{\"decisive\": false}"
+}

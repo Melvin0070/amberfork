@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "46b55d2c1eb8503d2d0aa6efa775d21aff67d76e9f4204131cf58cda2b2bab54",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "d1a4b07b9a9ae9ff385fe375eefe662bb6cb58e8576c78f8922abcdfa49ad75a",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523605,
+  "response": "Step 53 merely restates the previously obtained answer and is not the earliest decisive error.  \n{\"decisive\": false}"
+}

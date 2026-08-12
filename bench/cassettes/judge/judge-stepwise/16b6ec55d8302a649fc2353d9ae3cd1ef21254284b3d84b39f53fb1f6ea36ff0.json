@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "16b6ec55d8302a649fc2353d9ae3cd1ef21254284b3d84b39f53fb1f6ea36ff0",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "791ef2e6f49a0a89d7b332152f0ab1efee56c8576172f39f580dde06f31638d9",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523698,
+  "response": "Step 2 is correct because it accurately plans to reverse the text, interpret the instruction, and answer “right,” while step 0 had already reached the correct answer.\n{\"decisive\": false}"
+}

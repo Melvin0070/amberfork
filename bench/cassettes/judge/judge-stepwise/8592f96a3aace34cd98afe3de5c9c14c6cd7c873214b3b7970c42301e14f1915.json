@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "8592f96a3aace34cd98afe3de5c9c14c6cd7c873214b3b7970c42301e14f1915",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "985ff2515a7f4d5466382bb4afb211cf8f8451921a0687f732a8c668ca92b284",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523777,
+  "response": "Step 4 is not the decisive error because it merely initiates a verification search, while the prior steps are correct or preliminary rather than conclusively wrong.  \n{\"decisive\": false}"
+}

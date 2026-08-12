@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6f23c2cf3bac103013511a7ad071cea6e19a8266fe72ff1f5b6adb84a8f5e67e",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "0df939978e04e04453ed2de0e4677a2fb58d1a9d436ddd78f98bcf7f85025e6d",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524843,
+  "response": "Step 31 is not the decisive error because it merely reports an unsuccessful search for an em dash while the run had already identified the likely attribution as Annie Levin.  \n{\"decisive\": false}"
+}

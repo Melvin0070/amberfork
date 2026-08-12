@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4b1edd73f74001fb41d08dc0635ec915e0cfc126af2f0c047b4afdd7b46f92f6",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "bc0b7d55eeb2bc865df468c9115f4166765548500c671c9e7b661711e32b0d14",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524807,
+  "response": "Step 19 is merely an unproductive page-down action, while the answer had already been identified and no decisive error is shown.  \n{\"decisive\": false}"
+}

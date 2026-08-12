@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "d5db1e0367877d9df493a2c22cdb76d22b566816c3943bf113bf54580b485035",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "f1f37cbaf0972e53702a55f87c23c58d7bcd460bcd8d9ada65232c9f1bff8f55",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523723,
+  "response": "Step 5 merely repeats the previously reported value of 0.1777 m³ and does not introduce a new error, so it is not the decisive error.  \n{\"decisive\": false}"
+}

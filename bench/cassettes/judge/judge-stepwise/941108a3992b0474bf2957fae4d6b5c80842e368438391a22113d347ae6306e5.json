@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "941108a3992b0474bf2957fae4d6b5c80842e368438391a22113d347ae6306e5",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "da4d4c1fd5c2ed14bb3bb406644f0cc1f1a4e4a53d5aabf3002c7e58f7048289",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523550,
+  "response": "Step 35 is not the decisive error because it merely proposes another reasonable search, while the run had already relied on an unverified surname and possibly the wrong LibreTexts page.  \n{\"decisive\": false}"
+}

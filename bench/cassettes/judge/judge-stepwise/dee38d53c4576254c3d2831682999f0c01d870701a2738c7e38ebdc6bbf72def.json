@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "dee38d53c4576254c3d2831682999f0c01d870701a2738c7e38ebdc6bbf72def",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "45f770f3a9fc5b09ab646a8c177582f37494be66b7b23851fcf33634884f5fdc",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786523566,
+  "response": "Step 40 merely retries an on-page search after earlier unsuccessful searches and is not itself the decisive error.  \n{\"decisive\": false}"
+}

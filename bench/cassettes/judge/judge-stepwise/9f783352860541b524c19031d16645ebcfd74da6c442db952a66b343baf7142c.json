@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9f783352860541b524c19031d16645ebcfd74da6c442db952a66b343baf7142c",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "468a3604eb372fb998a5513597925e709a9e0f8e6e1e80854963a23960e8f9c8",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524715,
+  "response": "Step 4 is correct because it faithfully applies the stated Tizin verb–object–subject order and the supplied word forms, while merely restating the earlier valid derivation.  \n{\"decisive\": false}"
+}

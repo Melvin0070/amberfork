@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "4e486743db42cdb38fd381f55ed1e1f76008586944dd89cb55808aa8bf27b6e3",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-single",
+  "prompt_sha256": "e622edfd84bc2e15974b9e2ac94474fe047f41385a2d4bef64732fafaaec6e61",
+  "rendered_prompt_sha256": "f246eb0bd113f355cd070b8e428b56c51c72f0763300a4d4863827fa864b168a",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517338,
+  "response": "Step 105 is the decisive error because it changes the target from the date the image was first inserted into the article to the image file’s upload/history date. Those dates are not necessarily the same; the agent needed to inspect article revisions and find the earliest revision containing the image filename. This conflation led directly to the unsupported answer 21/03/2018.\n\n{\"step\":105}"
+}

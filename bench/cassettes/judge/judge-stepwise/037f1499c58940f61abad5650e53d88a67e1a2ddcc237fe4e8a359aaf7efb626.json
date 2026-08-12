@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "037f1499c58940f61abad5650e53d88a67e1a2ddcc237fe4e8a359aaf7efb626",
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "arm": "judge-stepwise",
+  "prompt_sha256": "d0c13e46c41e225510f0c6c23d1dfba9bdbd95530758a1ef2c83cc8a44bbc209",
+  "rendered_prompt_sha256": "904451d5d338fc057bf94a70d40414506b2a5df385063bb3fbc4ce520c6eb510",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786524254,
+  "response": "Step 36 merely reports an unsuccessful search for a diff marker and is not itself the decisive error; the run had already identified the likely answer earlier.  \n{\"decisive\": false}"
+}

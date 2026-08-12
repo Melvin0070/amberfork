@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "0267564a153c9bb21888dd72611bad6284d9c84dc46e1a0057b65fd6133222b8",
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "13df1b074f9ffbcfcb0e300bc219f1a873a3f275c5ba3463b96766d899788eb0",
+  "decoding": {
+    "temperature": null,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786517105,
+  "response": "The substantive answer was found and normalized correctly at steps 59–60. The first decisive divergence is step 61, which adds the unrequested prefix “FINAL ANSWER:” instead of returning only the short phrase, violating the required output format despite the phrase itself being correct.\n\n{\"step\":61}"
+}
