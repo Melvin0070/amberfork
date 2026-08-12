@@ -3541,3 +3541,108 @@ The rule binds symmetrically — a baseline carries its own freeze (model id, pr
 params, corpus, split), so "we tried a few prompts" cannot hide inside a baseline the way it cannot
 hide inside `params.toml`. BENCHMARK.md's Baselines section is amended to name the three conditions
 and to record that `judge-paired`, not the SOTA-replicating `judge-single`, is the headline.
+
+## 070 · 2026-08-13 · PRE-REGISTRATION: the natural-pair null is a representation defect (#46 → #49)
+
+**Written before a single line of the repair is implemented and before any re-scored number
+exists.** 069 was registered expecting to lose to the judge arms; it lost. This entry is the
+diagnosis of *why*, taken after the judge numbers landed, which makes it the single most
+motivated-reasoning-prone entry in the notebook. Everything below is therefore either a
+measurement already taken (quoted with its value) or a decision rule fixed in advance.
+
+### What the judge run actually exposed
+
+The A3/A4 run scored the product at **0.000 exact on all 23 dev pairs** against a random floor of
+0.174, losing to three of four judge arms with CIs excluding zero. Inspecting the per-pair
+predictions rather than the rates:
+
+- **All three aligner arms predict step 0. On every one of the 23 pairs.** `pos-lexical`,
+  `nw-structural/resync` and `nw-lexical/resync` — three different cost models — emit an
+  identical constant. Three algorithmically distinct arms cannot agree exactly unless none is
+  discriminating.
+- **The 0.348 at ±3 is not partial signal.** Exactly 8 of 23 pairs have gold ≤ 3. 8/23 = 0.348.
+  The entire ±3 column is "predict 0, count the pairs whose gold happens to sit near the start."
+
+The aligner is a constant predictor on this corpus. That is not a localization failure; it is the
+fork rule behaving correctly on input with no common prefix to fork from.
+
+### Three measured defects, none of them in the alignment algorithm
+
+1. **Zero shared step names, all 69 pairs.** The reference side carries exactly two distinct names
+   in the whole corpus (`openai.chat.completions.create`, `tool_result`); the failing side carries
+   real ones (`web_search`, `final_answer`, `Step N`). The lexical model compares `"{name}:
+   {outputs}"` — there is no name signal to find.
+2. **The tool names exist in the payload and are discarded.** HAL's LLM response carries
+   `tool_calls[].function.name` — `web_search`, `visit_page`, `find_on_page_ctrl_f`,
+   `page_down` — the same vocabulary smolagents uses on the TRAIL side. `hal.rs` says so itself:
+   *"the specific tool name is not reconstructed, since it is not this slice's job."* A known
+   deferral, not a discovery. Simulated: **921 of 2317 tool steps recover a real name; 22 of 69
+   pairs go from zero shared vocabulary to non-zero.**
+3. **The compared window is envelope, not content.** `TEXT_CAP` is 600 chars and `sorted_json`
+   orders the OpenAI envelope keys ahead of the payload, so the HAL side spends its window on
+   `{"choices":[{"finish_reason":"stop","index":0,"message":{"annotations":[],"content":"…` while
+   TRAIL starts at `{"content":"…`. Both sides were observed emitting the *same* planning text
+   ("### 1. Facts given in the task") for the same step, scored as near-dissimilar.
+
+Measured effect of unwrapping the envelope, over all 23 dev pairs: mean best-match **0.217 →
+0.246**, fraction of steps with a ≥0.5 match **0.04 → 0.11**, with **11 of 23 pairs improving
+materially** (`pair_48` 0.28 → 0.50, `pair_01` 0.20 → 0.44, `pair_62` 0.21 → 0.42).
+
+### The corpus is two corpora, and that is the uncomfortable part
+
+The pairs that do not improve are the ones where TRAIL logged a **7-step summary against a 50-step
+HAL reference** (median length ratio 3.1×). Roughly 10 dev pairs are of comparable granularity and
+~13 are not. No ingest repair touches the second group: there is no correspondence to recover.
+
+**This is the finding most at risk of becoming a cherry-pick**, so the rule is fixed here, before
+the number: a pair's comparability is decided by **step-count ratio and step-name vocabulary
+overlap only** — both computable from the two traces alone, with no gold label and without running
+the aligner — and the threshold is declared in the implementing slice *before* it is scored. The
+all-pairs number is published beside the stratified one in every table, always, under rule 3. If
+those two numbers ever appear apart, this registration has been violated.
+
+### What is being changed
+
+1. `hal.rs` reconstructs the tool name from the preceding turn's `tool_calls`, replacing the
+   generic `tool_result` label. Justified independently of any score by the adapter's own
+   deferred-work note.
+2. Provider envelopes are unwrapped so `outputs` carries the assistant message rather than the SDK
+   response — the fidelity principle `hal.rs` already claims ("a trajectory is the conversation,
+   not the SDK plumbing"), applied to the response side.
+3. **Abstention on no common ground.** The engine currently emits a confident, false "fork at
+   step 0" twenty-three times. Where two runs share no aligned steps, the honest output is no
+   prediction. Note the incentive this does *not* create: abstentions share the denominator with
+   hits (`score_windows_and_abstentions_share_one_denominator`), so abstaining cannot raise the
+   exact rate. It can only convert a false answer into an admitted one.
+4. The corpus stratification above.
+
+Frozen parameters are untouched. `bench/params.toml` keeps sha256 `8ebd95ce…`; rule 2 and rule 10
+both forbid a diagnosis from becoming a retune, and nothing here changes a cost-model constant,
+`resync-k`, or the fork rule.
+
+### The decision rule, fixed now
+
+- **Primary: exact-match on the comparable stratum, dev split, published beside the current
+  0.000 and beside the all-pairs repaired number.** Three numbers or none.
+- **The repair is a success only if the aligner stops being a constant predictor.** The check is
+  mechanical and comes first: if the three arms still emit an identical constant, the repair failed
+  regardless of what the rate did, and a rate that moved anyway is an artifact to be reported as
+  one.
+- **Beating the judge arms is not the bar and is not expected.** 069's branch 2 has already fired;
+  its consequence — v1.0's public claim narrows to the chimera controlled-injection protocol —
+  stands unless the repaired numbers overturn it on their own terms.
+- **If the repaired ingest still produces a null on the comparable stratum, the conclusion is that
+  this corpus cannot measure fork localization at all**, the TRAIL↔HAL natural-pair table is
+  retired to a documented negative result, and #49's real-agent perturbation protocol becomes the
+  only route to a natural-fork number. Registered now so that outcome cannot later be re-read as
+  "needs more tuning."
+
+### What this does not do
+
+It does not retract the judge result. Three of four judge arms beat the product on identical pairs
+and that number is published as measured. The mechanism explains it — a judge needs only the
+failing trace, which is why `judge-single` (0.261) beat `judge-paired` (0.174) — but an explanation
+is not a retraction, and the comparison was never the aligner's task to win on this corpus.
+
+It does not touch the chimera table (rule 10). Those pairs have a genuine shared prefix by
+construction, which is precisely the property this entry finds missing here.
