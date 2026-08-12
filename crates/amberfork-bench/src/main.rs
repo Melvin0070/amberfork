@@ -51,6 +51,7 @@ mod judge_answer;
 mod judge_cassette;
 mod judge_prompt;
 mod judge_provider;
+mod judge_run;
 mod multiref;
 mod pairs;
 mod params;
@@ -117,6 +118,9 @@ enum Command {
     /// Ask a judge one pair's question and read its answer — cassette-replayed by default,
     /// live only with --live and an API key (issue #46).
     JudgeAsk(JudgeAskArgs),
+    /// Score the LLM-judge baseline arms against the product on identical pairs (issue #46
+    /// slice A3, pre-registered in docs/notebook.md 069).
+    JudgeRun(JudgeRunArgs),
 }
 
 #[derive(Args)]
@@ -378,6 +382,60 @@ struct JudgeAskArgs {
     base_url: Option<String>,
 }
 
+#[derive(Args)]
+struct JudgeRunArgs {
+    /// One or more directories of pair_*.json manifests.
+    #[arg(long = "pairs", value_name = "DIR", num_args = 1.., required = true)]
+    pairs: Vec<PathBuf>,
+
+    /// Which protocol split to score. Defaults to dev: notebook 069 registers the judge arms
+    /// on the dev split, and the test split is sealed until the release tag (rule 1).
+    #[arg(long, value_enum, default_value_t = SplitSelection::Dev)]
+    split: SplitSelection,
+
+    /// Which registered conditions to score. Repeatable; defaults to all three.
+    #[arg(long = "arm", value_enum, num_args = 1.., default_values_t = [JudgeArmSelection::Single, JudgeArmSelection::Paired, JudgeArmSelection::Stepwise])]
+    arms: Vec<JudgeArmSelection>,
+
+    /// Frozen engine parameters (rule 2). A baseline never edits these (rule 10); they are
+    /// loaded so the product's arms re-score here exactly as they do in `run`.
+    #[arg(long, value_name = "FILE", default_value = "bench/params.toml")]
+    params: PathBuf,
+
+    /// The frozen prompt templates, pinned against notebook 069.
+    #[arg(long, value_name = "DIR", default_value = "bench/judge_prompts")]
+    prompts: PathBuf,
+
+    /// Cassette directory. Committed, so the published table replays offline forever.
+    #[arg(long, value_name = "DIR", default_value = "bench/cassettes/judge")]
+    cassettes: PathBuf,
+
+    #[arg(long, value_enum)]
+    provider: ProviderSelection,
+
+    #[arg(long, value_name = "MODEL")]
+    model: String,
+
+    /// Call the provider for any question with no cassette, and record the answers. This is
+    /// the flag that spends money.
+    #[arg(long)]
+    live: bool,
+
+    /// Send no temperature at all — the registered fallback for a model that rejects it.
+    #[arg(long)]
+    no_temperature: bool,
+
+    #[arg(long, default_value_t = 2000)]
+    max_output_tokens: u32,
+
+    #[arg(long, value_name = "URL")]
+    base_url: Option<String>,
+
+    /// Also write the full results document as JSON.
+    #[arg(long, value_name = "FILE")]
+    json_out: Option<PathBuf>,
+}
+
 /// `--provider`'s choices: the three registered places to ask (notebook 069).
 #[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
 enum ProviderSelection {
@@ -465,6 +523,7 @@ fn main() -> ExitCode {
         Command::Consensus(args) => consensus_experiment(&args),
         Command::JudgePrompt(args) => judge_prompt(&args),
         Command::JudgeAsk(args) => judge_ask(&args),
+        Command::JudgeRun(args) => judge_run(&args),
     };
     outcome.unwrap_or_else(|err| {
         eprintln!("amberfork-bench: {err}");
@@ -984,58 +1043,82 @@ impl JudgeQuestion {
 /// A parse failure is NOT an error here. The registration scores it as a miss and counts it,
 /// because a judge that cannot obey its own output contract is worse at the task rather than
 /// un-evaluable; surfacing it as exit 2 would invite the operator to "fix" it by retrying.
-fn judge_ask(args: &JudgeAskArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
-    let question = render_judge_question(&args.prompt)?;
-    let decoding = if args.no_temperature {
-        Decoding {
-            temperature: None,
-            max_output_tokens: args.max_output_tokens,
-        }
-    } else {
-        Decoding::registered(args.max_output_tokens)
-    };
-
-    // The key is read only for a live call: a replay must work on a machine that has none,
-    // which is the whole point of committing cassettes.
-    let api_key = match (args.live, args.provider.key_var()) {
+/// Build the provider a judge arm asks through.
+///
+/// The API key is read ONLY for a live call. A replay must work on a machine that has no key
+/// at all — that is the whole point of committing cassettes, and a key required merely to
+/// re-render a published table would quietly make the table unreproducible.
+fn build_localizer(
+    provider: ProviderSelection,
+    model: &str,
+    base_url: Option<&str>,
+    live: bool,
+    decoding: Decoding,
+) -> Result<Box<dyn Localizer>, Box<dyn std::error::Error>> {
+    let api_key = match (live, provider.key_var()) {
         (true, Some(var)) => {
             std::env::var(var).map_err(|_| format!("--live needs {var} in the environment"))?
         }
         _ => String::new(),
     };
-    let base_url = args
-        .base_url
-        .clone()
-        .unwrap_or_else(|| args.provider.default_base_url().to_string());
+    let base_url = base_url
+        .map(ToString::to_string)
+        .unwrap_or_else(|| provider.default_base_url().to_string());
 
-    let localizer: Box<dyn Localizer> = match args.provider {
+    Ok(match provider {
         ProviderSelection::Openai => Box::new(OpenAi::new(
             UreqPost,
             base_url,
-            args.model.clone(),
+            model.to_string(),
             api_key,
             decoding,
         )),
         ProviderSelection::Gemini => Box::new(Gemini::new(
             UreqPost,
             base_url,
-            args.model.clone(),
+            model.to_string(),
             api_key,
             decoding,
         )),
-        ProviderSelection::Ollama => Box::new(Ollama::new(
-            UreqPost,
-            base_url,
-            args.model.clone(),
-            decoding,
-        )),
-    };
+        ProviderSelection::Ollama => {
+            Box::new(Ollama::new(UreqPost, base_url, model.to_string(), decoding))
+        }
+    })
+}
 
-    let mode = if args.live {
+/// `--live` is the only way to reach a provider.
+fn cassette_mode(live: bool) -> judge_cassette::Mode {
+    if live {
         judge_cassette::Mode::Record
     } else {
         judge_cassette::Mode::ReplayOnly
-    };
+    }
+}
+
+/// The registered decoding, or the no-temperature fallback for a model that rejects it.
+fn decoding_from(no_temperature: bool, max_output_tokens: u32) -> Decoding {
+    if no_temperature {
+        Decoding {
+            temperature: None,
+            max_output_tokens,
+        }
+    } else {
+        Decoding::registered(max_output_tokens)
+    }
+}
+
+fn judge_ask(args: &JudgeAskArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let question = render_judge_question(&args.prompt)?;
+    let decoding = decoding_from(args.no_temperature, args.max_output_tokens);
+
+    let localizer = build_localizer(
+        args.provider,
+        &args.model,
+        args.base_url.as_deref(),
+        args.live,
+        decoding,
+    )?;
+    let mode = cassette_mode(args.live);
     let answer = judge_cassette::obtain(
         &judge_cassette::Cassettes::new(&args.cassettes),
         mode,
@@ -1077,5 +1160,87 @@ fn judge_ask(args: &JudgeAskArgs) -> Result<ExitCode, Box<dyn std::error::Error>
     println!("{verdict}");
     println!("--- response ---");
     print!("{}", answer.text);
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+/// Score the LLM-judge baseline arms (issue #46 slice A3).
+///
+/// A separate experiment from `run`, the same shape `consensus` took for #45: it emits its own
+/// document and leaves every published four-arm table alone (rule 10). amberfork's arms are
+/// re-scored here on the identical pairs, from the same frozen params, because rule 9's paired
+/// interval needs the product's hits on the very pairs the judge answered.
+///
+/// Replay-only by default. `--live` is the only path to a provider, and the only way this
+/// command costs anything.
+fn judge_run(args: &JudgeRunArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let frozen = params::load(&args.params)?;
+    let prompts = PromptSet::load(&args.prompts)?;
+    let decoding = decoding_from(args.no_temperature, args.max_output_tokens);
+    let localizer = build_localizer(
+        args.provider,
+        &args.model,
+        args.base_url.as_deref(),
+        args.live,
+        decoding,
+    )?;
+
+    let mut scored: Vec<(String, Pair)> = Vec::new();
+    for dir in &args.pairs {
+        let set = load_pairs(dir)?;
+        for exclusion in &set.exclusions {
+            eprintln!(
+                "amberfork-bench: excluded {}: {}",
+                exclusion.name, exclusion.reason
+            );
+        }
+        let label = dir
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("pairs");
+        for pair in set.pairs {
+            if args.split.admits(pair.split) {
+                scored.push((format!("{label}/{}", pair.name), pair));
+            }
+        }
+    }
+    if scored.is_empty() {
+        return Err(format!("no pairs to score in split {}", args.split.as_str()).into());
+    }
+    // Deterministic order regardless of how the operator ordered `--pairs`: the bootstrap
+    // resamples by index, so a reordered input set must not move the published interval.
+    scored.sort_by(|(a, _), (b, _)| a.cmp(b));
+
+    let arms: Vec<JudgeArm> = args.arms.iter().map(|arm| JudgeArm::from(*arm)).collect();
+    let cassettes = judge_cassette::Cassettes::new(&args.cassettes);
+    let results = judge_run::run_experiment(
+        &scored,
+        args.split.as_str(),
+        &frozen.sha256,
+        &judge_run::Config {
+            arms: &arms,
+            prompts: &prompts,
+            cassettes: &cassettes,
+            mode: cassette_mode(args.live),
+            localizer: localizer.as_ref(),
+            params: &frozen.params,
+            backoff: RETRY_BACKOFF,
+        },
+    )?;
+
+    if let Some(path) = &args.json_out {
+        let json = serde_json::to_string_pretty(&results)?;
+        std::fs::write(path, json)
+            .map_err(|err| format!("write results {}: {err}", path.display()))?;
+    }
+
+    eprintln!(
+        "judge baseline · split={} · {} pairs · {} {} · prompts {}",
+        results.split,
+        results.n_pairs,
+        results.provider,
+        results.model,
+        args.prompts.display(),
+    );
+    print!("{}", judge_run::render(&results));
     Ok(ExitCode::from(EXIT_OK))
 }
