@@ -1,6 +1,9 @@
 # amberfork
 
 [![ci](https://github.com/Melvin0070/amberfork/actions/workflows/ci.yml/badge.svg)](https://github.com/Melvin0070/amberfork/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/amberfork.svg)](https://crates.io/crates/amberfork)
+[![docs.rs](https://img.shields.io/docsrs/amberfork)](https://docs.rs/amberfork)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Point at a failing AI-agent run. amberfork aligns it against a known-good run, finds the
 exact step where they diverged, and shows what changed — then, on a run you captured under

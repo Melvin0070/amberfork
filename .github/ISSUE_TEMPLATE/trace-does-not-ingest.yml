@@ -1,0 +1,43 @@
+name: My trace does not ingest
+description: amberfork could not read your trace file, or read it wrong
+title: "ingest: <the tool or SDK that produced the trace>"
+labels: ["ingest"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most useful issue you can file. amberfork reads a plain-JSON trace format
+        (`docs/trace-format.md`) plus adapters for OpenInference/OTel and a few benchmark
+        corpora. Anything else needs an adapter, and knowing which format you have is the
+        whole job.
+
+        **Do not paste a trace containing secrets or customer data.** A redacted excerpt of
+        two or three steps is almost always enough.
+  - type: input
+    id: producer
+    attributes:
+      label: What produced the trace?
+      placeholder: LangSmith export / Langfuse / OpenAI Agents SDK / custom logger
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: The command you ran, and what happened
+      description: Include the full error. `2` is the trouble exit code.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: excerpt
+    attributes:
+      label: A redacted excerpt of the trace
+      description: Two or three steps, structure intact, values scrubbed.
+      render: json
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before filing
+      options:
+        - label: I read `docs/trace-format.md` and my file is not already in that shape
+        - label: The excerpt above contains no secrets, keys, or customer data

@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose a capability amberfork does not have
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check `docs/notebook.md` first — several obvious ideas were tried and measured, and a
+        few lost on the numbers. Proposals that beat a measured alternative are the strongest
+        kind.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem you hit
+      description: What were you trying to do when you wanted this?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would want it to do
+    validations:
+      required: true

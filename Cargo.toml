@@ -23,6 +23,7 @@ version = "0.9.1"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/Melvin0070/amberfork"
+homepage = "https://github.com/Melvin0070/amberfork"
 rust-version = "1.85"
 keywords = ["agent", "llm", "trace", "diff", "debugging"]
 

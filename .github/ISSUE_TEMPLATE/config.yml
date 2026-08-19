@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Evaluation protocol and published numbers
+    url: https://github.com/Melvin0070/amberfork/blob/main/BENCHMARK.md
+    about: How every number in the README was produced, including the nulls.
+  - name: Engineering notebook
+    url: https://github.com/Melvin0070/amberfork/blob/main/docs/notebook.md
+    about: Dated decisions and measurements, including the experiments that failed.

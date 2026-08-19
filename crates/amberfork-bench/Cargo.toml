@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/amberfork-bench"
 rust-version.workspace = true
 description = "Offline benchmark harness: the pre-registered chimera protocol (BENCHMARK.md), arms scored on identical fixtures."
 # Never published: the harness only means something next to the committed fixtures,
