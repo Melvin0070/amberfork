@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "377ed85ee7f77f53262b502cfb5dfc280ff045ce2eda86f479d7692605db6ea6",
+  "provider": "ollama",
+  "model": "qwen3:8b",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "5eec5861648cc284441be2f9dff14161fae1db905e20e92fd983a299fa91d386",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1787155780,
+  "response": "The failing run's first decisive error occurs in step 0, where it directly outputs \"Maktay Zapple Pa\" without properly verifying the correct case forms for \"apples\" (accusative vs. nominative). The reference run explicitly constructs the translation through structured fact-checking and planning (steps 1-3), ensuring correct grammar and word order. The failing run bypasses this critical validation step, committing to an incorrect answer prematurely. \n\n{\"step\": 0}"
+}

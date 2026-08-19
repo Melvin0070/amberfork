@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "6ade889cb32de53dc90f230e82f82c5f8eefccd79220018343206f8f9741357f",
+  "provider": "ollama",
+  "model": "qwen3:8b",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "b13e317fb3090594facb4873e734c8e70f1bb092fb2aad8cd81c5bf06a15c00a",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786561689,
+  "response": "The failing run's first decisive error occurs in step 10, where the agent directly uses the `final_answer` tool with the value \"133.7\" without properly retrieving or verifying the required census data from the NSI. In contrast, the reference run systematically searched for and confirmed the correct numbers (556,900 men, 791,800 women) before calculating the difference. The failing run's agent bypassed critical data validation steps, leading to an incorrect result.\n\n{\"step\": 10}"
+}

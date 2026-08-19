@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "167a6f4299e83bdd4f8719d3225cb71480b8fbe82c14d5754d1033c375bb68e3",
+  "provider": "ollama",
+  "model": "qwen3:8b",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "b0664dace28ee1b75b6890f80c303e965ede270fb675c5231c0c8d45534e1a3a",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1787155514,
+  "response": "{\"step\": 137}"
+}

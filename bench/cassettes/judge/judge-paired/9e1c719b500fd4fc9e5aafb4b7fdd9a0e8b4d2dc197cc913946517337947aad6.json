@@ -1,0 +1,15 @@
+{
+  "cassette_schema_version": "0.1",
+  "key": "9e1c719b500fd4fc9e5aafb4b7fdd9a0e8b4d2dc197cc913946517337947aad6",
+  "provider": "ollama",
+  "model": "qwen3:8b",
+  "arm": "judge-paired",
+  "prompt_sha256": "ce7515e888ffde2c54e61b0d5fcd90a9c27c29776532bdb4479e2fb1d1e9d942",
+  "rendered_prompt_sha256": "3e40b5ded3f9c6fc0609257c1ac4fd370def650dd6408feef75b38715fcca1c5",
+  "decoding": {
+    "temperature": 0.0,
+    "max_output_tokens": 2000
+  },
+  "recorded_unix": 1786561881,
+  "response": "The failing run's decisive error occurs in step 0, where the agent prematurely returns \"1937\" without executing any tool calls to verify the USGS source. Unlike the reference run, which methodically used the search_agent to query the NAS database and cross-check states, the failing run bypasses critical steps entirely, leading to an unverified, incorrect answer. The agent's reliance on prior (possibly incorrect) data rather than executing the required tool calls to access the USGS records commits it to the wrong outcome.\n\n{\"step\": 0}"
+}
