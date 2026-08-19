@@ -3770,3 +3770,50 @@ release until a benchmark improves is the exact pattern pre-registration exists 
 would read that way to any reviewer. #56 scores the sealed test split once per tag, so one ingest
 version per tag keeps that number unambiguous, and rule 3's old-beside-new is naturally expressed
 across two tags.
+
+## 072 · 2026-08-13 · `--gate` decided as no-flag; the CI contract is the exit code (#54)
+
+#54 offered both outcomes explicitly — add a `--gate` flag, or document that the exit codes
+already are the gate and record the decision. **Decided: no flag.**
+
+`amberfork diff` already exits diff(1)-style, verified by running it rather than reading the docs:
+
+| case | exit |
+|---|---|
+| same trace both sides | 0 |
+| forked pair (`run_b` vs `run_a`) | 1 |
+| missing file | 2 |
+| well-formed JSON that is not a trace | 2 |
+
+A `--gate` flag would re-expose a code the process already returns. The distinction CI actually
+needs is **1 vs 2** — a finding about your agent versus amberfork failing to do its job — and that
+distinction exists today; a flag does not improve it. `docs/ci.md` states it as one table.
+
+**No threshold knob either, and this is the interesting part.** Tools that diff two *live* agent
+runs need a tolerance (a max-divergence, a similarity floor) because non-determinism makes two runs
+of the same agent differ for reasons nobody cares about. amberfork's CI path is `record` a
+reference then `replay` the candidate — identical inputs, identical trajectory — so **any** fork is
+a real regression and exit 1 already means what a threshold approximates. Registered as a design
+position: adding a tolerance would require a benchmark showing the tolerance separates real
+regressions from noise, and no such measurement exists here or, as far as this project can tell, in
+the tools that ship one.
+
+**A latent break the test did not catch.** The first draft installed from
+`releases/latest/download/amberfork-v0.9.1-…tar.gz`. It returned 200 and the snippet ran green —
+because `latest` *is* v0.9.1 today. The asset filename embeds the version, so that URL 404s the
+moment the next tag ships. Fixed to an explicitly pinned tag plus `sha256sum -c` against the
+`.sha256` each release already publishes. Recorded because the green test was the misleading part.
+
+**Ran, not written from memory** (#54's acceptance): the gate step was executed end to end on the
+smoke fixtures — exit 1, `fork.html` (25,856 bytes, **zero** external references, confirmed
+self-contained) and `result.json` both produced, `jq '.fork.index, .fork.confidence'` → `6`,
+`0.4709`, schema_version `0.1`. The pinned download plus checksum verification was executed
+separately and matched.
+
+**`record`'s exit code is called out** as the trap: it propagates the *agent's* code, not a diff
+verdict, and writes the cassette even when the agent fails. Gating on `record` expecting diff(1)
+semantics is the mistake #54 predicted.
+
+`docs/ci.md` also carries the honest limitation from 070 — on runs sharing no common prefix the
+fork is reported at step 0 with high confidence rather than as an incomparability — scoped with the
+note that `record`/`replay` pairs cannot hit it.

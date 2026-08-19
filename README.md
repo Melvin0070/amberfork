@@ -47,7 +47,8 @@ The same fork, in your terminal:
 - `amberfork diff <bad> --against <good>` — align two agent-run traces
   ([plain JSON](docs/trace-format.md), plus OpenInference and native OTel `gen_ai.*` adapters —
   see [the format mappings](docs/trace-format.md)), light the fork up in the terminal, `--json`
-  for machines.
+  for machines, and diff(1) exit codes so it gates CI with no threshold to tune — recipe in
+  [`docs/ci.md`](docs/ci.md).
 - `amberfork diff <bad> --against <good> --verify` — on a run captured under `amberfork record`,
   replay it with the fork step patched and report whether the run recovers, to *confirm* the
   cause rather than only locate it.
@@ -191,6 +192,7 @@ baseline never disturbs the product's published table).
 | [`spike/`](spike/) | Throwaway feasibility spike (Python): alignment vs positional baseline on real multi-agent failure logs |
 | [`docs/notebook.md`](docs/notebook.md) | Engineering notebook: questions, measurements, dead ends |
 | [`docs/trace-format.md`](docs/trace-format.md) | The canonical plain-JSON trace format v1 accepts |
+| [`docs/ci.md`](docs/ci.md) | The exit-code contract and a working GitHub Actions gate |
 | [`BENCHMARK.md`](BENCHMARK.md) | Pre-registered evaluation protocol (splits, baselines, threats to validity) |
 | [`DESIGN.md`](DESIGN.md) | Visual system ("sameness recedes, divergence glows") |
 | [`docs/design/`](docs/design/) | Architecture + positioning corpus (the locked build plan) |
