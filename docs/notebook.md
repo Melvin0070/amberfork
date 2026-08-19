@@ -3646,3 +3646,127 @@ is not a retraction, and the comparison was never the aligner's task to win on t
 
 It does not touch the chimera table (rule 10). Those pairs have a genuine shared prefix by
 construction, which is precisely the property this entry finds missing here.
+
+## 071 · 2026-08-13 · RESULT: the LLM-judge baseline arms, and what the registration got wrong (#46 slice A4)
+
+The run 069 registered. Five arms, 23 dev pairs, **zero exclusions on every arm**, all cassettes
+committed so the table replays offline forever. 069 was written expecting to publish a loss. It is
+a loss.
+
+### The table
+
+| arm | model | exact | 95% CI | ±1 | ±3 | no-pred | parse-fail | n |
+|---|---|---|---|---|---|---|---|---|
+| `random` | — | 0.174 | [0.070, 0.371] | 0.304 | 0.565 | 0.000 | 0 | 23 |
+| `pos-lexical` | — | 0.000 | [0.000, 0.143] | 0.000 | 0.348 | 0.000 | 0 | 23 |
+| `nw-structural/resync` | — | 0.000 | [0.000, 0.143] | 0.000 | 0.348 | 0.000 | 0 | 23 |
+| `nw-lexical/resync` | — | 0.000 | [0.000, 0.143] | 0.000 | 0.348 | 0.000 | 0 | 23 |
+| `judge-single` | gpt-5.6-sol | **0.261** | [0.125, 0.465] | 0.348 | 0.522 | 0.043 | 1 | 23 |
+| `judge-paired` | gpt-5.6-sol | 0.174 | [0.070, 0.371] | 0.217 | 0.478 | 0.000 | 0 | 23 |
+| `judge-paired` | gemini-3.6-flash | 0.217 | [0.097, 0.419] | 0.261 | 0.478 | 0.217 | 5 | 23 |
+| `judge-paired` | qwen3:8b | 0.087 | [0.024, 0.268] | 0.174 | 0.565 | 0.000 | 0 | 23 |
+| `judge-stepwise` | gpt-5.6-luna | 0.087 | [0.024, 0.268] | 0.087 | 0.217 | 0.478 | 3 | 23 |
+
+Paired comparison (rule 9), `d_p = nw-lexical hit − judge hit`, 10,000 resamples over 23 pairs:
+
+| judge arm | mean d | 95% CI | verdict |
+|---|---|---|---|
+| `judge-single` (sol) | −0.261 | [−0.435, −0.087] | judge localizes better |
+| `judge-paired` (gemini) | −0.217 | [−0.391, −0.043] | judge localizes better |
+| `judge-paired` (sol) | −0.174 | [−0.348, −0.043] | judge localizes better |
+| `judge-paired` (qwen3:8b) | −0.087 | [−0.217, +0.000] | tie |
+| `judge-stepwise` (luna) | −0.087 | [−0.217, +0.000] | tie |
+
+**Three of five arms beat the product with intervals excluding zero. Two tie. The product scores
+0.000 against every one of them.** The cross-provider check holds: Gemini (0.217) lands within a
+point of sol's paired arm (0.174), so the result is not OpenAI-specific.
+
+### Three readings the table does not flatter anyone with
+
+**The headline arm lost to the control arm.** `judge-paired` was registered as *the* number —
+both runs in the prompt, the same information the aligner gets, chosen so a win could not be
+dismissed as an information asymmetry. It scored 0.174 against `judge-single`'s 0.261. Giving a
+frontier model the reference run made it **worse**. Nobody has published this number and it is the
+most interesting thing here: on natural cross-model pairs the reference trace is a distractor, not
+evidence.
+
+**Only one arm clears random, and not convincingly.** Random is 0.174 exact. `judge-paired` (sol)
+ties it exactly; qwen (0.087) and stepwise (0.087) are *below* it; only `judge-single` (0.261) is
+above, with a CI [0.125, 0.465] that overlaps random's [0.070, 0.371] heavily. **At ±3, random
+(0.565) matches or beats every arm including all four judges.** A frontier model given the real
+traces and the real question barely outperforms guessing.
+
+**`judge-stepwise` replicates its upstream method.** 0.087 with a 0.478 no-prediction rate — the
+Who&When step-by-step method abstains on nearly half the corpus and lands near the ~11% its authors
+report. The port is faithful; the method is weak here too.
+
+### What this means, per 069's own branches
+
+069 registered two readings in advance. **Both fired.** Branch 2: the judges land in the 15–30%
+band, so the aligner genuinely does not localize on natural cross-model pairs, and **v1.0's public
+claim narrows explicitly to the chimera controlled-injection protocol** (#57, #56). Branch 1: no
+arm meaningfully clears random and none clears it at ±3, which convicts the gold rather than any
+localizer. 070 is the mechanism behind branch 1 — the pairs share no common prefix to fork from —
+and it does not rescue the aligner. 069 said so in advance: *"a judge null here does not vindicate
+the aligner — it convicts the gold."*
+
+Rule 10 holds: no `params.toml` edit, no published chimera number restated, the product's arms
+re-scored unchanged.
+
+### What the registration did not anticipate
+
+Recorded as findings, not footnotes. Every one of them changed a number or nearly did.
+
+1. **Temperature 0 was impossible on the OpenAI arms.** Both `gpt-5.6-sol` and `gpt-5.6-luna`
+   reject it — *"only the default (1) is supported."* 069's fallback covers this, and the cassettes
+   record what was actually sent, but it means **three of the five arms carry single-sample noise
+   at temperature 1**, not the determinism the protocol assumed. `judge-single`'s 0.261 and
+   `judge-paired`'s 0.174 are one draw each, not a fixed point.
+2. **A quota-truncated arm nearly published a false verdict.** Gemini's free tier exhausted
+   mid-run: 9 of 23 pairs excluded, n=14, verdict **tie**. Filling the gaps with a second key took
+   it to n=23 and the verdict flipped to **judge wins**. The n=14 table was internally consistent,
+   printed a coverage line, and was wrong. Registered lesson: an arm whose n was set by a rate
+   limit is not a smaller version of the experiment, it is a different one. The 23 answers span two
+   API keys and two dates; the cassette key hashes provider/model/prompt, not the credential, so
+   they remain one coherent set at identical decoding.
+3. **The local arm would have answered truncated prompts in silence.** Ollama defaults to a
+   4096-token window and drops the overflow without complaint; **19 of 23 `judge-paired` prompts
+   exceed it**. Fixed by sending `num_ctx` explicitly (40960, qwen3:8b's maximum) and by reading
+   back `prompt_eval_count` so a prompt that fills the window is a loud failure rather than a
+   confident answer to a question the model half-saw.
+4. **An empty completion was being scored as an exclusion.** Gemini returned `finishReason`
+   `MALFORMED_RESPONSE` over empty content on one pair — reproducibly, across two API keys, so not
+   a quota artifact. The harness read "no parseable parts" as transport failure and excluded it,
+   removing a *method* failure from the denominator. Reclassified as a miss per 069's own rule,
+   moving the arm 0.227 (n=22) → **0.217 (n=23)**. Unflattering direction, correct direction.
+5. **`judge-stepwise` cost 340 calls, not the estimated ~687.** The first `true` short-circuits the
+   candidate sweep, so pairs that answer early stop asking. The estimate assumed a full sweep.
+6. **The local arm has a silent partial-failure mode the hosted arms do not.** Twice, the same 8
+   pairs failed for unrelated infrastructure reasons — once a sandbox loopback denial, once a dead
+   `ollama serve` — and both times the run exited 0 and printed a well-formed table scored on 15
+   pairs. Rule 4 worked exactly as designed and that is the problem: it is right for one flaky pair
+   and wrong for a third of the corpus vanishing at once. **Proposed guard: an arm losing more than
+   a declared fraction of its pairs to transport exclusions should exit non-zero rather than
+   publish.** Not implemented here; it would have changed no number in this table, since every
+   published arm ended at n=23 with zero exclusions.
+
+### Amendment to 070: where the repair is allowed to live
+
+070 registered four changes but not their blast radius. Fixing that here, before implementation:
+
+- **Envelope unwrapping goes in `hal.rs`, never in `step_text`/the cost model.** In the cost model
+  it would change every arm on every corpus including the published chimera table — a rule 2/rule
+  10 violation in substance. Confined to the ingest adapter, the chimera pairs (which arrive via
+  `whowhen.rs`) are untouched by construction.
+- **Abstention is an engine change and needs a no-op proof.** Unlike the other three it can fire on
+  chimera pairs. It must be demonstrated a strict no-op on the chimera dev set before going near
+  the sealed split; if it ever fires where a fork is currently produced, it is changing published
+  product behavior rather than adding honesty on out-of-domain input.
+
+### Sequencing decided
+
+**v1.0 ships with the narrowed claim; the 070 repair lands after, as its own release.** Holding a
+release until a benchmark improves is the exact pattern pre-registration exists to prevent, and it
+would read that way to any reviewer. #56 scores the sealed test split once per tag, so one ingest
+version per tag keeps that number unambiguous, and rule 3's old-beside-new is naturally expressed
+across two tags.
