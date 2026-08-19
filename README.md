@@ -136,6 +136,50 @@ limit, not a headline — the table (cross-system banner included) re-renders of
 cargo run -q -p amberfork-bench -- report --results bench/results/mode_a_prime_realpairs_all.json
 ```
 
+### TRAIL↔HAL natural pairs (n=69) — a null, and the LLM-judge baseline that measured it
+
+The third protocol is the strongest attempt at a natural-fork number: a real **TRAIL** failing
+trace against a real **HAL** passing reference on the same GAIA task, same Open Deep Research
+scaffolding, differing backing model, with gold taken from TRAIL's *human-annotated* error span.
+117 traces yield **69 pairs** (23 dev / 46 test).
+
+The engine scores **0.00 exact** on it, against random's 0.14 — worse than guessing:
+
+```sh
+cargo run -q -p amberfork-bench -- report --results bench/results/trail_hal_natural_all.json
+```
+
+Rather than leave that as an unexplained null, the missing baseline was built and
+[pre-registered first](docs/notebook.md) (notebook 069, written before any judge code existed):
+**does just asking a frontier model beat the aligner?** Five arms on the 23 dev pairs, zero
+exclusions, every answer cached so the table replays offline:
+
+| arm | model | exact | ±3 | n |
+|---|---|---|---|---|
+| `random` | — | 0.174 | 0.565 | 23 |
+| `nw-lexical/resync` (the engine) | — | **0.000** | 0.348 | 23 |
+| `judge-single` | gpt-5.6-sol | **0.261** | 0.522 | 23 |
+| `judge-paired` | gemini-3.6-flash | 0.217 | 0.478 | 23 |
+| `judge-paired` | gpt-5.6-sol | 0.174 | 0.478 | 23 |
+| `judge-paired` | qwen3:8b (local) | 0.087 | 0.565 | 23 |
+| `judge-stepwise` | gpt-5.6-luna | 0.087 | 0.217 | 23 |
+
+**Three of five judge arms beat the engine with paired-bootstrap intervals excluding zero.** The
+result is published as measured (`bench/results/judge_*.json`, notebook 071).
+
+Two findings matter more than the ranking. First, **no arm meaningfully clears random** — at ±3
+random beats every arm including all four frontier judges, so this corpus barely discriminates
+*any* method. Second, inspecting per-pair predictions rather than rates: **all three aligner arms
+predict step 0 on all 23 pairs.** The pairs share *zero* step names — TRAIL logs
+`CodeAgent.run`/`web_search`, HAL logs `openai.chat.completions.create`/`tool_result` — so there is
+no common prefix to fork from and the fork rule degenerates to a constant. The 0.348 at ±3 is
+entirely the 8 of 23 pairs whose gold happens to sit at step ≤ 3.
+
+That diagnosis, and the repair it implies, are [pre-registered in notebook 070](docs/notebook.md)
+with the decision rule fixed in advance — including the branch where the corpus is retired as a
+documented negative result. **The chimera numbers above are untouched** (protocol rule 10: a
+baseline never disturbs the product's published table).
+
 ## What exists today
 
 | Artifact | What it is |
@@ -147,3 +191,33 @@ cargo run -q -p amberfork-bench -- report --results bench/results/mode_a_prime_r
 | [`BENCHMARK.md`](BENCHMARK.md) | Pre-registered evaluation protocol (splits, baselines, threats to validity) |
 | [`DESIGN.md`](DESIGN.md) | Visual system ("sameness recedes, divergence glows") |
 | [`docs/design/`](docs/design/) | Architecture + positioning corpus (the locked build plan) |
+
+## Project status — parked at v0.9.1 (2026-08-13)
+
+Everything above works and is reproducible today. The remaining roadmap is **specified but not
+built**, and is paused deliberately rather than abandoned mid-thought — each item below is an open
+issue with its decision already argued in the notebook, so it can be picked up cold.
+
+**Done and standing:** 11 crates, the chimera sealed-test protocol (scored at three release tags,
+identical every time), the Mode A′ null, the TRAIL↔HAL null, and the LLM-judge baseline with its
+cassettes committed so every table replays offline with no API key.
+
+**The next experiment is already registered.** Notebook 070 pre-registers the ingest repair the
+judge run's diagnosis implies — tool-name reconstruction and provider-envelope unwrapping in
+`hal.rs`, abstention when two runs share no common ground, and a granularity-based corpus
+stratification — with its success test, its blast radius, and its failure branch all fixed *before*
+implementation. Whoever runs it, including a future me, is bound by a decision rule they did not
+write after seeing the number.
+
+**Known defect, honestly:** on two runs that share no common prefix, amberfork reports "fork at
+step 0" with high confidence (measured: 0.97) rather than admitting the runs are not comparable.
+The abstention guard in 070 is the fix. It is the highest-value item on the list, because it
+affects real use, not a benchmark row.
+
+**Open issues** carry the rest: `#47`–`#57` for the v1.0 release work (perf ceiling, `--gate`, the
+release matrix, the writeup) and `#58`–`#63` as decided post-v1 deferrals. `CONTRIBUTING.md`
+describes the working agreement; `BENCHMARK.md` governs any number that gets published.
+
+If you are evaluating this repo: the honest entry point is
+[`docs/notebook.md`](docs/notebook.md) — 71 dated entries including the experiments that failed,
+the two nulls above, and the baseline that beat us.
