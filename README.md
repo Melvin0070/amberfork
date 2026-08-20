@@ -219,10 +219,17 @@ step 0" with high confidence (measured: 0.97) rather than admitting the runs are
 The abstention guard in 070 is the fix. It is the highest-value item on the list, because it
 affects real use, not a benchmark row.
 
-**Open issues** carry the rest: `#47`–`#57` for the v1.0 release work (perf ceiling, `--gate`, the
-release matrix, the writeup) and `#58`–`#63` as decided post-v1 deferrals. `CONTRIBUTING.md`
-describes the working agreement; `BENCHMARK.md` governs any number that gets published.
+**Distribution is done.** Five released targets, each built and smoke-tested on a runner of its own
+architecture (#53); the CI gate contract in [`docs/ci.md`](docs/ci.md), whose recipe runs on every
+push as a real workflow rather than sitting in a document (#54); repo and crate metadata (#55).
+
+**Open issues** carry the rest: `#47`–`#52`, `#56`, `#57` for the remaining v1.0 work (perf ceiling,
+`--verify` measurement, the sealed-test reveal, the writeup) and `#58`–`#63` as decided post-v1
+deferrals. Two acceptance items wait on the next release rather than on code: crates.io only shows
+the new homepage/documentation links once a version is published, and the five-target matrix is
+proven on `workflow_dispatch` but not yet on a tag. `CONTRIBUTING.md` describes the working
+agreement; `BENCHMARK.md` governs any number that gets published.
 
 If you are evaluating this repo: the honest entry point is
-[`docs/notebook.md`](docs/notebook.md) — 71 dated entries including the experiments that failed,
+[`docs/notebook.md`](docs/notebook.md) — 73 dated entries including the experiments that failed,
 the two nulls above, and the baseline that beat us.
