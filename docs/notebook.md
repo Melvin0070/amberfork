@@ -3817,3 +3817,52 @@ semantics is the mistake #54 predicted.
 `docs/ci.md` also carries the honest limitation from 070 — on runs sharing no common prefix the
 fork is reported at step 0 with high confidence rather than as an incomparability — scoped with the
 note that `record`/`replay` pairs cannot hit it.
+
+## 073 · 2026-08-20 · Release matrix 2 → 5 targets, and a runner label that fails by hanging (#53)
+
+`release.yml` shipped two targets. Now five, each on a runner of its **own architecture** so the
+smoke test runs the real binary natively — `serve --demo` booting over the embedded UI bundle is
+the acceptance a dev build cannot reach (#28), and an emulator or a missing loader cannot
+demonstrate it. Cross-compiling would have produced five artifacts while proving two of them start.
+
+Verified on `workflow_dispatch` (the pre-tag dry run the workflow was built for) — run
+`32377831586`, all five green, all five artifacts checked by hand after download:
+
+| target | runner | `file` on the shipped binary | checksum |
+|---|---|---|---|
+| `aarch64-apple-darwin` | macos-14 | Mach-O arm64 | OK |
+| `x86_64-apple-darwin` | macos-15-intel | Mach-O x86_64 | OK |
+| `x86_64-unknown-linux-gnu` | ubuntu-latest | ELF x86-64 | OK |
+| `aarch64-unknown-linux-gnu` | ubuntu-24.04-arm | ELF ARM aarch64 | OK |
+| `x86_64-pc-windows-msvc` | windows-latest | PE32+ x86-64 (`amberfork.exe`) | OK |
+
+### `macos-13` is retired, and an unavailable label does not fail — it hangs
+
+The first dry run's Intel job sat **queued for ~20 hours** and was still pending when cancelled. It
+never errored. `timeout-minutes: 30` did not fire because that limit governs *execution*, not queue
+time, so a retired runner label is an unbounded silent stall rather than a red build. Switching to
+`macos-15-intel` allocated in **~30 seconds**. Recorded because the failure mode is invisible: no
+error text exists anywhere to search for, and the only symptom is a job that never starts.
+
+### Windows was not the expensive target #53 predicted
+
+The issue expected the bash smoke script, `serve`'s loopback bind and `record`'s process handling to
+be the friction, and pre-authorised shipping Unix-only if so. All of that **passed first try** under
+Git Bash (`defaults: run: shell: bash`). What failed was a *publish guard*:
+`cargo package --list | grep -qx 'ui-dist/index.html'`, which cannot match on Windows because the
+listing uses a `\` separator.
+
+The fix is not a Windows-proof grep. Both crates.io guards assert properties of the `.crate` tarball
+crates.io receives, which is identical whatever host built it — so they now run on
+`x86_64-unknown-linux-gnu` only, which is where publishing happens. That also removes four
+redundant `cargo package --workspace` builds from every release. The guard still runs; it stopped
+running four extra times to no purpose.
+
+### Packaging portability
+
+`shasum -a 256` exists on macOS but not on Linux or Git Bash (`sha256sum` is the reverse). Packaging
+now prefers `sha256sum` and falls back, keeping the `<hash>  <file>` form `sha256sum -c` accepts —
+which `docs/ci.md`'s install step verifies against, so the two are now coupled deliberately.
+
+`docs/run-on-your-own-agent.md` lists the real target set (#53's third acceptance box). The
+release job itself is unchanged and still tag-only; a dispatch stops at artifacts.

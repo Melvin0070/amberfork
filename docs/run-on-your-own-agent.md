@@ -10,7 +10,7 @@ exercised against genuinely messy production traces before it was written down
 Pick one:
 
 ```sh
-# a) prebuilt binary (macOS arm64 / Linux x86_64) — no toolchain needed
+# a) prebuilt binary — no toolchain needed
 #    download amberfork-<version>-<target>.tar.gz from the releases page,
 #    verify the .sha256, untar, put `amberfork` on your PATH
 #    https://github.com/Melvin0070/amberfork/releases
@@ -21,6 +21,23 @@ cargo install amberfork
 # c) from source
 git clone https://github.com/Melvin0070/amberfork && cd amberfork
 cargo run --release -q -p amberfork -- demo
+```
+
+Released targets — each built and smoke-tested on a runner of its own architecture, so the
+published binary is one that actually started and served on that platform:
+
+| target | platform |
+|---|---|
+| `aarch64-apple-darwin` | macOS, Apple silicon |
+| `x86_64-apple-darwin` | macOS, Intel |
+| `x86_64-unknown-linux-gnu` | Linux, x86-64 |
+| `aarch64-unknown-linux-gnu` | Linux, ARM64 |
+| `x86_64-pc-windows-msvc` | Windows, x86-64 (ships `amberfork.exe`) |
+
+Every artifact has a `.sha256` beside it in the `<hash>  <file>` form `sha256sum -c` accepts:
+
+```sh
+sha256sum -c amberfork-<version>-<target>.tar.gz.sha256   # shasum -a 256 on macOS
 ```
 
 ## 2 · Get two runs into the trace format
