@@ -1,0 +1,72 @@
+name: ci-gate example
+
+# Executes the recipe `docs/ci.md` hands to users, against this repo's own committed smoke
+# fixtures. It exists so that recipe is a thing that RUNS rather than a thing that was written
+# down: #54's acceptance asks for a snippet that has actually been run, and running its steps in
+# a local shell is not the same as running them as an Action.
+#
+# It lives here rather than in a separate demo repo on purpose — beside the release it pins, so
+# it cannot drift out of sync with the binary it documents.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      # Build from source rather than downloading a release: this workflow gates the code in
+      # THIS commit, so a published binary would be testing the wrong thing. Users following
+      # docs/ci.md install the pinned release instead.
+      - name: build amberfork
+        run: cargo build --release -q -p amberfork
+
+      - name: converged runs pass the gate (exit 0)
+        run: |
+          ./target/release/amberfork diff spike/fixtures/smoke/run_a.json \
+            --against spike/fixtures/smoke/run_a.json --no-color
+          echo "exit=$? (expected 0)"
+
+      - name: a forked run fails the gate (exit 1) and produces the report
+        run: |
+          set +e
+          ./target/release/amberfork diff spike/fixtures/smoke/run_b.json \
+            --against spike/fixtures/smoke/run_a.json \
+            --no-color --html fork.html --json > result.json
+          code=$?
+          set -e
+          test "$code" -eq 1 || { echo "expected exit 1, got $code"; exit 1; }
+          # The artifact must be self-contained: a CI report that fetches from a CDN is useless
+          # in an air-gapped runner and in an offline reviewer's browser.
+          test -s fork.html
+          ! grep -q 'src="http\|href="http' fork.html
+          jq -e '.fork.index != null and .meta.schema_version != null' result.json > /dev/null
+          echo "gate failed as designed, report is self-contained"
+
+      - name: unreadable input is trouble, not a regression (exit 2)
+        run: |
+          set +e
+          ./target/release/amberfork diff does-not-exist.json \
+            --against spike/fixtures/smoke/run_a.json --no-color
+          code=$?
+          set -e
+          test "$code" -eq 2 || { echo "expected exit 2, got $code"; exit 1; }
+          echo "exit 2 distinguishes broken input from a real fork"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: amberfork-fork-view
+          path: |
+            fork.html
+            result.json
+          if-no-files-found: error
