@@ -92,6 +92,11 @@ jobs:
           curl -sf http://127.0.0.1:8177/api/document | grep -q '"schema_version"'
 
       - name: crates.io package carries the embedded bundle (dry run)
+        # ONE target only. This asserts a property of the `.crate` tarball crates.io receives,
+        # which is identical whatever host built it — so running it per-target is redundant, and
+        # on Windows `cargo package --list` emits the path with a `\` separator, which
+        # `grep -qx 'ui-dist/index.html'` can never match (#53). Publishing happens from Linux.
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
         # The `.crate` tarball is what crates.io would receive: assert the server's `include`
         # override actually pulls the (gitignored) built ui-dist/ into it, so a `cargo install`
         # from the registry gets a `serve` with a UI. `--list` needs no registry-resolved deps;
@@ -101,6 +106,9 @@ jobs:
             | grep -qx 'ui-dist/index.html'
 
       - name: every crate actually compiles from its own tarball
+        # Same single-target reasoning as the step above: this guards the publish, not the
+        # per-host build, and the publish runs from Linux.
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
         # `--list` above never compiles anything, so it cannot catch a source file reaching
         # OUTSIDE its crate root — which builds fine in the repo and then fails at package
         # time, since the tarball carries no path above the crate dir. That is exactly how
