@@ -67,7 +67,12 @@ overclaim. If Mode A can't be constructed for a benchmark, say so and report onl
 - **Step-level exact-match** — predicted fork step == gold decisive step (headline; vs 14.2% / ~11%).
 - **Within-window (±1 step)** and **top-k** — honest, since "first divergence" and "decisive error"
   can legitimately differ by a step.
-- **Agent-level** accuracy (vs 53.5%).
+- ~~**Agent-level** accuracy (vs 53.5%).~~ Decided against (issue #52, notebook entry 078): the only
+  cheap proxy (agent name at the predicted step index) measures a different quantity than Who&When's
+  own gold `mistake_agent` label, which the data shows can diverge from "the agent at the mistake
+  step"; it's also structurally inapplicable to TRAIL/HAL (no per-step actor concept), so it could
+  never run on the same fixtures as every other row. A real proxy would look like a completed row
+  without being a faithful comparison to the 53.5% figure above.
 - **Calibration** — does the alignment confidence score correlate with correctness?
 - Report all of the above for amberfork **and every baseline**, on the same fixtures.
 
@@ -122,8 +127,8 @@ overclaim. If Mode A can't be constructed for a benchmark, say so and report onl
 
 ## Definition of done
 - `cargo run -p amberfork-bench` reproduces the results table, **offline** for the core method.
-- README shows: amberfork (Mode A) vs shallow-diff vs LLM-judge vs random — step-level + windowed +
-  agent-level — on Who&When and TRAIL.
+- README shows: amberfork (Mode A) vs shallow-diff vs LLM-judge vs random — step-level + windowed —
+  on Who&When and TRAIL. (Agent-level dropped from this list — see Metrics above.)
 - An honest **"where it fails"** paragraph.
 - Paired with the `amberfork demo` <90s GIF on one vivid divergent trace (the amber-fork moment).
 

@@ -4150,6 +4150,28 @@ test and its `ollama pull` instruction. Left alone: `verify_cli.rs`/`verify_agen
 `smollm2:135m` default, which is `--verify`'s (#44) unrelated harness model, a different constant
 for a different flag, out of #47's scope.
 
+## 077 · 2026-09-04 · design doc amendment: crate count to v0.9.1, linear-vs-DAG resolved (#51)
+
+Closes the doc-drift half of 068's audit and 040's watch-item 2. Added Amendment 2026-09-04 to
+`design-run-diff-debugger.md`: **A.** header's "10 crates shipped at v0.7.0" → **11 crates at
+v0.9.1** (`amberfork-judge`, v0.8/#10, is the 11th — 2026-07-21's amendment had listed it "still
+unbuilt"). **B.** the linear-vs-typed-causal-DAG question, resolved rather than left open:
+re-checked `crates/amberfork-align/src/nw.rs` — still exactly what its module doc says, affine-gap
+Needleman-Wunsch over a flat `&[Step]` sequence, never touching `Run`/`Step`'s `edges`/`parent_idx`.
+Shipped v1 reality is linear, full stop; GumTree-style tree/DAG alignment over the causal structure
+is now formally the v2 frontier at issue #59 (`backlog (post-v1)`, filed for exactly this
+resolution), not a silently dropped idea. Inline breadcrumbs added at both stale sites (the
+crate-count line, the line-361 GumTree bullet) per #51's acceptance criterion that the correction
+be visible where a reader meets the claim, not only in the amendment.
+
+`CLAUDE.md` and `CONTRIBUTING.md` already read "11 crates at v0.9.1" — checked, not touched.
+
+Not attempted here (left for a future slice — #51's B1 asks for more): a dated amendment for each
+individual v0.8/v0.9 capability (judge, ingest adapters #39, `--html` #29, deltas #40,
+expand-on-demand #30, light mode #31, the consensus null #45/066), and the judge-as-narration vs
+judge-as-baseline distinction. This entry covers the two concrete problems handed off for this
+slice, not the full issue.
+
 ## 078 · 2026-09-04 · DECISION: no agent-level accuracy metric, and why the proxy would mislead (#52)
 
 **BENCHMARK.md has specified "Agent-level accuracy (vs 53.5%)" since 2026-07-02 and it was never
@@ -4192,25 +4214,3 @@ two diverge, and (b) only ever apply to one corpus, unlike every other metric th
 A number with both properties is worse than no number: it looks like a completed benchmark row and
 isn't one. `BENCHMARK.md`'s Metrics and Definition-of-done sections are amended to point here instead
 of listing agent-level as pending work.
-
-## 077 · 2026-09-04 · design doc amendment: crate count to v0.9.1, linear-vs-DAG resolved (#51)
-
-Closes the doc-drift half of 068's audit and 040's watch-item 2. Added Amendment 2026-09-04 to
-`design-run-diff-debugger.md`: **A.** header's "10 crates shipped at v0.7.0" → **11 crates at
-v0.9.1** (`amberfork-judge`, v0.8/#10, is the 11th — 2026-07-21's amendment had listed it "still
-unbuilt"). **B.** the linear-vs-typed-causal-DAG question, resolved rather than left open:
-re-checked `crates/amberfork-align/src/nw.rs` — still exactly what its module doc says, affine-gap
-Needleman-Wunsch over a flat `&[Step]` sequence, never touching `Run`/`Step`'s `edges`/`parent_idx`.
-Shipped v1 reality is linear, full stop; GumTree-style tree/DAG alignment over the causal structure
-is now formally the v2 frontier at issue #59 (`backlog (post-v1)`, filed for exactly this
-resolution), not a silently dropped idea. Inline breadcrumbs added at both stale sites (the
-crate-count line, the line-361 GumTree bullet) per #51's acceptance criterion that the correction
-be visible where a reader meets the claim, not only in the amendment.
-
-`CLAUDE.md` and `CONTRIBUTING.md` already read "11 crates at v0.9.1" — checked, not touched.
-
-Not attempted here (left for a future slice — #51's B1 asks for more): a dated amendment for each
-individual v0.8/v0.9 capability (judge, ingest adapters #39, `--html` #29, deltas #40,
-expand-on-demand #30, light mode #31, the consensus null #45/066), and the judge-as-narration vs
-judge-as-baseline distinction. This entry covers the two concrete problems handed off for this
-slice, not the full issue.
