@@ -4359,3 +4359,33 @@ Raw per-pair cassettes and verify output live in gitignored `bench/data/verify_r
 (regeneratable via `spike/verify_bench.py`, needs a local Ollama with `smollm2:135m`); the committed
 `bench/results/verify_realprovider_all.json` carries every attribution needed to reproduce the table
 above with zero live calls.
+
+## 081 · 2026-09-04 · REVEAL: the sealed test split at v1.0.0 — identical to v0.2.0 (#56)
+
+Protocol rule 2's third scheduled reveal (after v0.4.0/021 and v0.5.0/037), caught before the tag's
+own release notes shipped without it — #56 names this explicitly as part of "release: v1.0.0," and
+it was nearly missed entirely in the rush to tag. Regenerated from the same cached raw sets
+(`spike/data/regen_noise_seed{42,43,44}/`, 20 pairs each, never committed), scored fresh against
+the unchanged frozen params (`bench/params.toml` sha256 `8ebd95ce8f3d…`, unchanged since notebook
+007):
+
+```
+cargo run -q -p amberfork-bench -- run --pairs spike/data/regen_noise_seed42 --split test \
+  --json-out bench/results/chimera_noise_seed42_test_v1.0.0.json
+# … seeds 43, 44 …
+cargo run -q -p amberfork-bench -- aggregate \
+  --results bench/results/chimera_noise_seed{42,43,44}_test_v1.0.0.json \
+  --json-out bench/results/chimera_noise_multiseed_test_v1.0.0.json
+```
+
+**Byte-identical to every prior reveal:** exact 0.49 [0.33, 0.64], ±3 0.91 [0.78, 0.97], n=35 — the
+same per-seed split (12/13/10), the same per-seed exact rate (0.75/0.23/0.50), the same calibration
+shape. Six tags and two new `amberfork-align` features since the last reveal (`consensus.rs` #45,
+`deltas.rs` #40) moved the number by exactly zero pairs, which is what "additive, frozen params,
+never touched the cost model" is supposed to guarantee — this is the confirmation, not an assumption.
+
+**Process note, honestly:** this reveal should have run *before* the v1.0.0 tag was pushed, not
+after — #56's own title names it as part of the release, and BENCHMARK.md rule 2 says once per tag,
+not once-eventually. Caught during post-release cleanup rather than before. No number changed
+because of the delay (the params were frozen and untouched throughout), but the sequencing was
+wrong and is recorded as wrong rather than quietly folded in as if it had always been the plan.

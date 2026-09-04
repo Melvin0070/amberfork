@@ -99,9 +99,11 @@ sustained divergence at the gold step is true *by construction*, which structura
 content-aware alignment arms. What the headline measures is the aligner's tolerance to benign noise
 around a known fork, not attribution on a *natural* failure (for that, see the Mode A′ null below).
 Wilson 95% intervals are wide at these n, and the test split is scored exactly once per release tag
-(protocol rule 2) — the next reveal comes with the next tag. (The v0.4.0 and v0.5.0 reveals reproduced
-these numbers identically on every arm and metric — `bench/results/*_test_v0.4.0.json` /
-`*_test_v0.5.0.json`, notebooks 021 and 037.) The claim the numbers support is the *shape* —
+(protocol rule 2) — scored fresh at every tag since. The v0.4.0, v0.5.0, and now v1.0.0 reveals all
+reproduced these numbers identically on every arm and metric — `bench/results/*_test_v0.4.0.json` /
+`*_test_v0.5.0.json` / `*_test_v1.0.0.json`, notebooks 021, 037, and 081. Six releases and two new
+`amberfork-align` features (consensus, deltas) later, the frozen params and the core alignment path
+haven't moved the number by a single pair. The claim the numbers support is the *shape* —
 content-aware alignment localizes within a few steps where position and structure do not.
 
 Reproduce the tables offline — they render from the committed results documents, zero fetch:
