@@ -215,6 +215,38 @@ fact about today's cassette-normalization path (one exchange, one undifferentiat
 not a claim about real agents in general. Full diagnosis, including what a version that could
 actually discriminate the two arms would need, is in notebook 075.
 
+### `--verify` confirmation rate (n=15) — the other half of the moat, measured
+
+The localization numbers above are half the pitch; `--verify`'s counterfactual confirmation is the
+other half, and until now it had a single-example smoke test and no rate. Scaled the existing
+real-provider test (a toy two-turn agent engineered to fork on genuine LLM sampling variance, not a
+scripted difference) from n=1 to n=15. [Pre-registered in notebook 079](docs/notebook.md); result in
+080:
+
+```sh
+python3 -c "import json; d=json.load(open('bench/results/verify_realprovider_all.json')); \
+print(json.dumps({k:v for k,v in d.items() if k!='raw_attributions'}, indent=2))"
+```
+
+| metric | rate | 95% CI | n |
+|---|---|---|---|
+| two-sided fork (ddmin engages) | 1.00 | [0.80, 1.00] | 15 |
+| **Recovered** | **0.867** | [0.62, 0.96] | 15 |
+| NotRecovered | 0.133 | [0.04, 0.38] | 15 |
+| **Unverified (indeterminate)** | **0.00** | [0.00, 0.20] | 15 |
+
+Read both bolded numbers together: 87% confirmation, and — more notable on a fixture specifically
+built to produce real sampling variance — the 3-run majority vote never split evenly across all 15
+calls (n is small; the CI says "low so far," not "zero"). The two `NotRecovered` cases are as
+informative as the eleven that recovered: both patched the correctly-identified cause and still
+didn't reconverge, because the downstream step carries its *own* independent sampling variance the
+patch can't reach — a confirmed-sufficient cause and a non-recovering re-run aren't a contradiction,
+they're two independent sources of real non-determinism, which is exactly why `Recovery` is a
+tri-state and not a boolean. Not measured here: origination/propagation accuracy against a known
+cause — the one corpus with a known cause (#49's) turns out to be structurally unreachable by the
+patch mechanism (the fault lives in local agent code, never a recorded response); notebook 079 has
+the full reasoning and what fixing it would take.
+
 ## What exists today
 
 | Artifact | What it is |
@@ -237,8 +269,8 @@ issue with its decision already argued in the notebook, so it can be picked up c
 **Done and standing:** 11 crates, the chimera sealed-test protocol (scored at three release tags,
 identical every time), the Mode A′ null, the TRAIL↔HAL null, the LLM-judge baseline, and the
 real-agent perturbation tie (#49) — four honest attempts at natural-fork evidence, each with its
-own diagnosed mechanism, cassettes and results committed so every table replays offline with no
-API key.
+own diagnosed mechanism — plus a real, measured `--verify` confirmation rate (#48, 87% on n=15, zero
+indeterminate). Cassettes and results committed so every table replays offline with no API key.
 
 **The next experiment is already registered.** Notebook 070 pre-registers the ingest repair the
 judge run's diagnosis implies — tool-name reconstruction and provider-envelope unwrapping in
@@ -256,13 +288,15 @@ affects real use, not a benchmark row.
 architecture (#53); the CI gate contract in [`docs/ci.md`](docs/ci.md), whose recipe runs on every
 push as a real workflow rather than sitting in a document (#54); repo and crate metadata (#55).
 
-**Open issues** carry the rest: `#47`, `#48`, `#50`–`#52`, `#56`, `#57` for the remaining v1.0 work
-(the local-judge model swap, `--verify` measurement, perf ceiling, the sealed-test reveal, the
-writeup) and `#58`–`#63` as decided post-v1 deferrals. Two acceptance items wait on the next release rather than on code: crates.io only shows
-the new homepage/documentation links once a version is published, and the five-target matrix is
-proven on `workflow_dispatch` but not yet on a tag. `CONTRIBUTING.md` describes the working
-agreement; `BENCHMARK.md` governs any number that gets published.
+**Open issues** carry the rest: `#50` (perf ceiling, deliberately deferred — lower credibility value
+than what shipped this pass), `#56` (the sealed-test reveal + release), `#57` (the writeup, drafted
+and committed, blocked on #56) for the remaining v1.0 work, and `#58`–`#63` as decided post-v1
+deferrals. `#47`, `#48`, `#51`, `#52` closed this pass. Two acceptance items wait on the next release
+rather than on code: crates.io only shows the new homepage/documentation links once a version is
+published, and the five-target matrix is proven on `workflow_dispatch` but not yet on a tag.
+`CONTRIBUTING.md` describes the working agreement; `BENCHMARK.md` governs any number that gets
+published.
 
 If you are evaluating this repo: the honest entry point is
-[`docs/notebook.md`](docs/notebook.md) — 75 dated entries including the experiments that failed,
+[`docs/notebook.md`](docs/notebook.md) — 80 dated entries including the experiments that failed,
 the nulls above, and the baseline that beat us.

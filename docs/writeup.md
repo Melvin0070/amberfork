@@ -29,8 +29,10 @@ is a majority vote over several replays rather than one call — a disclosed tri
 refuted / unverified), not a boolean. What's real about the wedge isn't "zero network calls"; it's
 that nothing about the *original agent framework* has to be runnable again. amberfork owns the
 recording, not the orchestration, so a frozen incident trace can be replayed and mutated without
-anyone standing the agent back up. (How reliable that confirmation actually is — a real
-confirmation rate, precision on the exact step it blames — isn't measured yet; see "Where it fails.")
+anyone standing the agent back up. How reliable that confirmation actually is: on n=15 real forks
+(scaling the existing real-provider test past its single example), it confirms **87%** of the time
+— with the one further caveat below (see "Where it fails") that not every case has an independently
+knowable ground truth to check precision against.
 
 Every other *shipping* tool in this space either shows you two trees and makes you find the fork by
 eye (LangSmith, Langfuse), or diffs a run against its own saved baseline and lists every tool call
@@ -222,10 +224,13 @@ the mechanistic diagnosis behind each one.
   step against the original upstream. Counterfactual confirmation needs a run captured under
   `amberfork record`; a passively-ingested trace can locate a fork but not confirm its cause by
   re-execution.
-- **`--verify`'s confirmation step has no measured accuracy yet.** An end-to-end happy path is
-  tested; a real confirmation rate and precision on the exact step it blames are not (issue #48).
-  Treat a confirmed/refuted verdict as evidence, the way the tool itself reports it — not as a
-  proven-accurate measurement.
+- **`--verify` confirms 87% of real forks (n=15), and zero came back indeterminate** — but that
+  number has no independently-known ground truth behind it, because it's measured on genuine LLM
+  sampling-variance forks, not manufactured ones. The one corpus in this repo with a truly known
+  cause (#49's perturbation harness) turns out to be unreachable by the patch mechanism: the fault
+  lives in the agent's own local code, never in a recorded network response, so there's nothing for
+  `--verify` to patch. Precision against a known cause — as opposed to a confirmation rate — remains
+  unmeasured, and notebook 079 explains exactly why rather than papering over it (issue #48).
 - **On natural (non-injected) agent divergence, this benchmark shows a loss to LLM judges, not
   parity.** The 91% headline number has no judge comparison at all — chimera's injected gold step is
   a splice point, which would hand a judge arm an unfair tell, so BENCHMARK.md's own protocol
@@ -248,6 +253,14 @@ Every table on this page reproduces offline, with no key, from a committed resul
 cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_multiseed_test.json
 cargo run -q -p amberfork-bench -- report --results bench/results/trail_hal_natural_all.json
 cargo run -q -p amberfork-bench -- report --results bench/results/perturbation_all.json
+```
+
+The `--verify` confirmation-rate table doesn't fit that schema (it's a tri-state distribution, not a
+step-localization score), so it's a plain committed JSON instead — still zero live calls to read:
+
+```sh
+python3 -c "import json; d=json.load(open('bench/results/verify_realprovider_all.json')); \
+print(json.dumps({k:v for k,v in d.items() if k!='raw_attributions'}, indent=2))"
 ```
 
 Point `amberfork diff`/`serve` at your own traces from there —
