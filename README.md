@@ -52,8 +52,8 @@ The same fork, in your terminal:
 - `amberfork diff <bad> --against <good> --verify` — on a run captured under `amberfork record`,
   replay it with the fork step patched and report whether the run recovers, to *confirm* the
   cause rather than only locate it.
-- `cargo run -p amberfork-bench` — reproduce the scoring table offline, deterministically, no
-  API key. Protocol: [`BENCHMARK.md`](BENCHMARK.md).
+- `cargo run -p amberfork-bench -- report` — reproduce a scoring table offline, deterministically,
+  no API key. Protocol: [`BENCHMARK.md`](BENCHMARK.md).
 
 ## Benchmark — sealed test split (v0.2.0)
 
@@ -172,8 +172,9 @@ exclusions, every answer cached so the table replays offline:
 result is published as measured (`bench/results/judge_*.json`, notebook 071).
 
 Two findings matter more than the ranking. First, **no arm meaningfully clears random** — at ±3
-random beats every arm including all four frontier judges, so this corpus barely discriminates
-*any* method. Second, inspecting per-pair predictions rather than rates: **all three aligner arms
+random matches or beats every judge arm (qwen3:8b, the local/free arm, ties it exactly; the four
+frontier-model arms all fall below it), so this corpus barely discriminates *any* method. Second,
+inspecting per-pair predictions rather than rates: **all three aligner arms
 predict step 0 on all 23 pairs.** The pairs share *zero* step names — TRAIL logs
 `CodeAgent.run`/`web_search`, HAL logs `openai.chat.completions.create`/`tool_result` — so there is
 no common prefix to fork from and the fork rule degenerates to a constant. The 0.348 at ±3 is
@@ -263,5 +264,5 @@ proven on `workflow_dispatch` but not yet on a tag. `CONTRIBUTING.md` describes 
 agreement; `BENCHMARK.md` governs any number that gets published.
 
 If you are evaluating this repo: the honest entry point is
-[`docs/notebook.md`](docs/notebook.md) — 73 dated entries including the experiments that failed,
-the two nulls above, and the baseline that beat us.
+[`docs/notebook.md`](docs/notebook.md) — 75 dated entries including the experiments that failed,
+the nulls above, and the baseline that beat us.
