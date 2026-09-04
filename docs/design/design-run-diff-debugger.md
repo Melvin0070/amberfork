@@ -44,6 +44,10 @@ debugger content is prompt/arg/error text that must be selectable, copyable, and
 2026-07-11 … -21; the original "14 crates + `ui/`" roster is a *target-state capability map*, not
 the build plan — see Amendment 2026-07-11 for the v0.4.0 roster and Amendment 2026-07-21 for the
 record + counterfactual crates that completed it).
+
+> **Amendment 2026-09-04:** the count and version above are stale — current shipped workspace is
+> **11 crates at v0.9.1**. See "## Amendment 2026-09-04" below.
+
 Full feature set kept: move-typed alignment, field-level diff, counterfactual-causal attribution,
 cluster-to-consensus (gated on a corpus), replay/record cassettes, and a factorized,
 local-capable judge (semantic naming only, never localization).
@@ -229,6 +233,36 @@ Still unbuilt, still earning their crate with the need: `amberfork-judge` (seman
 issue #10 — never localization), `amberfork-store` (persistence), and cluster/consensus (Phase 3,
 gated on a corpus). Default `amberfork diff` stays 100% offline; re-execution is opt-in (`--verify`).
 
+## Amendment 2026-09-04 — crate count reconciled to v0.9.1, and linear-vs-DAG resolved (#51)
+
+Notebook 068's full-project audit found this document a full milestone behind (header above still
+said "10 crates shipped at v0.7.0," last Amendment 2026-07-21) and flagged that 040's watch-item 2
+— linear alignment vs the typed-causal-DAG ambition — was never closed out. Both addressed here.
+
+- **A. Crate count/version — CORRECTED.** Shipped workspace is **11 crates at v0.9.1**
+  (`Cargo.toml` `workspace.package.version`; `ls crates/`: model, ingest, align, layout, server,
+  record, replay, attrib, judge, amberfork, bench). The 11th is **amberfork-judge**, which shipped
+  with v0.8 (issue #10) — this Amendment's predecessor (2026-07-21) explicitly listed it as "still
+  unbuilt" at 10 crates; it has since landed, closing the gap to 11.
+
+- **B. Linear alignment vs the typed-causal-DAG ambition — RESOLVED, not left silent.**
+  `Run`/`Step` carry `edges`/`parent_idx` (`crates/amberfork-model/src/lib.rs`), but
+  `amberfork-align` has never read them for tree structure: `nw.rs` is affine-gap
+  Needleman-Wunsch (Gotoh three-state) over the flat `&[Step]` sequence, full stop (see its module
+  doc). Branchy or multi-agent runs are aligned in linear run-order, not tree-aligned — that was
+  always true; what was missing was saying so. **The shipped v1 reality is linear alignment.**
+  This does not reopen anything CLAUDE.md marks "Settled — do not relitigate": the resync-k fork
+  rule and the lexical/tf-idf cost model (Amendment 2026-07-08.A/B) are locked regardless of
+  linear-vs-tree, because both operate on whatever sequence the aligner is handed. Line 361's
+  **"Structural diff with move detection (GumTree)"** bullet, in the [HISTORICAL] section's
+  prior-art list below (marked inline there), was one of several differentiation bets under
+  consideration before Amendment 2026-07-08.A picked sequence alignment; it was never built and is
+  not planned for v1. GumTree-style tree/DAG alignment over the causal structure is now formally
+  scoped as the **v2 frontier, tracked at issue #59** (`backlog (post-v1)` milestone) — deferred
+  deliberately, not dropped by omission. Trigger to build it: a real branchy trace the linear
+  aligner mishandles, not a schedule (same standard as the O(n·m) scale-wall watch-item, 040 #3 /
+  issue #50).
+
 ---
 
 # [HISTORICAL] Design: Run-Diff Debugger for AI Agents (local, framework-agnostic) — Validation-First
@@ -361,6 +395,12 @@ where the "impressive" lives, and it is grounded in primary papers/docs:
 - **Structural diff with move detection (GumTree).** Diff trajectories as trees, align on
   structure not text, model reordered steps as MOVES. Complexity constraint: optimal
   tree-diff-with-moves is NP-hard, so use an O(n^2) heuristic.
+
+  > **Amendment 2026-09-04:** superseded — this bullet was one of several differentiation bets
+  > under consideration before Amendment 2026-07-08.A picked sequence alignment (below) as the
+  > shipped approach. GumTree-style tree/DAG alignment was never built; it is the formally-scoped
+  > v2 frontier, tracked at issue #59. See "## Amendment 2026-09-04" up top.
+
 - **Sequence alignment + the non-determinism trick (bioinformatics MSA, ICPC'22).** Abstract
   runs into symbol sequences, align with Needleman-Wunsch-style gaps so divergences surface
   as mismatches. Key move for non-determinism: cluster many runs into "execution types" and
