@@ -1,0 +1,167 @@
+{
+  "schema_version": "0.1",
+  "id": "perturbed_04",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "qwen3:8b",
+      "inputs": {
+        "model": "qwen3:8b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a support agent. Before answering definitively, use the available tools to check current information — do not answer from assumption. Cite what you found, then give a direct, concise answer."
+          },
+          {
+            "role": "user",
+            "content": "Where is my order A193? It was supposed to arrive yesterday."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_status",
+              "description": "Check the current status of an order, shipment, or reference id.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "reference_id": {
+                    "type": "string",
+                    "description": "the id to check"
+                  }
+                },
+                "required": [
+                  "reference_id"
+                ]
+              }
+            }
+          }
+        ],
+        "stream": false,
+        "think": false,
+        "options": {
+          "temperature": 0.8,
+          "num_ctx": 40960
+        }
+      },
+      "outputs": {
+        "model": "qwen3:8b",
+        "created_at": "2026-09-04T07:05:39.054221Z",
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_1ip2qq7o",
+              "function": {
+                "index": 0,
+                "name": "check_status",
+                "arguments": {
+                  "reference_id": "A193"
+                }
+              }
+            }
+          ]
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 1343323959,
+        "load_duration": 134810417,
+        "prompt_eval_count": 209,
+        "prompt_eval_duration": 82458000,
+        "eval_count": 24,
+        "eval_duration": 1113334000
+      },
+      "attrs": {
+        "status": 200
+      }
+    },
+    {
+      "idx": 1,
+      "kind": "llm",
+      "name": "qwen3:8b",
+      "inputs": {
+        "model": "qwen3:8b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a support agent. Before answering definitively, use the available tools to check current information — do not answer from assumption. Cite what you found, then give a direct, concise answer."
+          },
+          {
+            "role": "user",
+            "content": "Where is my order A193? It was supposed to arrive yesterday."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_1ip2qq7o",
+                "function": {
+                  "index": 0,
+                  "name": "check_status",
+                  "arguments": {
+                    "reference_id": "A193"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_1ip2qq7o",
+            "content": "{\"reference_id\": \"A193\", \"status\": \"delivered\", \"detail\": \"Delivered yesterday at 2:14pm, signed for at the front desk.\"}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_status",
+              "description": "Check the current status of an order, shipment, or reference id.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "reference_id": {
+                    "type": "string",
+                    "description": "the id to check"
+                  }
+                },
+                "required": [
+                  "reference_id"
+                ]
+              }
+            }
+          }
+        ],
+        "stream": false,
+        "think": false,
+        "options": {
+          "temperature": 0.8,
+          "num_ctx": 40960
+        }
+      },
+      "outputs": {
+        "model": "qwen3:8b",
+        "created_at": "2026-09-04T07:05:40.570439Z",
+        "message": {
+          "role": "assistant",
+          "content": "Your order A193 was delivered yesterday at 2:14pm and was signed for at the front desk."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 1450516042,
+        "load_duration": 149335750,
+        "prompt_eval_count": 284,
+        "prompt_eval_duration": 225880000,
+        "eval_count": 26,
+        "eval_duration": 1064855000
+      },
+      "attrs": {
+        "status": 200
+      }
+    }
+  ]
+}

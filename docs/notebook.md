@@ -3966,7 +3966,12 @@ New `amberfork-bench build-perturbation-pairs` subcommand, structurally cloning
 existing, unmodified `amberfork_record::normalize` and the sidecar gold files instead of
 `amberfork_ingest::trail`/`hal`. Output is the same `pair_NN.json`/`a_NN.json`/`b_NN.json` manifest
 shape `pairs.rs::load_pairs` already reads, `cross_system: false` (both sides are the identical
-agent). Scored with the existing, unmodified `run --pairs bench/fixtures/perturbation_all --split
+agent). Written to `bench/perturbation_pairs/` — a sibling of `bench/fixtures/`, not inside it:
+that directory's own committed-fixture tests (GAIA-sanitizer-signature, Python-`json.dumps`
+byte-parity) are real, structural invariants for its CI-gate dev fixtures, and real captured
+Ollama payloads (floats in `options.temperature`, nanosecond durations) cannot and should not be
+forced through them — the same reason Mode A′'s and TRAIL/HAL's pairs never lived there either.
+Scored with the existing, unmodified `run --pairs bench/perturbation_pairs --split
 all`; reproduced offline forever after via the existing `report --results
 bench/results/perturbation_all.json`. No changes to `results.rs`, `arms.rs`, or the align engine.
 
@@ -4018,3 +4023,117 @@ alone (the cumulative, monotonically-growing message array). That cuts both ways
 predicted here: it could make alignment easier (real content divergence, unmasked by any
 name-matching shortcut) or harder (no cheap structural tell at all). Recorded now so neither
 reading of the eventual number can claim to have expected it.
+
+## 075 · 2026-09-04 · RESULT: the real-agent perturbation protocol ties position, and why (#49 slice A7)
+
+Registered in 074, run once, reported as it fell — including the branch 074 did not anticipate.
+
+### The table
+
+25 pairs (5 tasks × 5 independently-sampled perturbed recordings, 1 clean reference per task,
+zero exclusions — every one of 30 recordings succeeded within the retry budget). Reproduce:
+
+```
+cargo run -q -p amberfork-bench -- report --results bench/results/perturbation_all.json
+```
+
+| arm | exact | ±1 | ±3 | no-pred | n |
+|---|---|---|---|---|---|
+| random | 0.32 [0.17, 0.52] | 1.00 [0.87, 1.00] | 1.00 [0.87, 1.00] | 0.00 | 25 |
+| pos-lexical | **1.00 [0.87, 1.00]** | 1.00 | 1.00 | 0.00 | 25 |
+| nw-structural/resync | 0.00 [0.00, 0.13] | 0.00 | 0.00 | **1.00** | 25 |
+| nw-lexical/resync (the engine) | **1.00 [0.87, 1.00]** | 1.00 | 1.00 | 0.00 | 25 |
+
+Calibration: every one of the engine's 25 correct predictions carries confidence **under 0.4** (23
+in `[0.0, 0.2)`, 2 in `[0.2, 0.4)`) — under-confident on every hit, the opposite failure mode from
+TRAIL/HAL's 0.97-confidence wrong guess (README, "Known defect, honestly").
+
+**By 074's own registered decision rule, this is not a win.** The win branch required the engine to
+clear `pos-lexical`; it ties it exactly, on every metric, at every window. It also is not the
+registered null branch — it clears `random` (1.00 vs 0.32) by a wide margin. 074 did not register a
+branch for "ties the weak baseline it exists to beat," so this entry states plainly: **neither of
+074's two branches fires. A third outcome, unanticipated, is what happened.**
+
+### Diagnosis — two mechanisms, confirmed by reading the code that produced them, not guessed
+
+**Mechanism 1 (074's own addendum, now confirmed exactly): `nw-structural/resync` abstains on
+100% of pairs because it has nothing to key on.** Its cost model
+(`crates/amberfork-bench/src/arms.rs:146-160`) is content-blind by design — `cost_prepared`
+compares only `(step.kind, step.name)`, 0.0 if identical else 1.0. Every step in every run here is
+`(StepKind::Llm, "qwen3:8b")`: the *entire* cost matrix is one value. There is no signal in it for
+any fork rule to resync against, so it abstains everywhere — exactly the addendum's prediction,
+now measured rather than merely possible.
+
+**Mechanism 2 (not anticipated at registration — the one that actually explains the tie): this
+harness produces runs that are index-aligned with their reference by construction, always, for
+every pair, regardless of where gold_step falls.** The perturbation changes the *content* of one
+tool's return value; it never changes the *number or order* of exchanges before that point — the
+preamble is a scripted, deterministic tool-call sequence the model has no freedom to lengthen,
+shorten, or reorder. So step `i` of the perturbed run and step `i` of the reference are the same
+turn of the same conversation for every `i` up to the fork, every time. Under those conditions
+`pos-lexical` ("align by index, first mismatch") and `nw-lexical/resync` (real alignment) are
+**mathematically forced to agree**: alignment only earns its keep over position when the two
+sequences can differ in *length or order* before the point that matters — that is precisely what
+chimera's benign-noise model manufactures on purpose (reword, dropout, one retry-duplication —
+spike 001's whole finding) and what this harness, as built, never produces. All 25 gold steps
+additionally landed at index 1 (every task calls its designated tool first), which would have made
+the tie obvious immediately — but the deeper mechanism means varying that index would not have
+changed the outcome: position ties alignment here even where they'd disagree if the runs could
+ever go out of step, because these two never can.
+
+**Read together, in 069's own idiom: a tie here does not vindicate position over alignment — it
+convicts the harness's lack of pre-fork structural noise.** This is not the corpus-vocabulary
+defect 070 diagnosed in TRAIL/HAL (that was a different disease with the same symptom, a stuck
+prediction); this harness has abundant, real, shared vocabulary and still cannot separate the two
+arms, because it never gives them a chance to disagree.
+
+### What this does and does not establish
+
+**Does:** the full pipeline — a real local model making real tool-call decisions, `amberfork
+record` capturing it with no code aware recording was happening, `normalize` turning it into a
+`Run`, the unmodified engine scoring it — works correctly end to end on genuinely non-synthetic,
+non-spliced agent behavior, for the first time in this repo. The cascade is real: task 3
+(`cancellation_fee`) shows a real arithmetic step (25% × $900 = $225) computed correctly on a
+premise the model had no way to know was stale. Every number here is real content divergence
+correctly localized — nothing here is wrong, it is merely tied by a baseline that should have lost.
+
+**Does not:** demonstrate that alignment adds value over naive positional diffing on real agent
+divergence. This harness cannot test that question as built. Three published nulls (Mode A′ 016,
+TRAIL/HAL 051, consensus 066) plus this tie is not a fourth null — it is a fourth attempt whose
+honest lesson is about the *harness*, not the algorithm: real non-determinism has to be allowed to
+change **structure** (how many exploratory steps, in what order), not just content, before a
+natural-fork protocol can tell alignment and position apart. Every protocol in this repo that
+*did* produce pre-fork structural variation (chimera's noise model) is exactly the one where the
+gap between the two arms is the entire headline (README: 0.49 vs 0.03 exact).
+
+### What a discriminating version would need (registered, not built here)
+
+A future slice, if pursued: tasks where the model has genuine, unscripted freedom in *how many*
+preliminary tool calls to make before the designated one — e.g. an open-ended question with several
+plausible sources to check, rather than an instruction naming the tool to call — so that
+independently-sampled recordings can naturally differ in length before the fork, the way two real
+runs of a real agent actually do. That is a materially harder harness to build and validate (the
+model's choice to check zero, one, or several sources is not something this entry's tasks leave
+room for) and is not attempted here. Filed for the record, not the tracker — #49's acceptance
+criteria (pre-registration committed, results committed, identical-denominator arms, reported as
+it fell) are met by this entry as written.
+
+### Engineering notes
+
+Two pre-data-collection fixes, both before any session was recorded for score: an argument-order
+bug in `record_perturbation_sessions.py` inserted `--perturb` between `--task` and its value,
+breaking argparse for every perturbed session on the first sweep (caught by 74-byte cassettes and
+zero summary files — a mechanical failure, not a modeling one); `shipping_cutoff`'s prompt named no
+reference id, so `check_status` was never called — fixed by naming `SHIP-CUTOFF` explicitly,
+matching `order_status`'s already-working phrasing. Both fixes precede the recording run this entry
+scores; neither touches `bench/params.toml` or any previously published number (rule 10's spirit,
+applied to a harness fix rather than a baseline).
+
+`bench/results/perturbation_all.json`'s `protocol` field reads `"chimera"` — `run`'s scoring path
+has no protocol-name parameter, and the committed TRAIL/HAL table has the identical quirk
+(`trail_hal_natural_all.json`). Not fixed here: pre-existing, shared with a table already published,
+out of this slice's scope.
+
+Governing docs: `BENCHMARK.md` (protocol), notebook 074 (this entry's pre-registration), 069/070
+(the idiom this entry's diagnosis follows), 066 (the "no headroom" argument this entry's is a
+sibling of).

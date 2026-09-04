@@ -1,0 +1,13 @@
+{
+  "failing": "a_08.json",
+  "reference": "b_08.json",
+  "gold_step": 1,
+  "cross_system": false,
+  "meta": {
+    "task_id": "order_status",
+    "session_id": "perturbed_03",
+    "perturbation_type": "wrong_status",
+    "designated_tool": "check_status",
+    "provenance": "real-agent perturbation pair: a recorded tool-using agent session (qwen3:8b via `amberfork record`) against its task's clean reference recording, gold from the harness's own perturbation bookkeeping — notebook 074"
+  }
+}

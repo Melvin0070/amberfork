@@ -1,0 +1,342 @@
+{
+  "bench_schema_version": "0.6",
+  "protocol": "chimera",
+  "split": "all",
+  "coverage": {
+    "total": 25,
+    "evaluated": 25,
+    "dev": 0,
+    "test": 25,
+    "reasons": {},
+    "exclusions": []
+  },
+  "n_pairs": 25,
+  "cross_system": 0,
+  "params": {
+    "source": "bench/params.toml",
+    "sha256": "8ebd95ce8f3d50549017b4d381c8d0dc1f76264184ce92e5795895b383f36014",
+    "tau": 0.3,
+    "resync_k": 2,
+    "gap_open": 0.6,
+    "gap_ext": 0.3
+  },
+  "pairs": [
+    {
+      "name": "pair_00",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_01",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_02",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_03",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_04",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_05",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_06",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_07",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_08",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_09",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_10",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_11",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_12",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_13",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_14",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_15",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_16",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_17",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_18",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_19",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_20",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_21",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_22",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_23",
+      "task_key": "reference",
+      "split": "test"
+    },
+    {
+      "name": "pair_24",
+      "task_key": "reference",
+      "split": "test"
+    }
+  ],
+  "arms": [
+    {
+      "arm": "random",
+      "exact": {
+        "hits": 8,
+        "n": 25,
+        "rate": 0.32,
+        "ci95_lo": 0.17205190306907978,
+        "ci95_hi": 0.5158973072689775
+      },
+      "w1": {
+        "hits": 25,
+        "n": 25,
+        "rate": 1.0,
+        "ci95_lo": 0.8668077490609515,
+        "ci95_hi": 0.9999999999999999
+      },
+      "w3": {
+        "hits": 25,
+        "n": 25,
+        "rate": 1.0,
+        "ci95_lo": 0.8668077490609515,
+        "ci95_hi": 0.9999999999999999
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 25,
+        "rate": 0.0,
+        "ci95_lo": 1.3877787807814457e-17,
+        "ci95_hi": 0.13319225093904846
+      }
+    },
+    {
+      "arm": "pos-lexical",
+      "exact": {
+        "hits": 25,
+        "n": 25,
+        "rate": 1.0,
+        "ci95_lo": 0.8668077490609515,
+        "ci95_hi": 0.9999999999999999
+      },
+      "w1": {
+        "hits": 25,
+        "n": 25,
+        "rate": 1.0,
+        "ci95_lo": 0.8668077490609515,
+        "ci95_hi": 0.9999999999999999
+      },
+      "w3": {
+        "hits": 25,
+        "n": 25,
+        "rate": 1.0,
+        "ci95_lo": 0.8668077490609515,
+        "ci95_hi": 0.9999999999999999
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 25,
+        "rate": 0.0,
+        "ci95_lo": 1.3877787807814457e-17,
+        "ci95_hi": 0.13319225093904846
+      }
+    },
+    {
+      "arm": "nw-structural/resync",
+      "exact": {
+        "hits": 0,
+        "n": 25,
+        "rate": 0.0,
+        "ci95_lo": 1.3877787807814457e-17,
+        "ci95_hi": 0.13319225093904846
+      },
+      "w1": {
+        "hits": 0,
+        "n": 25,
+        "rate": 0.0,
+        "ci95_lo": 1.3877787807814457e-17,
+        "ci95_hi": 0.13319225093904846
+      },
+      "w3": {
+        "hits": 0,
+        "n": 25,
+        "rate": 0.0,
+        "ci95_lo": 1.3877787807814457e-17,
+        "ci95_hi": 0.13319225093904846
+      },
+      "no_pred": {
+        "hits": 25,
+        "n": 25,
+        "rate": 1.0,
+        "ci95_lo": 0.8668077490609515,
+        "ci95_hi": 0.9999999999999999
+      },
+      "calibration": [
+        {
+          "lo": 0.0,
+          "hi": 0.2,
+          "rate": null
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.4,
+          "rate": null
+        },
+        {
+          "lo": 0.4,
+          "hi": 0.6,
+          "rate": null
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.8,
+          "rate": null
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.0,
+          "rate": null
+        }
+      ]
+    },
+    {
+      "arm": "nw-lexical/resync",
+      "exact": {
+        "hits": 25,
+        "n": 25,
+        "rate": 1.0,
+        "ci95_lo": 0.8668077490609515,
+        "ci95_hi": 0.9999999999999999
+      },
+      "w1": {
+        "hits": 25,
+        "n": 25,
+        "rate": 1.0,
+        "ci95_lo": 0.8668077490609515,
+        "ci95_hi": 0.9999999999999999
+      },
+      "w3": {
+        "hits": 25,
+        "n": 25,
+        "rate": 1.0,
+        "ci95_lo": 0.8668077490609515,
+        "ci95_hi": 0.9999999999999999
+      },
+      "no_pred": {
+        "hits": 0,
+        "n": 25,
+        "rate": 0.0,
+        "ci95_lo": 1.3877787807814457e-17,
+        "ci95_hi": 0.13319225093904846
+      },
+      "calibration": [
+        {
+          "lo": 0.0,
+          "hi": 0.2,
+          "rate": {
+            "hits": 23,
+            "n": 23,
+            "rate": 1.0,
+            "ci95_lo": 0.8568833815495731,
+            "ci95_hi": 1.0
+          }
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.4,
+          "rate": {
+            "hits": 2,
+            "n": 2,
+            "rate": 1.0,
+            "ci95_lo": 0.34238022750665303,
+            "ci95_hi": 1.0
+          }
+        },
+        {
+          "lo": 0.4,
+          "hi": 0.6,
+          "rate": null
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.8,
+          "rate": null
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.0,
+          "rate": null
+        }
+      ]
+    }
+  ]
+}

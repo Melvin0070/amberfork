@@ -1,0 +1,167 @@
+{
+  "schema_version": "0.1",
+  "id": "reference",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "qwen3:8b",
+      "inputs": {
+        "model": "qwen3:8b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a support agent. Before answering definitively, use the available tools to check current information — do not answer from assumption. Cite what you found, then give a direct, concise answer."
+          },
+          {
+            "role": "user",
+            "content": "I bought a damaged item 40 days ago. Can I get a refund? Check the current policy first."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "search_docs",
+              "description": "Search internal policy documents.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "search query"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          }
+        ],
+        "stream": false,
+        "think": false,
+        "options": {
+          "temperature": 0.8,
+          "num_ctx": 40960
+        }
+      },
+      "outputs": {
+        "model": "qwen3:8b",
+        "created_at": "2026-09-04T07:05:42.335444Z",
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_mjbpwo5f",
+              "function": {
+                "index": 0,
+                "name": "search_docs",
+                "arguments": {
+                  "query": "refund policy for damaged items beyond 30 days"
+                }
+              }
+            }
+          ]
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 1606018834,
+        "load_duration": 115358792,
+        "prompt_eval_count": 203,
+        "prompt_eval_duration": 203350000,
+        "eval_count": 29,
+        "eval_duration": 1225103000
+      },
+      "attrs": {
+        "status": 200
+      }
+    },
+    {
+      "idx": 1,
+      "kind": "llm",
+      "name": "qwen3:8b",
+      "inputs": {
+        "model": "qwen3:8b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a support agent. Before answering definitively, use the available tools to check current information — do not answer from assumption. Cite what you found, then give a direct, concise answer."
+          },
+          {
+            "role": "user",
+            "content": "I bought a damaged item 40 days ago. Can I get a refund? Check the current policy first."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_mjbpwo5f",
+                "function": {
+                  "index": 0,
+                  "name": "search_docs",
+                  "arguments": {
+                    "query": "refund policy for damaged items beyond 30 days"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_mjbpwo5f",
+            "content": "{\"doc_id\": \"POL-77\", \"title\": \"Refund Policy (rev. 12)\", \"content\": \"Items may be refunded within 45 days of purchase if defective or damaged. Store credit only after 45 days.\"}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "search_docs",
+              "description": "Search internal policy documents.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "search query"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          }
+        ],
+        "stream": false,
+        "think": false,
+        "options": {
+          "temperature": 0.8,
+          "num_ctx": 40960
+        }
+      },
+      "outputs": {
+        "model": "qwen3:8b",
+        "created_at": "2026-09-04T07:22:05.909513Z",
+        "message": {
+          "role": "assistant",
+          "content": "The current policy states that items may be refunded within 45 days of purchase if defective or damaged. Since you purchased the item 40 days ago, you are still within the refund period. You can request a refund. If the item is not defective but damaged, you may be eligible for store credit instead. Please contact customer support to proceed with your refund request."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 4096578750,
+        "load_duration": 132968542,
+        "prompt_eval_count": 297,
+        "prompt_eval_duration": 240441000,
+        "eval_count": 76,
+        "eval_duration": 983140003000
+      },
+      "attrs": {
+        "status": 200
+      }
+    }
+  ]
+}

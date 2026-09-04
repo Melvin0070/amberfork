@@ -1,0 +1,167 @@
+{
+  "schema_version": "0.1",
+  "id": "perturbed_01",
+  "steps": [
+    {
+      "idx": 0,
+      "kind": "llm",
+      "name": "qwen3:8b",
+      "inputs": {
+        "model": "qwen3:8b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a support agent. Before answering definitively, use the available tools to check current information — do not answer from assumption. Cite what you found, then give a direct, concise answer."
+          },
+          {
+            "role": "user",
+            "content": "I need an order to arrive by Friday. Is standard shipping still fast enough, or do I need to pay for expedited? Check the current shipping status for reference SHIP-CUTOFF first."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_status",
+              "description": "Check the current status of an order, shipment, or reference id.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "reference_id": {
+                    "type": "string",
+                    "description": "the id to check"
+                  }
+                },
+                "required": [
+                  "reference_id"
+                ]
+              }
+            }
+          }
+        ],
+        "stream": false,
+        "think": false,
+        "options": {
+          "temperature": 0.8,
+          "num_ctx": 40960
+        }
+      },
+      "outputs": {
+        "model": "qwen3:8b",
+        "created_at": "2026-09-04T07:41:13.729976Z",
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_b6cp43od",
+              "function": {
+                "index": 0,
+                "name": "check_status",
+                "arguments": {
+                  "reference_id": "SHIP-CUTOFF"
+                }
+              }
+            }
+          ]
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 1283235250,
+        "load_duration": 120044833,
+        "prompt_eval_count": 233,
+        "prompt_eval_duration": 76483000,
+        "eval_count": 24,
+        "eval_duration": 1076589000
+      },
+      "attrs": {
+        "status": 200
+      }
+    },
+    {
+      "idx": 1,
+      "kind": "llm",
+      "name": "qwen3:8b",
+      "inputs": {
+        "model": "qwen3:8b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a support agent. Before answering definitively, use the available tools to check current information — do not answer from assumption. Cite what you found, then give a direct, concise answer."
+          },
+          {
+            "role": "user",
+            "content": "I need an order to arrive by Friday. Is standard shipping still fast enough, or do I need to pay for expedited? Check the current shipping status for reference SHIP-CUTOFF first."
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_b6cp43od",
+                "function": {
+                  "index": 0,
+                  "name": "check_status",
+                  "arguments": {
+                    "reference_id": "SHIP-CUTOFF"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_b6cp43od",
+            "content": "{\"reference_id\": \"SHIP-CUTOFF\", \"status\": \"delayed\", \"detail\": \"Carrier network delay in effect. Standard shipping cutoff for Friday delivery already passed last Friday; expedited shipping is required.\"}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_status",
+              "description": "Check the current status of an order, shipment, or reference id.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "reference_id": {
+                    "type": "string",
+                    "description": "the id to check"
+                  }
+                },
+                "required": [
+                  "reference_id"
+                ]
+              }
+            }
+          }
+        ],
+        "stream": false,
+        "think": false,
+        "options": {
+          "temperature": 0.8,
+          "num_ctx": 40960
+        }
+      },
+      "outputs": {
+        "model": "qwen3:8b",
+        "created_at": "2026-09-04T07:41:15.946728Z",
+        "message": {
+          "role": "assistant",
+          "content": "The reference ID SHIP-CUTOFF is currently delayed due to a carrier network issue. The standard shipping cutoff for Friday delivery has already passed, and expedited shipping is required to ensure your order arrives by Friday."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 2170431542,
+        "load_duration": 100995792,
+        "prompt_eval_count": 313,
+        "prompt_eval_duration": 213588000,
+        "eval_count": 44,
+        "eval_duration": 1849617000
+      },
+      "attrs": {
+        "status": 200
+      }
+    }
+  ]
+}

@@ -184,6 +184,36 @@ with the decision rule fixed in advance — including the branch where the corpu
 documented negative result. **The chimera numbers above are untouched** (protocol rule 10: a
 baseline never disturbs the product's published table).
 
+### Real-agent perturbation (n=25) — ties the weak baseline, and the reason is the finding
+
+The fourth attempt at natural-fork evidence, and the first with no found-corpus defect to blame: a
+real local model (`qwen3:8b`) drives a real tool-using agent through `amberfork record`, with one
+tool's return value swapped for a wrong one (a stale doc, a wrong status) — gold is the exchange
+where the bad value first reaches the model, known from the harness's own bookkeeping, not
+annotated. [Pre-registered in notebook 074](docs/notebook.md); result in 075.
+
+```sh
+cargo run -q -p amberfork-bench -- report --results bench/results/perturbation_all.json
+```
+
+| arm | exact | ±3 | n |
+|---|---|---|---|
+| random | 0.32 | 1.00 | 25 |
+| pos-lexical | **1.00** | 1.00 | 25 |
+| nw-structural/resync | 0.00 (100% abstain) | 0.00 | 25 |
+| nw-lexical/resync (the engine) | **1.00** | 1.00 | 25 |
+
+The engine is right on every pair — and so is the shallow positional diff it exists to beat. Read
+plainly: **this is not a win.** Alignment only earns its keep over position when two runs can
+differ in length or order before the point that matters (chimera's benign-noise model manufactures
+exactly that, on purpose); this harness perturbs *content* but never *structure*, so the two runs
+stay index-aligned by construction and position ties alignment every time, regardless of where the
+fork falls. `nw-structural/resync` abstains on all 25 for an unrelated, confirmed reason: its
+content-blind cost model keys on `(kind, name)`, and every step here shares one name — a mechanical
+fact about today's cassette-normalization path (one exchange, one undifferentiated `Llm` step),
+not a claim about real agents in general. Full diagnosis, including what a version that could
+actually discriminate the two arms would need, is in notebook 075.
+
 ## What exists today
 
 | Artifact | What it is |
@@ -204,8 +234,10 @@ built**, and is paused deliberately rather than abandoned mid-thought — each i
 issue with its decision already argued in the notebook, so it can be picked up cold.
 
 **Done and standing:** 11 crates, the chimera sealed-test protocol (scored at three release tags,
-identical every time), the Mode A′ null, the TRAIL↔HAL null, and the LLM-judge baseline with its
-cassettes committed so every table replays offline with no API key.
+identical every time), the Mode A′ null, the TRAIL↔HAL null, the LLM-judge baseline, and the
+real-agent perturbation tie (#49) — four honest attempts at natural-fork evidence, each with its
+own diagnosed mechanism, cassettes and results committed so every table replays offline with no
+API key.
 
 **The next experiment is already registered.** Notebook 070 pre-registers the ingest repair the
 judge run's diagnosis implies — tool-name reconstruction and provider-envelope unwrapping in
@@ -223,9 +255,9 @@ affects real use, not a benchmark row.
 architecture (#53); the CI gate contract in [`docs/ci.md`](docs/ci.md), whose recipe runs on every
 push as a real workflow rather than sitting in a document (#54); repo and crate metadata (#55).
 
-**Open issues** carry the rest: `#47`–`#52`, `#56`, `#57` for the remaining v1.0 work (perf ceiling,
-`--verify` measurement, the sealed-test reveal, the writeup) and `#58`–`#63` as decided post-v1
-deferrals. Two acceptance items wait on the next release rather than on code: crates.io only shows
+**Open issues** carry the rest: `#47`, `#48`, `#50`–`#52`, `#56`, `#57` for the remaining v1.0 work
+(the local-judge model swap, `--verify` measurement, perf ceiling, the sealed-test reveal, the
+writeup) and `#58`–`#63` as decided post-v1 deferrals. Two acceptance items wait on the next release rather than on code: crates.io only shows
 the new homepage/documentation links once a version is published, and the five-target matrix is
 proven on `workflow_dispatch` but not yet on a tag. `CONTRIBUTING.md` describes the working
 agreement; `BENCHMARK.md` governs any number that gets published.

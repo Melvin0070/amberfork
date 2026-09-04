@@ -1,0 +1,13 @@
+{
+  "failing": "a_10.json",
+  "reference": "b_10.json",
+  "gold_step": 1,
+  "cross_system": false,
+  "meta": {
+    "task_id": "refund_window",
+    "session_id": "perturbed_00",
+    "perturbation_type": "swapped_doc",
+    "designated_tool": "search_docs",
+    "provenance": "real-agent perturbation pair: a recorded tool-using agent session (qwen3:8b via `amberfork record`) against its task's clean reference recording, gold from the harness's own perturbation bookkeeping — notebook 074"
+  }
+}
