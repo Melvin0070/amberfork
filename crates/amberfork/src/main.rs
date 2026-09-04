@@ -46,7 +46,7 @@ const EXIT_TROUBLE: u8 = 2;
 /// `--judge local`'s provider (issue #10): a local Ollama server, no key, no cost — the same
 /// local-provider convention `crates/amberfork/tests/verify_cli.rs` (#44) established.
 const JUDGE_OLLAMA_URL: &str = "http://127.0.0.1:11434";
-const JUDGE_DEFAULT_MODEL: &str = "smollm2:135m";
+const JUDGE_DEFAULT_MODEL: &str = "qwen3:8b";
 /// Neighbours either side of the fork step a judge is shown — enough content to narrate, never
 /// the full trajectory (issue #10 guardrail #3).
 const JUDGE_WINDOW_K: usize = 2;
@@ -134,7 +134,7 @@ struct DiffArgs {
 
     /// Narrate the fork with a local model (issue #10). `off` (default) is the untouched
     /// deterministic path — no network, no new dependency reached. `local` asks a local Ollama
-    /// server (`http://127.0.0.1:11434`, model `smollm2:135m`) to describe the fork-region
+    /// server (`http://127.0.0.1:11434`, model `qwen3:8b`) to describe the fork-region
     /// content, printed under `AI (unverified):` below the deterministic render. Never affects
     /// `--json`: the AI layer is not part of the machine contract.
     #[arg(long, value_enum, default_value_t = JudgeMode::Off)]

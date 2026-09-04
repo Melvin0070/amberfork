@@ -98,12 +98,12 @@ fn judge_local_never_joins_the_json_contract() {
 }
 
 #[test]
-#[ignore = "network: drives a real local Ollama server, see verify_cli.rs's recipe (same server/model)"]
+#[ignore = "network: drives a real local Ollama server, same address as verify_cli.rs's recipe but its own model — see JUDGE_DEFAULT_MODEL"]
 fn judge_local_narrates_a_real_fork_against_a_real_local_provider() {
     assert!(
         ollama_reachable(),
         "Ollama is not reachable at {OLLAMA_ADDR} — start it with `ollama serve` and \
-         `ollama pull smollm2:135m` first"
+         `ollama pull qwen3:8b` first"
     );
     let (bad, good) = manifest();
 

@@ -4137,3 +4137,15 @@ out of this slice's scope.
 Governing docs: `BENCHMARK.md` (protocol), notebook 074 (this entry's pre-registration), 069/070
 (the idiom this entry's diagnosis follows), 066 (the "no headroom" argument this entry's is a
 sibling of).
+
+## 076 · 2026-09-04 · `--judge local` default swapped `smollm2:135m` → `qwen3:8b` (#47)
+
+Closes 068's side-finding: a 135M model narrating a fork is not producing useful output — a shipped
+feature that was effectively inert. `JUDGE_DEFAULT_MODEL` (`crates/amberfork/src/main.rs`) now
+points at `qwen3:8b`, the same local arm #46 already validated as this project's no-API-key
+condition and already pulled on this machine — no download, no new dependency. Pure default swap:
+no protocol or benchmark implication, since this is a shipped CLI default, not a
+`BENCHMARK.md`-governed number. Updated alongside it: `judge_cli.rs`'s `#[ignore]`d real-provider
+test and its `ollama pull` instruction. Left alone: `verify_cli.rs`/`verify_agent.py`'s own
+`smollm2:135m` default, which is `--verify`'s (#44) unrelated harness model, a different constant
+for a different flag, out of #47's scope.
