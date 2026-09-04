@@ -3866,3 +3866,143 @@ which `docs/ci.md`'s install step verifies against, so the two are now coupled d
 
 `docs/run-on-your-own-agent.md` lists the real target set (#53's third acceptance box). The
 release job itself is unchanged and still tag-only; a dispatch stops at artifacts.
+
+## 074 · 2026-09-04 · PRE-REGISTRATION: the real-agent perturbation protocol (#49 slice A6)
+
+**Written before any session is recorded, before any pair is built, before a single number exists.**
+Three natural-fork attempts are nulls (Mode A′ 016, TRAIL/HAL 051, consensus 066), and 049 itself
+says it: "three published nulls is discipline; a fourth without a stated interpretation starts to
+read as 'does not work on natural failures.'" This entry fixes what every outcome means before
+the outcome exists, per that instruction.
+
+### The question
+
+Mode A′ and TRAIL/HAL both tried to find natural forks in *found* data and both nulled for reasons
+entangled with the corpus (short runs / cross-system references; zero shared step vocabulary —
+070). Neither can settle whether the aligner works on real agent divergence, because neither rules
+out "the corpus was unfair." This protocol removes that escape hatch by manufacturing the fork
+instead of hunting for one: same agent, same tool vocabulary, same run-length distribution, on
+both sides of the pair, by construction. If this nulls, the corpus cannot be blamed.
+
+### The harness
+
+A small real tool-using agent, decisions made by a real local LLM (`qwen3:8b`, already this
+project's chosen local model — README, notebook 069), calling three mock tools (`search_docs`,
+`check_status`, `calculate`) against a fixed synthetic "world" I wrote. Recorded via the existing,
+unmodified `amberfork record` (a generic HTTP capture proxy — it does not know or care that the
+traffic is tool-calling; confirmed by reading `crates/amberfork-record/src/proxy.rs` and
+`normalize.rs` before writing this). No changes to `amberfork-record`, `amberfork-ingest`, or the
+`amberfork-attrib` cassette-patching path — all of that machinery is for `--verify`'s counterfactual
+replay, a different problem. The perturbation lives entirely in the mock tool's own return value,
+inside a new, self-contained `spike/perturbation/` package (agent driver + task/tool/world
+definitions + a recording orchestrator that shells out to `cargo run -p amberfork -- record`,
+mirroring `spike/`'s existing role as the maintained-but-Python benchmark data pipeline per
+CONTRIBUTING.md).
+
+**Why this needs no GAIA sanitization, unlike every other corpus in this repo:** the tasks, tools,
+and "world" facts below are entirely synthetic — invented for this experiment, not derived from
+GAIA or any upstream dataset. The resulting pair fixtures can be committed directly under
+`bench/fixtures/`; only the raw cassettes (which carry full, unredacted request/response bodies per
+`amberfork-record`'s own documented design) stay in gitignored `bench/data/perturbation/`.
+
+### Task family and perturbation catalogue (fixed before any session records)
+
+Five tasks, one designated tool call each, covering the issue's three named perturbation types:
+
+| task | tool sequence | perturbation type | correct → perturbed shift |
+|---|---|---|---|
+| `refund_window` | `search_docs("refund policy")` | swapped doc | 45-day window (eligible at 40d) → stale 30-day-window doc (looks ineligible) |
+| `order_status` | `check_status("A193")` | wrong status | `delayed` (real ETA) → `delivered` (false) |
+| `cancellation_fee` | `search_docs("cancellation policy")` → `calculate(...)` | stale value | 10% early-cancellation fee → stale 25% fee, propagated through a real arithmetic step |
+| `shipping_cutoff` | `check_status("SHIP-CUTOFF")` | wrong status | `on-time` (standard ships fine) → `delayed` (falsely implies expediting is required) |
+| `warranty_eligibility` | `search_docs("warranty policy")` | swapped doc | correct 18-month kitchen-appliance policy → a plausible but wrong 12-month *refurbished*-appliance doc |
+
+System prompt is one shared, neutral instruction ("check tools before answering definitively; cite
+what you found") — not engineered toward any particular downstream recovery behavior. Whatever the
+model does after seeing the bad value — accept it, double-check, hedge — is the "real recovery
+attempt / cascade" #49's issue text asks for, observed rather than scripted.
+
+### Gold rule
+
+Ollama chat is stateless per call — the full message history, including the tool's return value, is
+resent on the *next* request. `normalize()` maps one HTTP exchange to one step in capture order
+(confirmed in `amberfork-record/src/normalize.rs`), so the step where the perturbed value first
+becomes part of a request body is a well-defined, mechanically located index. The agent driver
+counts its own exchanges and writes that index to a sidecar `<session_id>.gold.json` at the moment
+it injects the bad tool result — gold is a property of the harness's own bookkeeping, never inferred
+from the trace after the fact, and it is written before the model ever gets a chance to react to it.
+
+### Declared parameters (frozen before recording)
+
+- Model: `qwen3:8b` via Ollama `/api/chat`, `"think": false` (controls wall-clock cost; declared,
+  not hidden), `temperature: 0.8` (explicit — never rely on an undeclared default), `num_ctx: 40960`
+  sent explicitly (069's lesson: Ollama silently truncates and answers a half-seen prompt otherwise).
+- **N and pairing: 5 tasks × 1 clean reference + 5 independently-sampled perturbed recordings =
+  25 pairs.** Reference-noise robustness (does *which* clean run you pick as reference matter) is
+  deliberately out of scope — 066 already measured that axis under a benign-noise model and killed
+  the consensus milestone on it; re-litigating it here would blur what this experiment is for. One
+  fixed clean reference per task, chosen as the first recording where the designated tool is
+  actually invoked (same triggering rule as the perturbed side, below).
+- **Retry rule, and the one thing that must not slide:** a recording is discarded and re-attempted
+  (cap 6, mirroring `verify_cli.rs`'s `MAX_FORK_ATTEMPTS`) *only* if the designated tool was never
+  called at all — a mechanical precondition for the pair to exist, not an outcome filter. A
+  recording is never discarded or retried because of what the aligner would say about it, because
+  the fork looks "too easy" or "too hard," or for any reason downstream of running `diff`. Retries
+  happen before `amberfork-bench` ever sees the cassette. If a task exhausts its retry budget, that
+  is an exclusion, reported per rule 4 — not backfilled by drawing a sixth task.
+- **No dev/test split.** Rule 1 exists to keep tuning off the test data; nothing is tuned here — 
+  `bench/params.toml` (sha256 `8ebd95ce8f3d…`) runs unchanged, exactly as it did for the Mode A′ and
+  TRAIL/HAL baseline measurements, neither of which used a split either. All 25 pairs score in one
+  pass, once.
+- Arms: the same factorial family as chimera and TRAIL/HAL — `random`, `pos-lexical`,
+  `nw-structural/resync`, `nw-lexical/resync` (the shipped engine) — for direct cross-protocol
+  comparability, not a new arm set.
+
+### Harness build (mirrors existing conventions, confirmed against source)
+
+New `amberfork-bench build-perturbation-pairs` subcommand, structurally cloning
+`crates/amberfork-bench/src/build_trail.rs` (`Reference`/`Failing`/`BuiltPair`/`DropReason`/
+`BuildStats`/`match_pairs`/`write_set`/`BuildError`), reading recorded cassettes through the
+existing, unmodified `amberfork_record::normalize` and the sidecar gold files instead of
+`amberfork_ingest::trail`/`hal`. Output is the same `pair_NN.json`/`a_NN.json`/`b_NN.json` manifest
+shape `pairs.rs::load_pairs` already reads, `cross_system: false` (both sides are the identical
+agent). Scored with the existing, unmodified `run --pairs bench/fixtures/perturbation_all --split
+all`; reproduced offline forever after via the existing `report --results
+bench/results/perturbation_all.json`. No changes to `results.rs`, `arms.rs`, or the align engine.
+
+### Decision rule — what each outcome means, fixed now
+
+- **Win** (engine clears `random` with non-overlapping Wilson 95% CIs, rule 6, and clears the
+  positional/structural baselines): the first natural-fork win. The headline claim expands beyond
+  chimera's by-construction caveat, and this becomes the lead evidence in #57's writeup.
+- **Partial** (engine beats the baselines but well under chimera's ±3-window rate): still a genuine,
+  publishable natural-fork result — reported at its own rate, never described as reaching chimera's
+  91% ±3, never rounded up.
+- **Null, and this is the branch that needs saying now, not after:** because this corpus shares
+  vocabulary and run-length by construction, a null here cannot be attributed to a corpus defect the
+  way 070 diagnosed TRAIL/HAL's zero-vocabulary-overlap collapse. A null here means the mechanistic
+  diagnosis in 070's style is mandatory before any interpretation is published — inspect per-pair
+  predictions the way 070 did (is the engine still predicting step 0 as a constant? Is a real
+  agent's recovery text lexically closer to its own pre-perturbation prefix than a spliced chimera
+  tail ever is, defeating resync-k specifically?) — and if the diagnosis finds no representation bug
+  to fix, the honest conclusion is that the validated regime is confined to controlled/injected
+  divergence, stated plainly in README and #57, not softened.
+
+### Threats to validity
+
+1. The "agent" is a harness built for this test, not a production agent — more real than chimera (no
+   trace-splicing, a genuine LLM making genuine tool-call decisions) but less real than production
+   telemetry. State both directions; let neither be implied.
+2. Single model (`qwen3:8b`) — its verbosity/style could interact with the lexical cost model in
+   ways specific to this one model. A different local model might score differently; this is not
+   measured here and should not be implied.
+3. Small N (25) — Wilson/bootstrap CIs per rule 6, no claimed difference between arms whose
+   intervals overlap.
+4. Task, tool, and perturbation design has one author (me) and is fixed before recording, per this
+   entry — the standard pre-registration mitigation for researcher-degrees-of-freedom, not a
+   guarantee against it.
+5. `think: false` and the retry-on-non-invocation rule are both harness choices that shape which
+   agent behaviors get observed; both are declared above rather than left implicit.
+
+Governing docs: `BENCHMARK.md` (protocol), notebook 040 (the by-construction catch), 065 (the
+pre-registration form this entry follows), 070 (the diagnosis discipline a null must repeat).
