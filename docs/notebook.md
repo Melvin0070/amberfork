@@ -4006,3 +4006,15 @@ bench/results/perturbation_all.json`. No changes to `results.rs`, `arms.rs`, or 
 
 Governing docs: `BENCHMARK.md` (protocol), notebook 040 (the by-construction catch), 065 (the
 pre-registration form this entry follows), 070 (the diagnosis discipline a null must repeat).
+
+**Addendum, same session, before any recording** — a mechanical fact from reading
+`normalize.rs` closely enough to write the gold rule above, worth stating before it can look like a
+post-hoc excuse either way: `step_from_exchange`'s `name` comes from the request body's `model`
+field (`model_name()`), and every exchange this harness produces targets the same model. **Every
+step in every one of these runs will carry the identical name, `"qwen3:8b"`.** Unlike TRAIL/HAL,
+where mismatched step names were 070's whole diagnosis, this harness gives the aligner *zero*
+step-name signal in either direction — sync and divergence must be decided on JSON payload content
+alone (the cumulative, monotonically-growing message array). That cuts both ways and is not
+predicted here: it could make alignment easier (real content divergence, unmasked by any
+name-matching shortcut) or harder (no cheap structural tell at all). Recorded now so neither
+reading of the eventual number can claim to have expected it.
