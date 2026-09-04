@@ -260,11 +260,12 @@ the full reasoning and what fixing it would take.
 | [`DESIGN.md`](DESIGN.md) | Visual system ("sameness recedes, divergence glows") |
 | [`docs/design/`](docs/design/) | Architecture + positioning corpus (the locked build plan) |
 
-## Project status — parked at v0.9.1 (2026-08-13)
+## Project status — v1.0.0, ready to tag (2026-09-04)
 
-Everything above works and is reproducible today. The remaining roadmap is **specified but not
-built**, and is paused deliberately rather than abandoned mid-thought — each item below is an open
-issue with its decision already argued in the notebook, so it can be picked up cold.
+Everything above works and is reproducible today. The v1.0 milestone's credibility work is done —
+the LLM-judge baseline, the fourth natural-fork attempt, a real `--verify` confirmation rate, and
+two documentation-drift issues closed with reasoning recorded, not just fixed — with one item
+(perf/scale measurement, #50) deliberately deferred rather than completeness for its own sake.
 
 **Done and standing:** 11 crates, the chimera sealed-test protocol (scored at three release tags,
 identical every time), the Mode A′ null, the TRAIL↔HAL null, the LLM-judge baseline, and the

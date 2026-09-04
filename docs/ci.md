@@ -77,7 +77,7 @@ jobs:
         env:
           # Pin the version. The asset filename embeds it, so `releases/latest/download/...`
           # would 404 the moment a new version ships — and pinning is what you want in CI anyway.
-          AMBERFORK_VERSION: v0.9.1
+          AMBERFORK_VERSION: v1.0.0
           TARGET: x86_64-unknown-linux-gnu
         run: |
           base="https://github.com/Melvin0070/amberfork/releases/download/${AMBERFORK_VERSION}"

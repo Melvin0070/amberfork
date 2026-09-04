@@ -2,6 +2,62 @@
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-09-04
+
+v1.0 — the credibility release (milestone issues #46–#57, `#50` deliberately deferred). Where v0.8
+first tested the headline number against reality, this milestone tests everything *around* it: the
+missing baseline the field's own numbers are compared against, a fourth honest attempt at natural-fork
+evidence, a real rate for the other half of the moat (`--verify`), and two documentation-drift issues
+closed with the reasoning kept rather than just the fix.
+
+- **The missing LLM-judge baseline (#46).** `judge-single`/`judge-paired`/`judge-stepwise` against
+  frontier and local models on the TRAIL↔HAL natural pairs, pre-registered before a line of judge
+  code existed (notebook 069). Result: three of five judge arms beat the engine with paired-bootstrap
+  intervals excluding zero — a real loss, published as measured. Mitigated, not erased, by a second
+  finding in the same table: no arm meaningfully clears random at the ±3 window either, which
+  convicts the corpus (070's zero-shared-vocabulary diagnosis) as much as any localizer.
+- **`--judge local` default: `smollm2:135m` → `qwen3:8b` (#47).** The 135M default was effectively
+  inert — too small to narrate a fork usefully. Swapped to this project's already-validated
+  no-API-key local arm; no download, no new dependency.
+- **Real-agent perturbation protocol (#49).** The fourth natural-fork attempt, and the first with no
+  found-corpus defect to blame: a real local model drives a real tool-using agent through unmodified
+  `amberfork record`, with one tool's return value swapped for a wrong one, gold known from the
+  harness's own construction. Result: a tie with the trivial positional baseline, mechanistically
+  diagnosed rather than left as a bare number — this harness perturbs content but never structure, so
+  the two runs stay index-aligned by construction and position can't lose here regardless of where
+  the fork falls (notebook 074/075).
+- **`--verify` confirmation rate, measured for the first time (#48).** Scaled the existing
+  single-example real-provider test to n=15: 87% Recovered, 0% indeterminate. Investigating this
+  surfaced a real architecture boundary worth documenting: #49's known-cause corpus can't be reused
+  to test ddmin against ground truth, because that harness's fault lives in local agent code, never
+  a recorded HTTP response — nothing for `patch_cassette` to graft. Recorded as a real gap (notebook
+  079/080), not silently dropped from the issue's original scope.
+- **Doc drift reconciled, not just patched (#51).** `design-run-diff-debugger.md`'s header was a
+  full milestone behind (10 crates at v0.7.0); the GumTree-vs-linear-alignment question sat open
+  since notebook 040. Both resolved: 11 crates, and shipped v1 alignment is linear NW, full stop,
+  with the typed-causal-DAG ambition now formally the v2 frontier at #59.
+- **Decided against an agent-level accuracy metric (#52).** Investigated rather than skipped: the
+  only cheap proxy (agent name at the predicted step index) measures a different quantity than
+  Who&When's own `mistake_agent` gold label, which the data shows can diverge from "the agent at the
+  mistake step." Structurally inapplicable to TRAIL/HAL besides. A real proxy would look like a
+  completed benchmark row without being one — worse than no number (notebook 078).
+- **Distribution + CI gate (#53, #54, #55).** Five released targets built and smoke-tested on a
+  runner of their own architecture; the CI gate contract in `docs/ci.md` runs on every push as a
+  real workflow; repo topics, homepage, issue templates, docs.rs badge.
+- **The writeup, fact-checked before it shipped (#57).** `docs/writeup.md` — drafted, then
+  adversarially checked against every committed source, which caught a false parity-with-a-judge
+  claim inherited from an earlier positioning doc (the actual result is a loss, mitigated not
+  erased), an overstated `--verify` claim, and a broken command, all fixed before this tag rather
+  than after.
+
+Deliberately not in this release: `#50` (perf/scale-wall measurement) — lower credibility value than
+what shipped here, filed as a disclosed deferral rather than folded in for completeness.
+
+Offline invariant held throughout: default `amberfork diff` output is unchanged; every new number in
+this release (`#46`, `#48`, `#49`) is a benchmark/measurement addition, not an engine change, and
+`cargo test --workspace` stays offline and deterministic — every real-provider measurement in this
+milestone is a maintainer-run, explicitly-gated script, never the default suite.
+
 ## [0.9.1] — 2026-08-10
 
 Packaging fix, no behaviour change: v0.9.0 is the first release published to crates.io since
