@@ -1,0 +1,224 @@
+{
+  "protocol": "verify-realprovider",
+  "notebook_registration": 79,
+  "n_pairs_attempted": 15,
+  "n_pairs_excluded_never_forked": 0,
+  "n_pairs_scored": 15,
+  "two_sided_fork_rate": {
+    "k": 15,
+    "n": 15,
+    "wilson95": [
+      1.0,
+      0.7961107336956521,
+      1.0
+    ]
+  },
+  "tri_state_distribution_on_two_sided": {
+    "n": 15,
+    "recovered": {
+      "k": 13,
+      "wilson95": [
+        0.8666666666666667,
+        0.6211750079348376,
+        0.9626395301086407
+      ]
+    },
+    "not_recovered": {
+      "k": 2,
+      "wilson95": [
+        0.13333333333333333,
+        0.0373604698913593,
+        0.3788249920651624
+      ]
+    },
+    "unverified": {
+      "k": 0,
+      "wilson95": [
+        0.0,
+        0.0,
+        0.20388926630434784
+      ]
+    }
+  },
+  "ddmin_non_empty_propagation_rate_on_two_sided": {
+    "k": 10,
+    "n": 15,
+    "wilson95": [
+      0.6666666666666666,
+      0.41713125151212976,
+      0.8482389930530876
+    ]
+  },
+  "raw_attributions": [
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 1,
+      "propagation": [],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 1,
+      "propagation": [],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "not_recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 1,
+      "propagation": [],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "not_recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 1,
+      "propagation": [],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 1,
+      "propagation": [],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    },
+    {
+      "mode": "counterfactual",
+      "origin_step": 0,
+      "propagation": [
+        1
+      ],
+      "counterfactual": {
+        "recovered": "recovered",
+        "runs": 3
+      },
+      "confidence": 1.0
+    }
+  ]
+}

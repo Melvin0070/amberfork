@@ -4294,3 +4294,68 @@ per-pair raw `attribution` JSON so the table re-renders offline with zero live c
 Governing docs: `BENCHMARK.md` rule 6 (small-N honesty), notebook 068 (the original gap), 038/039/053
 (the `--verify`/ddmin build history), 074 (the retry-is-precondition-not-outcome-filter discipline
 this entry reuses).
+
+## 080 · 2026-09-04 · RESULT: `--verify` confirms 87% of real forks, zero indeterminate (#48)
+
+Registered in 079, run once, reported as it fell. `spike/verify_bench.py` reuses `verify_agent.py`
+unmodified. Reproduce (offline, from the committed document):
+
+```
+python3 -c "import json; d=json.load(open('bench/results/verify_realprovider_all.json')); \
+print(json.dumps({k:v for k,v in d.items() if k!='raw_attributions'}, indent=2))"
+```
+
+**All 15 of 15 pairs forked on the first recording attempt** — the retry budget (cap 6) was never
+needed. `verify_cli.rs`'s existing fixture doc calls itself "engineered" to fork reliably at
+temperature 1.4; this is that claim holding at n=15, not a cherry-picked run.
+
+| metric | rate | 95% CI | n |
+|---|---|---|---|
+| two-sided fork (ddmin engages at all) | 1.00 | [0.80, 1.00] | 15 |
+| **Recovered** | **0.867** | **[0.62, 0.96]** | 15 |
+| NotRecovered | 0.133 | [0.04, 0.38] | 15 |
+| **Unverified (indeterminate)** | **0.00** | [0.00, 0.20] | 15 |
+| ddmin: non-empty propagation | 0.667 | [0.42, 0.85] | 15 |
+
+**Read the two headline numbers together, not separately.** 87% Recovered is the confirmation rate
+#48 asked for. **Zero indeterminate verdicts, on a fixture specifically engineered to produce real
+LLM sampling variance**, is the more surprising fact: the 3-run majority vote never split evenly
+here (every one of the 15 verify calls shows `confidence: 1.0` — all three re-executions agreed).
+Small-N honesty applies to both: n=15 is not enough to claim the true Unverified rate is exactly
+zero, only that it's low enough not to have shown up yet (CI upper bound 0.20).
+
+**Every origin step is 0 or 1** (the fixture is a 2-step trajectory) — 10 pairs forked at step 0
+(the fruit-naming call), 5 at step 1 (the color-naming call, when both runs happened to name the
+same fruit but a different color). `propagation` is `[1]` whenever origin is 0 (step 1 mechanically
+depends on step 0's content — the prompt embeds it verbatim) and `[]` whenever origin is 1 (nothing
+downstream to propagate to). This is the non-empty-propagation rate above: not ddmin finding a
+surprising multi-step cause, but the fixture's own dependency structure showing up correctly.
+Read as "ddmin behavior on real forks" per 079's reframing, not as precision against a ground truth
+this corpus doesn't have — it's simply confirmation that the reduction tracks genuine dependency
+rather than either always claiming the whole run is contaminated or claiming nothing downstream ever
+matters.
+
+**The two `NotRecovered` cases are the most informative data point in this table, and worth reading
+past the number.** Both are origin=0 (fruit-naming) forks — ddmin found the single fruit-naming step
+sufficient to patch, patched it, re-executed 3 times, and still landed on `NotRecovered` with full
+agreement. The likely mechanism, not directly observed but consistent with everything else measured
+here: patching step 0 fixes *that* step's content, but step 1 (the color-naming call) is *itself* an
+independent temperature-1.4 draw — correcting the fruit name doesn't pin down what color the
+re-executed run's own fresh sample names for it. **A confirmed-sufficient cause and a
+still-non-recovering re-run are not a contradiction**; they're what happens when a downstream step
+carries its own independent stochasticity the patch can't reach. `--verify`'s tri-state design
+already assumes exactly this is possible (that's why `Unverified` exists as a category, distinct
+from a clean binary) — this run just didn't happen to land there, a second source of real
+non-determinism did.
+
+**Not measured here, per 079: origination/propagation label accuracy against an independently known
+cause.** This fixture has no external ground truth either — a genuine sampling-variance fork has no
+"true" originating step to check against beyond what the aligner itself already located. That
+measurement needs #49's known-cause corpus, which 079 already showed is structurally unreachable by
+`patch_cassette` without a harness redesign (routing mock tools through a second recorded HTTP
+boundary) — filed as a real gap, not silently dropped.
+
+Raw per-pair cassettes and verify output live in gitignored `bench/data/verify_realprovider/`
+(regeneratable via `spike/verify_bench.py`, needs a local Ollama with `smollm2:135m`); the committed
+`bench/results/verify_realprovider_all.json` carries every attribution needed to reproduce the table
+above with zero live calls.
