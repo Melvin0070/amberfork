@@ -4214,3 +4214,83 @@ two diverge, and (b) only ever apply to one corpus, unlike every other metric th
 A number with both properties is worse than no number: it looks like a completed benchmark row and
 isn't one. `BENCHMARK.md`'s Metrics and Definition-of-done sections are amended to point here instead
 of listing agent-level as pending work.
+
+## 079 · 2026-09-04 · PRE-REGISTRATION: measuring `--verify` — and why #49's corpus can't be reused (#48)
+
+**Written before any pair is recorded for this measurement.** 068's audit named the gap plainly:
+`--verify` has an e2e happy-path test (053) and no rate — no confirmation rate, no ddmin precision,
+no origination/propagation accuracy. #48 asks for all of it or a recorded reason why not. Investigated
+the actual code first (`amberfork-attrib`) rather than guess at scope.
+
+**Correction to my own assumption, caught before building anything:** `ddmin` is not aspirational —
+it shipped complete and tested under issue #38 (notebook 039), three weeks before #48 was even filed,
+and every `verify()` call with a two-sided fork already runs it unconditionally. #48 is a measurement
+task against existing, working machinery, not a build task.
+
+**The corpus question, and why #49's perturbation harness — the obvious reuse — doesn't work here.**
+#49 built 25 real recordings with a *known, by-construction* cause (a mock tool's return value,
+swapped for exactly one call). That known-cause property looked perfect for testing ddmin against
+ground truth. It isn't usable: the perturbation lives in `perturbation_agent.py`'s own local Python
+branch (`execute_tool(..., perturbed=...)`), never in a recorded HTTP response. `patch_cassette`/
+`patch_many` (`amberfork-attrib/src/patch.rs`) can only graft *response* bodies from one recording
+onto another; re-driving that same script with `--perturb` still set reproduces the bad tool value
+locally regardless of what the replay tape serves, and re-driving it without `--perturb` makes the
+tape's patched content irrelevant before it's ever reached. There is no cassette-level intervention
+that removes this specific cause. Fixing that would mean routing the mock tools through a second
+recorded HTTP boundary (a real architecture change to the #49 harness) — filed as a future item, not
+attempted here; #48 does not need to wait on it.
+
+**What corpus is actually shaped right: the one `--verify`'s own existing test already uses.**
+`crates/amberfork/tests/verify_cli.rs` + `tests/fixtures/verify_agent.py` (issue #44) is a toy
+two-turn agent against real local Ollama, engineered so independent recordings genuinely diverge by
+sampling variance (temperature 1.4) and a patch to turn 0 forces a live relay on turn 1 — exactly the
+regime `--verify` is built for. It has never been run at more than n=1. This registration scales it
+up, unmodified, rather than inventing a new fixture.
+
+**What "confirmation rate" means without an independently known cause, and why that's fine.** Unlike
+#49, there is no external ground truth here — the fork is genuine, unscripted sampling variance, not
+a manufactured fault. That means this cannot be an accuracy-vs-known-cause number, and #48's own
+wording ("confirmation rate... the raw tri-state Recovery distribution") doesn't require one: the
+question is simply how often the shipped mechanism, run for real, lands on each of
+`Recovered`/`NotRecovered`/`Unverified` — a description of real behavior, not a precision claim.
+
+**Method, declared before recording:**
+- Reuse `verify_agent.py` verbatim (`AMBERFORK_VERIFY_MODEL=smollm2:135m`, its existing tuned
+  default — a different use case from #46/#47's judge-narration model choice, not touched here).
+- **N = 15 pairs.** For each: record `good` once; record `bad` with the same retry-until-forked rule
+  `verify_cli.rs` already uses (`MAX_FORK_ATTEMPTS = 6`, discard and retry on a converged pair — a
+  mechanical precondition, never an outcome filter, same discipline as 074's retry rule). Then run
+  `amberfork diff <bad> --against <good> --verify --runs 3 --json --upstream
+  http://127.0.0.1:11434 --base-url-env AMBERFORK_VERIFY_BASE_URL -- python3 verify_agent.py`,
+  `--runs 3` matching the shipped default (not a knob being tuned here).
+- **Metrics, all with Wilson 95% CIs (rule 6), n=15 honestly small:** the tri-state distribution
+  (`attribution.counterfactual.recovered` ∈ Recovered/NotRecovered/Unverified) with the Unverified
+  rate stated as its own line, not folded into a footnote (#48's acceptance criterion names it
+  explicitly); the two-sided-fork rate (`attribution.mode == "counterfactual"` vs a one-sided fork,
+  which skips ddmin and ships the static attribution untouched — `verify.rs:136-138`); and, on the
+  two-sided subset only, ddmin's *descriptive* behavior — `propagation` empty vs non-empty, and
+  candidate-region size vs reduced-set size. **Reframed from "ddmin precision" to "ddmin behavior on
+  real forks" deliberately** — precision needs a denominator (a known true cause) this corpus cannot
+  supply; reporting it as precision anyway would be the same kind of quiet redefinition 078 just
+  declined to do for agent-level accuracy.
+- **Decision rule / what a low n=15 Recovered rate would mean:** this measurement cannot fail in the
+  sense #45/#46/#49 could — there is no baseline to lose to and no prior claim being tested. Any
+  distribution gets published as it falls. The one thing worth pre-committing to: if `Unverified`
+  dominates, that is not a defect to explain away — a live provider's real non-determinism producing
+  a genuinely inconclusive verdict a large fraction of the time is exactly the honest thing `--verify`
+  is supposed to surface rather than paper over with a forced binary.
+- **Explicitly not measured here, and why:** origination/propagation label accuracy against
+  independently-known ground truth. #49's corpus is the only one in this repo with a known single
+  cause, and it's the one shown above to be structurally unreachable by `patch_cassette`. Recorded as
+  a real gap, not a silently dropped acceptance box — the fix (route mock tools through a recorded
+  HTTP boundary) is now specified enough to pick up later without re-deriving it.
+
+**Committed results document:** a small, purpose-built JSON (this doesn't fit `BenchResults`/
+`ArmResult`'s step-localization shape any better than 065's consensus experiment did, so it gets its
+own document and renderer, same precedent) at `bench/results/verify_realprovider_all.json`, plus the
+per-pair raw `attribution` JSON so the table re-renders offline with zero live calls, per rule 2's
+"the test split runs once" spirit even though this isn't a sealed-split protocol.
+
+Governing docs: `BENCHMARK.md` rule 6 (small-N honesty), notebook 068 (the original gap), 038/039/053
+(the `--verify`/ddmin build history), 074 (the retry-is-precondition-not-outcome-filter discipline
+this entry reuses).
