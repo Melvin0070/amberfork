@@ -23,6 +23,10 @@ workspace = true
 amberfork-align = { workspace = true }
 amberfork-ingest = { workspace = true }
 amberfork-model = { workspace = true }
+# Only `normalize_str` (pure, sync JSON->Run) is used — the same one function `amberfork`'s own
+# sync `load.rs` calls on the passive `diff` path. Does not pull async code into this crate; see
+# issue #49's `build-perturbation-pairs`, which reads recorded cassettes off disk.
+amberfork-record = { workspace = true }
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

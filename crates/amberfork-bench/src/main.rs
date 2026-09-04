@@ -41,6 +41,7 @@
 mod aggregate;
 mod arms;
 mod build;
+mod build_perturbation;
 mod build_trail;
 mod calibration;
 mod fetch;
@@ -101,6 +102,9 @@ enum Command {
     /// Construct a natural pair set from TRAIL failing traces + HAL passing references,
     /// matched on GAIA task_id (issue #41 S4c).
     BuildTrailPairs(BuildTrailPairsArgs),
+    /// Construct the real-agent perturbation pair set from recorded sessions (issue #49,
+    /// pre-registered in docs/notebook.md 074).
+    BuildPerturbationPairs(BuildPerturbationPairsArgs),
     /// Fetch the pinned raw upstream data `build-pairs` consumes (issue #7).
     Fetch(FetchArgs),
     /// Decrypt a HAL reference-trace zip into the plaintext dump `hal` ingest reads (issue #41).
@@ -223,6 +227,19 @@ struct BuildTrailPairsArgs {
     /// `hal-fetch` + `hal-decrypt` output).
     #[arg(long, value_name = "DIR")]
     hal: PathBuf,
+
+    /// Directory to write the `pair_*.json` + `a_*`/`b_*` triples into (created if absent).
+    #[arg(long, value_name = "DIR")]
+    out: PathBuf,
+}
+
+#[derive(Args)]
+struct BuildPerturbationPairsArgs {
+    /// Directory of recorded sessions, as written by
+    /// `spike/record_perturbation_sessions.py` (holds `manifest.json` plus one subdirectory
+    /// per task).
+    #[arg(long, value_name = "DIR")]
+    sessions: PathBuf,
 
     /// Directory to write the `pair_*.json` + `a_*`/`b_*` triples into (created if absent).
     #[arg(long, value_name = "DIR")]
@@ -527,6 +544,7 @@ fn main() -> ExitCode {
         Command::Aggregate(args) => aggregate_documents(&args),
         Command::BuildPairs(args) => build_pairs(&args),
         Command::BuildTrailPairs(args) => build_trail_pairs(&args),
+        Command::BuildPerturbationPairs(args) => build_perturbation_pairs(&args),
         Command::Fetch(args) => fetch_data(&args),
         Command::HalDecrypt(args) => hal_decrypt(&args),
         Command::HalFetch(args) => hal_fetch_data(&args),
@@ -820,6 +838,27 @@ fn build_trail_pairs(args: &BuildTrailPairsArgs) -> Result<ExitCode, Box<dyn std
         stats.traces_without_gold,
         stats.hal_dumps_read,
         stats.hal_runs_read,
+    );
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+/// Construct the real-agent perturbation pair set (issue #49). Like the other builders, a
+/// data-prep step: no table, only the pair triples and a coverage summary on stderr — the
+/// existing `run`/`report` commands score and render the result unchanged.
+fn build_perturbation_pairs(
+    args: &BuildPerturbationPairsArgs,
+) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let stats = build_perturbation::build_pairs(&args.sessions, &args.out)?;
+    for task in &stats.tasks_without_reference {
+        eprintln!("amberfork-bench: {task}: no reference recording, task excluded");
+    }
+    eprintln!(
+        "amberfork-bench: built {} perturbation pair(s) -> {} ({} session(s) excluded during \
+         recording — see {}/manifest.json)",
+        stats.pairs,
+        args.out.display(),
+        stats.excluded_sessions,
+        args.sessions.display(),
     );
     Ok(ExitCode::from(EXIT_OK))
 }
