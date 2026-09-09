@@ -175,8 +175,9 @@ PR changes the agent's behavior on that task, and to tell you *where*.
 **Today.** You assert on final output (brittle, misses mid-trajectory drift) or you eyeball traces
 manually after the fact.
 
-**What amberfork does.** `amberfork diff --gate <new> --against <golden>` runs in CI, exits non-zero when
-a decisive divergence is attributed, and emits `--json` naming the fork step and the changed field.
+**What amberfork does.** `amberfork diff <new> --against <golden>` runs in CI and exits diff(1)-style
+(0 converged / 1 forked / 2 trouble), so the exit code *is* the gate — there is no `--gate` flag and
+[`docs/ci.md`](../ci.md) explains why. `--json` names the fork step and the changed field.
 A green badge means "behavior matches the reference trajectory," machine-checkable.
 
 **Why it wins.** It's regression testing at the *trajectory* level, not just the output level, and it
@@ -285,7 +286,7 @@ retrieval `k` and adding a guard. She only knew *where* to look because the fork
 > get caught in review, not in production.
 
 **Narrative.** Sam commits a golden trace for the "invoice-parse" task and adds
-`amberfork diff --gate $CANDIDATE --against golden.otlp` to the GitHub Action. A teammate's PR tweaks a
+`amberfork diff $CANDIDATE --against golden.otlp` to the GitHub Action. A teammate's PR tweaks a
 prompt; CI goes red with `fork at step 7: tool 'extract_total' args changed (currency field dropped)`.
 The teammate sees exactly what their prompt change did to behavior, fixes it, CI goes green. No one had
 to read a trace by hand.
@@ -357,9 +358,11 @@ Aimed at the primary persona. Each is a thing the evaluator *sees* and reads as 
    move-type costs and the step-similarity predicate so they behave over *noisy, non-deterministic* LLM
    steps. That's genuine, iterative engineering, and the code shows it.
 
-4. **Local, offline, deterministic, no key: an asymmetry, not a benchmark brag.** The headline claim is
-   "localizes the decisive step as well as an LLM judge, but locally, explainably, deterministically,
-   and reproducibly without a network or key," stated *with* the honest privileged-reference caveat.
+4. **Local, offline, deterministic, no key: an asymmetry, not a benchmark brag.** This originally read
+   "localizes the decisive step as well as an LLM judge." Measurement refuted it: on the one corpus
+   with a judge comparison, three of five judge arms beat the engine (notebook 071). The claim that
+   survives is "beats position and structure baselines by a wide margin on controlled divergence,
+   locally and reproducibly without a network or key," stated *with* the privileged-reference caveat.
    That verifiable asymmetry is more impressive to a skeptic than a contestable "beats SOTA," and it
    doubles as the answer to "why not just use an LLM?"
 
@@ -498,5 +501,36 @@ natural place to reach for amberfork.)
 - **Mental-model teacher:** "Observability shows you what happened. amberfork shows you what *changed*."
 - **The intuition pump (use once, not as the headline):** "Like `git bisect`, but for agent runs."
 - **The depth claim (for the writeup):** "A move-typed sequence aligner that localizes the decisive step
-  in a regression as well as an LLM judge, but locally, explainably, and reproducibly without a key."
+  in a regression far better than position or structure baselines, locally, explainably, and
+  reproducibly without a key." (The earlier version of this line said "as well as an LLM judge."
+  Notebook 071 measured that and it is false — do not reuse it.)
 - **The honesty line:** "It tells you where two runs forked and why, and it tells you where it can't."
+
+---
+
+## Amendment 2026-09-09 — three corrections, from a use-case audit
+
+*This document had no dated amendments until now. It was written before any measurement existed, and
+parts of it aged into claims the evidence does not support. Per the design-doc convention, dated
+amendments win over the text above.*
+
+1. **UC3 and US3 promised `amberfork diff --gate`.** That flag was deliberately never built —
+   [`docs/ci.md`](../ci.md) argues that re-exposing an exit code the process already returns is
+   surface area for nothing. Both call sites now show the real invocation. The exit code is the gate.
+
+2. **`docs/ci.md` grounded the gate's soundness in a `replay` re-drive that users cannot run.**
+   `amberfork` ships four commands (`diff`, `demo`, `serve`, `record`); `amberfork-replay` is a
+   library with no binary, reachable only through `diff --verify`. The consequence for UC3 is
+   material: anyone gating in CI today is diffing two independently-run live agents, and the
+   false-positive rate of that is unmeasured. Registered as an experiment in
+   [`docs/notebook.md`](../notebook.md) entry 082, decision rule fixed before any number exists.
+
+3. **"Localizes the decisive step as well as an LLM judge" is refuted.** On the one corpus carrying a
+   judge comparison, three of five judge arms beat the engine with paired-bootstrap intervals
+   excluding zero (notebook 071). Both occurrences are corrected. The surviving claim is about
+   position and structure baselines on controlled divergence, and the writeup states it that way.
+
+**Still undone, recorded so it is not mistaken for settled:** the ★ ratings in §3 were assigned before
+any corpus was built and have never been revisited against evidence. As of v1.0.0 the mapping is
+UC1 → a null on the one natural corpus that fits it (TRAIL↔HAL, a model bump), UC2 → `--verify`'s 87%
+on n=15, UC3 → no benchmark, UC4/UC5/UC6 → unmeasured. A full re-rating amendment is owed.

@@ -31,19 +31,24 @@ $ amberfork diff missing.json --against run_a.json ; echo $?
 
 ## Why there is no `--gate` or `--threshold` flag
 
-Tools that compare *live* agent runs need a tolerance knob, because two runs of a
-non-deterministic agent differ for reasons nobody cares about. amberfork's CI story is the
-opposite: you capture a reference with `record` and re-drive the candidate under `replay`, so
-identical inputs produce identical trajectories and **any fork is a real regression**. Exit 1
-already means what a threshold would be approximating.
+There is no `--gate` flag, and that one is a settled design position: a flag that re-exposes an
+exit code the process already returns is surface area for nothing. `amberfork diff` **is** the
+gate, and the table above is its whole contract.
 
-There is likewise no `--gate` flag. A flag that re-exposes an exit code the process
-already returns is surface area for nothing — `amberfork diff` **is** the gate, and the table above
-is its whole contract.
+`--threshold` is a different case, and this document used to overstate it. The argument here was
+that you capture a reference with `record`, re-drive the candidate under `replay`, and therefore
+any fork is a real regression with no tolerance to tune. **There is no user-facing `replay`
+command.** `amberfork --help` lists `diff`, `demo`, `serve` and `record`; replay is internal
+machinery reachable only through `diff --verify`, which needs two already-recorded cassettes. So
+the tolerance-free path as written was not something you could actually run.
 
-That is a design position, not a missing feature. If you diff two independently-run live agents,
-a tolerance would be doing the work — and so would a benchmark proving the tolerance means
-something. See [`BENCHMARK.md`](../BENCHMARK.md) for what is and is not measured.
+What is true today: you record two runs of the same agent, or you diff two traces you already
+have, and `diff` reports whether they forked. Two runs of a non-deterministic agent can differ for
+reasons nobody cares about, and **how often that produces a spurious fork is not yet measured** —
+so a threshold is absent because no evidence justifies a particular one, not because divergence
+has been ruled out. The measurement is pre-registered in
+[`docs/notebook.md`](notebook.md) entry 082, with the decision rule fixed before any number exists.
+See [`BENCHMARK.md`](../BENCHMARK.md) for what is and is not measured.
 
 ## `record` does NOT follow this contract
 
@@ -135,8 +140,8 @@ jq -r '.fork.index, .fork.confidence' result.json
 
 On two runs that share **no common prefix** — traces from different agents, or different
 instrumentation of the same agent — amberfork currently reports a fork at step 0 with high
-confidence rather than reporting that the runs are not comparable. Under `record`/`replay` this
-does not arise, because the runs share a prefix by construction. If you diff arbitrary trace files
+confidence rather than reporting that the runs are not comparable. Two runs of the same agent
+captured under `record` share a prefix by construction, so this does not arise there. If you diff arbitrary trace files
 from unrelated sources, treat a step-0 fork as a signal to check that the traces are comparable.
 
 The measurement behind this, and the registered fix, are in
