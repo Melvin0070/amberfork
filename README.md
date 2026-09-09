@@ -34,15 +34,14 @@ The same fork, in your terminal:
 
 ![amberfork demo in the terminal: the two runs align in gray, a rate-limit retry is absorbed as a log-move, and the step where the bad run fetched a stale policy doc glows amber as the fork, closing with a one-line attribution footer.](docs/assets/hero.gif)
 
-> **Status: pre-v1.** The working surface: `diff` (terminal, `--json`, `--html` for a
+> **Status: v1.0.0, tagged.** The working surface: `diff` (terminal, `--json`, `--html` for a
 > self-contained static export, and an optional `--judge local` narration under a local Ollama
 > server), `serve` (the browser view above), `demo`, and — for runs captured under `record` —
 > `diff --verify`, which replays the recorded run with the fork step patched to confirm the
-> cause. The feasibility spike behind the core bet — semantic move-typed alignment beats a
-> positional diff at localizing the decisive step — is done; measurements in
-> [`docs/notebook.md`](docs/notebook.md).
+> cause. Every number below re-renders offline from a committed file, no API key; the dated
+> record of how each one was arrived at is [`docs/notebook.md`](docs/notebook.md).
 
-## What v1 will do
+## What it does today
 
 - `amberfork diff <bad> --against <good>` — align two agent-run traces
   ([plain JSON](docs/trace-format.md), plus OpenInference and native OTel `gen_ai.*` adapters —
@@ -55,7 +54,7 @@ The same fork, in your terminal:
 - `cargo run -p amberfork-bench -- report` — reproduce a scoring table offline, deterministically,
   no API key. Protocol: [`BENCHMARK.md`](BENCHMARK.md).
 
-## Benchmark — sealed test split (v0.2.0)
+## The headline number — sealed test split
 
 Fork-localization on chimera pairs: a controlled fork spliced into real agent logs
 ([Who&When](https://github.com/ag2ai/Agents_Failure_Attribution)-derived), every arm on
@@ -117,6 +116,61 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
 The dev-split pairs are committed (GAIA-sanitized — see `bench/fixtures/`); the CI gate scores
 them on every `amberfork-align` change. Regenerate the full sets from raw upstream data with the
 recipe in [`bench/fixtures/chimera_noise_seed42_dev/README.md`](bench/fixtures/chimera_noise_seed42_dev/README.md).
+
+The table above is the number on **injected** forks — a controlled divergence spliced into real
+logs. Three separate attempts at a **natural**-fork corpus follow, and not one of them produced a
+headline: [the natural-fork attempts](#the-natural-fork-attempts-and-what-each-one-measured). They
+are the honest context for the 0.91, and they are worth reading before you believe it.
+
+## `--verify` confirmation rate (n=15) — the other half of the moat, measured
+
+The localization numbers above are half the pitch; `--verify`'s counterfactual confirmation is the
+other half, and until now it had a single-example smoke test and no rate. Scaled the existing
+real-provider test (a toy two-turn agent engineered to fork on genuine LLM sampling variance, not a
+scripted difference) from n=1 to n=15. [Pre-registered in notebook 079](docs/notebook.md); result in
+080:
+
+```sh
+python3 -c "import json; d=json.load(open('bench/results/verify_realprovider_all.json')); \
+print(json.dumps({k:v for k,v in d.items() if k!='raw_attributions'}, indent=2))"
+```
+
+| metric | rate | 95% CI | n |
+|---|---|---|---|
+| two-sided fork (ddmin engages) | 1.00 | [0.80, 1.00] | 15 |
+| **Recovered** | **0.867** | [0.62, 0.96] | 15 |
+| NotRecovered | 0.133 | [0.04, 0.38] | 15 |
+| **Unverified (indeterminate)** | **0.00** | [0.00, 0.20] | 15 |
+
+Read both bolded numbers together: 87% confirmation, and — more notable on a fixture specifically
+built to produce real sampling variance — the 3-run majority vote never split evenly across all 15
+calls (n is small; the CI says "low so far," not "zero"). The two `NotRecovered` cases are as
+informative as the eleven that recovered: both patched the correctly-identified cause and still
+didn't reconverge, because the downstream step carries its *own* independent sampling variance the
+patch can't reach — a confirmed-sufficient cause and a non-recovering re-run aren't a contradiction,
+they're two independent sources of real non-determinism, which is exactly why `Recovery` is a
+tri-state and not a boolean. Not measured here: origination/propagation accuracy against a known
+cause — the one corpus with a known cause (#49's) turns out to be structurally unreachable by the
+patch mechanism (the fault lives in local agent code, never a recorded response); notebook 079 has
+the full reasoning and what fixing it would take.
+
+## What exists today
+
+| Artifact | What it is |
+|---|---|
+| [`crates/`](crates/) | The Rust workspace (11 crates): model → ingest → align → layout → server → record → replay → attrib → judge → CLI (`diff` / `demo` / `serve`, and `--verify` on recorded runs), plus the `amberfork-bench` harness and the embedded Leptos web UI |
+| [`spike/`](spike/) | Throwaway feasibility spike (Python): alignment vs positional baseline on real multi-agent failure logs |
+| [`docs/notebook.md`](docs/notebook.md) | Engineering notebook: questions, measurements, dead ends |
+| [`docs/trace-format.md`](docs/trace-format.md) | The canonical plain-JSON trace format v1 accepts |
+| [`docs/ci.md`](docs/ci.md) | The exit-code contract and a working GitHub Actions gate |
+| [`BENCHMARK.md`](BENCHMARK.md) | Pre-registered evaluation protocol (splits, baselines, threats to validity) |
+| [`DESIGN.md`](DESIGN.md) | Visual system ("sameness recedes, divergence glows") |
+| [`docs/design/`](docs/design/) | Architecture + positioning corpus (the locked build plan) |
+
+## The natural-fork attempts, and what each one measured
+
+Three corpora, three different reasons the headline does not transfer. Each was diagnosed
+rather than dropped, and each diagnosis is dated in the notebook.
 
 ### Mode A′ — real cross-system pairs (directional, n=4)
 
@@ -217,63 +271,14 @@ fact about today's cassette-normalization path (one exchange, one undifferentiat
 not a claim about real agents in general. Full diagnosis, including what a version that could
 actually discriminate the two arms would need, is in notebook 075.
 
-### `--verify` confirmation rate (n=15) — the other half of the moat, measured
+## The known defect, stated plainly
 
-The localization numbers above are half the pitch; `--verify`'s counterfactual confirmation is the
-other half, and until now it had a single-example smoke test and no rate. Scaled the existing
-real-provider test (a toy two-turn agent engineered to fork on genuine LLM sampling variance, not a
-scripted difference) from n=1 to n=15. [Pre-registered in notebook 079](docs/notebook.md); result in
-080:
+On two runs that share no common prefix, amberfork reports "fork at step 0" with high confidence
+(measured: 0.97) rather than admitting the runs are not comparable. The abstention guard
+pre-registered in [notebook 070](docs/notebook.md) is the fix. It is the highest-value item on
+the list, because it affects real use, not a benchmark row.
 
-```sh
-python3 -c "import json; d=json.load(open('bench/results/verify_realprovider_all.json')); \
-print(json.dumps({k:v for k,v in d.items() if k!='raw_attributions'}, indent=2))"
-```
-
-| metric | rate | 95% CI | n |
-|---|---|---|---|
-| two-sided fork (ddmin engages) | 1.00 | [0.80, 1.00] | 15 |
-| **Recovered** | **0.867** | [0.62, 0.96] | 15 |
-| NotRecovered | 0.133 | [0.04, 0.38] | 15 |
-| **Unverified (indeterminate)** | **0.00** | [0.00, 0.20] | 15 |
-
-Read both bolded numbers together: 87% confirmation, and — more notable on a fixture specifically
-built to produce real sampling variance — the 3-run majority vote never split evenly across all 15
-calls (n is small; the CI says "low so far," not "zero"). The two `NotRecovered` cases are as
-informative as the eleven that recovered: both patched the correctly-identified cause and still
-didn't reconverge, because the downstream step carries its *own* independent sampling variance the
-patch can't reach — a confirmed-sufficient cause and a non-recovering re-run aren't a contradiction,
-they're two independent sources of real non-determinism, which is exactly why `Recovery` is a
-tri-state and not a boolean. Not measured here: origination/propagation accuracy against a known
-cause — the one corpus with a known cause (#49's) turns out to be structurally unreachable by the
-patch mechanism (the fault lives in local agent code, never a recorded response); notebook 079 has
-the full reasoning and what fixing it would take.
-
-## What exists today
-
-| Artifact | What it is |
-|---|---|
-| [`crates/`](crates/) | The Rust workspace (11 crates): model → ingest → align → layout → server → record → replay → attrib → judge → CLI (`diff` / `demo` / `serve`, and `--verify` on recorded runs), plus the `amberfork-bench` harness and the embedded Leptos web UI |
-| [`spike/`](spike/) | Throwaway feasibility spike (Python): alignment vs positional baseline on real multi-agent failure logs |
-| [`docs/notebook.md`](docs/notebook.md) | Engineering notebook: questions, measurements, dead ends |
-| [`docs/trace-format.md`](docs/trace-format.md) | The canonical plain-JSON trace format v1 accepts |
-| [`docs/ci.md`](docs/ci.md) | The exit-code contract and a working GitHub Actions gate |
-| [`BENCHMARK.md`](BENCHMARK.md) | Pre-registered evaluation protocol (splits, baselines, threats to validity) |
-| [`DESIGN.md`](DESIGN.md) | Visual system ("sameness recedes, divergence glows") |
-| [`docs/design/`](docs/design/) | Architecture + positioning corpus (the locked build plan) |
-
-## Project status — v1.0.0, ready to tag (2026-09-04)
-
-Everything above works and is reproducible today. The v1.0 milestone's credibility work is done —
-the LLM-judge baseline, the fourth natural-fork attempt, a real `--verify` confirmation rate, and
-two documentation-drift issues closed with reasoning recorded, not just fixed — with one item
-(perf/scale measurement, #50) deliberately deferred rather than completeness for its own sake.
-
-**Done and standing:** 11 crates, the chimera sealed-test protocol (scored at three release tags,
-identical every time), the Mode A′ null, the TRAIL↔HAL null, the LLM-judge baseline, and the
-real-agent perturbation tie (#49) — four honest attempts at natural-fork evidence, each with its
-own diagnosed mechanism — plus a real, measured `--verify` confirmation rate (#48, 87% on n=15, zero
-indeterminate). Cassettes and results committed so every table replays offline with no API key.
+## Where this goes next
 
 **The next experiment is already registered.** Notebook 070 pre-registers the ingest repair the
 judge run's diagnosis implies — tool-name reconstruction and provider-envelope unwrapping in
@@ -282,23 +287,31 @@ stratification — with its success test, its blast radius, and its failure bran
 implementation. Whoever runs it, including a future me, is bound by a decision rule they did not
 write after seeing the number.
 
-**Known defect, honestly:** on two runs that share no common prefix, amberfork reports "fork at
-step 0" with high confidence (measured: 0.97) rather than admitting the runs are not comparable.
-The abstention guard in 070 is the fix. It is the highest-value item on the list, because it
-affects real use, not a benchmark row.
+## Project status — v1.0.0, tagged (2026-09-04)
+
+Everything above works and is reproducible today. The v1.0 credibility milestone is done — the
+LLM-judge baseline, the fourth natural-fork attempt, a real `--verify` confirmation rate, and two
+documentation-drift issues closed with reasoning recorded, not just fixed — with one item
+(perf/scale measurement, #50) deliberately deferred rather than completeness for its own sake.
+
+**Done and standing:** 11 crates, the chimera sealed-test protocol (scored at four release tags,
+identical every time), the Mode A′ null, the TRAIL↔HAL null, the LLM-judge baseline, and the
+real-agent perturbation tie (#49) — four honest attempts at natural-fork evidence, each with its
+own diagnosed mechanism — plus a real, measured `--verify` confirmation rate (#48, 87% on n=15, zero
+indeterminate). Cassettes and results committed so every table replays offline with no API key.
 
 **Distribution is done.** Five released targets, each built and smoke-tested on a runner of its own
 architecture (#53); the CI gate contract in [`docs/ci.md`](docs/ci.md), whose recipe runs on every
 push as a real workflow rather than sitting in a document (#54); repo and crate metadata (#55).
 
-**Open issues** carry the rest: `#50` (perf ceiling, deliberately deferred — lower credibility value
-than what shipped this pass), `#56` (the sealed-test reveal + release), `#57` (the writeup, drafted
-and committed, blocked on #56) for the remaining v1.0 work, and `#58`–`#63` as decided post-v1
-deferrals. `#47`, `#48`, `#51`, `#52` closed this pass. Two acceptance items wait on the next release
-rather than on code: crates.io only shows the new homepage/documentation links once a version is
-published, and the five-target matrix is proven on `workflow_dispatch` but not yet on a tag.
-`CONTRIBUTING.md` describes the working agreement; `BENCHMARK.md` governs any number that gets
-published.
+**What is left.** `#57` (the writeup, drafted and committed, unblocked now that #56's reveal has
+run) is the last open v1.0 item; `#50` (perf ceiling) is deliberately deferred, a lower credibility
+return than what shipped this pass. `#53`/`#54`/`#55` track work that has landed and are pending
+close. `#47`, `#48`, `#51`, `#52`, `#56` are closed. `#58`–`#63` are decided post-v1 deferrals, not
+available work. Two acceptance items wait on the next release rather than on code: crates.io only
+shows the new homepage/documentation links once a version is published, and the five-target matrix
+is proven on `workflow_dispatch` but not yet on a tag. `CONTRIBUTING.md` describes the working
+agreement; `BENCHMARK.md` governs any number that gets published.
 
 If you are evaluating this repo: the honest entry point is
 [`docs/notebook.md`](docs/notebook.md) — 80 dated entries including the experiments that failed,
