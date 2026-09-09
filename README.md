@@ -314,5 +314,5 @@ is proven on `workflow_dispatch` but not yet on a tag. `CONTRIBUTING.md` describ
 agreement; `BENCHMARK.md` governs any number that gets published.
 
 If you are evaluating this repo: the honest entry point is
-[`docs/notebook.md`](docs/notebook.md) — 80 dated entries including the experiments that failed,
+[`docs/notebook.md`](docs/notebook.md) — 81 dated entries including the experiments that failed,
 the nulls above, and the baseline that beat us.

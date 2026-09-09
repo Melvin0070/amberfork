@@ -1,10 +1,10 @@
 # amberfork: what changed between two agent runs
 
 *The v1.0 writeup (issue #57). Every number below traces to a committed file in this repo — the
-links are real paths, not citations you have to trust. One caveat up front: the headline benchmark
-number is the sealed reveal from the v0.2.0 tag (reproduced identically at v0.4.0 and v0.5.0); the
-v1.0.0 sealed reveal itself is a separate, later event (issue #56) under the protocol's own
-"scored once per tag" rule, not yet run as this is written.*
+links are real paths, not citations you have to trust. The headline benchmark number was revealed
+once, at the v0.2.0 tag, under params frozen before a single test pair was scored — and re-scored at
+every tag since. v0.4.0, v0.5.0 and now v1.0.0 each reproduced it byte-for-byte, on every arm and
+every metric, across six releases and two new alignment features (notebook 081).*
 
 ## The asymmetry, not the pitch
 
@@ -113,8 +113,10 @@ did.
 **TRAIL↔HAL natural pairs (23 of 69 total, dev split) — the engine loses.** The strongest attempt at
 a real natural-fork number: a real TRAIL failing trace against a real HAL passing reference on the
 same GAIA task, same agent scaffolding, differing backing model, gold from TRAIL's human-annotated
-error span (69 pairs total; the 46-pair test split is reserved for the v1.0.0 sealed reveal per
-protocol rule 2 and hasn't been scored yet — the 23-pair dev split below is what's measured today).
+error span (69 pairs total; the 46-pair test split is still sealed. v1.0.0's reveal covered the
+chimera protocol only — this corpus is held for the repair-or-retire decision registered in notebook
+070, and rule 2 grants it exactly one scored look, which is not worth spending on a corpus already
+diagnosed as defective. The 23-pair dev split below is what's measured today).
 On the full 69, the engine scores **0.00 exact** against random's 0.145. Rather than leave that
 unexplained, we built the missing baseline the field's own published numbers are compared against —
 *does just asking a frontier model beat the aligner?* — pre-registered before writing a line of
@@ -207,8 +209,14 @@ can put a real loss to an LLM judge next to the one clean win without either und
 reading as an excuse for the loss: both were possible outcomes before anyone knew which way they'd
 fall, and both were registered as publishable in advance.
 
+The same discipline is why this release's one process failure is on the record. Rule 2 says the
+sealed split is scored once per tag; at v1.0.0 the reveal ran *after* the tag was pushed rather than
+before, caught during post-release cleanup. No number moved — the params were frozen and untouched
+throughout, and the reveal reproduced byte-identically — but the sequencing was wrong, and notebook
+081 records it as wrong rather than folding it in as though it had always been the plan.
+
 If you're evaluating this repo rather than using it: the honest entry point is
-[`docs/notebook.md`](notebook.md) — 75 dated entries, including every experiment above in full and
+[`docs/notebook.md`](notebook.md) — 81 dated entries, including every experiment above in full and
 the mechanistic diagnosis behind each one.
 
 ## Where it fails, on purpose stated here
