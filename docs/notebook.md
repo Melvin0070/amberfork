@@ -4473,3 +4473,59 @@ step localization, so it gets its own document and renderer rather than being fo
 Governing docs: `BENCHMARK.md` rules 6 and 10, `docs/design/POSITIONING.md` §3 UC3, `docs/ci.md`
 (the contract under test), notebooks 074/075 (the harness and its step-length finding), 079 (the
 exclusion discipline and the purpose-built-document precedent).
+
+### 082a · 2026-09-09 · AMENDMENT to 082, before any session is recorded
+
+**No data has been collected under 082. Nothing below is a response to a number** — the amendment
+is dated and recorded rather than folded into the original text, so the distinction between
+"corrected before the run" and "revised after seeing the result" stays checkable.
+
+**Correction 1 — the direction-of-bias claim was wrong, or at least unearned.** 082 states that a
+short-run false-positive rate is a *lower bound*, reasoning that fewer steps means fewer chances for
+sampling variance to produce a spurious divergence. The opposite mechanism is just as real and was
+missed: the fork rule is *first non-sync block that never re-syncs*, and re-syncing needs steps to
+happen in. A benign wording difference at step 3 of a 4-step run has no room left to re-sync, so it
+fires as a fork rather than being absorbed. On that argument short runs **inflate** false positives.
+
+Both mechanisms are present and which dominates is unknown. **The "lower bound" framing is
+withdrawn.** The result is a measurement of the short-run regime, not a bound on the long-run one,
+and the long-run number stays an open question that longer tasks (the #49 harness's 2–4 step ceiling,
+notebook 075) would have to answer. This makes the low-FP branch informative where it previously
+was not: under 082 as written, "low FP" was consistent with the bound and taught nothing.
+
+**Correction 2 — the model is a variable, not a constant, so it gets named as one.** 082 fixed
+`qwen3:8b` implicitly by reusing #49's harness. But this experiment measures *non-determinism*, which
+is a property of the model-plus-agent-plus-task, not of amberfork. A single-model false-positive rate
+does not generalize, and "measured on a local 8B" is the first thing a skeptic would discount. Two
+arms are registered:
+
+- **Arm L (local): `qwen3:8b` via Ollama.** Free, no key, and directly comparable to #49's published
+  localization table because it scores the same recordings from the same harness.
+- **Arm F (frontier): `claude-haiku-4-5` via the Anthropic API.** Estimated cost for the 25 clean
+  recordings is well under one dollar at $1/$5 per MTok. Registered as a second arm, not a
+  replacement — dropping arm L would forfeit the comparison to #49.
+
+The headline is **the pair**, not either number: whether the gate's false-positive rate is a property
+of amberfork or a property of the weak local model is exactly what one arm cannot distinguish and two
+can. If only one arm is ever run, it is reported as one arm, with the other named as not-run rather
+than quietly dropped.
+
+**What arm F costs in engineering, checked rather than assumed.** `amberfork-record` needs **no
+change**: `normalize.rs:9` states the mapping is deliberately provider-agnostic and explicitly does
+not re-parse a provider's message schema, and `cassette.rs` already redacts `anthropic-auth-token`
+among its header denylist. The change is confined to `spike/perturbation_agent.py`, which speaks
+Ollama's `/api/chat` and reads `message.tool_calls`; the Anthropic Messages API is `/v1/messages`,
+declares tools with `input_schema`, and returns calls as `tool_use` content blocks. That is a rewrite
+of `chat()` and the tool-dispatch loop, and nothing else. Recorded here so the cost of arm F is a
+known quantity before anyone decides whether to pay it.
+
+**Unchanged from 082:** the negative class (all C(5,2)=10 clean×clean pairs per task), the positive
+class (the 25 existing clean×perturbed pairs), scoring by shelling the shipped binary and reading
+`$?`, Wilson 95% CIs, the exit-2 rate reported separately, the exclusion discipline (every recorded
+pair scored, no outcome filtering), rule 10 (#49's localization table is not disturbed), and the
+committed results document. The decision rule stands as written, now read per arm, with the cross-arm
+comparison as its own reported line.
+
+**Offline reproducibility is preserved.** Arm F uses a paid provider to *record*, exactly as #46's
+judge arms did; the committed results document replays with no key and no network, which is the
+property BENCHMARK.md's definition of done actually requires.
