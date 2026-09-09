@@ -28,6 +28,11 @@ from pathlib import Path
 from perturbation_world import TASKS
 
 N_PERTURBED_PER_TASK = 5
+# Total clean sessions per task, `reference` included (notebook 082): the negative class
+# is every unordered clean-vs-clean pair, so 5 sessions yield C(5,2)=10 pairs per task.
+# #49 only ever needed one clean run; raising this is additive and leaves `reference`
+# exactly where its pipeline expects it.
+N_CLEAN_PER_TASK = 5
 MAX_RETRIES = 6
 UPSTREAM = "http://127.0.0.1:11434"
 BASE_URL_ENV = "AMBERFORK_BASE_URL"
@@ -88,6 +93,14 @@ def main() -> int:
     parser.add_argument("--amberfork-bin", default="target/debug/amberfork")
     parser.add_argument("--out", default="bench/data/perturbation")
     parser.add_argument("--tasks", nargs="*", default=sorted(TASKS), choices=sorted(TASKS))
+    parser.add_argument(
+        "--only-clean",
+        action="store_true",
+        help="record ONLY the extra clean sessions 082 needs, leaving `reference` and the "
+        "perturbed sessions on disk untouched. Use this on an existing "
+        "bench/data/perturbation: a full re-record would replace the raw recordings #49's "
+        "published table was computed from (BENCHMARK.md rule 10).",
+    )
     args = parser.parse_args()
 
     amberfork_bin = Path(args.amberfork_bin).resolve()
@@ -102,16 +115,41 @@ def main() -> int:
         print(f"=== {task_id} ===")
         task_dir = out_root / task_id
         task_dir.mkdir(parents=True, exist_ok=True)
-        entry: dict = {"reference": None, "perturbed": [], "excluded": []}
+        entry: dict = {"reference": None, "clean": [], "perturbed": [], "excluded": []}
 
-        ref_summary = record_one(amberfork_bin, task_dir, "reference", task_id, perturb=False)
-        if ref_summary is None:
-            entry["excluded"].append("reference")
-        else:
+        ref_cassette = task_dir / "reference.cassette.json"
+        if args.only_clean and ref_cassette.exists():
+            print("  reference: already on disk, kept (--only-clean)")
             entry["reference"] = "reference"
+            entry["clean"].append("reference")
+        else:
+            ref_summary = record_one(amberfork_bin, task_dir, "reference", task_id, perturb=False)
+            if ref_summary is None:
+                entry["excluded"].append("reference")
+            else:
+                entry["reference"] = "reference"
+                entry["clean"].append("reference")
+
+        # The extra clean sessions (082's negative class). `reference` is the first of the
+        # N_CLEAN_PER_TASK, so only the remainder are recorded here.
+        for i in range(1, N_CLEAN_PER_TASK):
+            session_id = f"clean_{i:02d}"
+            if args.only_clean and (task_dir / f"{session_id}.cassette.json").exists():
+                print(f"  {session_id}: already on disk, kept (--only-clean)")
+                entry["clean"].append(session_id)
+                continue
+            summary = record_one(amberfork_bin, task_dir, session_id, task_id, perturb=False)
+            if summary is None:
+                entry["excluded"].append(session_id)
+            else:
+                entry["clean"].append(session_id)
 
         for i in range(N_PERTURBED_PER_TASK):
             session_id = f"perturbed_{i:02d}"
+            if args.only_clean:
+                if (task_dir / f"{session_id}.cassette.json").exists():
+                    entry["perturbed"].append(session_id)
+                continue
             summary = record_one(amberfork_bin, task_dir, session_id, task_id, perturb=True)
             if summary is None:
                 entry["excluded"].append(session_id)
@@ -125,8 +163,13 @@ def main() -> int:
     print(f"\nmanifest written to {manifest_path}")
 
     total_perturbed = sum(len(e["perturbed"]) for e in manifest["tasks"].values())
+    total_clean = sum(len(e["clean"]) for e in manifest["tasks"].values())
     total_excluded = sum(len(e["excluded"]) for e in manifest["tasks"].values())
+    neg_pairs = sum(
+        len(e["clean"]) * (len(e["clean"]) - 1) // 2 for e in manifest["tasks"].values()
+    )
     print(f"total usable pairs: {total_perturbed}  ·  total exclusions: {total_excluded}")
+    print(f"clean sessions: {total_clean}  ·  clean-vs-clean pairs (082 negative class): {neg_pairs}")
     return 0
 
 
