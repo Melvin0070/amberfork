@@ -4389,3 +4389,87 @@ after — #56's own title names it as part of the release, and BENCHMARK.md rule
 not once-eventually. Caught during post-release cleanup rather than before. No number changed
 because of the delay (the params were frozen and untouched throughout), but the sequencing was
 wrong and is recorded as wrong rather than quietly folded in as if it had always been the plan.
+
+## 082 · 2026-09-09 · PRE-REGISTRATION: the CI gate's false-positive rate — and the `replay` verb that isn't there (UC3)
+
+**Written before any session is recorded for this measurement.** The trigger was a use-case audit,
+not a bug: mapping POSITIONING's UC1–UC6 onto the corpora that exist, UC3 (golden-trace CI gate,
+rated ★★★★☆) turned out to have no benchmark at all. Investigated the shipped surface before
+designing one, and the investigation changed the experiment.
+
+**Correction to the premise, caught before writing any code.** `docs/ci.md:36` grounds the gate's
+whole soundness argument in a workflow: "you capture a reference with `record` and re-drive the
+candidate under `replay`, so identical inputs produce identical trajectories and **any fork is a real
+regression**." **There is no `replay` verb.** `amberfork --help` lists exactly four commands — `diff`,
+`demo`, `serve`, `record`. `amberfork-replay` is a library crate with no `[[bin]]`, and its machinery
+is reachable only through `diff --verify`, which itself requires two *already-recorded* cassettes plus
+`--upstream`, `--base-url-env` and a trailing `-- <cmd>`. `record` has no replay mode either. The
+shipped example gate (`.github/workflows/ci-gate-example.yml`) diffs two static committed fixtures; it
+demonstrates the exit-code contract, which is real, but it is not UC3 and it records nothing.
+
+So the sentence the CI story rests on describes an operation a user cannot perform. The practical
+consequence is the inverse of what `docs/ci.md:44` assumes: **anyone putting amberfork in CI today is
+necessarily diffing two independently-run live agents** — the exact case that document says "a
+tolerance would be doing the work" for, and declines to support. That case has never been measured.
+This registration measures it, because it is the only case that currently exists.
+
+**Corpus: #49's harness, unmodified, with one addition.** `spike/record_perturbation_sessions.py`
+already records, per task, ONE clean reference (`perturb=False`) and FIVE independently-sampled
+perturbed sessions against real local Ollama through the real `amberfork record` binary. Five tasks
+(`refund_window`, `order_status`, `shipping_cutoff`, `cancellation_fee`, `warranty_eligibility`). The
+only change needed is `N_CLEAN_PER_TASK`: record five clean sessions per task instead of one, so that
+clean×clean pairs exist. Nothing about the agent, the tasks, the perturbation, or the recording path
+is touched.
+
+- **Negative class (the number that matters): 50 pairs.** Within each task, all C(5,2)=10 distinct
+  clean×clean pairs — the same unchanged agent, two independent live runs, diverging only by real
+  sampling variance. Every one of these *should* exit 0. Each exit 1 is a false positive.
+- **Positive class: the 25 existing clean×perturbed pairs**, already recorded, asking only "did the
+  gate fire" (exit 1).
+- Both classes are scored by shelling the **shipped binary** — `amberfork diff <b> --against <a>` and
+  reading `$?` — not by calling the library. Confirmed working: `diff` reads a cassette directly, a
+  self-diff of `refund_window/reference.cassette.json` exits 0, and reference-vs-perturbed exits 1.
+
+**Metrics, all with Wilson 95% CIs (rule 6):** the false-positive rate on the 50 unchanged pairs; the
+fire rate on the 25 changed pairs; and the exit-2 rate on both classes reported separately, since a
+`trouble` exit is an infrastructure failure and folding it into either rate would be the kind of
+quiet redefinition 078 declined.
+
+**The exclusion discipline, stated hard because it is the whole integrity of this number.** Every
+recorded clean×clean pair is scored. No retry-until-converged, no discarding a pair because it forked,
+no filtering on outcome of any kind. The recorder's existing `MAX_RETRIES` stays, and stays what it
+is: a mechanical guard against a *failed recording* (agent crash, empty cassette), never an outcome
+filter — the same line 074 drew and 079 reused. Discarding a forking clean pair would manufacture the
+result this experiment exists to find.
+
+**The limitation that caps what the number can claim, registered now rather than discovered later.**
+These runs are 2–4 steps (notebook 075). Short runs give sampling variance *fewer* opportunities to
+produce a spurious divergence, so whatever false-positive rate comes back is a **lower bound** — an
+optimistic one — and does not transfer to the 12–50-step range where the chimera headline lives and
+where POSITIONING says the tool is actually for. A low FP here means "not obviously broken on short
+runs," never "safe in CI." Longer tasks are the honest follow-up and are out of scope for this entry.
+
+**The decision rule, fixed now:**
+
+- **If the FP rate's CI upper bound is under 0.10:** the gate survives two independent live runs on
+  short tasks, and `docs/ci.md`'s implication that record/replay is required is stronger than the
+  evidence demands. Consequence: ci.md is amended to say what is measured, and UC3 gets its first
+  real number.
+- **If the FP rate is high:** ci.md's design position is vindicated *on evidence* rather than by
+  assertion, and the consequence is concrete — UC3 is not shippable as a use case until a
+  user-facing `replay` verb exists. That becomes a filed issue, not a paragraph of hedging.
+- **Either branch leaves the `replay`-verb gap standing**, because it is true independently of the
+  number. It is recorded here so the fix cannot later be re-read as having been obvious all along.
+- **This does not touch #49's published localization table (rule 10).** Same recordings, different
+  question: that table scores *where* the fork is, this scores *whether the gate fires*. A weaker
+  question on a used corpus, published as its own document, never merged into the existing row.
+
+**Committed results document:** `bench/results/gate_falsepositive_all.json` — exit-code rates, not
+step localization, so it gets its own document and renderer rather than being forced into
+`BenchResults`/`ArmResult`, the same precedent 065 and 079 set.
+
+**Cost:** 25 additional clean recordings on local qwen3:8b via Ollama, zero API spend.
+
+Governing docs: `BENCHMARK.md` rules 6 and 10, `docs/design/POSITIONING.md` §3 UC3, `docs/ci.md`
+(the contract under test), notebooks 074/075 (the harness and its step-length finding), 079 (the
+exclusion discipline and the purpose-built-document precedent).
