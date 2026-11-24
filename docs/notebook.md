@@ -4722,3 +4722,100 @@ lexical cost compares `"{name}: {outputs}"` — a step's *inputs* are not compar
 that carries no observation of its own (every call but the last in a multi-call turn, per the
 adapter rule in 083) is therefore compared by tool name alone. The engine is not changed for
 this corpus (rules 2 and 10); it is a named threat to whatever the number says.
+
+## 084 · 2026-11-24 · RESULT: on real same-agent pairs, alignment beats position but not run length — and the gate fires on 97% of passing pairs
+
+Scored once, on dev, at commit `9c260f8` — the commit that carries 083b, pushed before this run.
+Frozen params (`bench/params.toml` sha256 `8ebd95ce…`). 23 tasks, 412 pass×fail and 273
+pass×pass pairs, zero exclusions on this split. Results document:
+`bench/results/tbench_natural_dev.json`.
+
+```sh
+cargo run -q --release -p amberfork-bench -- score-tbench --pairs bench/data/tbench/pairs --split dev
+```
+
+### Measurement 1 — the gate
+
+| class | diff exits 1 | Wilson 95% | n |
+|---|---|---|---|
+| pass×pass (false positives) | **0.967** | [0.939, 0.983] | 273 |
+| pass×fail | 0.956 | [0.932, 0.972] | 412 |
+
+**The registered prediction held.** Two independent runs of the same agent on the same task fork
+97% of the time when *both passed*. The exit code carries no information about failure here — the
+pass×fail rate is, if anything, a point lower. 082's decision rule fires on its high-FP branch
+without 082 ever being run: `docs/ci.md`'s position, that a gate needs a recorded reference and a
+replayed candidate and that two live runs are not a gate, is now a measurement (n=273, real
+agents, 9 scaffolds) instead of an argument. The `replay`-verb gap 082 found therefore stands as
+the thing UC3 is blocked on.
+
+### Measurement 2 — discrimination
+
+AUROC for separating pass×pass from pass×fail, 95% CI by bootstrap over tasks (2,000 resamples):
+
+| score | AUROC | 95% CI |
+|---|---|---|
+| length-only (`min/max` steps) | 0.614 | [0.580, 0.652] |
+| pos-lexical in-sync | 0.569 | [0.532, 0.607] |
+| **nw-lexical/resync in-sync** (the engine) | **0.614** | [0.580, 0.649] |
+| engine − pos-lexical (paired) | **+0.045** | [+0.020, +0.069] |
+| engine − length-only (paired) | −0.000 | [−0.033, +0.032] |
+
+**By the rule fixed in 083 this is the second branch: beats position, not length.** The engine's
+interval clears 0.5 and it beats the positional baseline with a paired interval excluding zero.
+It does not beat a score that knows nothing but the two runs' lengths — the difference is zero to
+three decimals. Per 083: *"alignment recovers run-length, not content — a null for the product
+claim."* Published as measured. The secondary statistic 083b kept for audit (`engine_paired`,
+every `Sync` move) scores 0.640; no decision rests on it, and it would not have changed the
+branch against a length baseline it is even more tightly bound to.
+
+### What is and is not a finding
+
+**A real, small, positive result — the first on natural data.** On pairs whose structure varies
+on its own (3.6% equal length), alignment recovers more matching steps than index-wise comparison
+(median in-sync 0.36 vs 0.21 on pass×pass), and that advantage survives a task-level paired
+bootstrap. Chimera showed this under noise we injected; 075 could not show it at all because its
+runs were index-aligned by construction. This is the claim "alignment beats position on real
+agent runs" with n=685 and no construction behind it.
+
+**And the null that matters more.** That advantage does not translate into telling a failure
+from ordinary variance.
+
+### Diagnosis (the 070 / 075 standard — and labelled exploratory, since none of it was registered)
+
+- **Not a constant predictor.** 486 distinct in-sync values across 685 pairs, none zero. This is
+  not 070's disease.
+- **Not one scaffold.** Engine AUROC by scaffold runs 0.52–0.69 with no scaffold carrying the
+  pooled number; `terminus-2`, 44% of pairs, sits at 0.60.
+- **The signal the engine has is mostly length.** In-sync fraction correlates 0.59 with length
+  ratio. Holding length roughly fixed, the engine's AUROC is 0.61 for ratio < 0.5, 0.59 for
+  0.5–0.8, and **0.52 for ratio ≥ 0.8** (n = 134 pp / 136 pf) — where the two runs are about the
+  same length, the engine cannot tell the classes apart. It does beat length *within* the middle
+  stratum (0.59 vs 0.52), which is where the pooled tie comes from: both scores are reading the
+  same thing, the engine slightly more finely.
+- **The mechanism, stated plainly:** a failing run is not "the passing run plus one wrong
+  turn." Two *passing* runs of the same agent already share only about a third of their steps
+  (median in-sync 0.36); a failing run shares slightly less (0.28), and most of that gap is that
+  failing runs differ more in length. Run-to-run variance in real agents is larger than the
+  pass/fail signal riding on it.
+- **Untested, named in 083, still open:** the 5,000-character observation truncation, and (083b)
+  that the frozen cost model compares outputs only, so most tool calls in a multi-call turn are
+  compared by name alone. Either could be hiding content signal. Neither can be checked on this
+  scrape, and neither is licence to change a parameter.
+
+### What this changes
+
+1. **The product claim narrows, on evidence.** amberfork localizes a divergence between two runs
+   that are *the same run up to a point* — a recorded run and its replay, a before/after of one
+   change under a pinned environment. It does not find the cause of a failure by comparing two
+   independent executions, because independent executions of a real agent diverge almost
+   immediately whether or not anything went wrong. POSITIONING's UC2 ("flaky failure: a pass vs a
+   fail") is the use case this measures, and it does not hold as stated.
+2. **`record` → `replay` moves from a nice-to-have to the spine.** Both measurements point at the
+   same missing piece: a way to make the two runs comparable before diffing them.
+3. **The test split stays sealed.** 083's rule re-scores on test only after a dev win. It can be
+   scored once at the next tag to confirm the null, and not before.
+
+Governing docs: notebook 083 / 083a / 083b (the registration and its two pre-result amendments),
+082 (the gate rule this result triggers), 075 (the corpus condition this finally met),
+`BENCHMARK.md` rules 3, 6, 9.

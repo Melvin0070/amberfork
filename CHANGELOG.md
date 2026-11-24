@@ -10,6 +10,13 @@
   `trajectory.json` (ATIF v1.0–v1.8) directly, detected by its `ATIF-` `schema_version`. New
   `amberfork_ingest::atif` adapter: each agent turn fans out into an `llm` step plus one `tool`
   step per call, with every step keeping its source `step_id`.
+- **Natural same-agent pairs from Terminal-Bench 2.0 (notebooks 083–084).** A fifth natural-data
+  attempt, and the first on a corpus whose run structure varies on its own: 685 dev pairs across
+  23 tasks and 9 scaffolds, pre-registered and twice amended before any score. Result: alignment
+  beats the positional baseline (AUROC +0.045 [+0.020, +0.069]) but not run length alone
+  (−0.000 [−0.033, +0.032]), and `diff` reports a fork on 96.7% of pairs where both runs passed —
+  two independent live runs are not a gate. New `amberfork-bench build-tbench-pairs` and
+  `score-tbench`; the corpus is benchmark-use only and never committed.
 
 ## [1.0.0] — 2026-09-04
 
