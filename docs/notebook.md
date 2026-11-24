@@ -4630,3 +4630,64 @@ loudly rather than drift.
 Governing docs: `BENCHMARK.md` rules 1–4, 8, 9, 10; notebooks 075 (what a discriminating corpus
 needs), 082/082a (the gate question this subsumes for the two-live-runs case; 082's
 record-vs-replay arms stand as registered), 070 (the diagnosis standard for a null).
+
+### 083a · 2026-11-24 · AMENDMENT to 083, before the engine has scored a single pair
+
+**No engine output exists for this corpus. Nothing below responds to a result.** Building the
+pair set — selection only, no alignment — exposed two errors in 083 and one defect in the corpus.
+Recorded as an amendment, not folded into 083, for the reason 082a gives.
+
+**Correction 1 — the split rule.** 083 registered `sha256(task_name)`, first byte < 77. The
+protocol already has a split rule, and exactly one: `Split::of`, FNV-1a mod 100 < 30
+(`amberfork-bench/src/split.rs`, whose own header says the constants are "protocol, not
+parameters"). Writing a second one into a registration was a mistake of not reading the code
+first. **The standing rule is used.** It puts 23 tasks on dev and 63 on test.
+
+**Correction 2 — `trial_id` is not an identifier.** The dataset card calls it a per-trial UUID.
+It is the empty string on 29,506 of 52,104 records, so "lexicographically smallest `trial_id`"
+selects nothing meaningful. A trial is identified by **`trial_name`** (never empty, and unique to
+a trial across the corpus), and "smallest" now means smallest `trial_name`.
+
+**The corpus defect — some trials are listed twice.** 4,952 trials appear as two records in the
+same group under the same `trial_name`: one carrying a `trial_id` and a start time, one carrying
+neither, with the same reward and step count but differently serialized steps. Left alone, a
+group with one such passing trial yields a **pass×pass pair of a run against itself** — near-total
+agreement, manufactured, and in exactly the class the hypothesis needs to look good. Rules, fixed
+now:
+
+- A trial listed twice counts once; the record with the `trial_id` is the one used.
+- A trial whose `steps` are byte-identical to an earlier-named trial in its group is dropped
+  (170 cases), whatever its outcome. Some of these may be genuine determinism rather than
+  re-uploads; they cannot be told apart, and dropping them can only lower pass×pass agreement —
+  the direction that works against the hypothesis.
+
+**How it was caught, since the method is the lesson.** The first build reported zero exclusions
+and wrote 99 run files for roughly 4,000 pairs: thousands of trials had collapsed onto one empty
+id. Nothing failed. Only the file count disagreed with the pair count.
+
+**Counts restated — these supersede 083's**, which were computed over the duplicated records:
+
+| | dev | test |
+|---|---|---|
+| tasks | 23 | 63 |
+| pass×fail pairs | 412 | 1,582 |
+| pass×pass pairs | 273 | 1,088 |
+
+1,996 eligible groups (was 1,999); 4,175 single-outcome groups; 17,642 records without steps;
+2 selected pairs excluded for a run over 2,000 canonical steps. After the adapter's fan-out the
+median run is 49 canonical steps, and **3.6% of pass×fail pairs have equal length** (083 reported
+7.6% on source-step counts). 083's 13,778 / 20,180 all-pairs totals are withdrawn, not restated:
+the protocol takes one pair per group per class, so they were never the denominator.
+
+**Unchanged from 083:** the two measurements and the registered prediction, the sync-fraction
+statistic, both baselines, bootstrap over tasks, the decision rule, the frozen params, the
+benchmark-use-only handling, and the sealed test side.
+
+**Reproduce the pair set** (writes only under `bench/data/`, which is gitignored):
+
+```sh
+uv run --no-project --with pyarrow python -I spike/tbench_to_jsonl.py \
+    bench/data/tbench/train-*.parquet > bench/data/tbench/trials.jsonl
+cargo run -q --release -p amberfork-bench -- build-tbench-pairs \
+    --trials bench/data/tbench/trials.jsonl --out bench/data/tbench/pairs
+```

@@ -61,6 +61,7 @@ mod results;
 mod sanitize;
 mod score;
 mod split;
+mod tbench;
 
 use arms::Prediction;
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -105,6 +106,10 @@ enum Command {
     /// Construct the real-agent perturbation pair set from recorded sessions (issue #49,
     /// pre-registered in docs/notebook.md 074).
     BuildPerturbationPairs(BuildPerturbationPairsArgs),
+    /// Construct same-agent pass×fail and pass×pass pairs from Terminal-Bench 2.0 trials
+    /// (pre-registered in docs/notebook.md 083). Benchmark-use only: reads and writes under
+    /// bench/data/, never a committed path.
+    BuildTbenchPairs(BuildTbenchPairsArgs),
     /// Fetch the pinned raw upstream data `build-pairs` consumes (issue #7).
     Fetch(FetchArgs),
     /// Decrypt a HAL reference-trace zip into the plaintext dump `hal` ingest reads (issue #41).
@@ -242,6 +247,17 @@ struct BuildPerturbationPairsArgs {
     sessions: PathBuf,
 
     /// Directory to write the `pair_*.json` + `a_*`/`b_*` triples into (created if absent).
+    #[arg(long, value_name = "DIR")]
+    out: PathBuf,
+}
+
+#[derive(Args)]
+struct BuildTbenchPairsArgs {
+    /// One or more JSON-Lines files of trials, as written by `spike/tbench_to_jsonl.py`.
+    #[arg(long, value_name = "FILE", required = true, num_args = 1..)]
+    trials: Vec<PathBuf>,
+
+    /// Directory to write `pairs.json` and `runs/` into (created if absent).
     #[arg(long, value_name = "DIR")]
     out: PathBuf,
 }
@@ -545,6 +561,7 @@ fn main() -> ExitCode {
         Command::BuildPairs(args) => build_pairs(&args),
         Command::BuildTrailPairs(args) => build_trail_pairs(&args),
         Command::BuildPerturbationPairs(args) => build_perturbation_pairs(&args),
+        Command::BuildTbenchPairs(args) => build_tbench_pairs(&args),
         Command::Fetch(args) => fetch_data(&args),
         Command::HalDecrypt(args) => hal_decrypt(&args),
         Command::HalFetch(args) => hal_fetch_data(&args),
@@ -845,6 +862,40 @@ fn build_trail_pairs(args: &BuildTrailPairsArgs) -> Result<ExitCode, Box<dyn std
 /// Construct the real-agent perturbation pair set (issue #49). Like the other builders, a
 /// data-prep step: no table, only the pair triples and a coverage summary on stderr — the
 /// existing `run`/`report` commands score and render the result unchanged.
+fn build_tbench_pairs(args: &BuildTbenchPairsArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let report = tbench::build(&args.trials, &args.out)?;
+    let count = |class, split: &str| {
+        report
+            .pairs
+            .iter()
+            .filter(|p| p.spec.class == class && p.spec.split == split)
+            .count()
+    };
+    let sel = &report.selection;
+    eprintln!(
+        "amberfork-bench: {} trial record(s): {} without steps, {} duplicate record(s), {} \
+         identical trajectory(ies)",
+        sel.trials, sel.trials_without_steps, sel.duplicate_records, sel.identical_trajectories,
+    );
+    eprintln!(
+        "amberfork-bench: {} group(s) with steps: {} eligible, {} single-outcome",
+        sel.groups_with_steps, sel.eligible_groups, sel.single_outcome_groups,
+    );
+    for split in ["dev", "test"] {
+        eprintln!(
+            "amberfork-bench: {split}: {} pass-fail pair(s), {} pass-pass pair(s)",
+            count(tbench::PairClass::PassFail, split),
+            count(tbench::PairClass::PassPass, split),
+        );
+    }
+    eprintln!(
+        "amberfork-bench: {} pair(s) excluded -> {}/pairs.json",
+        report.excluded.len(),
+        args.out.display(),
+    );
+    Ok(ExitCode::from(EXIT_OK))
+}
+
 fn build_perturbation_pairs(
     args: &BuildPerturbationPairsArgs,
 ) -> Result<ExitCode, Box<dyn std::error::Error>> {
