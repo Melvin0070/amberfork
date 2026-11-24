@@ -18,7 +18,7 @@
 //! path can keep well-defined. A `tokio::sync::Mutex` (not `std`) is used precisely because the
 //! guard is held across that await.
 
-use crate::{ReplayProxy, Upstream};
+use crate::{Miss, ReplayProxy, Upstream};
 use amberfork_record::{Body, CapturedRequest, CapturedResponse, Cassette, retain_request_headers};
 use axum::Router;
 use axum::extract::{Request, State};
@@ -142,6 +142,11 @@ impl<U: Upstream + 'static> ReplayServer<U> {
     pub async fn reexecuted(&self) -> Cassette {
         self.proxy.lock().await.reexecuted().clone()
     }
+
+    /// Where the re-execution first left the tape, if it has.
+    pub async fn first_miss(&self) -> Option<Miss> {
+        self.proxy.lock().await.first_miss().cloned()
+    }
 }
 
 /// Answer one request the re-driven agent issued: parse it into a [`CapturedRequest`], drive it
@@ -191,7 +196,7 @@ async fn answer<U: Upstream + 'static>(
 
     match answered {
         Ok(response) => into_http(response),
-        Err(err) => (StatusCode::BAD_GATEWAY, format!("live relay failed: {err}")).into_response(),
+        Err(err) => (StatusCode::BAD_GATEWAY, format!("amberfork replay: {err}")).into_response(),
     }
 }
 

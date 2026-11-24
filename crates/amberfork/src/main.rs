@@ -26,6 +26,7 @@ use amberfork_judge::{ExplainContext, Judge, OllamaJudge, ground};
 use amberfork_layout::{Document, ViewModel};
 use amberfork_model::{DiffResult, Run, Warning};
 use amberfork_record::{CaptureProxy, Cassette};
+use amberfork_replay::{NoUpstream, ReplayServer};
 use amberfork_server::Server;
 use clap::{Args, Parser, Subcommand};
 use load::{LoadError, load_run};
@@ -86,6 +87,8 @@ enum Command {
 
     /// Record an agent behind a capture proxy, writing a full-content cassette.
     Record(RecordArgs),
+    /// Re-run an agent against a recorded cassette, offline — exits 1 where it diverges.
+    Replay(ReplayArgs),
 }
 
 /// `--judge`'s two states (issue #10). `Off` is the default and is byte-identical to a build
@@ -227,6 +230,23 @@ struct RecordArgs {
     command: Vec<String>,
 }
 
+#[derive(Args)]
+struct ReplayArgs {
+    /// The recorded cassette to serve back (what `amberfork record` wrote).
+    #[arg(value_name = "CASSETTE")]
+    cassette: PathBuf,
+
+    /// Environment variable to point the agent's SDK at the replay listener, e.g.
+    /// `OPENAI_BASE_URL`. Repeatable; at least one is required — an SDK reading none would talk
+    /// to the real provider and replay nothing.
+    #[arg(long = "base-url-env", value_name = "NAME", required = true)]
+    base_url_env: Vec<String>,
+
+    /// The agent command to run, after `--` — e.g. `-- python agent.py`.
+    #[arg(value_name = "CMD", last = true, required = true, num_args = 1..)]
+    command: Vec<String>,
+}
+
 impl RecordArgs {
     /// The resolved cassette output path: the explicit `--out`, else `<id>.cassette.json`.
     fn out_path(&self) -> PathBuf {
@@ -262,6 +282,7 @@ fn main() -> ExitCode {
             ExitCode::from(EXIT_TROUBLE)
         }),
         Command::Record(args) => run_record(&args),
+        Command::Replay(args) => run_replay(&args),
     }
 }
 
@@ -548,6 +569,101 @@ async fn record_session(args: &RecordArgs) -> ExitCode {
     );
 
     ExitCode::from(exit_code_of(&status))
+}
+
+/// `amberfork replay <cassette> -- <cmd>`: re-run the agent with every provider call answered
+/// from the recording. Strict and offline — nothing is relayed, so no network and no key.
+///
+/// The exit contract is `diff`'s, not `record`'s, because replay is a judge and not a wrapper:
+/// 0 the agent followed the tape (every recorded exchange served, nothing else asked), 1 it
+/// diverged (asked something the recording never did, or stopped short), 2 trouble. The agent's
+/// own exit code is reported and never propagated: a recording of a failing run replays to the
+/// same failure, and that is still "followed the tape".
+fn run_replay(args: &ReplayArgs) -> ExitCode {
+    let cassette = match load::load_cassette(&args.cassette) {
+        Ok(cassette) => cassette,
+        Err(LoadError::NotACassette { path }) => {
+            eprintln!(
+                "amberfork: {}: replay serves recorded exchanges, so it needs a cassette — this \
+                 is a trace (no `cassette_version`)\n  record one with `amberfork record -- <cmd>`",
+                path.display()
+            );
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+        Err(err) => {
+            eprintln!("amberfork: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .build()
+    {
+        Ok(runtime) => runtime,
+        Err(err) => {
+            eprintln!("amberfork: cannot start the async runtime: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
+    runtime.block_on(replay_session(args, cassette))
+}
+
+/// Bind the replay listener, run the agent against it, and judge what it did. The agent is an
+/// async child for the same reason as in [`record_session`]: a blocking wait would starve the
+/// listener answering it.
+async fn replay_session(args: &ReplayArgs, cassette: Cassette) -> ExitCode {
+    let recorded = cassette.exchanges.len();
+    let server = match ReplayServer::bind(cassette, NoUpstream, "replay").await {
+        Ok(server) => server,
+        Err(err) => {
+            eprintln!("amberfork: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
+
+    let (program, program_args) = args
+        .command
+        .split_first()
+        .expect("clap requires a command after --");
+    let mut child = tokio::process::Command::new(program);
+    child.args(program_args);
+    for name in &args.base_url_env {
+        child.env(name, server.base_url());
+    }
+    let status = match child.status().await {
+        Ok(status) => status,
+        Err(err) => {
+            eprintln!("amberfork: cannot run agent `{program}`: {err}");
+            return ExitCode::from(EXIT_TROUBLE);
+        }
+    };
+
+    let served = server.reexecuted().await.exchanges.len();
+    let agent = exit_code_of(&status);
+    match server.first_miss().await {
+        Some(miss) => {
+            eprintln!(
+                "amberfork: replay diverged at exchange {} — {} {} is not on the tape \
+                 ({served} of {recorded} recorded exchange(s) served, agent exited {agent})",
+                miss.exchange, miss.method, miss.path,
+            );
+            ExitCode::from(EXIT_FORKED)
+        }
+        None if served != recorded => {
+            eprintln!(
+                "amberfork: replay diverged — the agent stopped after {served} of {recorded} \
+                 recorded exchange(s) (agent exited {agent})"
+            );
+            ExitCode::from(EXIT_FORKED)
+        }
+        None => {
+            eprintln!(
+                "amberfork: replay followed the tape — {served} of {recorded} recorded \
+                 exchange(s) served, agent exited {agent}"
+            );
+            ExitCode::from(EXIT_CONVERGED)
+        }
+    }
 }
 
 /// Serialize a cassette to its output file. Serialization itself is infallible (bodies are

@@ -40,6 +40,9 @@ pub trait Upstream: Send + Sync {
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum UpstreamError {
+    /// The request is not on the tape and there is no provider to relay it to — a strict replay
+    /// ([`NoUpstream`]) reached the point where the agent diverged from the recording.
+    OffTape,
     /// The in-process scripted stub ran out of queued responses — a test drove more cache-miss
     /// relays than it scripted.
     Exhausted,
@@ -51,6 +54,9 @@ pub enum UpstreamError {
 impl fmt::Display for UpstreamError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::OffTape => f.write_str(
+                "request is not on the tape, and this replay has no upstream to relay it to",
+            ),
             Self::Exhausted => f.write_str("scripted upstream has no more responses"),
             Self::Transport(source) => write!(f, "live relay to the provider failed: {source}"),
         }
@@ -60,7 +66,7 @@ impl fmt::Display for UpstreamError {
 impl std::error::Error for UpstreamError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Exhausted => None,
+            Self::OffTape | Self::Exhausted => None,
             Self::Transport(source) => Some(source),
         }
     }
@@ -140,6 +146,21 @@ impl Upstream for LiveUpstream {
                 body: Body::from_bytes(&body),
             })
         }
+    }
+}
+
+/// The [`Upstream`] of a strict replay: there is none. Every cache miss fails with
+/// [`UpstreamError::OffTape`], so the run can only go where the recording already went.
+///
+/// This is what makes replay a gate that needs no provider, no network and no key: the agent is
+/// answered from the tape until it asks something the recorded run never asked, and that request
+/// — the first behavioural difference — ends the replay.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct NoUpstream;
+
+impl Upstream for NoUpstream {
+    async fn send(&self, _request: &CapturedRequest) -> Result<CapturedResponse, UpstreamError> {
+        Err(UpstreamError::OffTape)
     }
 }
 

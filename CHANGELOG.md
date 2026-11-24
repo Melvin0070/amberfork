@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- **`amberfork replay <cassette> -- <cmd>` — a user-facing replay verb, strict and offline.**
+  Serves a recorded run back to the agent with no provider, no network and no key, and judges
+  what the agent did: exit 0 it followed the tape, 1 it diverged (the first request not on the
+  tape is named, as is an agent that stopped short), 2 trouble. Closes the gap notebook 082 found
+  (`docs/ci.md` described a `replay` step no user could run) and is what notebook 084's result
+  points at: two independent live runs fork 97% of the time, so a gate has to make the runs
+  comparable first. New `NoUpstream` and first-miss tracking in `amberfork-replay`.
 - **Claude Code sessions load natively.** `amberfork diff` and `serve` accept a session
   transcript (`~/.claude/projects/<project>/<session-id>.jsonl`) directly — no conversion script.
   New `amberfork_ingest::claudecode` adapter; the CLI sniffs the transcript's `type` + `sessionId`

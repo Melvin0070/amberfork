@@ -33,6 +33,18 @@ pub struct ReplayProxy<U> {
     replay: Replay,
     upstream: U,
     reexecuted: Cassette,
+    first_miss: Option<Miss>,
+}
+
+/// The first request a re-execution issued that the tape could not answer — the point where the
+/// re-driven agent stopped doing what the recorded run did.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Miss {
+    /// How many requests the re-execution had been answered before this one: the 0-based
+    /// position of the diverging request in the re-executed run.
+    pub exchange: usize,
+    pub method: String,
+    pub path: String,
 }
 
 impl<U: Upstream> ReplayProxy<U> {
@@ -44,6 +56,7 @@ impl<U: Upstream> ReplayProxy<U> {
             replay: Replay::new(cassette),
             upstream,
             reexecuted: Cassette::new(reexecuted_id),
+            first_miss: None,
         }
     }
 
@@ -63,7 +76,15 @@ impl<U: Upstream> ReplayProxy<U> {
     ) -> Result<CapturedResponse, UpstreamError> {
         let response = match self.replay.lookup(&request) {
             Some(recorded) => recorded.clone(),
-            None => self.upstream.send(&request).await?,
+            None => {
+                // Noted before the relay, so a miss the upstream cannot answer is still located.
+                self.first_miss.get_or_insert_with(|| Miss {
+                    exchange: self.reexecuted.exchanges.len(),
+                    method: request.method.clone(),
+                    path: request.path.clone(),
+                });
+                self.upstream.send(&request).await?
+            }
         };
         self.reexecuted.exchanges.push(Exchange {
             idx: self.reexecuted.exchanges.len(),
@@ -78,12 +99,18 @@ impl<U: Upstream> ReplayProxy<U> {
     pub fn reexecuted(&self) -> &Cassette {
         &self.reexecuted
     }
+
+    /// Where the re-execution first left the tape, or `None` while every request has hit.
+    #[must_use]
+    pub fn first_miss(&self) -> Option<&Miss> {
+        self.first_miss.as_ref()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ScriptedUpstream;
+    use crate::{ScriptedUpstream, UpstreamError};
     use amberfork_record::Body;
     use serde_json::{Value, json};
 
@@ -201,5 +228,57 @@ mod tests {
                 },
             ]
         );
+    }
+    #[tokio::test]
+    async fn a_strict_replay_refuses_an_off_tape_request_and_remembers_where() {
+        let recorded_req = request(json!({"messages": [{"role": "user", "content": "hi"}]}));
+        let recorded_resp = response(json!({"choices": []}));
+        let off_tape = request(json!({"messages": [{"role": "user", "content": "changed"}]}));
+        let mut proxy = ReplayProxy::new(
+            cassette_with([(recorded_req.clone(), recorded_resp)]),
+            crate::NoUpstream,
+            "reexec",
+        );
+
+        proxy.answer(recorded_req).await.expect("a hit is served");
+        assert_eq!(proxy.first_miss(), None, "still on the tape");
+
+        let err = proxy
+            .answer(off_tape)
+            .await
+            .expect_err("nothing to relay to");
+        assert!(matches!(err, UpstreamError::OffTape));
+        assert_eq!(
+            proxy.first_miss(),
+            Some(&Miss {
+                exchange: 1,
+                method: "POST".to_string(),
+                path: "/v1/chat/completions".to_string(),
+            }),
+            "the divergence is the second request the agent issued"
+        );
+        assert_eq!(
+            proxy.reexecuted().exchanges.len(),
+            1,
+            "an unanswered request is not a turn of the re-executed run"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_first_miss_is_kept_when_a_live_relay_carries_the_run_on() {
+        let off_tape =
+            |text: &str| request(json!({"messages": [{"role": "user", "content": text}]}));
+        let live = response(json!({"choices": []}));
+        let mut proxy = ReplayProxy::new(
+            cassette_with(Vec::<(CapturedRequest, CapturedResponse)>::new()),
+            ScriptedUpstream::new([live.clone(), live]),
+            "reexec",
+        );
+
+        proxy.answer(off_tape("one")).await.unwrap();
+        proxy.answer(off_tape("two")).await.unwrap();
+
+        assert_eq!(proxy.first_miss().map(|miss| miss.exchange), Some(0));
+        assert_eq!(proxy.reexecuted().exchanges.len(), 2);
     }
 }
