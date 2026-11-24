@@ -4819,3 +4819,91 @@ from ordinary variance.
 Governing docs: notebook 083 / 083a / 083b (the registration and its two pre-result amendments),
 082 (the gate rule this result triggers), 075 (the corpus condition this finally met),
 `BENCHMARK.md` rules 3, 6, 9.
+
+## 085 · 2026-11-24 · PRE-REGISTRATION: the replay gate on real recorded sessions — does an unchanged agent follow its own tape, and does a changed one leave it at the right exchange?
+
+**Written before `amberfork replay` has been pointed at a single real cassette.** It has only
+ever run against hand-built fixtures and a scripted stand-in agent (commits `0e3c4f0`,
+`45a0ce1`).
+
+**Why.** 084 measured that two independent live runs fork 96.7% of the time when nothing is
+wrong, and concluded that a gate has to make the runs comparable first. `replay` is the mechanism
+that claims to do that. `docs/ci.md` now says so, and also says — because it is true — that how
+often a real unchanged agent replays cleanly "has not yet been measured." This is that
+measurement, on the smallest honest corpus available.
+
+**Corpus: #49's recordings, unmodified, and no new model calls.** `bench/data/perturbation/`
+holds 30 cassettes recorded on 2026-09-04 through the real `amberfork record` binary, from a real
+tool-using agent (`spike/perturbation_agent.py`) driven by a real local model (`qwen3:8b`):
+5 tasks × (1 clean session + 5 perturbed sessions, where one tool returns a wrong value). The
+agent and world scripts are byte-identical to the commit that recorded them (`257e895`; checked
+with `git log`). Replay is offline, so the model is never called again — the responses on the
+tapes are the real ones it gave then.
+
+**What is run.** Every cassette is replayed twice through the shipped binary, strict mode, with
+`python3 spike/perturbation_agent.py --task T [--perturb]` as the agent:
+
+- **Unchanged (30 replays).** The agent in the *same* configuration that made the tape — clean
+  agent on a clean tape, perturbed agent on a perturbed tape. Nothing changed, so each should
+  exit 0. An exit 1 is a false positive.
+- **Changed (30 replays).** The `--perturb` flag flipped — perturbed agent on a clean tape (5),
+  clean agent on a perturbed tape (25). One tool now returns a different value than the tape's
+  run saw, so each should exit 1.
+
+**Gold for the changed class, fixed now and computable from the tape alone:** the designated
+tool's result first reaches the model in the request *after* the first exchange whose recorded
+response calls that tool. So gold = (index of the first exchange whose response contains a call
+to the task's designated tool) + 1. For the 25 perturbed tapes this must equal the `gold_step`
+the agent wrote into its own summary at record time; any disagreement is reported as a harness
+defect before any rate is.
+
+**Metrics.** Counts and Wilson 95% intervals (rule 6) for: the false-positive rate (unchanged →
+exit 1); the detection rate (changed → exit 1); the **exact-exchange rate** (changed, and the
+exchange `replay` names equals gold); exit 2 on each class, reported apart. Every replay is
+scored — no retries, no exclusions on outcome.
+
+**A same-fixture contrast, so the comparison to 084 is not across corpora (rule 8).** 084's
+96.7% is Terminal-Bench. On *these* recordings the equivalent "two live runs, nothing changed"
+class also exists: within each task the five perturbed sessions are one agent configuration
+sampled five times, giving C(5,2) = 10 pairs per task, 50 in all. `amberfork diff` is run on each
+(earlier session id as `--against`) and its exit-1 rate reported beside the replay false-positive
+rate. This is 082's negative class built from the perturbed sessions rather than from clean ones
+that were never recorded; it is named as that variant, not passed off as 082.
+
+**Prediction, registered:** 0/30 false positives, 30/30 detected, 30/30 at the exact exchange.
+Stated plainly because of what follows.
+
+**What this can and cannot show — read before the number.**
+
+- **This is closer to a conformance test than an experiment.** The agent is deterministic given
+  its inputs and replay matches requests exactly, so a clean result is what the design implies.
+  Its value is that it is the *real* path end to end — real recorded model output, the shipped
+  `record` capture, the shipped `replay` matcher, an agent with real tool calls — where the only
+  prior evidence was hand-built JSON. A failure would be a fidelity bug (a body that does not
+  round-trip, a header that leaks into matching, a number re-serialized differently), and that is
+  what the measurement is able to find.
+- **The unit is the tape, and there are few of them.** 30 tapes from 5 tasks, 2–4 exchanges each
+  (notebook 075). Replays are deterministic, so repeating them adds nothing. 0/30 gives a Wilson
+  upper bound near 0.11 — "not broken on this agent", never "safe".
+- **It says nothing about agents whose requests are not reproducible.** This agent sends no
+  timestamps, no random ids, and uses no SDK. An agent that does will diverge at exchange 0, and
+  `docs/ci.md` already says so; nothing here measures how common that is.
+- **It does not measure the model.** A replay never calls it. A model change with unchanged
+  prompts replays clean by design; that is a documented property of the gate, not a result.
+
+**Decision rule.**
+
+- **Prediction holds:** `docs/ci.md`'s "not yet measured" sentence is replaced with the measured
+  counts and these limits, verbatim in spirit. No larger claim is made.
+- **Any false positive, miss, or wrong exchange:** it is a defect in `record` or `replay`,
+  diagnosed per replay and fixed with a test before `replay` is described as a gate anywhere. The
+  failing count is published as measured (rule 3) beside the post-fix count.
+
+**Document:** `bench/results/replay_gate_all.json`, written by `spike/score_replay_gate.py`
+(the precedent `spike/score_gate_falsepositive.py` set for exit-code measurements: shell the
+shipped binary, read `$?`).
+
+**Cost:** none. No model, no network.
+
+Governing docs: `BENCHMARK.md` rules 3, 4, 6, 8; notebooks 074/075 (the harness and its recordings),
+082/082a (the gate question), 084 (the result this follows from).
