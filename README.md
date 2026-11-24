@@ -5,314 +5,117 @@
 [![docs.rs](https://img.shields.io/docsrs/amberfork)](https://docs.rs/amberfork)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Point at a failing AI-agent run. amberfork aligns it against a known-good run, finds the
-exact step where they diverged, and shows what changed — then, on a run you captured under
-`record`, confirms the cause by replaying it with that step patched. All local, offline, no
-account.
+Find where an AI-agent run stopped doing what it did before. Record a run once, replay your
+agent against it offline, and amberfork names the first step where its behaviour changed — then
+aligns the two runs and shows what differed. Local, deterministic, no account, no API key.
 
 ![amberfork serve --demo: two agent runs aligned side by side in the browser on one shared timeline. The steps they agree on recede in gray; the step where the bad run fetched a stale refund policy ignites amber as the fork, the divergent path glows amber down to the wrong answer, and the field diff on the right shows the swapped policy doc in red and green.](docs/assets/hero-web.gif)
 
 ## Try it (30 seconds)
 
 ```sh
-cargo install amberfork        # or a prebuilt binary from the releases page, or build from source
-amberfork serve --demo         # the view above — the bundled sample fork in your browser
-amberfork demo                 # or the same fork rendered in your terminal
+cargo install amberfork        # or a prebuilt binary from the releases page
+amberfork serve --demo         # the view above — a bundled sample fork in your browser
+amberfork demo                 # the same fork in your terminal
 ```
 
-`--demo` is a sample pair bundled inside the binary — no files, no setup, offline. `serve` opens
-it as a local `127.0.0.1` web page (nothing leaves your machine); `demo` prints it to the
-terminal. Then point either at your own traces ([plain-JSON format](docs/trace-format.md); worked
-example in [the run-it-on-your-own-agent guide](docs/run-on-your-own-agent.md)):
-
-```sh
-amberfork diff  bad.json --against good.json   # exits 1 on a fork; --json for machines
-amberfork serve bad.json --against good.json   # or read the fork in the browser
-```
-
-The same fork, in your terminal:
+`--demo` is a sample pair bundled inside the binary: no files, no setup, offline. `serve` binds
+`127.0.0.1` only; nothing leaves your machine.
 
 ![amberfork demo in the terminal: the two runs align in gray, a rate-limit retry is absorbed as a log-move, and the step where the bad run fetched a stale policy doc glows amber as the fork, closing with a one-line attribution footer.](docs/assets/hero.gif)
 
-> **Status: v1.0.0, tagged.** The working surface: `diff` (terminal, `--json`, `--html` for a
-> self-contained static export, and an optional `--judge local` narration under a local Ollama
-> server), `serve` (the browser view above), `demo`, and — for runs captured under `record` —
-> `diff --verify`, which replays the recorded run with the fork step patched to confirm the
-> cause. Every number below re-renders offline from a committed file, no API key; the dated
-> record of how each one was arrived at is [`docs/notebook.md`](docs/notebook.md).
+> **v1.0.0 is on crates.io. `replay`, and reading Claude Code and ATIF files directly, are on
+> `main` and ship in the next release** — until then install with
+> `cargo install --git https://github.com/Melvin0070/amberfork amberfork`. (A git build has
+> everything except `serve`, whose web bundle is only packaged into releases.)
 
-## What it does today
+## What it does
 
-- `amberfork diff <bad> --against <good>` — align two agent-run traces
-  ([plain JSON](docs/trace-format.md), plus OpenInference and native OTel `gen_ai.*` adapters —
-  see [the format mappings](docs/trace-format.md)), light the fork up in the terminal, `--json`
-  for machines, and diff(1) exit codes so it gates CI with no threshold to tune — recipe in
-  [`docs/ci.md`](docs/ci.md).
-- `amberfork diff <bad> --against <good> --verify` — on a run captured under `amberfork record`,
-  replay it with the fork step patched and report whether the run recovers, to *confirm* the
-  cause rather than only locate it.
-- `cargo run -p amberfork-bench -- report` — reproduce a scoring table offline, deterministically,
-  no API key. Protocol: [`BENCHMARK.md`](BENCHMARK.md).
-
-## The headline number — sealed test split
-
-Fork-localization on chimera pairs: a controlled fork spliced into real agent logs
-([Who&When](https://github.com/ag2ai/Agents_Failure_Attribution)-derived), every arm on
-identical pairs with an identical denominator. Protocol: [`BENCHMARK.md`](BENCHMARK.md).
-
-**The headline** (sealed test split, three seeds, n=35 — revealed once, at the v0.2.0 tag,
-under params frozen before any test pair was scored): the full engine localizes the fork
-**within 3 steps 91% of the time** — 0.91 [0.78, 0.97] vs the best baseline's 0.49
-[0.33, 0.64], non-overlapping intervals — and takes **0.49 exact** where the baselines'
-best is 0.03 (notebook 017).
-
-| arm (test, n=35 across 3 seeds) | exact | ±1 | ±3 |
-|---|---|---|---|
-| random | 0.00 | 0.09 | 0.29 |
-| pos-lexical | 0.00 | 0.20 | 0.49 |
-| nw-structural/resync | 0.03 | 0.20 | 0.20 |
-| **nw-lexical/resync** (full engine) | **0.49** | **0.71** | **0.91** |
-
-The dev side these params were tuned on agrees: exact 0.56 · ±1 0.72 · ±3 1.00 (n=25) — no
-overfitting cliff. **Exact-step** localization is *seed-sensitive* on unseen pairs too (0.75 /
-0.23 / 0.50 on seeds 42 / 43 / 44), the same shape dev showed — which is why the ±3 window,
-not exact, is the claim (notebooks 014, 017). The engine's fork confidence is calibrated on
-unseen data: exact-hit rate climbs monotonically from 0.08 in the lowest-confidence bin to
-1.00 in the two highest.
-
-Every number above renders from a committed document. The headline table IS
-`bench/results/chimera_noise_multiseed_test.json` — an exact pool (hits and n summed,
-Wilson intervals recomputed) of the **three sealed per-seed test documents**
-(`bench/results/chimera_noise_seed*_test.json`), each of which it names by sha256; a test
-rebuilds the aggregate from its committed sources byte-for-byte. **Seed 42's dev split** is
-the default `report` below (the CI gate additionally pins seeds 43/44 —
-`bench/fixtures/chimera_noise_seed*_dev/`):
-
-```text
-params: bench/params.toml sha256:8ebd95ce8f3d · tau 0.3 · resync_k 2 · gap 0.6+0.3
-| nw-lexical/resync | 0.75 [0.41, 0.93] exact | 0.88 ±1 | 1.00 ±3 | n=8 |  (dev, seed 42)
-```
-
-Read it honestly: these are **injected** forks — a controlled divergence spliced into real logs — so
-sustained divergence at the gold step is true *by construction*, which structurally favors the
-content-aware alignment arms. What the headline measures is the aligner's tolerance to benign noise
-around a known fork, not attribution on a *natural* failure (for that, see the Mode A′ null below).
-Wilson 95% intervals are wide at these n, and the test split is scored exactly once per release tag
-(protocol rule 2) — scored fresh at every tag since. The v0.4.0, v0.5.0, and now v1.0.0 reveals all
-reproduced these numbers identically on every arm and metric — `bench/results/*_test_v0.4.0.json` /
-`*_test_v0.5.0.json` / `*_test_v1.0.0.json`, notebooks 021, 037, and 081. Six releases and two new
-`amberfork-align` features (consensus, deltas) later, the frozen params and the core alignment path
-haven't moved the number by a single pair. The claim the numbers support is the *shape* —
-content-aware alignment localizes within a few steps where position and structure do not.
-
-Reproduce the tables offline — they render from the committed results documents, zero fetch:
+**Gate a change to your agent — `record`, then `replay`.** Record a known-good run once. After
+that, `replay` answers every provider call from the recording, so the new run *is* the old run
+until your agent sends a request the recording never saw. No network, no key.
 
 ```sh
-cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_multiseed_test.json   # the headline (test, n=35)
-cargo run -q -p amberfork-bench -- report    # seed-42 dev (the default)
-cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_seed42_test.json      # one seed's test slice
+amberfork record --upstream https://api.openai.com --base-url-env OPENAI_BASE_URL \
+    --out good.cassette.json -- python agent.py
+amberfork replay good.cassette.json --base-url-env OPENAI_BASE_URL -- python agent.py
+# exit 0: followed the recording · 1: diverged, and at which exchange · 2: trouble
 ```
 
-The dev-split pairs are committed (GAIA-sanitized — see `bench/fixtures/`); the CI gate scores
-them on every `amberfork-align` change. Regenerate the full sets from raw upstream data with the
-recipe in [`bench/fixtures/chimera_noise_seed42_dev/README.md`](bench/fixtures/chimera_noise_seed42_dev/README.md).
-
-The table above is the number on **injected** forks — a controlled divergence spliced into real
-logs. Three separate attempts at a **natural**-fork corpus follow, and not one of them produced a
-headline: [the natural-fork attempts](#the-natural-fork-attempts-and-what-each-one-measured). They
-are the honest context for the 0.91, and they are worth reading before you believe it.
-
-## `--verify` confirmation rate (n=15) — the other half of the moat, measured
-
-The localization numbers above are half the pitch; `--verify`'s counterfactual confirmation is the
-other half, and until now it had a single-example smoke test and no rate. Scaled the existing
-real-provider test (a toy two-turn agent engineered to fork on genuine LLM sampling variance, not a
-scripted difference) from n=1 to n=15. [Pre-registered in notebook 079](docs/notebook.md); result in
-080:
+**See what changed — `diff`.** Align two runs with move-typed, affine-gap sequence alignment (not
+index matching), locate the fork, and show the field-level difference. Terminal, `--json`,
+self-contained `--html`, or the browser view with `serve`.
 
 ```sh
-python3 -c "import json; d=json.load(open('bench/results/verify_realprovider_all.json')); \
-print(json.dumps({k:v for k,v in d.items() if k!='raw_attributions'}, indent=2))"
+amberfork diff bad.json --against good.json
 ```
 
-| metric | rate | 95% CI | n |
+It reads [plain JSON](docs/trace-format.md), `record` cassettes, Claude Code session transcripts
+(`~/.claude/projects/<project>/<session>.jsonl`) and [ATIF](docs/trace-format.md) `trajectory.json`
+files as they are — no conversion step. [Run it on your own agent →](docs/run-on-your-own-agent.md)
+
+**Confirm the cause — `diff --verify`.** On two recorded runs, re-execute the failing one with the
+fork step patched to the good run's response and report whether it recovers.
+
+CI recipes for all three, and what each gate does *not* check: [`docs/ci.md`](docs/ci.md).
+
+## What has been measured
+
+Every number below was produced under a [pre-registered protocol](BENCHMARK.md) and re-renders
+offline from a committed file. Several went against the tool; they are here on purpose.
+
+| Question | Result | n | Reading |
 |---|---|---|---|
-| two-sided fork (ddmin engages) | 1.00 | [0.80, 1.00] | 15 |
-| **Recovered** | **0.867** | [0.62, 0.96] | 15 |
-| NotRecovered | 0.133 | [0.04, 0.38] | 15 |
-| **Unverified (indeterminate)** | **0.00** | [0.00, 0.20] | 15 |
+| Does alignment find a fork under benign noise? (sealed test split, injected forks) | within ±3 steps **0.91** [0.78, 0.97] vs best baseline 0.49 [0.33, 0.64] | 35 | Yes — but the fork is injected, so this measures noise tolerance, not attribution of a natural failure |
+| Does alignment beat a positional diff on real runs? (Terminal-Bench, same agent and task) | AUROC **+0.045** [+0.020, +0.069] | 685 | Yes, modestly — the first such result without injected noise |
+| Can diffing two independent runs tell a failure from normal variance? (same pairs) | engine 0.614 vs run-length alone 0.614 | 685 | **No.** Two passing runs already share only about a third of their steps |
+| Is diffing two live runs a usable CI gate? | forks on **96.7%** [93.9%, 98.3%] of pairs where both runs passed | 273 | **No** — hence `replay` |
+| Does `replay` round-trip real recordings? | 0 / 30 false positives; 30 / 30 tool changes caught | 30 | Yes, on one short deterministic agent. Not a localization result |
+| Does `--verify` confirm a real fork? | **87%** recovered [62%, 96%], none indeterminate | 15 | Yes, on a toy agent with real sampling variance |
+| Does it beat asking a frontier model? (TRAIL↔HAL) | 3 of 5 LLM-judge arms beat it | 23 | **No** — though no arm cleared random; the corpus shares no step names across sides |
 
-Read both bolded numbers together: 87% confirmation, and — more notable on a fixture specifically
-built to produce real sampling variance — the 3-run majority vote never split evenly across all 15
-calls (n is small; the CI says "low so far," not "zero"). The two `NotRecovered` cases are as
-informative as the eleven that recovered: both patched the correctly-identified cause and still
-didn't reconverge, because the downstream step carries its *own* independent sampling variance the
-patch can't reach — a confirmed-sufficient cause and a non-recovering re-run aren't a contradiction,
-they're two independent sources of real non-determinism, which is exactly why `Recovery` is a
-tri-state and not a boolean. Not measured here: origination/propagation accuracy against a known
-cause — the one corpus with a known cause (#49's) turns out to be structurally unreachable by the
-patch mechanism (the fault lives in local agent code, never a recorded response); notebook 079 has
-the full reasoning and what fixing it would take.
+Two more nulls (a cross-system corpus at n=4, and a scripted harness where position ties
+alignment), each number's command and file, and how to read every row:
+**[`docs/evidence.md`](docs/evidence.md)**.
 
-## What exists today
+Reproduce the headline offline, no key:
 
-| Artifact | What it is |
+```sh
+cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_multiseed_test.json
+```
+
+## What it does not do
+
+- **It does not find a failure's cause by comparing two independent runs.** That is the measured
+  null above. It works when the two runs are the same run up to a point: a recording and its
+  replay, or a before/after under a pinned environment.
+- **`replay` does not test the model.** Responses come from the recording, so a model upgrade with
+  unchanged prompts replays clean. It also needs reproducible requests — a prompt containing the
+  current time diverges at once.
+- **It over-claims on unrelated runs.** Two runs with no common prefix get "fork at step 0" at high
+  confidence instead of "not comparable". The fix is registered ([notebook 070](docs/notebook.md))
+  and not yet built.
+- **Alignment is quadratic in run length.** `--max-steps` (default 2000) is the guard; the wall
+  itself has been projected, not measured (#50).
+
+## Where to look
+
+| | |
 |---|---|
-| [`crates/`](crates/) | The Rust workspace (11 crates): model → ingest → align → layout → server → record → replay → attrib → judge → CLI (`diff` / `demo` / `serve`, and `--verify` on recorded runs), plus the `amberfork-bench` harness and the embedded Leptos web UI |
-| [`spike/`](spike/) | Throwaway feasibility spike (Python): alignment vs positional baseline on real multi-agent failure logs |
-| [`docs/notebook.md`](docs/notebook.md) | Engineering notebook: questions, measurements, dead ends |
-| [`docs/trace-format.md`](docs/trace-format.md) | The canonical plain-JSON trace format v1 accepts |
-| [`docs/ci.md`](docs/ci.md) | The exit-code contract and a working GitHub Actions gate |
-| [`BENCHMARK.md`](BENCHMARK.md) | Pre-registered evaluation protocol (splits, baselines, threats to validity) |
-| [`DESIGN.md`](DESIGN.md) | Visual system ("sameness recedes, divergence glows") |
-| [`docs/design/`](docs/design/) | Architecture + positioning corpus (the locked build plan) |
+| [`docs/notebook.md`](docs/notebook.md) | The engineering notebook: 86 dated entries — registrations, results, amendments, and the experiments that failed. **The honest entry point if you are evaluating this repo.** |
+| [`docs/evidence.md`](docs/evidence.md) | Every published measurement in full |
+| [`BENCHMARK.md`](BENCHMARK.md) | The pre-registered protocol: splits, frozen parameters, baselines, sealed test set |
+| [`docs/ci.md`](docs/ci.md) | The replay and diff gates, with a workflow that runs on every push |
+| [`docs/run-on-your-own-agent.md`](docs/run-on-your-own-agent.md) | Install, record, and read a fork |
+| [`docs/trace-format.md`](docs/trace-format.md) · [`docs/cassette-format.md`](docs/cassette-format.md) | The input contracts |
+| [`docs/design/`](docs/design/) · [`DESIGN.md`](DESIGN.md) | Architecture, positioning, and the visual system |
+| [`crates/`](crates/) | 11 Rust crates: model → ingest → align → layout → server → record → replay → attrib → judge → CLI, plus the `amberfork-bench` harness. Engine crates are sync and pure; async is confined to the I/O edges. The web UI ([`ui/`](ui/)) is a separate Leptos workspace |
 
-## The natural-fork attempts, and what each one measured
+## Status
 
-Three corpora, three different reasons the headline does not transfer. Each was diagnosed
-rather than dropped, and each diagnosis is dated in the notebook.
-
-### Mode A′ — real cross-system pairs (directional, n=4)
-
-The second protocol scores *natural* failures: a failing Who&When run against a passing
-reference from a **different agent system** (a ServiceNow TapeAgents tape) on the same GAIA
-task. The whole pipeline is in-tree, pinned, and reproducible:
-
-```sh
-cargo run -q -p amberfork-bench -- fetch    # pinned upstream data → bench/data/ (never committed)
-cargo run -q -p amberfork-bench -- build-pairs --tapes bench/data/tapes --logs bench/data/whowhen --out bench/data/pairs_real
-cargo run -q -p amberfork-bench -- run --pairs bench/data/pairs_real --split all
-```
-
-Public data yields exactly **4 pairs** (only 4 published tapes pass their task), and the honest
-result is a **null**: the engine reaches 0.50 ±3 while *random guessing reaches 0.75*, because
-these runs are 7–10 steps long (a ±3 window covers most of the run) and a reference from a
-different system legitimately diverges from step 0, making the annotated "decisive step" a weak
-gold target. Both limits were pre-registered in [`BENCHMARK.md`](BENCHMARK.md)'s
-threats-to-validity before the measurement (notebook 016). So Mode A′ ships as a disclosed
-limit, not a headline — the table (cross-system banner included) re-renders offline:
-
-```sh
-cargo run -q -p amberfork-bench -- report --results bench/results/mode_a_prime_realpairs_all.json
-```
-
-### TRAIL↔HAL natural pairs (n=69) — a null, and the LLM-judge baseline that measured it
-
-The third protocol is the strongest attempt at a natural-fork number: a real **TRAIL** failing
-trace against a real **HAL** passing reference on the same GAIA task, same Open Deep Research
-scaffolding, differing backing model, with gold taken from TRAIL's *human-annotated* error span.
-117 traces yield **69 pairs** (23 dev / 46 test).
-
-The engine scores **0.00 exact** on it, against random's 0.14 — worse than guessing:
-
-```sh
-cargo run -q -p amberfork-bench -- report --results bench/results/trail_hal_natural_all.json
-```
-
-Rather than leave that as an unexplained null, the missing baseline was built and
-[pre-registered first](docs/notebook.md) (notebook 069, written before any judge code existed):
-**does just asking a frontier model beat the aligner?** Five arms on the 23 dev pairs, zero
-exclusions, every answer cached so the table replays offline:
-
-| arm | model | exact | ±3 | n |
-|---|---|---|---|---|
-| `random` | — | 0.174 | 0.565 | 23 |
-| `nw-lexical/resync` (the engine) | — | **0.000** | 0.348 | 23 |
-| `judge-single` | gpt-5.6-sol | **0.261** | 0.522 | 23 |
-| `judge-paired` | gemini-3.6-flash | 0.217 | 0.478 | 23 |
-| `judge-paired` | gpt-5.6-sol | 0.174 | 0.478 | 23 |
-| `judge-paired` | qwen3:8b (local) | 0.087 | 0.565 | 23 |
-| `judge-stepwise` | gpt-5.6-luna | 0.087 | 0.217 | 23 |
-
-**Three of five judge arms beat the engine with paired-bootstrap intervals excluding zero.** The
-result is published as measured (`bench/results/judge_*.json`, notebook 071).
-
-Two findings matter more than the ranking. First, **no arm meaningfully clears random** — at ±3
-random matches or beats every judge arm (qwen3:8b, the local/free arm, ties it exactly; the four
-frontier-model arms all fall below it), so this corpus barely discriminates *any* method. Second,
-inspecting per-pair predictions rather than rates: **all three aligner arms
-predict step 0 on all 23 pairs.** The pairs share *zero* step names — TRAIL logs
-`CodeAgent.run`/`web_search`, HAL logs `openai.chat.completions.create`/`tool_result` — so there is
-no common prefix to fork from and the fork rule degenerates to a constant. The 0.348 at ±3 is
-entirely the 8 of 23 pairs whose gold happens to sit at step ≤ 3.
-
-That diagnosis, and the repair it implies, are [pre-registered in notebook 070](docs/notebook.md)
-with the decision rule fixed in advance — including the branch where the corpus is retired as a
-documented negative result. **The chimera numbers above are untouched** (protocol rule 10: a
-baseline never disturbs the product's published table).
-
-### Real-agent perturbation (n=25) — ties the weak baseline, and the reason is the finding
-
-The fourth attempt at natural-fork evidence, and the first with no found-corpus defect to blame: a
-real local model (`qwen3:8b`) drives a real tool-using agent through `amberfork record`, with one
-tool's return value swapped for a wrong one (a stale doc, a wrong status) — gold is the exchange
-where the bad value first reaches the model, known from the harness's own bookkeeping, not
-annotated. [Pre-registered in notebook 074](docs/notebook.md); result in 075.
-
-```sh
-cargo run -q -p amberfork-bench -- report --results bench/results/perturbation_all.json
-```
-
-| arm | exact | ±3 | n |
-|---|---|---|---|
-| random | 0.32 | 1.00 | 25 |
-| pos-lexical | **1.00** | 1.00 | 25 |
-| nw-structural/resync | 0.00 (100% abstain) | 0.00 | 25 |
-| nw-lexical/resync (the engine) | **1.00** | 1.00 | 25 |
-
-The engine is right on every pair — and so is the shallow positional diff it exists to beat. Read
-plainly: **this is not a win.** Alignment only earns its keep over position when two runs can
-differ in length or order before the point that matters (chimera's benign-noise model manufactures
-exactly that, on purpose); this harness perturbs *content* but never *structure*, so the two runs
-stay index-aligned by construction and position ties alignment every time, regardless of where the
-fork falls. `nw-structural/resync` abstains on all 25 for an unrelated, confirmed reason: its
-content-blind cost model keys on `(kind, name)`, and every step here shares one name — a mechanical
-fact about today's cassette-normalization path (one exchange, one undifferentiated `Llm` step),
-not a claim about real agents in general. Full diagnosis, including what a version that could
-actually discriminate the two arms would need, is in notebook 075.
-
-## The known defect, stated plainly
-
-On two runs that share no common prefix, amberfork reports "fork at step 0" with high confidence
-(measured: 0.97) rather than admitting the runs are not comparable. The abstention guard
-pre-registered in [notebook 070](docs/notebook.md) is the fix. It is the highest-value item on
-the list, because it affects real use, not a benchmark row.
-
-## Where this goes next
-
-**The next experiment is already registered.** Notebook 070 pre-registers the ingest repair the
-judge run's diagnosis implies — tool-name reconstruction and provider-envelope unwrapping in
-`hal.rs`, abstention when two runs share no common ground, and a granularity-based corpus
-stratification — with its success test, its blast radius, and its failure branch all fixed *before*
-implementation. Whoever runs it, including a future me, is bound by a decision rule they did not
-write after seeing the number.
-
-## Project status — v1.0.0, tagged (2026-09-04)
-
-Everything above works and is reproducible today. The v1.0 credibility milestone is done — the
-LLM-judge baseline, the fourth natural-fork attempt, a real `--verify` confirmation rate, and two
-documentation-drift issues closed with reasoning recorded, not just fixed — with one item
-(perf/scale measurement, #50) deliberately deferred rather than completeness for its own sake.
-
-**Done and standing:** 11 crates, the chimera sealed-test protocol (scored at four release tags,
-identical every time), the Mode A′ null, the TRAIL↔HAL null, the LLM-judge baseline, and the
-real-agent perturbation tie (#49) — four honest attempts at natural-fork evidence, each with its
-own diagnosed mechanism — plus a real, measured `--verify` confirmation rate (#48, 87% on n=15, zero
-indeterminate). Cassettes and results committed so every table replays offline with no API key.
-
-**Distribution is done.** Five released targets, each built and smoke-tested on a runner of its own
-architecture (#53); the CI gate contract in [`docs/ci.md`](docs/ci.md), whose recipe runs on every
-push as a real workflow rather than sitting in a document (#54); repo and crate metadata (#55).
-
-**What is left.** `#57` (the writeup, drafted and committed, unblocked now that #56's reveal has
-run) is the last open v1.0 item; `#50` (perf ceiling) is deliberately deferred, a lower credibility
-return than what shipped this pass. `#53`/`#54`/`#55` track work that has landed and are pending
-close. `#47`, `#48`, `#51`, `#52`, `#56` are closed. `#58`–`#63` are decided post-v1 deferrals, not
-available work. Two acceptance items wait on the next release rather than on code: crates.io only
-shows the new homepage/documentation links once a version is published, and the five-target matrix
-is proven on `workflow_dispatch` but not yet on a tag. `CONTRIBUTING.md` describes the working
-agreement; `BENCHMARK.md` governs any number that gets published.
-
-If you are evaluating this repo: the honest entry point is
-[`docs/notebook.md`](docs/notebook.md) — 81 dated entries including the experiments that failed,
-the nulls above, and the baseline that beat us.
+v1.0.0 is tagged and published. On `main` since then: the `replay` verb, native Claude Code and
+ATIF ingest, and the Terminal-Bench and replay measurements. Open before the next release: the
+no-common-prefix guard, the scale measurement (#50), and a measurement of `replay` on a long,
+free-running agent — the one regime where its advantage over live runs is expected and unproven.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) describes the working agreement; [`CHANGELOG.md`](CHANGELOG.md)
+has the rest.

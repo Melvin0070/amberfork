@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- **README rewritten; the detail moved to `docs/evidence.md`.** The README now leads with
+  record-then-replay, carries one table of every published measurement with its n and an honest
+  one-line reading (including the nulls), and states what the tool does not do. Nothing was
+  deleted: the full per-experiment sections live in `docs/evidence.md`, with the Terminal-Bench
+  and replay results added.
 - **`amberfork replay <cassette> -- <cmd>` — a user-facing replay verb, strict and offline.**
   Serves a recorded run back to the agent with no provider, no network and no key, and judges
   what the agent did: exit 0 it followed the tape, 1 it diverged (the first request not on the
