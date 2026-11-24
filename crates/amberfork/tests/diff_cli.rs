@@ -282,3 +282,87 @@ fn verify_runs_below_one_is_rejected_by_the_parser() {
         .code(EXIT_TROUBLE)
         .stderr(predicates::str::contains("invalid value"));
 }
+
+/// One Claude Code transcript record per element, joined into the `.jsonl` a session writes.
+fn claude_code_session(session_id: &str, policy_doc: &str, verdict: &str, action: &str) -> String {
+    let records = [
+        serde_json::json!({"type": "mode", "sessionId": session_id, "mode": "default"}),
+        serde_json::json!({"type": "user", "sessionId": session_id, "isSidechain": false,
+            "message": {"role": "user", "content": "Handle the refund for order 8841"}}),
+        serde_json::json!({"type": "assistant", "sessionId": session_id, "isSidechain": false,
+            "message": {"role": "assistant", "model": "claude-opus-5-5", "content": [
+                {"type": "text", "text": "I'll look up the refund policy first."}]}}),
+        serde_json::json!({"type": "assistant", "sessionId": session_id, "isSidechain": false,
+            "message": {"role": "assistant", "model": "claude-opus-5-5", "content": [
+                {"type": "tool_use", "id": "toolu_01", "name": "Read",
+                 "input": {"file_path": "policy/refunds.md"}}]}}),
+        serde_json::json!({"type": "user", "sessionId": session_id, "isSidechain": false,
+            "message": {"role": "user", "content": [
+                {"type": "tool_result", "tool_use_id": "toolu_01", "content": policy_doc}]}}),
+        serde_json::json!({"type": "assistant", "sessionId": session_id, "isSidechain": false,
+            "message": {"role": "assistant", "model": "claude-opus-5-5", "content": [
+                {"type": "text", "text": verdict}]}}),
+        serde_json::json!({"type": "assistant", "sessionId": session_id, "isSidechain": false,
+            "message": {"role": "assistant", "model": "claude-opus-5-5", "content": [
+                {"type": "tool_use", "id": "toolu_02", "name": "Bash",
+                 "input": {"command": action}}]}}),
+        serde_json::json!({"type": "user", "sessionId": session_id, "isSidechain": false,
+            "message": {"role": "user", "content": [
+                {"type": "tool_result", "tool_use_id": "toolu_02", "content": "ok"}]}}),
+    ];
+    records.iter().map(|record| format!("{record}\n")).collect()
+}
+
+#[test]
+fn two_claude_code_sessions_diff_with_no_conversion_step() {
+    // The zero-setup path: the transcripts already on a developer's disk are valid inputs as
+    // they are. Steps: 0 user · 1 assistant · 2 Read · 3 assistant · 4 Bash — the stale policy
+    // doc lands in step 2's output, and nothing after it re-syncs.
+    let dir = tempfile::tempdir().unwrap();
+    let good = dir.path().join("good-session.jsonl");
+    let bad = dir.path().join("bad-session.jsonl");
+    std::fs::write(
+        &good,
+        claude_code_session(
+            "good",
+            "Refunds v3 (CURRENT). Electronics: 30-day return window, refund to original payment.",
+            "Order is 23 days old, inside the 30-day window. Issuing the refund.",
+            "payments refund --order 8841 --amount 129.00",
+        ),
+    )
+    .unwrap();
+    std::fs::write(
+        &bad,
+        claude_code_session(
+            "bad",
+            "Refunds v1 (ARCHIVED). Electronics: 14 days from delivery, store credit only.",
+            "Past the 14-day limit, so policy says no. Drafting a polite denial.",
+            "crm set-status --order 8841 --status denied",
+        ),
+    )
+    .unwrap();
+
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--json")
+        .assert()
+        .code(EXIT_FORKED);
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let result: DiffResult = serde_json::from_str(&stdout).expect("a valid DiffResult");
+    assert_eq!(
+        result.fork_step_observed(),
+        Some(2),
+        "the fork is the Read that returned the stale policy"
+    );
+
+    amberfork()
+        .arg("diff")
+        .arg(&good)
+        .arg("--against")
+        .arg(&good)
+        .assert()
+        .code(EXIT_CONVERGED);
+}

@@ -62,11 +62,27 @@ Rules of thumb: `kind` is one of `llm` / `tool` / `agent` / `other`; every step 
 kept and surfaced as warnings, never fatal. You need **two** files: the failing run and a
 known-good reference of the same task.
 
-### A worked, real example: Claude Code sessions
+### Claude Code sessions: no conversion needed
 
-Any agent framework's log converts with a few dozen lines of script. Here is the one we
-use on [Claude Code](https://claude.com/claude-code) session transcripts
-(`~/.claude/projects/<project>/<session-id>.jsonl`) — real multi-megabyte agent
+A [Claude Code](https://claude.com/claude-code) session transcript is read as it is — point
+`diff` (or `serve`) straight at two of the files already on your disk:
+
+```sh
+amberfork diff  ~/.claude/projects/<project>/<bad-session>.jsonl \
+      --against ~/.claude/projects/<project>/<good-session>.jsonl
+```
+
+Each assistant text block becomes an `llm` step named `assistant` (the model id is kept in
+`attrs`, so a before/after-model-bump pair still aligns), each tool call becomes a `tool` step
+with its result paired back as the output, and each prompt becomes an `other` step named
+`user`. Subagent (sidechain) traffic and `thinking` blocks are left out. A transcript does not
+know whether the session succeeded, so the header shows no pass/fail.
+
+### A worked example for any other framework
+
+Any agent framework's log converts with a few dozen lines of script. As a template, here is
+the converter we first used on Claude Code session transcripts
+(`~/.claude/projects/<project>/<session-id>.jsonl`), before the native reader above existed — real multi-megabyte agent
 trajectories. The mapping: each assistant text block → an `llm` step, each `tool_use` →
 a `tool` step whose `tool_result` is paired back by id, each user message → `other`.
 

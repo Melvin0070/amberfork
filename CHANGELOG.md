@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- **Claude Code sessions load natively.** `amberfork diff` and `serve` accept a session
+  transcript (`~/.claude/projects/<project>/<session-id>.jsonl`) directly — no conversion script.
+  New `amberfork_ingest::claudecode` adapter; the CLI sniffs the transcript's `type` + `sessionId`
+  record shape ahead of the generic JSON-Lines error, which still fires for any other JSONL.
+
 ## [1.0.0] — 2026-09-04
 
 v1.0 — the credibility release (milestone issues #46–#57, `#50` deliberately deferred). Where v0.8

@@ -126,6 +126,12 @@ pub fn load_run(path: &Path) -> Result<Ingested, LoadError> {
             warnings: Vec::new(),
         });
     }
+    // A Claude Code transcript is the one foreign shape sniffed here: it is already on the
+    // user's disk, and without this it dead-ends in the generic JSON-Lines error.
+    if amberfork_ingest::claudecode::looks_like_session(&text) {
+        return amberfork_ingest::claudecode::from_jsonl_str(&text)
+            .map_err(|err| LoadError::Ingest(err.with_path(path)));
+    }
     amberfork_ingest::from_json_str(&text).map_err(|err| LoadError::Ingest(err.with_path(path)))
 }
 

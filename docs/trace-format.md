@@ -68,6 +68,14 @@ Each foreign shape has its own namespaced adapter in `amberfork-ingest`; the can
 above never bends to fit one. Status is stated honestly — "framework-agnostic" is a covered
 subset today, not a blanket claim.
 
+- **Claude Code session transcripts** (`~/.claude/projects/<project>/<session-id>.jsonl`) —
+  **implemented, and the only adapter `amberfork diff` / `serve` auto-detect**
+  (`amberfork_ingest::claudecode`, one `Run` per transcript). Assistant `text` → `llm` step named
+  `assistant` (model id in `attrs`, never the name); `tool_use` → `tool` step, its `tool_result`
+  paired back by id as the output (`is_error` → `attrs`); a prompt → `other` step named `user`.
+  Sidechain (subagent) and meta records and `thinking` blocks are skipped; `outcome` is never set.
+  The format is undocumented upstream, so unknown record and block types are skipped, not fatal.
+  The adapters below are library APIs today — the CLI does not yet route files to them.
 - **OpenInference** (`openinference.*` / `llm.*` / `tool.*` over OTLP/JSON) — **implemented**
   (`amberfork_ingest::openinference`, one `Run` per `traceId`). Covered: `openinference.span.kind`
   LLM/TOOL/AGENT → `kind` (CHAIN/RETRIEVER/EMBEDDING/… fold to `other`); `tool.name` → `name`;
