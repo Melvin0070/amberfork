@@ -62,9 +62,16 @@ Both transcripts are real: the agent and recording are
   `--upstream` (below) and point the agent at it — that is a live run and is no longer a gate.
 - **Requests must be reproducible.** A prompt that embeds the current time or a random id differs
   on every run and will diverge at once. Tool-call ids, which SDKs mint fresh per run, are
-  normalized for you; anything else non-deterministic in a request is yours to pin. How often a
-  real, unchanged agent replays cleanly has **not yet been measured** — treat a divergence at
-  exchange 0 on an agent you did not change as a reproducibility problem first.
+  normalized for you; anything else non-deterministic in a request is yours to pin. Treat a
+  divergence at exchange 0 on an agent you did not change as a reproducibility problem first.
+- **What has been measured, and how little.** On 30 real recordings of a small tool-using agent
+  (5 tasks, 2 or 4 exchanges each, a local model), an unchanged agent followed its tape 30 times out
+  of 30, and an agent with one tool's return value changed diverged 30 times out of 30
+  ([notebook 086](notebook.md)). That is a round-trip check on one deterministic agent, not a
+  false-positive rate for yours: 0/30 bounds it under about 11% for that agent only. On that same
+  short agent, diffing two live runs was nearly as quiet (2 of 50 forked), so the advantage of
+  replay over live runs — large in principle on long, free-running agents — has not itself been
+  measured.
 - **The agent's exit code is reported, not returned.** A recording of a failing run replays to
   the same failure, and that is "followed the tape" (exit 0).
 

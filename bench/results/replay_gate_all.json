@@ -1,0 +1,803 @@
+{
+  "protocol": "replay-gate",
+  "notebook_registration": 85,
+  "model": "qwen3:8b",
+  "gold_rule": "first exchange whose response calls the designated tool, plus one",
+  "gold_defects": [],
+  "unchanged": {
+    "false_positive": {
+      "hits": 0,
+      "n": 30,
+      "rate": 0.0,
+      "ci95_lo": 0.0,
+      "ci95_hi": 0.11351339317396876
+    },
+    "trouble": 0
+  },
+  "changed": {
+    "detected": {
+      "hits": 30,
+      "n": 30,
+      "rate": 1.0,
+      "ci95_lo": 0.8864866068260312,
+      "ci95_hi": 0.9999999999999999
+    },
+    "exact_exchange": {
+      "hits": 30,
+      "n": 30,
+      "rate": 1.0,
+      "ci95_lo": 0.8864866068260312,
+      "ci95_hi": 0.9999999999999999
+    },
+    "trouble": 0
+  },
+  "live_diff_same_config": {
+    "note": "amberfork diff on pairs of perturbed sessions of one task: two live runs, nothing changed",
+    "forked": {
+      "hits": 2,
+      "n": 50,
+      "rate": 0.04,
+      "ci95_lo": 0.011038884327619805,
+      "ci95_hi": 0.1346009068750702
+    },
+    "trouble": 0
+  },
+  "raw": {
+    "unchanged": [
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_00",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 4 of 4 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 4 of 4 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 4 of 4 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 4 of 4 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 4 of 4 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "reference",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_00",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "order_status",
+        "tape": "reference",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_00",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_window",
+        "tape": "reference",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_00",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "reference",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_00",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "reference",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 2 of 2 recorded exchange(s) served, agent exited 0"
+      }
+    ],
+    "changed": [
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_00",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 4 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_01",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 4 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_02",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 4 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_03",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 4 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "perturbed_04",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 4 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "cancellation_fee",
+        "tape": "reference",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_00",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_01",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_02",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_03",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "order_status",
+        "tape": "perturbed_04",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "order_status",
+        "tape": "reference",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_00",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_01",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_02",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_03",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_window",
+        "tape": "perturbed_04",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_window",
+        "tape": "reference",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_00",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_01",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_02",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_03",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "perturbed_04",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "shipping_cutoff",
+        "tape": "reference",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_00",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_01",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_02",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_03",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "perturbed_04",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "warranty_eligibility",
+        "tape": "reference",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 2 recorded exchange(s) served, agent exited 1)"
+      }
+    ],
+    "live_pairs": [
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_01.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "cancellation_fee",
+        "good": "perturbed_03.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_01.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "order_status",
+        "good": "perturbed_03.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_01.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 1
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 1
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "refund_window",
+        "good": "perturbed_03.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_01.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "shipping_cutoff",
+        "good": "perturbed_03.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_01.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_00.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_02.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_01.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_03.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_02.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      },
+      {
+        "task": "warranty_eligibility",
+        "good": "perturbed_03.cassette.json",
+        "bad": "perturbed_04.cassette.json",
+        "exit": 0
+      }
+    ]
+  }
+}

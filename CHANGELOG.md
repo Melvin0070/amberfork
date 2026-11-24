@@ -16,6 +16,11 @@
   96.7% fork rate for two live runs, and fixes a `record` command that omitted its required flags.
   The example workflow runs the replay gate against a committed agent and recording
   (`docs/examples/ci-gate/`) on every push.
+- **The replay gate measured on real recordings (notebooks 085–086).** 30 recorded sessions of a
+  real tool-using agent: 0/30 false positives on an unchanged agent, 30/30 detected when a tool's
+  return value changed. Published with its limits — a round-trip check on one short deterministic
+  agent, every change at the same exchange so it is not a localization result, and no measurable
+  advantage over live diff on that corpus (2/50 forked).
 - **Claude Code sessions load natively.** `amberfork diff` and `serve` accept a session
   transcript (`~/.claude/projects/<project>/<session-id>.jsonl`) directly — no conversion script.
   New `amberfork_ingest::claudecode` adapter; the CLI sniffs the transcript's `type` + `sessionId`

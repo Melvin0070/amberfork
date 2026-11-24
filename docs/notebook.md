@@ -4907,3 +4907,78 @@ shipped binary, read `$?`).
 
 Governing docs: `BENCHMARK.md` rules 3, 4, 6, 8; notebooks 074/075 (the harness and its recordings),
 082/082a (the gate question), 084 (the result this follows from).
+
+## 086 · 2026-11-24 · RESULT: the replay gate round-trips real recordings — 0/30 false positives, 30/30 caught — and the same-corpus contrast with live diff is a null
+
+Run once at commit `2802c4b` (the commit that carries 085, pushed first). No model call, no
+network. Document: `bench/results/replay_gate_all.json`.
+
+```sh
+cargo build -q --release -p amberfork
+python3 spike/score_replay_gate.py --amberfork-bin target/release/amberfork
+```
+
+| measurement | count | rate | Wilson 95% |
+|---|---|---|---|
+| replay, unchanged agent → exit 1 (false positive) | 0 / 30 | 0.000 | [0.000, 0.114] |
+| replay, changed agent → exit 1 (detected) | 30 / 30 | 1.000 | [0.886, 1.000] |
+| replay, changed agent → named the gold exchange | 30 / 30 | 1.000 | [0.886, 1.000] |
+| `diff` on two live runs, same configuration → exit 1 | 2 / 50 | 0.040 | [0.011, 0.135] |
+
+No exit 2 in any class. No gold defect: for all 25 perturbed tapes the gold derived from the tape
+equals the `gold_step` the agent wrote at record time.
+
+**The registered prediction held on all three counts.** By 085's rule, `docs/ci.md`'s "not yet
+measured" sentence is replaced with these counts and limits, and no larger claim is made.
+
+### What the result is worth — three things it does not show
+
+**1. It is the conformance test 085 said it would be.** Thirty real recordings — real `qwen3:8b`
+output, captured by the shipped `record`, with tool calls in the bodies — replay through the
+shipped matcher with a real agent and round-trip exactly. Before today the only evidence was
+hand-built JSON. That is a real thing to know and it is the whole of what the first row claims.
+0/30 bounds the false-positive rate under 11.4% *for this agent*.
+
+**2. "30/30 at the exact exchange" is not a localization result, and must not be quoted as one.**
+Every gold in this corpus is exchange 1 — notebook 075 already recorded that all 25 gold steps
+landed at index 1, and the five clean tapes do too. A procedure that always answered "1" scores
+30/30. What the row shows is that replay stops at the first request that differs, which here is
+the only place a difference could be. It does not show replay finding a change at depth, and
+this corpus cannot.
+
+**3. The same-corpus contrast with live diff is a null, and it corrects how 084 should be
+read.** 085 registered this contrast so the comparison would not lean on Terminal-Bench. On these
+recordings, two live runs of one unchanged configuration fork only 4% of the time (2/50), and
+that interval [0.011, 0.135] overlaps replay's [0.000, 0.114] almost entirely. **On this agent,
+replay is not measurably better than diffing two live runs.**
+
+The reason is the corpus, and it is the same reason 075 gave for a different tie: these runs are
+2 or 4 exchanges (25 tapes and 5) with a scripted tool sequence, so two samples have almost no room to differ. 084's
+96.7% was measured on free-running agents with a median of 49 steps. Both numbers are true; they
+describe different regimes, and the honest statement is:
+
+> Two live runs fork 97% of the time on long, free-running agents (084) and 4% of the time on a
+> short, scripted one (this entry). Replay's advantage is therefore *expected* to grow with run
+> length and freedom, and has been *measured* nowhere: the one corpus where replay ran is the one
+> where it has nothing to beat.
+
+That gap is the next measurement and it needs new recordings — a longer, freer agent recorded
+through `record`, which means a live model. It is registered separately when it is run, not
+assumed here.
+
+**082, answered on its variant.** 082's negative class (clean × clean) was never recorded; 085
+substituted perturbed × perturbed, one configuration sampled five times. Its 4.0% [1.1%, 13.5%]
+is the first measurement of that question. 082's rule turns on whether the interval's upper bound
+is under 0.10; it is not (0.135), so neither branch fires cleanly at n=50 — reported as
+inconclusive on 082's own terms, with both forking pairs in `refund_window`, and both involving session `perturbed_02`.
+
+### What changes
+
+- `docs/ci.md`: the "has not yet been measured" sentence becomes the measured counts, with limits
+  1–3 beside them.
+- Nothing else. In particular the README and writeup may say replay *round-trips real recordings*
+  and *catches an injected tool change*; they may not say it localizes, and may not present 97%
+  vs 0% as a measured before/after.
+
+Governing docs: notebook 085 (the registration), 084 (the 96.7%), 082/082a (the gate rule),
+075 (why this corpus is short and why every gold is 1), `BENCHMARK.md` rules 3, 6, 8.
