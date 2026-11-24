@@ -62,6 +62,7 @@ mod sanitize;
 mod score;
 mod split;
 mod tbench;
+mod tbench_score;
 
 use arms::Prediction;
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -110,6 +111,9 @@ enum Command {
     /// (pre-registered in docs/notebook.md 083). Benchmark-use only: reads and writes under
     /// bench/data/, never a committed path.
     BuildTbenchPairs(BuildTbenchPairsArgs),
+    /// Score the Terminal-Bench natural pairs: the gate's false-positive rate and in-sync
+    /// discrimination against the positional and length-only baselines (notebook 083).
+    ScoreTbench(ScoreTbenchArgs),
     /// Fetch the pinned raw upstream data `build-pairs` consumes (issue #7).
     Fetch(FetchArgs),
     /// Decrypt a HAL reference-trace zip into the plaintext dump `hal` ingest reads (issue #41).
@@ -260,6 +264,26 @@ struct BuildTbenchPairsArgs {
     /// Directory to write `pairs.json` and `runs/` into (created if absent).
     #[arg(long, value_name = "DIR")]
     out: PathBuf,
+}
+
+#[derive(Args)]
+struct ScoreTbenchArgs {
+    /// The directory `build-tbench-pairs` wrote (`pairs.json` + `runs/`).
+    #[arg(long, value_name = "DIR")]
+    pairs: PathBuf,
+
+    /// Which protocol split to score. Defaults to dev: the test side is sealed and scored
+    /// once per release tag (rule 1).
+    #[arg(long, value_enum, default_value_t = SplitSelection::Dev)]
+    split: SplitSelection,
+
+    /// Frozen engine parameters (protocol rule 2).
+    #[arg(long, value_name = "FILE", default_value = "bench/params.toml")]
+    params: PathBuf,
+
+    /// Also write the full results document as JSON.
+    #[arg(long, value_name = "FILE")]
+    json_out: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -562,6 +586,7 @@ fn main() -> ExitCode {
         Command::BuildTrailPairs(args) => build_trail_pairs(&args),
         Command::BuildPerturbationPairs(args) => build_perturbation_pairs(&args),
         Command::BuildTbenchPairs(args) => build_tbench_pairs(&args),
+        Command::ScoreTbench(args) => score_tbench(&args),
         Command::Fetch(args) => fetch_data(&args),
         Command::HalDecrypt(args) => hal_decrypt(&args),
         Command::HalFetch(args) => hal_fetch_data(&args),
@@ -893,6 +918,44 @@ fn build_tbench_pairs(args: &BuildTbenchPairsArgs) -> Result<ExitCode, Box<dyn s
         report.excluded.len(),
         args.out.display(),
     );
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+fn score_tbench(args: &ScoreTbenchArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let frozen = params::load(&args.params)?;
+    let manifest = args.pairs.join("pairs.json");
+    let text = std::fs::read_to_string(&manifest)
+        .map_err(|err| format!("{}: {err}", manifest.display()))?;
+    let report: tbench::BuildReport = serde_json::from_str(&text)?;
+    let split = match args.split {
+        SplitSelection::Dev => Split::Dev.as_str(),
+        SplitSelection::Test => Split::Test.as_str(),
+        SplitSelection::All => {
+            return Err(
+                "score-tbench scores one split at a time: --split dev or --split test".into(),
+            );
+        }
+    };
+
+    let scores = tbench_score::score_split(&report, &args.pairs, split, &frozen.params)?;
+    let excluded = report
+        .excluded
+        .iter()
+        .filter(|pair| pair.spec.split == split)
+        .count();
+    let results = tbench_score::summarize(
+        scores,
+        split,
+        &frozen.sha256,
+        frozen.params.fork.tau,
+        excluded,
+    );
+    if let Some(path) = &args.json_out {
+        std::fs::write(path, serde_json::to_string_pretty(&results)?)
+            .map_err(|err| format!("{}: {err}", path.display()))?;
+    }
+    println!("params: {} sha256:{}", frozen.source, frozen.sha256);
+    print!("{}", tbench_score::render(&results));
     Ok(ExitCode::from(EXIT_OK))
 }
 

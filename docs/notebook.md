@@ -4691,3 +4691,34 @@ uv run --no-project --with pyarrow python -I spike/tbench_to_jsonl.py \
 cargo run -q --release -p amberfork-bench -- build-tbench-pairs \
     --trials bench/data/tbench/trials.jsonl --out bench/data/tbench/pairs
 ```
+
+### 083b · 2026-11-24 · AMENDMENT to 083 — which steps count as "in sync" — still before any score
+
+**No pair has been scored.** Implementing the statistic exposed an ambiguity in 083's wording,
+resolved here by the founder before the first scoring run.
+
+083 says "sync fraction = sync moves ÷ alignment length". In the engine a `Sync` *move* is any
+paired step, matching or not — the aligner pairs two dissimilar steps whenever that is cheaper
+than a gap. A step is *in sync* only when its cost is ≤ `tau` (0.3, frozen), which is the
+definition the fork rule itself uses (`fork.rs`: "a sync move with `cost <= tau` counts as
+in-sync"). The two readings are different statistics.
+
+**Resolution: in-sync.** The headline statistic is `(Sync moves with cost ≤ tau) ÷ alignment
+length`. The `pos-lexical` baseline is the same thing with no alignment: positions `i` below the
+shorter run's length whose two steps cost ≤ tau, over the longer run's length.
+
+**Why this reading and not the literal one — a reason that does not depend on any result.**
+Under the literal reading the positional baseline pairs every index up to the shorter length, so
+its score is `min(len)/max(len)` — *identical* to the length-only baseline. 083 registered those
+as two different baselines answering two different questions. The registration is only
+self-consistent under the in-sync reading.
+
+**The literal statistic is still computed and published**, as `engine_paired`, labelled
+secondary. No branch of the decision rule reads it. It is there so the choice between readings
+can be audited against the number it would have produced.
+
+**One limit, noticed while reading the cost model and registered rather than fixed:** the frozen
+lexical cost compares `"{name}: {outputs}"` — a step's *inputs* are not compared. A tool call
+that carries no observation of its own (every call but the last in a multi-call turn, per the
+adapter rule in 083) is therefore compared by tool name alone. The engine is not changed for
+this corpus (rules 2 and 10); it is a named threat to whatever the number says.
