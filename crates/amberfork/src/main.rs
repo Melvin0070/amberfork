@@ -26,7 +26,7 @@ use amberfork_judge::{ExplainContext, Judge, OllamaJudge, ground};
 use amberfork_layout::{Document, ViewModel};
 use amberfork_model::{DiffResult, Run, Warning};
 use amberfork_record::{CaptureProxy, Cassette};
-use amberfork_replay::{NoUpstream, ReplayServer};
+use amberfork_replay::{LiveUpstream, NoUpstream, ReplayServer, Upstream};
 use amberfork_server::Server;
 use clap::{Args, Parser, Subcommand};
 use load::{LoadError, load_run};
@@ -241,6 +241,21 @@ struct ReplayArgs {
     /// to the real provider and replay nothing.
     #[arg(long = "base-url-env", value_name = "NAME", required = true)]
     base_url_env: Vec<String>,
+
+    /// A real provider origin, e.g. `https://api.openai.com`. Without it replay is strict and
+    /// offline: the first request not on the tape ends the run. With it, off-tape requests are
+    /// relayed there, so you can see what the changed agent goes on to do — this needs the
+    /// network and the agent's API key.
+    #[arg(long, value_name = "URL")]
+    upstream: Option<String>,
+
+    /// Write the re-executed run as a cassette — the candidate to `diff` against the recording.
+    #[arg(long, value_name = "FILE")]
+    out: Option<PathBuf>,
+
+    /// Id stamped into the re-executed cassette.
+    #[arg(long, value_name = "ID", default_value = "replay")]
+    id: String,
 
     /// The agent command to run, after `--` — e.g. `-- python agent.py`.
     #[arg(value_name = "CMD", last = true, required = true, num_args = 1..)]
@@ -572,7 +587,8 @@ async fn record_session(args: &RecordArgs) -> ExitCode {
 }
 
 /// `amberfork replay <cassette> -- <cmd>`: re-run the agent with every provider call answered
-/// from the recording. Strict and offline — nothing is relayed, so no network and no key.
+/// from the recording. Strict and offline by default — nothing is relayed, so no network and no
+/// key; with `--upstream`, a request the tape cannot answer goes to the real provider instead.
 ///
 /// The exit contract is `diff`'s, not `record`'s, because replay is a judge and not a wrapper:
 /// 0 the agent followed the tape (every recorded exchange served, nothing else asked), 1 it
@@ -605,15 +621,32 @@ fn run_replay(args: &ReplayArgs) -> ExitCode {
             return ExitCode::from(EXIT_TROUBLE);
         }
     };
-    runtime.block_on(replay_session(args, cassette))
+    match &args.upstream {
+        None => runtime.block_on(replay_session(args, cassette, NoUpstream)),
+        Some(origin) => {
+            let client = match reqwest::Client::builder().build() {
+                Ok(client) => client,
+                Err(err) => {
+                    eprintln!("amberfork: cannot build the HTTP client: {err}");
+                    return ExitCode::from(EXIT_TROUBLE);
+                }
+            };
+            let upstream = LiveUpstream::new(client, origin.clone());
+            runtime.block_on(replay_session(args, cassette, upstream))
+        }
+    }
 }
 
 /// Bind the replay listener, run the agent against it, and judge what it did. The agent is an
 /// async child for the same reason as in [`record_session`]: a blocking wait would starve the
 /// listener answering it.
-async fn replay_session(args: &ReplayArgs, cassette: Cassette) -> ExitCode {
+async fn replay_session<U: Upstream + 'static>(
+    args: &ReplayArgs,
+    cassette: Cassette,
+    upstream: U,
+) -> ExitCode {
     let recorded = cassette.exchanges.len();
-    let server = match ReplayServer::bind(cassette, NoUpstream, "replay").await {
+    let server = match ReplayServer::bind(cassette, upstream, &args.id).await {
         Ok(server) => server,
         Err(err) => {
             eprintln!("amberfork: {err}");
@@ -638,9 +671,29 @@ async fn replay_session(args: &ReplayArgs, cassette: Cassette) -> ExitCode {
         }
     };
 
-    let served = server.reexecuted().await.exchanges.len();
+    let reexecuted = server.reexecuted().await;
+    let served = reexecuted.exchanges.len();
+    if let Some(out) = &args.out {
+        // Written whatever the verdict: a diverged run is the one worth diffing.
+        if let Err(code) = write_cassette(&reexecuted, out) {
+            return code;
+        }
+        eprintln!(
+            "amberfork: re-executed run ({served} exchange(s)) → {}",
+            out.display()
+        );
+    }
     let agent = exit_code_of(&status);
     match server.first_miss().await {
+        Some(miss) if args.upstream.is_some() => {
+            eprintln!(
+                "amberfork: replay diverged at exchange {} — {} {} is not on the tape; relayed \
+                 to the provider from there ({served} exchange(s) in the re-executed run, \
+                 {recorded} recorded, agent exited {agent})",
+                miss.exchange, miss.method, miss.path,
+            );
+            ExitCode::from(EXIT_FORKED)
+        }
         Some(miss) => {
             eprintln!(
                 "amberfork: replay diverged at exchange {} — {} {} is not on the tape \

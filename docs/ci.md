@@ -1,72 +1,105 @@
 # amberfork in CI
 
-amberfork is a gate. It reads two traces, decides whether the second diverged from the first,
-and exits with a code your CI already understands. There is no threshold to tune and no
-service to sign up for.
+amberfork gives CI two gates, and they answer different questions:
+
+| gate | question | needs |
+|---|---|---|
+| `amberfork replay` | Is my agent still doing what it did when I recorded it? | one committed recording; no network, no API key |
+| `amberfork diff` | Did these two traces I already have diverge, and where? | two trace files |
+
+Use `replay` to gate changes to your agent. Use `diff` when the two runs already exist.
 
 ## The exit-code contract
 
-`amberfork diff` follows `diff(1)`:
+Both follow `diff(1)`:
 
-| exit | meaning | what CI should do |
-|---|---|---|
-| `0` | **converged** — the runs stayed aligned | pass |
-| `1` | **forked** — a divergence was found and localized | fail the job, publish the report |
-| `2` | **trouble** — unreadable, invalid, or over `--max-steps` | fail the job, but as an *infrastructure* error, not a regression |
+| exit | `replay` | `diff` | what CI should do |
+|---|---|---|---|
+| `0` | the agent followed the tape | the runs converged | pass |
+| `1` | the agent diverged from the tape | a fork was found and localized | fail the job |
+| `2` | trouble: not a cassette, agent not runnable | trouble: unreadable, invalid, or over `--max-steps` | fail the job as an *infrastructure* error |
 
 Distinguishing `1` from `2` matters. `1` is a finding about your agent. `2` means amberfork could
-not do its job — a malformed trace, a missing file, a run longer than `--max-steps` (default 2000).
-Treating them alike turns a broken export into a phantom regression.
+not do its job. Treating them alike turns a broken export into a phantom regression.
 
-Verified behaviour, not documentation drift:
+## Why the gate is record-then-replay, not two live runs
+
+The obvious gate — run the agent, diff it against a reference run — does not work, and that is a
+measurement, not a caution. On 273 pairs of real agent runs where **both runs passed the task**
+(same agent, same model, same task; 9 scaffolds), `amberfork diff` reported a fork on **96.7%**
+[93.9%, 98.3%] ([notebook 084](notebook.md)). Two independent executions of a real agent diverge
+almost immediately whether or not anything is wrong, so a diff between them cannot tell you that
+something is.
+
+`replay` removes the independence. It answers each of the agent's provider calls from the
+recording, so the new run *is* the recorded run until the agent itself sends a request the
+recording never saw. That first off-tape request is the change.
 
 ```console
-$ amberfork diff run_a.json --against run_a.json ; echo $?
+$ amberfork replay reference.cassette.json --base-url-env AGENT_BASE_URL -- python agent.py
+amberfork: replay followed the tape — 2 of 2 recorded exchange(s) served, agent exited 0
+$ echo $?
 0
-$ amberfork diff run_b.json --against run_a.json ; echo $?
+$ AGENT_SYSTEM_PROMPT="Be strict." \
+  amberfork replay reference.cassette.json --base-url-env AGENT_BASE_URL -- python agent.py
+amberfork: replay diverged at exchange 0 — POST /v1/chat is not on the tape (0 of 2 recorded exchange(s) served, agent exited 1)
+$ echo $?
 1
-$ amberfork diff missing.json --against run_a.json ; echo $?
-2
 ```
 
-## Why there is no `--gate` or `--threshold` flag
+Both transcripts are real: the agent and recording are
+[`docs/examples/ci-gate/`](examples/ci-gate/), and this repository's own
+[`ci-gate example` workflow](../.github/workflows/ci-gate-example.yml) runs them on every push.
 
-There is no `--gate` flag, and that one is a settled design position: a flag that re-exposes an
-exit code the process already returns is surface area for nothing. `amberfork diff` **is** the
-gate, and the table above is its whole contract.
+### What a replay gate does and does not check
 
-`--threshold` is a different case, and this document used to overstate it. The argument here was
-that you capture a reference with `record`, re-drive the candidate under `replay`, and therefore
-any fork is a real regression with no tolerance to tune. **There is no user-facing `replay`
-command.** `amberfork --help` lists `diff`, `demo`, `serve` and `record`; replay is internal
-machinery reachable only through `diff --verify`, which needs two already-recorded cassettes. So
-the tolerance-free path as written was not something you could actually run.
+- **It checks everything on your side of the provider boundary.** A changed prompt, a tool that
+  returns something different, a code path that makes one call more or one fewer — each changes a
+  request, and the first changed request ends the replay with exit 1. An agent that stops short of
+  the recording also exits 1.
+- **It does not check the model.** Responses come from the tape, so the model is never called. A
+  model upgrade with unchanged prompts replays to exit 0. To see what a different model does, add
+  `--upstream` (below) and point the agent at it — that is a live run and is no longer a gate.
+- **Requests must be reproducible.** A prompt that embeds the current time or a random id differs
+  on every run and will diverge at once. Tool-call ids, which SDKs mint fresh per run, are
+  normalized for you; anything else non-deterministic in a request is yours to pin. How often a
+  real, unchanged agent replays cleanly has **not yet been measured** — treat a divergence at
+  exchange 0 on an agent you did not change as a reproducibility problem first.
+- **The agent's exit code is reported, not returned.** A recording of a failing run replays to
+  the same failure, and that is "followed the tape" (exit 0).
 
-What is true today: you record two runs of the same agent, or you diff two traces you already
-have, and `diff` reports whether they forked. Two runs of a non-deterministic agent can differ for
-reasons nobody cares about, and **how often that produces a spurious fork is not yet measured** —
-so a threshold is absent because no evidence justifies a particular one, not because divergence
-has been ruled out. The measurement is pre-registered in
-[`docs/notebook.md`](notebook.md) entry 082, with the decision rule fixed before any number exists.
-See [`BENCHMARK.md`](../BENCHMARK.md) for what is and is not measured.
+### Seeing what the changed agent goes on to do
 
-## `record` does NOT follow this contract
-
-The surprising part, called out because it will bite you:
+Strict replay stops at the first off-tape request. To let the run continue against the real
+provider and inspect the result, give it an upstream and an output file, then diff:
 
 ```sh
-amberfork record --out run.json -- python agent.py
+amberfork replay reference.cassette.json --base-url-env OPENAI_BASE_URL \
+    --upstream https://api.openai.com --out candidate.cassette.json -- python agent.py
+amberfork diff candidate.cassette.json --against reference.cassette.json --html fork.html
 ```
 
-**`record` propagates the *agent's* exit code**, not a diff verdict. If your agent exits 3,
-`record` exits 3. The cassette is still written when the agent fails — that is the point, since a
-failing run is the one you want to diff. So never gate on `record`'s exit code expecting
-diff(1) semantics; gate on the `diff` that follows it.
+The two cassettes share their prefix exactly — the tape answered it — so the fork `diff` reports
+is where the agent's behaviour changed, not where sampling happened to differ. This needs the
+network and the agent's API key.
+
+## Recording the reference
+
+```sh
+amberfork record --upstream https://api.openai.com --base-url-env OPENAI_BASE_URL \
+    --out reference.cassette.json -- python agent.py
+```
+
+**`record` does not follow the contract above.** It is a transparent wrapper: it propagates the
+*agent's* exit code, and writes the cassette even when the agent fails. Never gate on `record`'s
+exit code expecting diff(1) semantics.
+
+A cassette holds full request and response bodies. Read
+[the privacy contract](cassette-format.md#privacy-contract) before committing one.
 
 ## GitHub Actions
 
-Commit a known-good reference trace, produce a candidate in CI, gate on the diff, and publish the
-fork view as an artifact when it fails.
+Commit the reference recording, replay the agent against it on every pull request.
 
 ```yaml
 name: agent regression gate
@@ -80,8 +113,8 @@ jobs:
 
       - name: Install amberfork
         env:
-          # Pin the version. The asset filename embeds it, so `releases/latest/download/...`
-          # would 404 the moment a new version ships — and pinning is what you want in CI anyway.
+          # Pin the version: the asset filename embeds it, and pinning is what you want in CI.
+          # `replay` ships in the release after v1.0.0 — build from source until it is tagged.
           AMBERFORK_VERSION: v1.0.0
           TARGET: x86_64-unknown-linux-gnu
         run: |
@@ -94,54 +127,41 @@ jobs:
           sudo install -m755 amberfork /usr/local/bin/amberfork
           amberfork --version
 
-      # Produce the candidate trace however your agent does it. Under `record`, remember that
-      # this step's exit code is your AGENT's, not amberfork's.
-      - name: Run the agent
-        run: amberfork record --out candidate.json -- python agent.py
-
-      - name: Gate on the fork
-        id: gate
+      # Offline: no API key, no provider. Exit 1 fails the job where the agent diverged.
+      - name: Replay the agent against the reference recording
         run: |
-          set +e
-          amberfork diff candidate.json \
-            --against traces/reference.json \
-            --html fork.html --json > result.json
-          code=$?
-          set -e
-          case $code in
-            0) echo "converged" ;;
-            1) echo "::error::agent trajectory forked — see the fork.html artifact" ;;
-            2) echo "::error::amberfork could not read the traces (exit 2)" ;;
-          esac
-          exit $code
-
-      - name: Publish the fork view
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: amberfork-fork-view
-          path: |
-            fork.html
-            result.json
+          amberfork replay traces/reference.cassette.json \
+            --base-url-env OPENAI_BASE_URL -- python agent.py
 ```
 
 Every release publishes a `.sha256` beside each artifact, so the install step verifies what it
 downloaded rather than trusting the transport.
 
-`--html` writes a self-contained static page — no JS, no wasm, no network — so the artifact opens
-cold from the Actions UI. `--json` emits the versioned `DiffResult` if you would rather post your
-own summary:
+### Gating on two traces you already have
+
+When both runs exist as files — exported traces, two cassettes, two Claude Code sessions —
+`diff` is the gate, and `--html` gives CI a self-contained report (no JS, no wasm, no network):
 
 ```sh
+amberfork diff candidate.json --against reference.json --html fork.html --json > result.json
 jq -r '.fork.index, .fork.confidence' result.json
 ```
+
+Read the 96.7% above before gating on this with two *independently executed* runs of a real agent.
+
+## Why there is no `--gate` or `--threshold` flag
+
+There is no `--gate` flag: a flag that re-exposes an exit code the process already returns is
+surface area for nothing. There is no `--threshold` either. Under `replay` there is nothing to
+tolerate — a request is on the tape or it is not. Under `diff` on two live runs, the measurement
+above says no threshold would rescue the comparison: both classes fork at nearly the same rate.
 
 ## Known limitation
 
 On two runs that share **no common prefix** — traces from different agents, or different
 instrumentation of the same agent — amberfork currently reports a fork at step 0 with high
-confidence rather than reporting that the runs are not comparable. Two runs of the same agent
-captured under `record` share a prefix by construction, so this does not arise there. If you diff arbitrary trace files
+confidence rather than reporting that the runs are not comparable. A recording and its `replay`
+share a prefix by construction, so this does not arise there. If you diff arbitrary trace files
 from unrelated sources, treat a step-0 fork as a signal to check that the traces are comparable.
 
 The measurement behind this, and the registered fix, are in

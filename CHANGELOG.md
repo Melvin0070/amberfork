@@ -9,6 +9,13 @@
   (`docs/ci.md` described a `replay` step no user could run) and is what notebook 084's result
   points at: two independent live runs fork 97% of the time, so a gate has to make the runs
   comparable first. New `NoUpstream` and first-miss tracking in `amberfork-replay`.
+  With `--upstream`, off-tape requests are relayed to the real provider so the run carries on, and
+  `--out` writes the re-executed run as a cassette to `diff` against the recording.
+- **`docs/ci.md` rewritten around record-then-replay.** It now leads with the replay gate, states
+  what replay does not check (the model; requests that are not reproducible), cites the measured
+  96.7% fork rate for two live runs, and fixes a `record` command that omitted its required flags.
+  The example workflow runs the replay gate against a committed agent and recording
+  (`docs/examples/ci-gate/`) on every push.
 - **Claude Code sessions load natively.** `amberfork diff` and `serve` accept a session
   transcript (`~/.claude/projects/<project>/<session-id>.jsonl`) directly — no conversion script.
   New `amberfork_ingest::claudecode` adapter; the CLI sniffs the transcript's `type` + `sessionId`

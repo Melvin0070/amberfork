@@ -1,7 +1,7 @@
 name: ci-gate example
 
-# Executes the recipe `docs/ci.md` hands to users, against this repo's own committed smoke
-# fixtures. It exists so that recipe is a thing that RUNS rather than a thing that was written
+# Executes the recipes `docs/ci.md` hands to users — the replay gate against the committed
+# example agent, and the diff gate against this repo's own smoke fixtures. It exists so that recipe is a thing that RUNS rather than a thing that was written
 # down: #54's acceptance asks for a snippet that has actually been run, and running its steps in
 # a local shell is not the same as running them as an Action.
 #
@@ -29,6 +29,27 @@ jobs:
       # docs/ci.md install the pinned release instead.
       - name: build amberfork
         run: cargo build --release -q -p amberfork
+
+      # The replay gate: offline, no provider, no key. The agent and its reference recording are
+      # the ones docs/ci.md quotes.
+      - name: an unchanged agent follows its recording (exit 0)
+        working-directory: docs/examples/ci-gate
+        run: |
+          ../../../target/release/amberfork replay reference.cassette.json \
+            --base-url-env AGENT_BASE_URL -- python3 agent.py
+
+      - name: a changed agent diverges from its recording (exit 1)
+        working-directory: docs/examples/ci-gate
+        env:
+          AGENT_SYSTEM_PROMPT: "You are a refund assistant. Be strict."
+        run: |
+          set +e
+          ../../../target/release/amberfork replay reference.cassette.json \
+            --base-url-env AGENT_BASE_URL -- python3 agent.py
+          code=$?
+          set -e
+          test "$code" -eq 1 || { echo "expected exit 1, got $code"; exit 1; }
+          echo "replay gate failed as designed"
 
       - name: converged runs pass the gate (exit 0)
         run: |
