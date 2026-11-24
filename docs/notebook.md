@@ -4529,3 +4529,104 @@ comparison as its own reported line.
 **Offline reproducibility is preserved.** Arm F uses a paid provider to *record*, exactly as #46's
 judge arms did; the committed results document replays with no key and no network, which is the
 property BENCHMARK.md's definition of done actually requires.
+
+## 083 · 2026-11-24 · PRE-REGISTRATION: natural same-agent pairs from Terminal-Bench 2.0 — does alignment separate a failure from ordinary run-to-run variance?
+
+**Written before the engine has been run on a single trajectory from this corpus.** What has been
+looked at is listed under "Already seen" below, so the line between designing the protocol and
+peeking at its answer stays checkable.
+
+**Why this corpus.** Four natural-fork attempts have failed for three different reasons: Mode A′
+had n=4 (016), TRAIL↔HAL shared no step vocabulary (070), consensus had no headroom under our own
+noise model (066), and the #49 harness scripted the pre-fork steps so the two runs stayed
+index-aligned by construction (075). 075 named what a discriminating corpus needs — the same
+agent, free to choose how many steps to take before the point that matters — and filed it as a
+"materially harder harness to build." It does not need building. Terminal-Bench 2.0 publishes
+about five independent trials per task × agent × model, each with a verifier verdict.
+
+**Corpus.** `yoonholee/terminalbench-trajectories` at revision `04e8940f5b67`, two parquet files
+(sha256 `e95bc8dc…effdfa`, `00d61614…ae99b2`), 52,104 trials. It is a third party's scrape of
+tbench.ai; the Apache-2.0 label is the scraper's. **Treated as benchmark-use only, the HAL rule:**
+fetched into `bench/data/tbench/` (gitignored), never committed, no fixture derived from it enters
+the repo. Only results documents (rates, counts, per-pair statistics keyed by `trial_id`) are
+committed. Not ATIF despite the venue: each step is `{src, msg, tools:[{fn, cmd}], obs}`, so it
+gets its own adapter inside `amberfork-bench`, not the CLI.
+
+**Already seen (all of it, and none of it an engine output).** The dataset card; a 100-row API
+sample covering one task (`adaptive-rejection-sampler`), read for record shape only; and these
+whole-corpus counts, computed from `task_name / agent / model / reward` and step counts alone:
+
+- 34,462 of 52,104 trials carry steps (17,642 do not — excluded, and counted).
+- 6,171 groups (task × agent × model) have steps; **1,999 are eligible** — at least one passing
+  and one failing trial, both with steps — spanning 86 of 89 tasks and 9 scaffolds.
+- 13,778 pass×fail pairs and 20,180 pass×pass pairs exist.
+- Eligible trials: median 23 steps, p95 133, max 3,006 (24 exceed the 2,000-step guard).
+- **Only 7.6% of pass×fail pairs have equal step counts** (median length ratio 1.4). This is the
+  structural variance 075 could not produce, occurring unprompted.
+
+**Split (rule 1).** The independent unit is the *task*, not the pair — five trials of one task
+are not five observations. `sha256(task_name)`, first byte < 77 → dev (~30%); otherwise test. The
+test side is sealed: scored once, at the next release tag, under the frozen params
+(`bench/params.toml` sha256 `8ebd95ce…`, untouched — rules 2 and 10).
+
+**Pairs.** One pass×fail pair per eligible group and, where the group has two passing trials, one
+pass×pass pair: in each case the trials with the lexicographically smallest `trial_id`s. Fixed by
+rule so no group contributes more than one pair per class and nothing is chosen after scoring.
+
+**Adapter mapping, declared now.** Identical in spirit to `atif.rs`: an agent `msg` → `llm` step
+named `assistant`; each `tools` entry → a `tool` step named by `fn` with `cmd` as its input; the
+step's single `obs` attaches to the *last* tool call of that step (the source does not say which
+call produced it); `user` / `system` → `other`.
+
+**What is measured — and what is deliberately not.** There are no step-level cause labels here,
+so this entry makes **no localization claim**. Exact/±k accuracy needs labels, and who produces
+them (a human, or an LLM judge disclosed as silver labels) is its own registration. This entry
+measures the two things the corpus can answer without labels:
+
+1. **The gate's false-positive rate on independent live runs, at scale** — 082's question, which
+   was never run. Fraction of pass×pass pairs on which `amberfork diff` exits 1, Wilson 95% CI;
+   same for pass×fail; exit 2 reported separately. *Prediction, registered:* both are near 1.0,
+   because two independent 23-step runs almost never stay in sync. If so, `docs/ci.md`'s position
+   — that a gate needs record/replay, not two live runs — is confirmed on evidence.
+2. **Discrimination (the headline).** If the exit code cannot tell the classes apart, does the
+   alignment itself? Statistic, fixed here: **sync fraction** = sync moves ÷ alignment length.
+   Hypothesis: pass×pass pairs stay in sync further than pass×fail pairs. Reported as AUROC of
+   sync fraction for separating the two classes, 95% CI by bootstrap **over tasks** (2,000
+   resamples).
+
+**Baselines, on identical pairs (rule 8).** `pos-lexical` sync fraction (does alignment add
+anything over position, now that runs differ in length?), and a **length-only** score,
+`min(len)/max(len)`. The length baseline is the one that matters: failing runs may simply be
+longer or shorter (timeouts, early give-ups), and a method that only rediscovers that has found
+nothing. Engine-vs-baseline differences use a paired bootstrap over tasks (rule 9).
+
+**Decision rule, fixed now.**
+
+- **Win:** on dev, engine AUROC's CI lower bound is above 0.5 **and** the engine beats both
+  baselines with paired intervals excluding zero. Then, and only then, the claim is made, and it
+  is re-scored once on test at the tag.
+- **Beats position but not length:** published as "alignment recovers run-length, not content" —
+  a null for the product claim.
+- **Null (CI includes 0.5, or loses to a baseline):** published as measured, with the per-pair
+  diagnosis 070 and 075 set as the standard: is the engine a constant predictor, is one scaffold
+  driving it, is the 5,000-char truncation the cause.
+- No branch changes a parameter. A result that motivates a change is tuned on dev and reported
+  beside this one (rule 3).
+
+**Exclusions are data (rule 4).** Counted and tabulated: trials without steps, groups with only
+one outcome, runs over 2,000 steps (the default `--max-steps`, not raised), any trial the adapter
+cannot read. Coverage = scored pairs ÷ eligible groups, per split.
+
+**Threats, named in advance.** Observations are truncated to 5,000 characters and tool arguments
+reduced to one `cmd` string — the engine sees less than a real user's trace would give it. A
+"pass" is the verifier's verdict, so two passing runs may legitimately take different routes
+(this is exactly what the pass×pass class measures). 888 of the 1,999 eligible groups are one
+scaffold (`terminus-2`); results are reported per scaffold as well as pooled. The corpus is a
+scrape that could be withdrawn — the revision and checksums are pinned, and `fetch` will fail
+loudly rather than drift.
+
+**Cost.** Zero API spend; local compute only.
+
+Governing docs: `BENCHMARK.md` rules 1–4, 8, 9, 10; notebooks 075 (what a discriminating corpus
+needs), 082/082a (the gate question this subsumes for the two-live-runs case; 082's
+record-vs-replay arms stand as registered), 070 (the diagnosis standard for a null).
