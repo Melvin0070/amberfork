@@ -366,3 +366,75 @@ fn two_claude_code_sessions_diff_with_no_conversion_step() {
         .assert()
         .code(EXIT_CONVERGED);
 }
+
+/// An ATIF `trajectory.json` (Harbor / Terminal-Bench) for the same refund task.
+fn atif_trajectory(session_id: &str, policy_doc: &str, verdict: &str, action: &str) -> String {
+    serde_json::json!({
+        "schema_version": "ATIF-v1.8",
+        "session_id": session_id,
+        "agent": {"name": "terminus", "version": "2.0.0", "model_name": "openai/gpt-5.6-sol"},
+        "steps": [
+            {"step_id": 1, "source": "user", "message": "Handle the refund for order 8841"},
+            {"step_id": 2, "source": "agent", "message": "I'll look up the refund policy first.",
+             "tool_calls": [{"tool_call_id": "c1", "function_name": "read_file",
+                             "arguments": {"path": "policy/refunds.md"}}],
+             "observation": {"results": [{"source_call_id": "c1", "content": policy_doc}]}},
+            {"step_id": 3, "source": "agent", "message": verdict,
+             "tool_calls": [{"tool_call_id": "c2", "function_name": "bash",
+                             "arguments": {"cmd": action}}],
+             "observation": {"results": [{"source_call_id": "c2", "content": "ok"}]}},
+        ]
+    })
+    .to_string()
+}
+
+#[test]
+fn two_atif_trajectories_diff_with_no_conversion_step() {
+    // Canonical steps: 0 user · 1 assistant · 2 read_file · 3 assistant · 4 bash. The stale
+    // policy lands in step 2's output — inside ATIF step 2, which the fan-out makes addressable.
+    let dir = tempfile::tempdir().unwrap();
+    let good = dir.path().join("good").join("trajectory.json");
+    let bad = dir.path().join("bad").join("trajectory.json");
+    std::fs::create_dir_all(good.parent().unwrap()).unwrap();
+    std::fs::create_dir_all(bad.parent().unwrap()).unwrap();
+    std::fs::write(
+        &good,
+        atif_trajectory(
+            "good",
+            "Refunds v3 (CURRENT). Electronics: 30-day return window, refund to original payment.",
+            "Order is 23 days old, inside the 30-day window. Issuing the refund.",
+            "payments refund --order 8841 --amount 129.00",
+        ),
+    )
+    .unwrap();
+    std::fs::write(
+        &bad,
+        atif_trajectory(
+            "bad",
+            "Refunds v1 (ARCHIVED). Electronics: 14 days from delivery, store credit only.",
+            "Past the 14-day limit, so policy says no. Drafting a polite denial.",
+            "crm set-status --order 8841 --status denied",
+        ),
+    )
+    .unwrap();
+
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--json")
+        .assert()
+        .code(EXIT_FORKED);
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let result: DiffResult = serde_json::from_str(&stdout).expect("a valid DiffResult");
+    assert_eq!(result.fork_step_observed(), Some(2));
+
+    amberfork()
+        .arg("diff")
+        .arg(&good)
+        .arg("--against")
+        .arg(&good)
+        .assert()
+        .code(EXIT_CONVERGED);
+}

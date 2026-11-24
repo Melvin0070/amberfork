@@ -69,12 +69,24 @@ above never bends to fit one. Status is stated honestly — "framework-agnostic"
 subset today, not a blanket claim.
 
 - **Claude Code session transcripts** (`~/.claude/projects/<project>/<session-id>.jsonl`) —
-  **implemented, and the only adapter `amberfork diff` / `serve` auto-detect**
+  **implemented, auto-detected by `amberfork diff` / `serve`**
   (`amberfork_ingest::claudecode`, one `Run` per transcript). Assistant `text` → `llm` step named
   `assistant` (model id in `attrs`, never the name); `tool_use` → `tool` step, its `tool_result`
   paired back by id as the output (`is_error` → `attrs`); a prompt → `other` step named `user`.
   Sidechain (subagent) and meta records and `thinking` blocks are skipped; `outcome` is never set.
   The format is undocumented upstream, so unknown record and block types are skipped, not fatal.
+- **ATIF** (Agent Trajectory Interchange Format — Harbor's `trajectory.json`, the format
+  Terminal-Bench trials are published in; RFC versions 1.0–1.8) — **implemented, auto-detected by
+  `amberfork diff` / `serve`** on a `schema_version` starting `ATIF-` (`amberfork_ingest::atif`,
+  one `Run` per document). An ATIF step is a whole agent turn, so it fans out: the turn's
+  `message` → `llm` step named `assistant` (model in `attrs`); each `tool_calls` entry → a `tool`
+  step named by `function_name`, with the observation result matching its `tool_call_id` as the
+  output; a result with no `source_call_id` → `other` step named `observation`; `system` / `user`
+  steps → `other` steps named for their source. Every canonical step keeps its ATIF `step_id` in
+  `attrs`. Skipped: `reasoning_content`, `is_copied_context` steps, embedded
+  `subagent_trajectories`. `outcome` is never set (the verdict lives in the harness's result
+  file). A version outside the v1 line loads with a `schema-version-mismatch` warning.
+
   The adapters below are library APIs today — the CLI does not yet route files to them.
 - **OpenInference** (`openinference.*` / `llm.*` / `tool.*` over OTLP/JSON) — **implemented**
   (`amberfork_ingest::openinference`, one `Run` per `traceId`). Covered: `openinference.span.kind`

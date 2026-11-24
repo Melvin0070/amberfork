@@ -132,6 +132,12 @@ pub fn load_run(path: &Path) -> Result<Ingested, LoadError> {
         return amberfork_ingest::claudecode::from_jsonl_str(&text)
             .map_err(|err| LoadError::Ingest(err.with_path(path)));
     }
+    // ATIF shares the `schema_version` key with the canonical trace, so it is told apart by the
+    // value (`ATIF-…`) and must be routed before the canonical loader rejects it.
+    if amberfork_ingest::atif::looks_like_trajectory(&text) {
+        return amberfork_ingest::atif::from_json_str(&text)
+            .map_err(|err| LoadError::Ingest(err.with_path(path)));
+    }
     amberfork_ingest::from_json_str(&text).map_err(|err| LoadError::Ingest(err.with_path(path)))
 }
 

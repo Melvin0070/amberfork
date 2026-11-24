@@ -78,6 +78,18 @@ with its result paired back as the output, and each prompt becomes an `other` st
 `user`. Subagent (sidechain) traffic and `thinking` blocks are left out. A transcript does not
 know whether the session succeeded, so the header shows no pass/fail.
 
+### ATIF trajectories (Harbor, Terminal-Bench): no conversion needed
+
+An [ATIF](https://docs.harborframework.com/agents/atif) `trajectory.json` — what Harbor agents
+write to `agent/trajectory.json` in a trial result — is read as it is too:
+
+```sh
+amberfork diff failed-trial/agent/trajectory.json --against passed-trial/agent/trajectory.json
+```
+
+Each agent turn fans out into an `llm` step for its message plus one `tool` step per tool
+call, so two turns that made a different number of calls still line up call by call.
+
 ### A worked example for any other framework
 
 Any agent framework's log converts with a few dozen lines of script. As a template, here is

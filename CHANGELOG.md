@@ -6,6 +6,10 @@
   transcript (`~/.claude/projects/<project>/<session-id>.jsonl`) directly — no conversion script.
   New `amberfork_ingest::claudecode` adapter; the CLI sniffs the transcript's `type` + `sessionId`
   record shape ahead of the generic JSON-Lines error, which still fires for any other JSONL.
+- **ATIF trajectories load natively.** `diff` and `serve` accept a Harbor / Terminal-Bench
+  `trajectory.json` (ATIF v1.0–v1.8) directly, detected by its `ATIF-` `schema_version`. New
+  `amberfork_ingest::atif` adapter: each agent turn fans out into an `llm` step plus one `tool`
+  step per call, with every step keeping its source `step_id`.
 
 ## [1.0.0] — 2026-09-04
 
