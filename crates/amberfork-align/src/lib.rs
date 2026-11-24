@@ -28,6 +28,6 @@ mod params;
 pub use consensus::{Consensus, consensus};
 pub use cost::{CostModel, LexicalCost};
 pub use diff::{DiffParams, diff};
-pub use fork::{ForkParams, find_fork};
+pub use fork::{ForkParams, find_fork, has_common_ground};
 pub use nw::{AlignParams, align};
 pub use params::ParamError;

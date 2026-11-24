@@ -438,3 +438,81 @@ fn two_atif_trajectories_diff_with_no_conversion_step() {
         .assert()
         .code(EXIT_CONVERGED);
 }
+
+/// A canonical trace whose steps share nothing with the smoke fixtures or with each other's
+/// counterpart — two different agents on two different tasks.
+fn unrelated_trace(dir: &Path, name: &str, steps: &[(&str, &str)]) -> PathBuf {
+    let steps: Vec<serde_json::Value> = steps
+        .iter()
+        .enumerate()
+        .map(|(idx, (step_name, output))| {
+            serde_json::json!({"idx": idx, "kind": "tool", "name": step_name, "outputs": output})
+        })
+        .collect();
+    let path = dir.join(name);
+    std::fs::write(
+        &path,
+        serde_json::json!({"schema_version": "0.1", "id": name, "steps": steps}).to_string(),
+    )
+    .unwrap();
+    path
+}
+
+#[test]
+fn runs_with_no_common_ground_exit_2_instead_of_claiming_a_fork_at_step_0() {
+    // The known defect (notebook 070): two runs that share nothing used to exit 1 with "fork at
+    // step 0" at high confidence. They are not comparable, and that is trouble, not a finding.
+    let dir = tempfile::tempdir().unwrap();
+    let a = unrelated_trace(
+        dir.path(),
+        "a.json",
+        &[
+            ("web_search", "paris weather forecast"),
+            ("visit_page", "sunny, 21 degrees"),
+        ],
+    );
+    let b = unrelated_trace(
+        dir.path(),
+        "b.json",
+        &[
+            ("sql_query", "select count from orders"),
+            ("send_email", "quarterly report attached"),
+        ],
+    );
+
+    amberfork()
+        .arg("diff")
+        .arg(&b)
+        .arg("--against")
+        .arg(&a)
+        .arg("--json")
+        .assert()
+        .code(EXIT_TROUBLE)
+        .stdout(predicates::str::is_empty())
+        .stderr(predicates::str::contains("no common ground"))
+        .stderr(predicates::str::contains("--allow-unrelated"));
+}
+
+#[test]
+fn allow_unrelated_aligns_them_anyway() {
+    let dir = tempfile::tempdir().unwrap();
+    let a = unrelated_trace(
+        dir.path(),
+        "a.json",
+        &[("web_search", "paris weather forecast")],
+    );
+    let b = unrelated_trace(
+        dir.path(),
+        "b.json",
+        &[("sql_query", "select count from orders")],
+    );
+
+    amberfork()
+        .arg("diff")
+        .arg(&b)
+        .arg("--against")
+        .arg(&a)
+        .arg("--allow-unrelated")
+        .assert()
+        .code(EXIT_FORKED);
+}

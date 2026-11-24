@@ -66,6 +66,25 @@ pub fn find_fork(alignment: &[Move], params: &ForkParams) -> Option<Fork> {
     None
 }
 
+/// Whether an alignment has any common ground: at least one in-sync move, by the same
+/// definition [`find_fork`] uses (a sync move with `cost <= tau`).
+///
+/// [`find_fork`] answers "where does unrecovered divergence begin", which presupposes the two
+/// runs were ever together. When nothing is in sync that presupposition fails, and the rule's
+/// answer — the first move, at high confidence — is a statement about unrelated runs, not a
+/// located fork (notebook 070: 23 of 23 cross-system pairs, one constant answer). Callers that
+/// publish a fork should check this first and report "not comparable" instead.
+///
+/// An empty alignment (two empty runs) counts as common ground: there is nothing to disagree
+/// about, and [`find_fork`] already reports it converged.
+#[must_use]
+pub fn has_common_ground(alignment: &[Move], params: &ForkParams) -> bool {
+    alignment.is_empty()
+        || alignment
+            .iter()
+            .any(|m| m.kind == MoveKind::Sync && m.cost <= params.tau)
+}
+
 /// How far a move's divergence evidence clears `tau`, rescaled to `[0, 1]`. Evidence is a sync
 /// move's cost, or a gap move's distance-to-closest-counterpart (its `confidence`, as stamped
 /// by [`crate::align`]). A gapped step with a sync-grade twin on the other side clamps to 0 —
@@ -180,5 +199,28 @@ mod tests {
         // A gap whose step has a sync-grade twin elsewhere: honest zero, not negative.
         let twinned = find_fork(&[log(0, 0.1)], &params).expect("fork");
         assert_eq!(twinned.confidence, 0.0);
+    }
+
+    #[test]
+    fn one_in_sync_move_is_common_ground() {
+        let params = ForkParams::default();
+        let moves = vec![sync(0, 0.0), sync(1, 0.9), log(2, 1.0)];
+        assert!(has_common_ground(&moves, &params));
+    }
+
+    #[test]
+    fn paired_but_dissimilar_steps_are_not_common_ground() {
+        // The aligner pairs two dissimilar steps whenever that beats a gap, so a `Sync` *move*
+        // is not evidence the runs are related — only an in-sync one (cost <= tau) is.
+        let params = ForkParams::default();
+        let moves = vec![sync(0, 0.9), sync(1, 0.31), log(2, 1.0)];
+        assert!(!has_common_ground(&moves, &params));
+        // ...which is exactly the case the fork rule answers with a confident step 0.
+        assert_eq!(find_fork(&moves, &params).map(|fork| fork.index), Some(0));
+    }
+
+    #[test]
+    fn two_empty_runs_have_nothing_to_disagree_about() {
+        assert!(has_common_ground(&[], &ForkParams::default()));
     }
 }

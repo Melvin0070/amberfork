@@ -272,9 +272,15 @@ fact about today's cassette-normalization path (one exchange, one undifferentiat
 not a claim about real agents in general. Full diagnosis, including what a version that could
 actually discriminate the two arms would need, is in notebook 075.
 
-## The known defect, stated plainly
+## The step-0 defect, and its guard
 
-On two runs that share no common prefix, amberfork reports "fork at step 0" with high confidence
-(measured: 0.97) rather than admitting the runs are not comparable. The abstention guard
-pre-registered in [notebook 070](notebook.md) is the fix. It is the highest-value item on
-the list, because it affects real use, not a benchmark row.
+On two runs that share no common prefix, amberfork used to report "fork at step 0" with high
+confidence (measured: 0.97) rather than admitting the runs were not comparable — on the TRAIL↔HAL
+corpus above, one constant answer for all 23 dev pairs.
+
+Since [notebook 087](notebook.md) it refuses: when the alignment has no in-sync step, `diff`
+exits 2 with "no common ground", and `--allow-unrelated` aligns the runs anyway. The guard is a
+strict no-op on the injected-fork dev fixtures (every arm's row identical before and after), so
+the headline table is untouched. On the two out-of-domain corpora the engine now abstains where it
+used to answer: 21 of 23 TRAIL↔HAL dev pairs and 3 of 4 Mode A′ pairs. The tables above are the
+numbers as published at the time and are not rewritten; the before-and-after rows are in 087.

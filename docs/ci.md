@@ -163,13 +163,24 @@ surface area for nothing. There is no `--threshold` either. Under `replay` there
 tolerate — a request is on the tape or it is not. Under `diff` on two live runs, the measurement
 above says no threshold would rescue the comparison: both classes fork at nearly the same rate.
 
-## Known limitation
+## Runs with no common ground
 
-On two runs that share **no common prefix** — traces from different agents, or different
-instrumentation of the same agent — amberfork currently reports a fork at step 0 with high
-confidence rather than reporting that the runs are not comparable. A recording and its `replay`
-share a prefix by construction, so this does not arise there. If you diff arbitrary trace files
-from unrelated sources, treat a step-0 fork as a signal to check that the traces are comparable.
+When no step of one run matches any step of the other — traces from different agents, or the same
+agent instrumented two ways — `diff` exits `2` and says the runs share no common ground. It used
+to report a fork at step 0 with high confidence, which CI would read as a located regression.
 
-The measurement behind this, and the registered fix, are in
-[`docs/notebook.md`](notebook.md) entries 070 and 071.
+```console
+$ amberfork diff other-agent.json --against reference.json ; echo $?
+amberfork: these runs share no common ground — no step of other-agent matches any step of reference
+  either they are unrelated (different agents, or the same agent traced differently), or they diverge from the very first step
+  pass --allow-unrelated to align them anyway
+2
+```
+
+A run that diverges from its reference at the very first step is indistinguishable from an
+unrelated one and gets the same exit 2. Under `replay` that case is reported precisely
+("diverged at exchange 0"), which is one more reason to gate with `replay`. `--allow-unrelated`
+aligns the runs regardless, for deliberate cross-agent comparisons.
+
+The measurement behind the old behaviour and the guard's no-op proof are in
+[`docs/notebook.md`](notebook.md) entries 070 and 087.

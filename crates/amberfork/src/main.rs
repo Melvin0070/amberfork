@@ -20,7 +20,7 @@
 //! design, so it exits 1. `serve` exits 2 on any startup failure (before the port binds) and
 //! otherwise runs until interrupted.
 
-use amberfork_align::{AlignParams, DiffParams, LexicalCost, diff};
+use amberfork_align::{AlignParams, DiffParams, LexicalCost, diff, has_common_ground};
 use amberfork_ingest::Ingested;
 use amberfork_judge::{ExplainContext, Judge, OllamaJudge, ground};
 use amberfork_layout::{Document, ViewModel};
@@ -114,6 +114,12 @@ struct DiffArgs {
     #[arg(long, value_name = "N", default_value_t = AlignParams::DEFAULT_MAX_STEPS)]
     max_steps: usize,
 
+    /// Align the runs even when no step of one matches any step of the other. By default that
+    /// is refused (exit 2): a "fork at step 0" between two runs that were never together is not
+    /// a finding. Pass this when you are comparing two different agents on purpose.
+    #[arg(long)]
+    allow_unrelated: bool,
+
     /// Verify the fork by counterfactual re-execution: patch the fork step with the good run's
     /// response, re-drive the agent, and report whether the run recovered. Opt-in; both runs must
     /// be recorded cassettes, and it requires --upstream, --base-url-env, and a `-- <cmd>`.
@@ -193,6 +199,12 @@ struct ServeArgs {
     /// memory and time grow with steps²).
     #[arg(long, value_name = "N", default_value_t = AlignParams::DEFAULT_MAX_STEPS)]
     max_steps: usize,
+
+    /// Align the runs even when no step of one matches any step of the other. By default that
+    /// is refused (exit 2): a "fork at step 0" between two runs that were never together is not
+    /// a finding. Pass this when you are comparing two different agents on purpose.
+    #[arg(long)]
+    allow_unrelated: bool,
 
     /// Pin the port. Default is an OS-assigned free port; a busy pinned port is an error,
     /// not a hunt for the next one.
@@ -317,7 +329,10 @@ fn run_diff(args: &DiffArgs) -> Result<ExitCode, LoadError> {
             Ok(diff_and_report(
                 good,
                 bad,
-                args.max_steps,
+                EngineOptions {
+                    max_steps: args.max_steps,
+                    allow_unrelated: args.allow_unrelated,
+                },
                 &args.output,
                 None,
                 args.judge,
@@ -361,6 +376,13 @@ fn run_diff_verify(args: &DiffArgs, config: &verify::VerifyConfig) -> Result<Exi
             return Ok(ExitCode::from(EXIT_TROUBLE));
         }
     };
+    // Re-executing a "fork" between runs that were never together would patch and replay a
+    // step chosen by nothing; the guard applies here exactly as on the passive path.
+    if !args.allow_unrelated
+        && let Err(code) = require_common_ground(&result, &params)
+    {
+        return Ok(code);
+    }
     // A cassette carries full content and raises no ingest diagnostics, so there are no per-run
     // warnings to merge — the passive path's `merged_warnings` reduces to an empty list here.
     result.warnings = Vec::new();
@@ -392,7 +414,10 @@ fn run_demo(args: &DemoArgs) -> ExitCode {
     diff_and_report(
         good,
         bad,
-        AlignParams::DEFAULT_MAX_STEPS,
+        EngineOptions {
+            max_steps: AlignParams::DEFAULT_MAX_STEPS,
+            allow_unrelated: false,
+        },
         &args.output,
         Some(DEMO_HINT),
         JudgeMode::Off,
@@ -429,7 +454,11 @@ fn run_serve(args: &ServeArgs) -> Result<ExitCode, LoadError> {
         let bad = load_run(args.bad.as_ref().expect("clap requires BAD unless --demo"))?;
         (good, bad)
     };
-    let mut result = match run_engine(&good, &bad, args.max_steps) {
+    let options = EngineOptions {
+        max_steps: args.max_steps,
+        allow_unrelated: args.allow_unrelated,
+    };
+    let mut result = match run_engine(&good, &bad, options) {
         Ok(result) => result,
         Err(code) => return Ok(code),
     };
@@ -759,12 +788,45 @@ fn engine_params(max_steps: usize) -> Result<DiffParams, ExitCode> {
     })
 }
 
-fn run_engine(good: &Ingested, bad: &Ingested, max_steps: usize) -> Result<DiffResult, ExitCode> {
-    let params = engine_params(max_steps)?;
-    diff(&good.run, &bad.run, &LexicalCost, &params).map_err(|err| {
+/// What the user chose about the engine's two guards.
+#[derive(Clone, Copy)]
+struct EngineOptions {
+    max_steps: usize,
+    /// Align runs that share no common ground instead of refusing them.
+    allow_unrelated: bool,
+}
+
+fn run_engine(
+    good: &Ingested,
+    bad: &Ingested,
+    options: EngineOptions,
+) -> Result<DiffResult, ExitCode> {
+    let params = engine_params(options.max_steps)?;
+    let result = diff(&good.run, &bad.run, &LexicalCost, &params).map_err(|err| {
         eprintln!("amberfork: {err}");
         ExitCode::from(EXIT_TROUBLE)
-    })
+    })?;
+    if !options.allow_unrelated {
+        require_common_ground(&result, &params)?;
+    }
+    Ok(result)
+}
+
+/// Refuse a pair whose alignment has nothing in sync. The fork rule would answer "step 0" at
+/// high confidence (notebook 070), which is a claim about a divergence between runs that were
+/// never together — so it is trouble (exit 2), like any input the engine cannot honestly judge.
+fn require_common_ground(result: &DiffResult, params: &DiffParams) -> Result<(), ExitCode> {
+    if has_common_ground(&result.alignment, &params.fork) {
+        return Ok(());
+    }
+    eprintln!(
+        "amberfork: these runs share no common ground — no step of {} matches any step of {}\n  \
+         either they are unrelated (different agents, or the same agent traced differently), or \
+         they diverge from the very first step\n  \
+         pass --allow-unrelated to align them anyway",
+        result.runs.b.id, result.runs.a.id,
+    );
+    Err(ExitCode::from(EXIT_TROUBLE))
 }
 
 /// The shared back half of `diff`/`demo`: run the engine on a loaded pair, emit the result
@@ -775,13 +837,13 @@ fn run_engine(good: &Ingested, bad: &Ingested, max_steps: usize) -> Result<DiffR
 fn diff_and_report(
     good: Ingested,
     bad: Ingested,
-    max_steps: usize,
+    options: EngineOptions,
     output: &OutputArgs,
     footer: Option<&str>,
     judge: JudgeMode,
     html: Option<&Path>,
 ) -> ExitCode {
-    let mut result = match run_engine(&good, &bad, max_steps) {
+    let mut result = match run_engine(&good, &bad, options) {
         Ok(result) => result,
         Err(code) => return code,
     };

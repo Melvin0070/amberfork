@@ -4982,3 +4982,60 @@ inconclusive on 082's own terms, with both forking pairs in `refund_window`, and
 
 Governing docs: notebook 085 (the registration), 084 (the 96.7%), 082/082a (the gate rule),
 075 (why this corpus is short and why every gold is 1), `BENCHMARK.md` rules 3, 6, 8.
+
+## 087 · 2026-11-25 · the no-common-ground guard ships — a strict no-op on chimera dev, an abstention where the engine used to answer step 0
+
+Implements item 3 of 070's registered repair, and only item 3. Tool-name reconstruction and
+envelope unwrapping in `hal.rs` (items 1–2) and the corpus stratification (item 4) are not built;
+070's decision rule on the comparable stratum therefore still has not been run.
+
+**The rule.** Two runs have common ground when their alignment contains at least one in-sync
+move — a `Sync` move with cost ≤ `tau`, the fork rule's own definition, no new parameter. When
+there is none, `amberfork diff` (and `diff --verify`, and `serve`) exits 2 with "no common
+ground"; `--allow-unrelated` aligns the runs anyway. Exit 2 and not 1, by the founder's decision
+before implementation: a fork between runs that were never together is not a finding, and CI must
+not read it as a located regression.
+
+**Where it lives, and why not inside `diff()`.** A new pure function,
+`amberfork_align::has_common_ground`, called by the CLI and by the benchmark's aligner arms.
+`diff()` itself is unchanged and still returns the step-0 fork to a caller who does not ask. That
+is deliberate: no public type in `amberfork-model` or `amberfork-align` is `#[non_exhaustive]`, so
+a new error variant or a new `DiffResult` field would be a breaking change to crates already
+published at 1.0.0, and a third verdict inside `DiffResult` would be a schema bump on the
+versioned seam. An additive function changes neither. The cost is stated: a library user calling
+`diff()` directly must call the check themselves, and its doc comment says so.
+
+**The no-op proof 071 required, before the guard goes near the sealed split.** All four arms were
+scored on the three committed chimera dev seeds and the held-out ReAct fixture with the guard off
+(stashed) and on. The 16 table rows are byte-identical. Directly: 0 of 25 chimera dev pairs, 0 of
+6 held-out pairs and 0 of 25 perturbation pairs have a zero-in-sync alignment under the lexical
+cost. The gate's pinned per-seed exact counts (6/8, 2/7, 6/10) hold. It has **not** been run on
+the sealed test split, which is scored at the next release tag and not before; if it fires there,
+071 already says what that means — it would be changing published product behaviour, and is
+reported as such.
+
+**Where it does fire — old beside new (rule 3).** These corpora are gitignored; the committed
+results documents are the numbers as published and are not regenerated.
+
+| corpus | arm | exact | ±3 | abstained | |
+|---|---|---|---|---|---|
+| TRAIL↔HAL dev (n=23) | nw-lexical/resync | 0.00 | 0.35 | 0.00 | before |
+| | | 0.00 | **0.00** | **0.91** | after |
+| TRAIL↔HAL dev (n=23) | nw-structural/resync | 0.00 | 0.35 | 0.00 | before |
+| | | 0.00 | 0.00 | 1.00 | after |
+| Mode A′ (n=4) | nw-lexical/resync | 0.00 | 0.50 | 0.00 | before |
+| | | 0.00 | 0.25 | 0.75 | after |
+
+The TRAIL↔HAL ±3 falling from 0.35 to 0.00 is the point, not a regression: 070 showed the 0.35
+was exactly "predict 0, count the 8 pairs whose gold sits at step ≤ 3". The engine was never
+localizing those; it now says so on 21 of 23. As 070 registered, abstention cannot raise the
+exact rate, and it did not. Mode A′ was already an honest null at n=4 and stays one.
+
+**What the guard cannot tell apart.** A run that genuinely diverges from its reference at step 0
+and never re-syncs has no in-sync move either, and is refused with the same message — which names
+both possibilities. Under `replay` that case is reported exactly ("diverged at exchange 0"). This
+is a real loss of a previously-given answer for a real case, accepted because the answer could not
+be distinguished from the false one.
+
+Governing docs: notebook 070 (the registration), 071 (the blast-radius amendment and the no-op
+requirement), `BENCHMARK.md` rules 2, 3, 10.

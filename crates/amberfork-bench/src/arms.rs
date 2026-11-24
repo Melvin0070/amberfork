@@ -19,7 +19,7 @@
 
 use crate::hash::{bounded, fnv1a64, splitmix64};
 use crate::pairs::Pair;
-use amberfork_align::{CostModel, DiffParams, LexicalCost, diff};
+use amberfork_align::{CostModel, DiffParams, LexicalCost, diff, has_common_ground};
 use amberfork_model::{Step, StepKind};
 
 /// Base seed for the random arm. Arbitrary, committed, part of the frozen protocol.
@@ -93,10 +93,12 @@ impl Arm {
             Self::NwStructural => aligned_prediction(
                 diff(&pair.reference, &pair.failing, &StructuralCost, params)
                     .expect("bench pairs stay within the default size guard"),
+                params,
             ),
             Self::NwLexical => aligned_prediction(
                 diff(&pair.reference, &pair.failing, &LexicalCost, params)
                     .expect("bench pairs stay within the default size guard"),
+                params,
             ),
         }
     }
@@ -105,7 +107,17 @@ impl Arm {
 /// An aligner arm's prediction: the observed-side fork step with the fork's own confidence.
 /// `fork_step_observed` is `Some` exactly when the diff forked, so a step always brings its
 /// confidence along.
-fn aligned_prediction(result: amberfork_model::DiffResult) -> Option<Prediction> {
+///
+/// Abstains when the runs share no common ground (notebook 070/087): the shipped CLI refuses
+/// such a pair, so the arm that stands for the product must not score a prediction the product
+/// no longer makes. Abstentions share the denominator with hits, so this cannot raise a rate.
+fn aligned_prediction(
+    result: amberfork_model::DiffResult,
+    params: &DiffParams,
+) -> Option<Prediction> {
+    if !has_common_ground(&result.alignment, &params.fork) {
+        return None;
+    }
     result.fork_step_observed().map(|step| Prediction {
         step,
         confidence: result.fork.map(|fork| fork.confidence),
@@ -339,5 +351,33 @@ mod tests {
                 "nw-lexical/resync"
             ]
         );
+    }
+
+    #[test]
+    fn aligner_arms_abstain_when_the_runs_share_no_common_ground() {
+        // Notebook 070's defect: on two runs with nothing in sync the fork rule answers "step
+        // 0" with high confidence. An abstention is the honest prediction, and it shares the
+        // denominator with hits, so it cannot raise a rate.
+        let p = pair(
+            "unrelated",
+            run(
+                "ref",
+                &[
+                    ("web_search", "alpha beta gamma"),
+                    ("visit_page", "delta epsilon"),
+                ],
+            ),
+            run(
+                "obs",
+                &[
+                    ("llm_call", "one two three four"),
+                    ("tool_result", "five six seven"),
+                ],
+            ),
+        );
+        assert_eq!(predicted_step(Arm::NwLexical, &p), None);
+        assert_eq!(predicted_step(Arm::NwStructural, &p), None);
+        // The no-alignment baseline has no notion of common ground and is left as it was.
+        assert_eq!(predicted_step(Arm::PosLexical, &p), Some(0));
     }
 }

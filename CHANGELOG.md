@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- **`diff` refuses runs that share no common ground (notebooks 070, 087).** When the alignment
+  has no in-sync step, `diff`, `diff --verify` and `serve` exit 2 with "no common ground" where
+  they used to report a fork at step 0 at high confidence; `--allow-unrelated` aligns them anyway.
+  **Behaviour change:** such pairs previously exited 1. New `amberfork_align::has_common_ground`;
+  the benchmark's aligner arms abstain on the same condition. Proven a strict no-op on the
+  injected-fork dev fixtures — every arm's row is identical before and after.
 - **README rewritten; the detail moved to `docs/evidence.md`.** The README now leads with
   record-then-replay, carries one table of every published measurement with its n and an honest
   one-line reading (including the nulls), and states what the tool does not do. Nothing was

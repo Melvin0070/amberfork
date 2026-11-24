@@ -92,9 +92,10 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
 - **`replay` does not test the model.** Responses come from the recording, so a model upgrade with
   unchanged prompts replays clean. It also needs reproducible requests — a prompt containing the
   current time diverges at once.
-- **It over-claims on unrelated runs.** Two runs with no common prefix get "fork at step 0" at high
-  confidence instead of "not comparable". The fix is registered ([notebook 070](docs/notebook.md))
-  and not yet built.
+- **It refuses runs that share nothing.** When no step of one run matches any step of the
+  other, `diff` exits 2 ("no common ground") instead of reporting a fork at step 0 — which is what
+  it used to do, at high confidence. `--allow-unrelated` aligns them anyway. A change in the very
+  first step looks the same as two unrelated runs, and gets the same refusal.
 - **Alignment is quadratic in run length.** `--max-steps` (default 2000) is the guard; the wall
   itself has been projected, not measured (#50).
 
@@ -114,8 +115,9 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
 ## Status
 
 v1.0.0 is tagged and published. On `main` since then: the `replay` verb, native Claude Code and
-ATIF ingest, and the Terminal-Bench and replay measurements. Open before the next release: the
-no-common-prefix guard, the scale measurement (#50), and a measurement of `replay` on a long,
-free-running agent — the one regime where its advantage over live runs is expected and unproven.
+ATIF ingest, and the Terminal-Bench and replay measurements. Also on `main`: the guard that refuses runs with no
+common ground. Open before the next release: the scale measurement (#50), and a measurement of
+`replay` on a long, free-running agent — the one regime where its advantage over live runs is
+expected and unproven.
 [`CONTRIBUTING.md`](CONTRIBUTING.md) describes the working agreement; [`CHANGELOG.md`](CHANGELOG.md)
 has the rest.
