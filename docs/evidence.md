@@ -64,9 +64,54 @@ python3 spike/score_replay_gate.py --amberfork-bin target/release/amberfork
 
 Read it honestly: this is a round-trip check on one short, deterministic agent, not a
 false-positive rate for yours. Every change in this corpus lands at the same exchange, so it says
-nothing about localization. And on this corpus diffing two live runs was nearly as quiet, so
-replay's advantage over live runs — large in principle on the long, free-running agents the 96.7%
-above comes from — has not itself been measured.
+nothing about localization. And on this corpus diffing two live runs was nearly as quiet, so it
+cannot show replay's advantage over live runs. The next section measures that on a longer agent.
+
+## Replay against a live diff on a longer agent (n=35 tapes)
+
+The measurement the section above could not make. A tool-using agent driven by a local model
+(`qwen3:8b`) that chooses its own lookups, recorded 35 times across 7 tasks; the reference tapes
+run 11 to 20 exchanges, median 18. Pre-registered in notebook 088 and amended once before any
+session was recorded (088a); result in 089. The recordings are committed
+(`bench/recordings/replay_longrun_v1/`), so scoring is offline and reproduces
+`bench/results/replay_longrun_all.json` byte for byte (089a):
+
+```sh
+cargo build -q --release -p amberfork
+python3 spike/score_replay_longrun.py --amberfork-bin target/release/amberfork
+```
+
+| what was run | measurement | count | Wilson 95% |
+|---|---|---|---|
+| `replay`, unchanged agent | diverged (false positive) | **0 / 35** | [0.000, 0.099] |
+| `diff`, two live runs of the unchanged agent | forked (false positive) | **56 / 70** | [0.692, 0.877] |
+| `replay`, one lookup's result changed | diverged (detected) | 105 / 105 | [0.965, 1.000] |
+| `replay`, one lookup's result changed | named the exchange where the change entered | 105 / 105 | [0.965, 1.000] |
+| best constant answer ("always exchange 1") | named that exchange | 35 / 105 | [0.250, 0.428] |
+| `diff`, live changed run against its reference | forked (detected) | 30 / 35 | [0.706, 0.937] |
+| `diff`, live changed run against its reference | fork within ±3 of the change | 0 / 35 | [0.000, 0.099] |
+
+No run exited 2. The changes were placed at the first, middle and last changeable call of each
+tape, so the exchange to be named ranges from 1 to 19.
+
+Read it honestly:
+
+- **`replay` is quiet where a live diff is not**, on this agent: the live diff's lower bound
+  (0.692) is above replay's upper bound (0.099).
+- **The live diff could not tell a changed agent from an unchanged one.** It flagged 86% of
+  changed runs and 80% of unchanged pairs, and those intervals overlap almost entirely.
+- **Where the live diff forked is the main caveat.** 54 of its 56 forks on unchanged pairs, and 29
+  of its 30 on changed runs, are at the final exchange: the model wording its closing answer
+  differently. The lookups before it mostly stayed in sync. This is a true false alarm for a
+  gate, but a narrower effect than the Terminal-Bench one above, and 80% is not a rate for agents
+  in general.
+- **The replay rows are what exact request matching implies.** Their value is that 105 changes at
+  ten depths and 35 unchanged replays went through the shipped `record` and `replay` on real model
+  output with no fidelity defect. Naming the first request that differs is not attribution.
+- **Narrow corpus.** One model, one invented world, an agent whose requests are reproducible, and
+  tapes that are not independent within a task. The agent is mid-length, well short of
+  Terminal-Bench's median of 49 steps. Not measured: unreproducible request content, or any
+  change to the model itself.
 
 ## The headline number — sealed test split
 
@@ -301,3 +346,25 @@ localization, the table above stands as a documented negative result, and nothin
 tuned against it. The likeliest reasons are that the two sides still name their model steps
 differently, and that a human-annotated error step in one model's run need not be where a
 different model's passing run diverges.
+
+## The scale wall (100 to 5,000 steps per side)
+
+Alignment is quadratic in run length, in time and in memory. Measured end to end through the
+shipped binary on an Apple M5 (16 GB), release build, median of three runs after one warm-up;
+notebook 090. This is a timing, not a pre-registered accuracy result.
+
+```sh
+cargo build --release -p amberfork
+python3 spike/measure_scale.py --render     # re-prints the table from bench/results/scale_all.json
+```
+
+| steps per side | wall time (median) | peak memory |
+|---|---|---|
+| 100 | 90 ms | 11 MB |
+| 500 | 2.40 s | 24 MB |
+| 1000 | 8.28 s | 56 MB |
+| 2000 (the default `--max-steps` guard) | 34.75 s | 152 MB |
+| 5000 | 4.6 min | 789 MB |
+
+There is no banding or linear-space traceback, so much longer runs run out of memory on a laptop
+before they run out of time. The numbers are one machine's; the growth rate is the portable part.

@@ -119,7 +119,7 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
 
 | | |
 |---|---|
-| [`docs/notebook.md`](docs/notebook.md) | The engineering notebook: 86 dated entries — registrations, results, amendments, and the experiments that failed. **The honest entry point if you are evaluating this repo.** |
+| [`docs/notebook.md`](docs/notebook.md) | The engineering notebook: over 90 dated entries — registrations, results, amendments, and the experiments that failed. **The honest entry point if you are evaluating this repo.** |
 | [`docs/evidence.md`](docs/evidence.md) | Every published measurement in full |
 | [`BENCHMARK.md`](BENCHMARK.md) | The pre-registered protocol: splits, frozen parameters, baselines, sealed test set |
 | [`docs/ci.md`](docs/ci.md) | The replay and diff gates, with a workflow that runs on every push |
