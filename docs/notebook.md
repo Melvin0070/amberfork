@@ -5589,3 +5589,89 @@ Governing docs: notebook 073; `.github/workflows/release.yml`; issue #53.
 The whole run took 8 minutes, set by the Intel macOS job; the Apple-silicon job took 3. Still
 unverified until the v1.1.0 tag: the tag-only `release` job.
 
+## 095 · 2026-11-25 · PRE-REGISTRATION: the two sealed reveals at v1.1.0 — what each outcome will mean (#64)
+
+**Written before either test split is scored for this release.** Two reveals are due at the
+v1.1.0 tag. Both run on the release commit *before* the tag is pushed, which is the sequencing 081
+recorded getting wrong at v1.0.0. Each is one look. A run that dies before it writes a results
+document is not a look (the 088a rule); a written document is, whatever it says.
+
+Frozen for both: `bench/params.toml`, sha256 `8ebd95ce…`, untouched.
+
+### Reveal 1 — the chimera test split, now with the no-common-ground guard
+
+The fourth scheduled reveal (after 021, 037, 081), and the first since the guard of 087, which
+has never been run on the sealed split. Same cached raw sets as every prior reveal
+(`spike/data/regen_noise_seed{42,43,44}/`, 20 pair manifests each, counted before scoring):
+
+```sh
+for s in 42 43 44; do
+  cargo run -q --release -p amberfork-bench -- run --pairs spike/data/regen_noise_seed$s \
+    --split test --json-out bench/results/chimera_noise_seed${s}_test_v1.1.0.json
+done
+cargo run -q --release -p amberfork-bench -- aggregate \
+  --results bench/results/chimera_noise_seed{42,43,44}_test_v1.1.0.json \
+  --json-out bench/results/chimera_noise_multiseed_test_v1.1.0.json
+```
+
+**Prediction:** every arm's row equals the v1.0.0 reveal's — exact 17/35, ±3 32/35 for the
+engine, `no_pred` 0/35 — because the guard fired on none of the 56 pairs 087 checked (25 chimera dev, 6 held-out, 25
+perturbation).
+
+**What each outcome means, fixed now:**
+
+- **Identical to v1.0.0.** The headline stands as published. Reported in one line.
+- **The engine arm abstains on one or more test pairs** (`no_pred` above 0). By 071 and 087 this
+  is the guard changing published product behaviour. It is reported as such, old beside new
+  (rule 3), with the pairs counted. The v0.2.0 headline documents are not rewritten, and the
+  README and writeup then quote the v1.1.0 row beside the 0.91, not instead of it.
+- **Any row differs for a reason other than abstention.** That is a regression in a frozen path.
+  The release stops until it is explained; the document already written is published either way.
+
+### Reveal 2 — the Terminal-Bench test side
+
+083 sealed the test side and said it would be re-scored after a dev win. Dev was not a win (084),
+and 084 allowed one scoring at the next tag "to confirm the null". This entry fixes what
+confirming and overturning mean, because 083 only defined the branches for dev.
+
+Corpus as counted in 083a, before any score: 63 test tasks, 1,582 pass×fail pairs and 1,088
+pass×pass pairs, from the same `bench/data/tbench/pairs` build the dev score used.
+
+```sh
+cargo run -q --release -p amberfork-bench -- score-tbench --pairs bench/data/tbench/pairs \
+  --split test --json-out bench/results/tbench_natural_test.json
+```
+
+The same statistics as dev, nothing added: the fork rate on each pair class with Wilson intervals;
+AUROC of the in-sync fraction for the engine, the positional diff and run length alone; the two
+paired differences by bootstrap over tasks, 2,000 resamples.
+
+**What each outcome means, fixed now.** The branches are 083's, applied to test.
+
+- **Confirmed** — the engine does not beat run length (the paired engine−length interval includes
+  zero or is below it). The dev conclusion stands on both splits. The writeup's section 3 quotes
+  test beside dev and drops "scored on the dev split" as a limit.
+- **Overturned** — test meets 083's win condition in full: the engine's AUROC interval is above
+  0.5 **and** it beats both baselines with paired intervals excluding zero. Then dev and test
+  disagree. Both are published side by side, the writeup says they disagree, and **no claim
+  widens**: one split out of two is not the evidence 083 asked for, and a fresh registration on
+  new data would be needed before the product says anything stronger.
+- **The positional result does not replicate** — the engine−positional interval includes zero on
+  test. Then the one positive sentence 084 allowed ("alignment beats a positional diff on real
+  runs") is withdrawn from the README, the writeup and the launch drafts, and reported as a dev
+  result that test did not reproduce. This can happen alongside either branch above.
+- **The fork rate on passing pairs** is reported with its interval beside dev's 96.7%. No branch
+  reads it. It is the number `docs/ci.md` quotes, so if the two intervals do not overlap, the docs
+  quote both.
+
+No branch changes a parameter (rules 2 and 10). The per-pair test scores are committed as the
+dev ones were; the corpus itself stays out of the repository.
+
+### After both
+
+One notebook entry reports both reveals. Then, and only then, the docs that quote them are
+edited: README, `docs/evidence.md`, `docs/writeup.md` section 3, `docs/launch.md`.
+
+Governing docs: `BENCHMARK.md` rules 1, 2, 3, 6, 9, 10; notebooks 081 (the sequencing failure this
+avoids), 083 / 083a / 083b and 084 (reveal 2), 071 and 087 (the guard clause in reveal 1); issue #64.
+
