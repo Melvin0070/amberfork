@@ -35,7 +35,7 @@ serde = { version = "1", features = ["derive"] }
 # key order to survive a parse -> serialize round trip; it swaps `Map` to an insertion-order
 # map workspace-wide (typed structs serialize in field order regardless).
 serde_json = { version = "1", features = ["preserve_order"] }
-toml = "0.9"
+toml = "1.2"
 sha2 = "0.10"
 # HAL reference-trace acquisition (issue #41 S4b): its config dumps ship as a Fernet-encrypted
 # JSON envelope inside a zip. `pbkdf2`/`base64` derive the Fernet key HAL's `hal-decrypt.sh`
