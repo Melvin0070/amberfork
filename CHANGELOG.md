@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- **Lockfile:** `chacha20` 0.10.1 was yanked upstream; moved to 0.10.2. It is reached only through
+  `proptest`, a dev-dependency, so no released artifact is affected (notebook 097).
+
 ## [1.1.0] — 2026-11-25
 
 Record-then-replay becomes the spine, four trace formats load without conversion, and the
