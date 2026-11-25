@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "task": "refund_audit_a",
+  "change": "get_order:O2002",
+  "exchanges": 17,
+  "tool_calls": 16,
+  "final_answer": "The refundable orders for Customer C100 are **O2000**, **O2001**, and **O2004**, with a **total refundable amount of $300**."
+}

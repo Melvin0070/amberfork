@@ -88,7 +88,7 @@ def diff(amberfork_bin: Path, observed: Path, reference: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--amberfork-bin", default="target/release/amberfork")
-    parser.add_argument("--data", default="bench/data/longrun")
+    parser.add_argument("--data", default="bench/recordings/replay_longrun_v1")
     parser.add_argument("--out", default="bench/results/replay_longrun_all.json")
     args = parser.parse_args()
 

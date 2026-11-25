@@ -1,0 +1,5474 @@
+{
+  "cassette_version": "0.1",
+  "id": "refund_audit_a_ref_02",
+  "exchanges": [
+    {
+      "idx": 0,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:29:51.909271Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_qiwb5av5",
+                "function": {
+                  "index": 0,
+                  "name": "get_customer",
+                  "arguments": {
+                    "customer_id": "C100"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2749454333,
+          "load_duration": 83817583,
+          "prompt_eval_count": 501,
+          "prompt_eval_duration": 131928000,
+          "eval_count": 24,
+          "eval_duration": 1436438000
+        }
+      }
+    },
+    {
+      "idx": 1,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:29:53.98002Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_gc02v8qd",
+                "function": {
+                  "index": 0,
+                  "name": "list_orders",
+                  "arguments": {
+                    "customer_id": "C100"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2069366959,
+          "load_duration": 74192584,
+          "prompt_eval_count": 566,
+          "prompt_eval_duration": 574693000,
+          "eval_count": 23,
+          "eval_duration": 1417373000
+        }
+      }
+    },
+    {
+      "idx": 2,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:29:56.009383Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_u22lh29h",
+                "function": {
+                  "index": 0,
+                  "name": "get_policy",
+                  "arguments": {
+                    "topic": "refunds"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2028187500,
+          "load_duration": 74476167,
+          "prompt_eval_count": 657,
+          "prompt_eval_duration": 588610000,
+          "eval_count": 21,
+          "eval_duration": 1362391000
+        }
+      }
+    },
+    {
+      "idx": 3,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:29:59.246044Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_reinhcl2",
+                "function": {
+                  "index": 0,
+                  "name": "get_order",
+                  "arguments": {
+                    "order_id": "O2000"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 3235731083,
+          "load_duration": 74885666,
+          "prompt_eval_count": 753,
+          "prompt_eval_duration": 530485000,
+          "eval_count": 24,
+          "eval_duration": 2627347000
+        }
+      }
+    },
+    {
+      "idx": 4,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:02.243963Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_q8zugkxo",
+                "function": {
+                  "index": 0,
+                  "name": "get_shipment",
+                  "arguments": {
+                    "shipment_id": "S7000"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2995477417,
+          "load_duration": 106855250,
+          "prompt_eval_count": 850,
+          "prompt_eval_duration": 720125000,
+          "eval_count": 25,
+          "eval_duration": 2161698000
+        }
+      }
+    },
+    {
+      "idx": 5,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:04.279001Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_qi70lo2h",
+                "function": {
+                  "index": 0,
+                  "name": "get_order",
+                  "arguments": {
+                    "order_id": "O2001"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2033169708,
+          "load_duration": 84169417,
+          "prompt_eval_count": 931,
+          "prompt_eval_duration": 451787000,
+          "eval_count": 24,
+          "eval_duration": 1493585000
+        }
+      }
+    },
+    {
+      "idx": 6,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:06.614393Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_cbbtp4vn",
+                "function": {
+                  "index": 0,
+                  "name": "get_shipment",
+                  "arguments": {
+                    "shipment_id": "S7001"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2334096583,
+          "load_duration": 74474083,
+          "prompt_eval_count": 1030,
+          "prompt_eval_duration": 618063000,
+          "eval_count": 25,
+          "eval_duration": 1638595000
+        }
+      }
+    },
+    {
+      "idx": 7,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_cbbtp4vn",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_cbbtp4vn",
+              "content": "{\"shipment_id\": \"S7001\", \"order_id\": \"O2001\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 0}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:10.368616Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_e7h3qo3e",
+                "function": {
+                  "index": 0,
+                  "name": "get_order",
+                  "arguments": {
+                    "order_id": "O2002"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 3753340584,
+          "load_duration": 73803792,
+          "prompt_eval_count": 1110,
+          "prompt_eval_duration": 566840000,
+          "eval_count": 24,
+          "eval_duration": 3108520000
+        }
+      }
+    },
+    {
+      "idx": 8,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_cbbtp4vn",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_cbbtp4vn",
+              "content": "{\"shipment_id\": \"S7001\", \"order_id\": \"O2001\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_e7h3qo3e",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_e7h3qo3e",
+              "content": "{\"order_id\": \"O2002\", \"customer_id\": \"C100\", \"item\": \"tablet\", \"amount\": 250, \"placed_days_ago\": 53, \"status\": \"lost\", \"shipment_id\": \"S7002\"}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:12.444958Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_ny7i6iq6",
+                "function": {
+                  "index": 0,
+                  "name": "get_shipment",
+                  "arguments": {
+                    "shipment_id": "S7002"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2072110875,
+          "load_duration": 180768791,
+          "prompt_eval_count": 1208,
+          "prompt_eval_duration": 497465000,
+          "eval_count": 25,
+          "eval_duration": 1380489000
+        }
+      }
+    },
+    {
+      "idx": 9,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_cbbtp4vn",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_cbbtp4vn",
+              "content": "{\"shipment_id\": \"S7001\", \"order_id\": \"O2001\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_e7h3qo3e",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_e7h3qo3e",
+              "content": "{\"order_id\": \"O2002\", \"customer_id\": \"C100\", \"item\": \"tablet\", \"amount\": 250, \"placed_days_ago\": 53, \"status\": \"lost\", \"shipment_id\": \"S7002\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_ny7i6iq6",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_ny7i6iq6",
+              "content": "{\"shipment_id\": \"S7002\", \"order_id\": \"O2002\", \"carrier\": \"Halden\", \"status\": \"lost\", \"delay_days\": 0}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:14.674612Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_0zain1wm",
+                "function": {
+                  "index": 0,
+                  "name": "get_order",
+                  "arguments": {
+                    "order_id": "O2003"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2227582917,
+          "load_duration": 85039208,
+          "prompt_eval_count": 1288,
+          "prompt_eval_duration": 524352999,
+          "eval_count": 24,
+          "eval_duration": 1614440000
+        }
+      }
+    },
+    {
+      "idx": 10,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_cbbtp4vn",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_cbbtp4vn",
+              "content": "{\"shipment_id\": \"S7001\", \"order_id\": \"O2001\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_e7h3qo3e",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_e7h3qo3e",
+              "content": "{\"order_id\": \"O2002\", \"customer_id\": \"C100\", \"item\": \"tablet\", \"amount\": 250, \"placed_days_ago\": 53, \"status\": \"lost\", \"shipment_id\": \"S7002\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_ny7i6iq6",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_ny7i6iq6",
+              "content": "{\"shipment_id\": \"S7002\", \"order_id\": \"O2002\", \"carrier\": \"Halden\", \"status\": \"lost\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_0zain1wm",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_0zain1wm",
+              "content": "{\"order_id\": \"O2003\", \"customer_id\": \"C100\", \"item\": \"keyboard\", \"amount\": 355, \"placed_days_ago\": 77, \"status\": \"in_transit\", \"shipment_id\": \"S7003\"}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:17.163202Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_zd2lv3b5",
+                "function": {
+                  "index": 0,
+                  "name": "get_shipment",
+                  "arguments": {
+                    "shipment_id": "S7003"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2487407833,
+          "load_duration": 99761000,
+          "prompt_eval_count": 1388,
+          "prompt_eval_duration": 685320000,
+          "eval_count": 25,
+          "eval_duration": 1698564000
+        }
+      }
+    },
+    {
+      "idx": 11,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_cbbtp4vn",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_cbbtp4vn",
+              "content": "{\"shipment_id\": \"S7001\", \"order_id\": \"O2001\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_e7h3qo3e",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_e7h3qo3e",
+              "content": "{\"order_id\": \"O2002\", \"customer_id\": \"C100\", \"item\": \"tablet\", \"amount\": 250, \"placed_days_ago\": 53, \"status\": \"lost\", \"shipment_id\": \"S7002\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_ny7i6iq6",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_ny7i6iq6",
+              "content": "{\"shipment_id\": \"S7002\", \"order_id\": \"O2002\", \"carrier\": \"Halden\", \"status\": \"lost\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_0zain1wm",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_0zain1wm",
+              "content": "{\"order_id\": \"O2003\", \"customer_id\": \"C100\", \"item\": \"keyboard\", \"amount\": 355, \"placed_days_ago\": 77, \"status\": \"in_transit\", \"shipment_id\": \"S7003\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_zd2lv3b5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_zd2lv3b5",
+              "content": "{\"shipment_id\": \"S7003\", \"order_id\": \"O2003\", \"carrier\": \"Halden\", \"status\": \"in_transit\", \"delay_days\": 4}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:19.258926Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_hr0z2mjp",
+                "function": {
+                  "index": 0,
+                  "name": "get_order",
+                  "arguments": {
+                    "order_id": "O2004"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2094606458,
+          "load_duration": 73989000,
+          "prompt_eval_count": 1470,
+          "prompt_eval_duration": 492653000,
+          "eval_count": 24,
+          "eval_duration": 1524710000
+        }
+      }
+    },
+    {
+      "idx": 12,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_cbbtp4vn",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_cbbtp4vn",
+              "content": "{\"shipment_id\": \"S7001\", \"order_id\": \"O2001\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_e7h3qo3e",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_e7h3qo3e",
+              "content": "{\"order_id\": \"O2002\", \"customer_id\": \"C100\", \"item\": \"tablet\", \"amount\": 250, \"placed_days_ago\": 53, \"status\": \"lost\", \"shipment_id\": \"S7002\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_ny7i6iq6",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_ny7i6iq6",
+              "content": "{\"shipment_id\": \"S7002\", \"order_id\": \"O2002\", \"carrier\": \"Halden\", \"status\": \"lost\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_0zain1wm",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_0zain1wm",
+              "content": "{\"order_id\": \"O2003\", \"customer_id\": \"C100\", \"item\": \"keyboard\", \"amount\": 355, \"placed_days_ago\": 77, \"status\": \"in_transit\", \"shipment_id\": \"S7003\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_zd2lv3b5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_zd2lv3b5",
+              "content": "{\"shipment_id\": \"S7003\", \"order_id\": \"O2003\", \"carrier\": \"Halden\", \"status\": \"in_transit\", \"delay_days\": 4}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_hr0z2mjp",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2004"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_hr0z2mjp",
+              "content": "{\"order_id\": \"O2004\", \"customer_id\": \"C100\", \"item\": \"webcam\", \"amount\": 115, \"placed_days_ago\": 23, \"status\": \"delivered\", \"shipment_id\": \"S7004\"}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:21.799752Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_2iv3m9mk",
+                "function": {
+                  "index": 0,
+                  "name": "get_shipment",
+                  "arguments": {
+                    "shipment_id": "S7004"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2539282709,
+          "load_duration": 85208750,
+          "prompt_eval_count": 1570,
+          "prompt_eval_duration": 759618000,
+          "eval_count": 25,
+          "eval_duration": 1691224000
+        }
+      }
+    },
+    {
+      "idx": 13,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_cbbtp4vn",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_cbbtp4vn",
+              "content": "{\"shipment_id\": \"S7001\", \"order_id\": \"O2001\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_e7h3qo3e",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_e7h3qo3e",
+              "content": "{\"order_id\": \"O2002\", \"customer_id\": \"C100\", \"item\": \"tablet\", \"amount\": 250, \"placed_days_ago\": 53, \"status\": \"lost\", \"shipment_id\": \"S7002\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_ny7i6iq6",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_ny7i6iq6",
+              "content": "{\"shipment_id\": \"S7002\", \"order_id\": \"O2002\", \"carrier\": \"Halden\", \"status\": \"lost\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_0zain1wm",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_0zain1wm",
+              "content": "{\"order_id\": \"O2003\", \"customer_id\": \"C100\", \"item\": \"keyboard\", \"amount\": 355, \"placed_days_ago\": 77, \"status\": \"in_transit\", \"shipment_id\": \"S7003\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_zd2lv3b5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_zd2lv3b5",
+              "content": "{\"shipment_id\": \"S7003\", \"order_id\": \"O2003\", \"carrier\": \"Halden\", \"status\": \"in_transit\", \"delay_days\": 4}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_hr0z2mjp",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2004"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_hr0z2mjp",
+              "content": "{\"order_id\": \"O2004\", \"customer_id\": \"C100\", \"item\": \"webcam\", \"amount\": 115, \"placed_days_ago\": 23, \"status\": \"delivered\", \"shipment_id\": \"S7004\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_2iv3m9mk",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7004"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_2iv3m9mk",
+              "content": "{\"shipment_id\": \"S7004\", \"order_id\": \"O2004\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:24.109034Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_oujxok1f",
+                "function": {
+                  "index": 0,
+                  "name": "get_order",
+                  "arguments": {
+                    "order_id": "O2005"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2308323875,
+          "load_duration": 88034625,
+          "prompt_eval_count": 1651,
+          "prompt_eval_duration": 576383000,
+          "eval_count": 24,
+          "eval_duration": 1640325000
+        }
+      }
+    },
+    {
+      "idx": 14,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_cbbtp4vn",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_cbbtp4vn",
+              "content": "{\"shipment_id\": \"S7001\", \"order_id\": \"O2001\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_e7h3qo3e",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_e7h3qo3e",
+              "content": "{\"order_id\": \"O2002\", \"customer_id\": \"C100\", \"item\": \"tablet\", \"amount\": 250, \"placed_days_ago\": 53, \"status\": \"lost\", \"shipment_id\": \"S7002\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_ny7i6iq6",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_ny7i6iq6",
+              "content": "{\"shipment_id\": \"S7002\", \"order_id\": \"O2002\", \"carrier\": \"Halden\", \"status\": \"lost\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_0zain1wm",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_0zain1wm",
+              "content": "{\"order_id\": \"O2003\", \"customer_id\": \"C100\", \"item\": \"keyboard\", \"amount\": 355, \"placed_days_ago\": 77, \"status\": \"in_transit\", \"shipment_id\": \"S7003\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_zd2lv3b5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_zd2lv3b5",
+              "content": "{\"shipment_id\": \"S7003\", \"order_id\": \"O2003\", \"carrier\": \"Halden\", \"status\": \"in_transit\", \"delay_days\": 4}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_hr0z2mjp",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2004"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_hr0z2mjp",
+              "content": "{\"order_id\": \"O2004\", \"customer_id\": \"C100\", \"item\": \"webcam\", \"amount\": 115, \"placed_days_ago\": 23, \"status\": \"delivered\", \"shipment_id\": \"S7004\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_2iv3m9mk",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7004"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_2iv3m9mk",
+              "content": "{\"shipment_id\": \"S7004\", \"order_id\": \"O2004\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_oujxok1f",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2005"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_oujxok1f",
+              "content": "{\"order_id\": \"O2005\", \"customer_id\": \"C100\", \"item\": \"printer\", \"amount\": 220, \"placed_days_ago\": 47, \"status\": \"delivered\", \"shipment_id\": \"S7005\"}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:26.502754Z",
+          "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_211vdmbp",
+                "function": {
+                  "index": 0,
+                  "name": "get_shipment",
+                  "arguments": {
+                    "shipment_id": "S7005"
+                  }
+                }
+              }
+            ]
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 2392509625,
+          "load_duration": 75701458,
+          "prompt_eval_count": 1750,
+          "prompt_eval_duration": 642205000,
+          "eval_count": 25,
+          "eval_duration": 1671053000
+        }
+      }
+    },
+    {
+      "idx": 15,
+      "request": {
+        "method": "POST",
+        "path": "/api/chat",
+        "headers": [
+          [
+            "content-type",
+            "application/json"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an operations analyst. Work only from what the tools return — never assume a value you have not looked up. Look up every record the task depends on before you answer, then give a concise final answer with the figures you found."
+            },
+            {
+              "role": "user",
+              "content": "Customer C100: which of their orders are refundable today, and what is the total refundable amount?"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qiwb5av5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_customer",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qiwb5av5",
+              "content": "{\"customer_id\": \"C100\", \"tier\": \"standard\", \"region\": \"north\", \"account_age_months\": 6}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_gc02v8qd",
+                  "function": {
+                    "index": 0,
+                    "name": "list_orders",
+                    "arguments": {
+                      "customer_id": "C100"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_gc02v8qd",
+              "content": "{\"customer_id\": \"C100\", \"order_ids\": [\"O2000\", \"O2001\", \"O2002\", \"O2003\", \"O2004\", \"O2005\"]}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_u22lh29h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_policy",
+                    "arguments": {
+                      "topic": "refunds"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_u22lh29h",
+              "content": "{\"topic\": \"refunds\", \"text\": \"Refund windows by tier, counted in days since the order was placed: standard 30, plus 45, premier 60. Only delivered orders can be refunded. Returned and lost orders are handled separately and are never refunded under this policy.\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_reinhcl2",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_reinhcl2",
+              "content": "{\"order_id\": \"O2000\", \"customer_id\": \"C100\", \"item\": \"router\", \"amount\": 40, \"placed_days_ago\": 5, \"status\": \"delivered\", \"shipment_id\": \"S7000\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_q8zugkxo",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7000"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_q8zugkxo",
+              "content": "{\"shipment_id\": \"S7000\", \"order_id\": \"O2000\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_qi70lo2h",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_qi70lo2h",
+              "content": "{\"order_id\": \"O2001\", \"customer_id\": \"C100\", \"item\": \"dock\", \"amount\": 145, \"placed_days_ago\": 29, \"status\": \"delivered\", \"shipment_id\": \"S7001\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_cbbtp4vn",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7001"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_cbbtp4vn",
+              "content": "{\"shipment_id\": \"S7001\", \"order_id\": \"O2001\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_e7h3qo3e",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_e7h3qo3e",
+              "content": "{\"order_id\": \"O2002\", \"customer_id\": \"C100\", \"item\": \"tablet\", \"amount\": 250, \"placed_days_ago\": 53, \"status\": \"lost\", \"shipment_id\": \"S7002\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_ny7i6iq6",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7002"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_ny7i6iq6",
+              "content": "{\"shipment_id\": \"S7002\", \"order_id\": \"O2002\", \"carrier\": \"Halden\", \"status\": \"lost\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_0zain1wm",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_0zain1wm",
+              "content": "{\"order_id\": \"O2003\", \"customer_id\": \"C100\", \"item\": \"keyboard\", \"amount\": 355, \"placed_days_ago\": 77, \"status\": \"in_transit\", \"shipment_id\": \"S7003\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_zd2lv3b5",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7003"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_zd2lv3b5",
+              "content": "{\"shipment_id\": \"S7003\", \"order_id\": \"O2003\", \"carrier\": \"Halden\", \"status\": \"in_transit\", \"delay_days\": 4}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_hr0z2mjp",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2004"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_hr0z2mjp",
+              "content": "{\"order_id\": \"O2004\", \"customer_id\": \"C100\", \"item\": \"webcam\", \"amount\": 115, \"placed_days_ago\": 23, \"status\": \"delivered\", \"shipment_id\": \"S7004\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_2iv3m9mk",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7004"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_2iv3m9mk",
+              "content": "{\"shipment_id\": \"S7004\", \"order_id\": \"O2004\", \"carrier\": \"Kestrel\", \"status\": \"delivered\", \"delay_days\": 0}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_oujxok1f",
+                  "function": {
+                    "index": 0,
+                    "name": "get_order",
+                    "arguments": {
+                      "order_id": "O2005"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_oujxok1f",
+              "content": "{\"order_id\": \"O2005\", \"customer_id\": \"C100\", \"item\": \"printer\", \"amount\": 220, \"placed_days_ago\": 47, \"status\": \"delivered\", \"shipment_id\": \"S7005\"}"
+            },
+            {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "call_211vdmbp",
+                  "function": {
+                    "index": 0,
+                    "name": "get_shipment",
+                    "arguments": {
+                      "shipment_id": "S7005"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "tool_call_id": "call_211vdmbp",
+              "content": "{\"shipment_id\": \"S7005\", \"order_id\": \"O2005\", \"carrier\": \"Brightline\", \"status\": \"delivered\", \"delay_days\": 8}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_customer",
+                "description": "Look up a customer's tier, region and account age.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "list_orders",
+                "description": "List the order ids belonging to a customer.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string",
+                      "description": "e.g. C100"
+                    }
+                  },
+                  "required": [
+                    "customer_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_order",
+                "description": "Look up one order: item, amount, age, status, shipment id.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "e.g. O2000"
+                    }
+                  },
+                  "required": [
+                    "order_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_shipment",
+                "description": "Look up one shipment: carrier, status, delay in days.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "shipment_id": {
+                      "type": "string",
+                      "description": "e.g. S7000"
+                    }
+                  },
+                  "required": [
+                    "shipment_id"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_policy",
+                "description": "Read a policy document.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "topic": {
+                      "type": "string",
+                      "description": "one of: refunds, delays, carriers"
+                    }
+                  },
+                  "required": [
+                    "topic"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "description": "Evaluate a numeric arithmetic expression.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "e.g. '0.10 * 900'"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ],
+          "stream": false,
+          "think": false,
+          "options": {
+            "temperature": 0.8,
+            "num_ctx": 8192
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          [
+            "content-type",
+            "application/json; charset=utf-8"
+          ]
+        ],
+        "body": {
+          "model": "qwen3:8b",
+          "created_at": "2026-11-25T07:30:57.523197Z",
+          "message": {
+            "role": "assistant",
+            "content": "### Refundable Orders and Total Refundable Amount for Customer C100\n\n#### Step 1: Determine Refund Window\n- Customer Tier: **Standard**\n- Refund Window: **30 days** since the order was placed\n\n#### Step 2: Check Orders for Refund Eligibility\nRefundable orders must be:\n- **Delivered**\n- Placed **within the last 30 days**\n\nLet's evaluate each order:\n\n| Order ID | Status   | Placed Days Ago | Refundable? |\n|----------|----------|------------------|-------------|\n| O2000    | Delivered | 5                | Yes         |\n| O2001    | Delivered | 29               | Yes         |\n| O2002    | Lost      | 53               | No          |\n| O2003    | In Transit| 77               | No          |\n| O2004    | Delivered | 23               | Yes         |\n| O2005    | Delivered | 47               | No          |\n\n#### Step 3: Total Refundable Amount\n- O2000: $40\n- O2001: $145\n- O2004: $115\n\n**Total Refundable Amount**: $40 + $145 + $115 = **$300**\n\n### ✅ Final Answer:\n- **Refundable Orders**: O2000, O2001, O2004\n- **Total Refundable Amount**: $300"
+          },
+          "done": true,
+          "done_reason": "stop",
+          "total_duration": 31018900292,
+          "load_duration": 91498875,
+          "prompt_eval_count": 1830,
+          "prompt_eval_duration": 1215756000,
+          "eval_count": 351,
+          "eval_duration": 29696583000
+        }
+      }
+    }
+  ]
+}

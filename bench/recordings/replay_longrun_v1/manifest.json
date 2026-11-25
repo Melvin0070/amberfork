@@ -1,0 +1,565 @@
+{
+  "attempts": [
+    {
+      "task": "account_summary",
+      "session": "ref_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 56.8
+    },
+    {
+      "task": "account_summary",
+      "session": "ref_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 83.9
+    },
+    {
+      "task": "account_summary",
+      "session": "ref_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 84.1
+    },
+    {
+      "task": "account_summary",
+      "session": "ref_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 79.0
+    },
+    {
+      "task": "account_summary",
+      "session": "ref_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 69.4
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "ref_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 50.3
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "ref_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 41.4
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "ref_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 46.0
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "ref_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 53.3
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "ref_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 53.5
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "ref_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 51.3
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "ref_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 50.1
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "ref_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 49.9
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "ref_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 57.9
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "ref_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 50.4
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "ref_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 83.2
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "ref_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 68.6
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "ref_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 77.4
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "ref_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 80.2
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "ref_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 97.5
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "ref_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 82.3
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "ref_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 105.0
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "ref_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 89.7
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "ref_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 78.2
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "ref_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 70.8
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "ref_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 16,
+      "seconds": 63.3
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "ref_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 16,
+      "seconds": 68.5
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "ref_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 16,
+      "seconds": 81.7
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "ref_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 16,
+      "seconds": 89.8
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "ref_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 16,
+      "seconds": 67.9
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "ref_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 11,
+      "seconds": 38.9
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "ref_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 11,
+      "seconds": 76.3
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "ref_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 11,
+      "seconds": 59.7
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "ref_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 95.0
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "ref_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 98.8
+    },
+    {
+      "task": "account_summary",
+      "session": "changed_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 99.8
+    },
+    {
+      "task": "account_summary",
+      "session": "changed_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 89.1
+    },
+    {
+      "task": "account_summary",
+      "session": "changed_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 97.3
+    },
+    {
+      "task": "account_summary",
+      "session": "changed_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 85.5
+    },
+    {
+      "task": "account_summary",
+      "session": "changed_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 96.7
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "changed_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 55.0
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "changed_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 57.3
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "changed_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 69.4
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "changed_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 82.4
+    },
+    {
+      "task": "carrier_review_a",
+      "session": "changed_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 19,
+      "seconds": 67.5
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "changed_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 60.1
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "changed_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 70.0
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "changed_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 63.6
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "changed_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 64.8
+    },
+    {
+      "task": "carrier_review_b",
+      "session": "changed_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 15,
+      "seconds": 71.2
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "changed_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 71.3
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "changed_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 79.8
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "changed_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 84.3
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "changed_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 82.5
+    },
+    {
+      "task": "delay_credit_a",
+      "session": "changed_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 18,
+      "seconds": 63.9
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "changed_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 92.8
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "changed_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 90.7
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "changed_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 76.5
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "changed_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 85.9
+    },
+    {
+      "task": "delay_credit_b",
+      "session": "changed_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 85.6
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "changed_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 16,
+      "seconds": 83.4
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "changed_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 17,
+      "seconds": 74.4
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "changed_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 16,
+      "seconds": 71.7
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "changed_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 16,
+      "seconds": 86.6
+    },
+    {
+      "task": "refund_audit_a",
+      "session": "changed_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 16,
+      "seconds": 77.2
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "changed_01",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 11,
+      "seconds": 60.6
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "changed_02",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 81.7
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "changed_03",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 11,
+      "seconds": 44.3
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "changed_04",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 20,
+      "seconds": 96.4
+    },
+    {
+      "task": "refund_audit_b",
+      "session": "changed_05",
+      "attempt": 1,
+      "agent_exit": 0,
+      "exchanges": 11,
+      "seconds": 47.2
+    }
+  ],
+  "excluded": []
+}

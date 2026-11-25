@@ -5256,3 +5256,22 @@ replay *naming the first request that differs*, which is what the mechanism does
 Governing docs: notebook 088 and 088a (the registration and its amendment), 084, 086;
 `BENCHMARK.md` rules 3, 6, 8; issue #65.
 
+## 089a · 2026-11-25 · the 089 recordings are committed, and re-scoring them reproduces the document byte for byte
+
+086's tapes stayed in the gitignored `bench/data/`, so its table can only be re-derived on the
+machine that recorded them. 089's world is invented — no upstream-dataset content, nothing to
+redact — so there is no reason to repeat that. The 70 cassettes, their summaries and both
+recorder logs (including 088a's voided one, unmodified) are committed as
+`bench/recordings/replay_longrun_v1/` (14 MB), and the scorer's default `--data` now points there.
+
+**Check, run before committing:** scoring the committed copy into a scratch file and comparing it
+with `bench/results/replay_longrun_all.json` gives a byte-identical document. The published result
+document is untouched.
+
+**Why not `bench/fixtures/`.** Tried first, and it failed the gate: two tests treat every
+directory there as sanitized output of the Python pair pipeline (the sanitizer-signature check,
+which has an opt-out, and the `pyjson` byte-round-trip, which does not). Cassettes are neither, so
+they get their own root instead of a second exemption. The recorder still writes to
+`bench/data/longrun/`, so a new recording run cannot overwrite the scored tapes.
+
+Governing docs: notebooks 088, 088a, 089.
