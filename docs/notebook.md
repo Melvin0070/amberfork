@@ -5039,3 +5039,108 @@ be distinguished from the false one.
 
 Governing docs: notebook 070 (the registration), 071 (the blast-radius amendment and the no-op
 requirement), `BENCHMARK.md` rules 2, 3, 10.
+
+## 088 · 2026-11-25 · PRE-REGISTRATION: replay on a long, free-running agent — false positives against live diff, and localization at varied depth (#65)
+
+**Written before any corpus session is recorded.** One session of a pilot task that is excluded
+from the corpus has been recorded and replayed, to check the harness runs; what it showed is
+stated below so nothing about it is hidden.
+
+**Why.** 086 ended on a gap: two live runs fork 96.7% of the time on long free-running agents
+(084, Terminal-Bench) and 4% on a short scripted one (086), and `replay` has only run on the
+short one, where every gold is exchange 1 and there is nothing to beat. This entry registers the
+measurement in the other regime, on one corpus, so the comparison is not across corpora (rule 8).
+
+**Agent and world, new and committed with this entry.** `spike/longrun_agent.py` over
+`spike/longrun_world.py`: an invented dataset (8 customers, 55 orders, 55 shipments, 3 policies)
+behind five lookup tools that are pure functions of their arguments, plus `calculate`. Nothing
+scripts the path — the model chooses which records to open, in what order, and when to stop.
+Model `qwen3:8b` through Ollama, temperature 0.8, `num_ctx` 8192, `think` off, at most 60 turns.
+The request body is a pure function of the conversation (no timestamps, no random ids).
+
+**Pilot, disclosed.** `pilot_refunds` (customer C107) is in `PILOT_TASKS` and is never scored.
+One session: 19 exchanges, 18 tool calls, one call per exchange. Replayed unchanged it followed
+the tape; with a change at three different calls it left the tape at exchanges 1, 12 and 18; with
+a change to a call the run never made it followed the tape. That session used `num_ctx` 40960;
+its largest prompt was 2,114 tokens, and 40960 made the model 11 GB on a 16 GB machine, so the
+corpus uses 8192. **Harness check, fixed now:** any tape where an exchange's
+`prompt_eval_count + eval_count` reaches 8192 is reported as a defect before any rate.
+
+**Corpus.** 7 tasks (`refund_audit_a/b`, `delay_credit_a/b`, `carrier_review_a/b`,
+`account_summary`) × 5 sessions of the unchanged agent = **35 reference tapes**, recorded through
+the shipped `amberfork record`. A session is re-recorded (at most 3 attempts, each logged) only
+when the agent exits 3 (no final answer in 60 turns) or 1 (transport error) — never on what the
+run did. A task that exhausts its attempts is reported as an exclusion.
+
+**A change** is one world call, `tool:argument`, whose result is altered by a fixed rule per tool
+(tier rotated, last order dropped, status flipped, delay +7 days, policy numbers changed). It
+models a dependency that now answers differently.
+
+**What is run.**
+
+- **A — replay, unchanged (35).** Each tape replayed strict with the unchanged agent. Exit 1 is a
+  false positive.
+- **B — replay, changed (up to 105).** For each tape, list the distinct changeable world calls in
+  order of first appearance, and take the **first, the middle (index ⌊n/2⌋) and the last**. Each is
+  one replay with `--change` set. Gold, from the tape alone: (index of the first exchange whose
+  recorded response makes that call) + 1 — the request that first carries the altered result.
+- **C — live diff, unchanged (70).** `amberfork diff` on every pair of the five reference tapes
+  within a task (C(5,2) = 10 per task; earlier session as `--against`). Two live runs, nothing
+  changed. Exit 1 is the live-diff false positive — 084's 96.7% measured on this corpus.
+- **D — live diff, changed (35).** For each reference tape, one new live session with that tape's
+  *middle* change active, then `amberfork diff <changed> --against <reference> --json`. This is
+  what a team without `replay` would do to catch the same change.
+
+**Metrics.** Counts with Wilson 95% intervals (rule 6); exit 2 reported apart in every class;
+every run scored, no retries or exclusions on outcome.
+
+- A: false-positive rate.
+- B: detection rate; **exact-exchange rate** (the exchange `replay` names equals gold); both also
+  split by position (first / middle / last), with the distribution of gold exchanges printed, and
+  beside them the score of the best constant answer — the check that 086's "always 1" would not
+  pass here.
+- C: false-positive rate.
+- D: detection rate (exit 1); and, where the changed run made the altered call, whether the fork
+  `diff` reports on the changed side is at that run's own gold exchange — exactly, and within ±3.
+  Runs that never made the altered call are counted as not localized and reported as their own
+  count, because nothing changed for them.
+
+**Primary comparison.** A against C: the false-positive rate of the two ways to gate, on one
+agent. **Secondary.** B's exact-exchange rate against D's.
+
+**Prediction, registered.** A 0/35. B all detected, all at the gold exchange, with gold spread
+over at least three distinct exchanges per task. C above 50%. D detects nearly always (it fires
+on unchanged pairs too) and localizes exactly in under half.
+
+**What this can and cannot show — read before the number.**
+
+- **A and B are properties of the design, confirmed on a real path.** The agent is deterministic
+  given its inputs and `replay` matches requests exactly, so 0 false positives and exact
+  localization are what the mechanism implies. The measurement can find a fidelity bug; it cannot
+  show cleverness. The measured content is the contrast with C and D.
+- **One model, one invented world, one agent with no unreproducible request content.** An agent
+  that sends timestamps or random ids diverges at exchange 0 (`docs/ci.md` says so); how common
+  that is, is not measured here.
+- **35 tapes from 7 tasks.** Tapes within a task are not independent; intervals are reported per
+  class and the per-task counts beside them. 0/35 bounds a rate near 0.10, not at zero.
+- **It does not measure the model.** A replay never calls it.
+- **D is one live sample per tape**, at the middle change only.
+
+**Decision rule.**
+
+- **C's lower bound above A's upper bound:** the README evidence table and `docs/ci.md` may state
+  the measured false-positive rates of both gates on this corpus, with these limits.
+- **Intervals overlap:** reported as a null, as 086 was; no advantage is claimed.
+- **Any false positive, miss or wrong exchange in A or B:** a defect in `record` or `replay`,
+  diagnosed per replay, fixed with a test, and the failing count published beside the post-fix
+  count (rule 3).
+- B and D are reported whatever they show. B's exact-exchange rate may be described as replay
+  *naming the first request that differs*, never as attribution.
+
+**Documents.** `bench/results/replay_longrun_all.json`, written by `spike/score_replay_longrun.py`;
+recordings under `bench/data/longrun/` (gitignored), made by `spike/record_longrun_sessions.py`.
+Both scripts are committed before recording starts.
+
+**Cost.** 70 live sessions on a local model; no network, no key.
+
+Governing docs: `BENCHMARK.md` rules 3, 6, 8; notebooks 084, 085, 086; issue #65.
