@@ -2,7 +2,7 @@
 
 Local all-Rust tool that diffs two AI-agent run trajectories, finds the fork point, and
 attributes the regression. 11 crates at v1.0.0. `ui/` is a SEPARATE workspace (`exclude`d).
-Current milestone: **v1.0 — the credibility release** (#46–#57). `backlog (post-v1)` (#58–#63)
+Current milestone: **v1.1** (#50, #53, #57, #64–#68). `backlog (post-v1)` (#58–#63)
 holds decided deferrals, not available work.
 
 ## Commands
@@ -19,7 +19,7 @@ holds decided deferrals, not available work.
 - `DiffResult` + trace-format is the versioned seam (`schema_version`). Never fork it per
   consumer; bump the version deliberately.
 - `serde_json`'s `preserve_order` feature is load-bearing for byte-parity, not a convenience.
-- Exit codes are diff(1)-style: `diff` 0=converged, 1=forked, 2=trouble. `demo` exits 1 on success; `record` propagates the *agent's* exit code instead.
+- Exit codes are diff(1)-style: `diff` and `replay` 0=converged/followed, 1=forked/diverged, 2=trouble (incl. runs with no common ground). `demo` exits 1 on success; `record` propagates the *agent's* exit code instead.
 - Commit straight to `main` — no branches, no PRs. `(#N)` in a message is a GitHub *issue* ref.
 - One vertical slice at a time; WAIT for founder review before committing. See CONTRIBUTING.md.
 

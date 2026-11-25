@@ -1,0 +1,44 @@
+# cargo-deny policy for both workspaces (the engine at `/`, the web UI at `/ui`).
+# CI runs `cargo deny check` against each; see .github/workflows/ci.yml.
+
+[graph]
+all-features = true
+
+[advisories]
+# Default: any RustSec advisory against a crate in the lockfile fails the check.
+ignore = []
+
+[licenses]
+# Permissive and weak-copyleft licenses only. amberfork is MIT and ships as a single binary, so
+# nothing here may impose terms on the binary as a whole.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "0BSD",
+    "Unlicense",
+    "CC0-1.0",
+    "BSL-1.0",
+    "Unicode-3.0",
+    # File-level copyleft: applies to the MPL-licensed source files, not to the binary.
+    "MPL-2.0",
+    # The Mozilla CA bundle (`webpki-roots`), a permissive data licence.
+    "CDLA-Permissive-2.0",
+]
+confidence-threshold = 0.8
+
+[bans]
+# Duplicate versions are a size cost, not a correctness one; surfaced, not fatal.
+multiple-versions = "warn"
+wildcards = "deny"
+# Path dependencies between workspace members carry a version when published.
+allow-wildcard-paths = true
+
+[sources]
+# Everything comes from crates.io: no git dependencies, no alternative registries.
+unknown-registry = "deny"
+unknown-git = "deny"

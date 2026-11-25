@@ -8,8 +8,8 @@ file is the human-readable summary of the same working agreement.
 
 1. **Pick work from the tracker.** `gh issue list` — take the lowest-numbered unblocked issue in
    the current milestone. Milestones are the cut line (v0.1 walking skeleton → v0.2 offline
-   benchmark → v0.8 the credibility pass → v0.9 the explain layer, all shipped; now
-   **v1.0 the credibility release**). Issues in **backlog (post-v1)** are *decided deferrals* —
+   benchmark → v0.8 the credibility pass → v0.9 the explain layer → v1.0 the credibility
+   release, all shipped; now **v1.1**, record-then-replay). Issues in **backlog (post-v1)** are *decided deferrals* —
    each records why it is not in the current milestone. Don't pull from there without a decision.
 2. **Read the governing doc.** Each issue points at the section of `docs/design/`, `BENCHMARK.md`,
    or `DESIGN.md` that specifies it. The design corpus is authoritative; where it conflicts, the

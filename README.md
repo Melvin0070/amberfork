@@ -116,8 +116,9 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
 
 v1.0.0 is tagged and published. On `main` since then: the `replay` verb, native Claude Code and
 ATIF ingest, and the Terminal-Bench and replay measurements. Also on `main`: the guard that refuses runs with no
-common ground. Open before the next release: the scale measurement (#50), and a measurement of
-`replay` on a long, free-running agent — the one regime where its advantage over live runs is
-expected and unproven.
+common ground. Open before the next release (milestone
+[v1.1](https://github.com/Melvin0070/amberfork/milestone/12)): the scale measurement (#50), and a
+measurement of `replay` on a long, free-running agent (#65) — the one regime where its advantage
+over live runs is expected and unproven.
 [`CONTRIBUTING.md`](CONTRIBUTING.md) describes the working agreement; [`CHANGELOG.md`](CHANGELOG.md)
 has the rest.

@@ -1,0 +1,26 @@
+version: 2
+updates:
+  # The engine workspace. Grouped so a week of patch bumps is one change to review, not twenty.
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      rust:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # The web UI is a separate workspace (`exclude`d from the root one) with its own lockfile.
+  - package-ecosystem: cargo
+    directory: /ui
+    schedule:
+      interval: weekly
+    groups:
+      rust-ui:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

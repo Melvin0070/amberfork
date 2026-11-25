@@ -28,3 +28,31 @@ jobs:
           else
             echo "no Cargo.toml yet — rust checks skipped (this step arms itself when the workspace lands)"
           fi
+
+  # The published crates declare `rust-version`; this is what keeps that declaration true. It
+  # was false once (1.85 declared, let-chains used — which need 1.88) and nothing noticed.
+  msrv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: check on the declared minimum Rust version
+        run: |
+          msrv=$(sed -n 's/^rust-version = "\(.*\)"/\1/p' Cargo.toml)
+          test -n "$msrv" || { echo "no rust-version in Cargo.toml"; exit 1; }
+          rustup toolchain install "$msrv" --profile minimal
+          cargo "+$msrv" check --workspace --all-targets --locked
+
+  # Licences, RustSec advisories and dependency sources, for both workspaces (deny.toml).
+  deny:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          manifest-path: ui/Cargo.toml

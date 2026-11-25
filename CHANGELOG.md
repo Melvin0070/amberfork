@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+- **The declared minimum Rust version was wrong, and is now 1.88.** `rust-version` said 1.85 while
+  the code used let-chains, which need 1.88 — true of the published v1.0.0 crates as well. A new
+  `msrv` CI job checks the workspace on whatever `rust-version` declares, so it cannot drift again.
+- **Dependency audit in CI (`cargo-deny`), and the advisories it found fixed.** `deny.toml` checks
+  licences, RustSec advisories and sources for both workspaces. Its first run reported 15
+  advisories: `rustls`, `rustls-webpki`, `webpki-roots`, `tokio`, `webbrowser` and `url` are
+  updated in the lockfiles, and `zip` (benchmark harness only) moves 2 → 9.
+- **Repo hygiene.** `SECURITY.md` (what the loopback proxies and cassettes do and do not protect),
+  Dependabot for both Cargo workspaces and the workflows, `.env` ignored, and the Codex
+  counterparts of the tracked `.claude/` setup (`AGENTS.md`, `.codex/`, `.agents/`) committed.
 - **`diff` refuses runs that share no common ground (notebooks 070, 087).** When the alignment
   has no in-sync step, `diff`, `diff --verify` and `serve` exit 2 with "no common ground" where
   they used to report a fork at step 0 at high confidence; `--allow-unrelated` aligns them anyway.

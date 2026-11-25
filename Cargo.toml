@@ -24,7 +24,7 @@ edition = "2024"
 license = "MIT"
 repository = "https://github.com/Melvin0070/amberfork"
 homepage = "https://github.com/Melvin0070/amberfork"
-rust-version = "1.85"
+rust-version = "1.88"
 keywords = ["agent", "llm", "trace", "diff", "debugging"]
 
 # Single source of truth for shared dependency versions. Every crate reads these via
@@ -44,7 +44,7 @@ sha2 = "0.10"
 pbkdf2 = "0.12"
 base64 = "0.22"
 fernet = "0.2"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "9", default-features = false, features = ["deflate"] }
 proptest = "1"
 clap = { version = "4", features = ["derive"] }
 terminal_size = "0.4"

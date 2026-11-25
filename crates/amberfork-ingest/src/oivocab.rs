@@ -161,10 +161,8 @@ pub(crate) fn decode_content(value: Option<&Value>, mime: Option<&Value>) -> Opt
     let is_json = mime
         .and_then(|m| m.as_str())
         .is_some_and(|m| m.contains("json"));
-    if is_json {
-        if let Ok(parsed) = serde_json::from_str::<Value>(&text) {
-            return Some(payload_from_json(parsed));
-        }
+    if is_json && let Ok(parsed) = serde_json::from_str::<Value>(&text) {
+        return Some(payload_from_json(parsed));
     }
     Some(Payload::Text(text))
 }

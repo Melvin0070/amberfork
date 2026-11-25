@@ -31,5 +31,10 @@ ui/dist/
 # Claude Code worktrees (`claude --worktree <name>`, subagent isolation)
 .claude/worktrees/
 
+# Secrets: API keys for the benchmark's paid arms live in the environment or a local .env.
+.env
+.env.*
+!.env.example
+
 # OS
 .DS_Store

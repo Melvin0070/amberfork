@@ -88,7 +88,8 @@ pub fn decrypt_traces(zip: &[u8], password: &str) -> Result<Vec<u8>, HalDecryptE
             .by_index(index)
             .map_err(HalDecryptError::Zip)?
             .name()
-            .to_string();
+            .map_err(HalDecryptError::Zip)?
+            .into_owned();
         if name.ends_with(ENCRYPTED_MEMBER_SUFFIX) {
             count += 1;
             member_index = Some(index);

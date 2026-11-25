@@ -452,13 +452,12 @@ fn ollama_text(raw: &[u8], num_ctx: Option<u32>) -> Result<String, String> {
         value
             .get("prompt_eval_count")
             .and_then(serde_json::Value::as_u64),
-    ) {
-        if evaluated >= u64::from(num_ctx) {
-            return Err(format!(
-                "prompt filled the {num_ctx}-token context window ({evaluated} evaluated): \
+    ) && evaluated >= u64::from(num_ctx)
+    {
+        return Err(format!(
+            "prompt filled the {num_ctx}-token context window ({evaluated} evaluated): \
                  the model saw a truncated prompt"
-            ));
-        }
+        ));
     }
     value
         .get("response")
