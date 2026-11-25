@@ -5744,3 +5744,56 @@ both classes and below it on the other four; that is descriptive only.
 
 Governing docs: notebook 095 (the registration), 081, 083 / 083a / 083b, 084, 087;
 `BENCHMARK.md` rules 1, 2, 3, 4, 6, 9, 10; issue #64.
+
+## 097 · 2026-11-25 · v1.1.0 as executed: reveal, dry run, tag, publish — in that order (#64)
+
+The release ran in the order 095 fixed, each step on the same commit:
+
+| step | commit / run | result |
+|---|---|---|
+| registration of both reveals (095) | `ff13290` | pushed before any scoring |
+| release prep, 1.0.0 → 1.1.0 | `38d347e` | CI green |
+| both sealed reveals (096) | scored at `38d347e` | chimera byte-identical; Terminal-Bench null confirmed |
+| results and docs | `4431cb8` | CI green |
+| `release.yml` dry run | `45659991062` on `4431cb8` | five targets green, `cargo package --workspace` green |
+| tag `v1.1.0` | `4431cb8` | — |
+| release workflow | `45662493697` | five builds and the tag-only `release` job green; ten assets |
+| crates.io | ten crates at 1.1.0 | published from the tagged commit |
+
+The engine code that was scored is the code that was tagged: `4431cb8` differs from `38d347e`
+only in documents and committed results. 081's sequencing failure did not repeat.
+
+**The tag-only `release` job is now verified** with `download-artifact` v8, the one step 094 and
+094a could not reach from a dispatch.
+
+**Checked after the fact, not assumed.** The released Apple-silicon archive verifies against its
+`.sha256`, reports `amberfork 1.1.0`, lists `replay`, and `demo` exits 1. A fresh
+`cargo install amberfork` from the registry into an empty root gives 1.1.0 with `replay`, and its
+`serve --demo` answers `/` with the UI page and `/api/document` — so the web bundle is inside
+the published `amberfork-server` crate.
+
+### What went wrong
+
+- **The workspace publish stopped partway.** `cargo publish --workspace` uploaded six crates and
+  failed on the seventh, `amberfork-server`. The error text was lost: the command's output was
+  being filtered to a few line patterns and the cause did not match one. Publishing that crate
+  alone then succeeded, and the last three were published one at a time in dependency order.
+  Nothing was left inconsistent, but the lesson is procedural: do not filter the output of an
+  irreversible command.
+- **The publish needs a step the checkout does not have.** `crates/amberfork-server/ui-dist/` is
+  empty in a dev checkout, so the bundle was built with `trunk` and staged before publishing, as
+  `release.yml` does, and removed afterwards. Publishing without it would have shipped a `serve`
+  with no UI, and nothing would have failed.
+- **A watch on the wrong run.** The first wait on the pre-tag dry run picked up an earlier
+  dispatch on a different commit and printed its green result. Caught from the commit hash before
+  it was relied on. A dry run's result is only evidence for the commit it ran on.
+- **A yanked dev-dependency.** `chacha20 0.10.1` in `Cargo.lock` was yanked upstream. It reaches
+  the workspace only through `proptest`, a dev-dependency of `amberfork-align`, so no shipped
+  binary or published crate is affected. Moved to 0.10.2 on `main` after the tag.
+
+### For the next release
+
+Dispatch `release.yml` on the release commit and check the run's `headSha`; stage the web bundle
+before `cargo publish`; publish with unfiltered output.
+
+Governing docs: notebooks 081, 094, 094a, 095, 096; `BENCHMARK.md` rule 2; issue #64.
