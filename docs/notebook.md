@@ -5393,3 +5393,71 @@ counts, passes unchanged. `bench/params.toml` is untouched (sha256 `8ebd95ce…`
 
 Governing docs: notebooks 070, 071, 087; issue #66.
 
+## 092 · 2026-11-25 · AMENDMENT to 070, before any score: the comparable stratum, and what counts as a null (#66 slice 2)
+
+**Written before the aligner has been run on the repaired pairs.** 070 fixed that comparability is
+decided by step-count ratio and step-name overlap only, "and the threshold is declared in the
+implementing slice *before* it is scored." This is that declaration. It also pins two things 070
+left as words: what "constant predictor" means mechanically, and what "still a null" means.
+
+**What was looked at to choose it.** For each of the 23 dev pairs of the rebuilt set
+(`pairs_trail_hal_v2`, notebook 091): the two step counts and the two sets of step names. No gold
+step, no alignment, no arm's prediction. The test-side pairs were not examined.
+
+| dev pairs | count |
+|---|---|
+| step-count ratio (longer ÷ shorter) ≤ 3.0 | 14 |
+| ratio > 3.0 | 9 |
+| sharing ≥ 1 step name | 9 |
+| ratio ≤ 3.0 **and** sharing ≥ 1 step name | 9 |
+
+The ratios fall in two groups with nothing between them: fourteen pairs from 1.03 to 2.75, nine
+from 4.85 to 13.29. Median 2.24. Every pair that shares a step name has ratio ≤ 2.25.
+
+**The rule.** A pair is **comparable** when both hold:
+
+1. `max(n_failing, n_reference) / min(n_failing, n_reference) ≤ 3.0`;
+2. the two runs share **at least one step name**.
+
+Why these values. Condition 2 is 070's first defect stated as a test: with no shared name the
+fork rule has nothing to anchor on, and one is the smallest overlap that is not none. Condition 1
+is set in the empty interval between the two ratio groups (2.75 to 4.85) at a round number, so no
+dev pair sits near it; on dev it removes nothing condition 2 has not already removed, and it is
+kept because the test side may differ. Neither value was chosen by looking at a score, and
+neither will be revisited after one.
+
+**The stratum is small, and that is stated before the number.** 9 of 23 dev pairs. A Wilson
+interval on 9 is wide — 3 hits in 9 spans roughly 0.12 to 0.65 — so only a large effect can be
+told from nothing. 070 estimated "roughly 10"; this is that, measured.
+
+**"Constant predictor", mechanically (070's first check).** An aligner arm is a constant predictor
+on a set of pairs when its answers take fewer than two distinct values, counting an abstention as
+a value. The check passes only if `nw-lexical/resync` — the arm that stands for the product — is
+not a constant predictor on the comparable dev stratum. It is reported for all three aligner arms
+on both the stratum and all 23 pairs. If it fails, the repair failed whatever the rates say.
+
+**"Still a null", mechanically (070's retirement branch).** On the comparable dev stratum, the
+exact-match rate of `nw-lexical/resync` is compared with the `random` arm on the same pairs. It is
+a null unless the engine's rate is higher **and** the paired-bootstrap 95% interval of the
+difference (the protocol's existing resampling, over pairs) excludes zero. Higher but not
+separable is a null. ±1 and ±3 are reported beside it and do not decide.
+
+**What is published, always together (070, rule 3):** the old all-pairs number (0.000 exact,
+n=23), the repaired all-pairs number, and the repaired comparable-stratum number — each with its
+abstention rate. Three numbers or none.
+
+**Consequences, unchanged from 070.** Not a null: the result is published with these limits and
+the TRAIL↔HAL table is kept, on its comparable stratum only. A null: the corpus is retired as a
+documented negative result for fork localization, and nothing further is tuned against it.
+
+**How it is computed.** A new `amberfork-bench score-trail-strata` subcommand, committed before it
+is run on this corpus. It assigns each pair its stratum from step counts and step names alone,
+then asks the protocol's existing arms for their per-pair answers (`Arm::predict`, the same call
+`run` makes), and reports: each pair's counts, ratio, shared-name count, stratum and per-arm
+answer; the constant-predictor check; exact / ±1 / ±3 and abstention with Wilson intervals from
+the existing scorer, for all dev pairs and for the comparable stratum; and the paired-bootstrap
+difference against `random` (2,000 resamples over pairs, fixed seed). No new arm, no new
+parameter, `bench/params.toml` untouched.
+
+Governing docs: notebooks 070, 071, 087, 091; `BENCHMARK.md` rules 2, 3, 6, 10.
+
