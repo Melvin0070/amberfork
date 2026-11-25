@@ -99,8 +99,20 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
   other, `diff` exits 2 ("no common ground") instead of reporting a fork at step 0 — which is what
   it used to do, at high confidence. `--allow-unrelated` aligns them anyway. A change in the very
   first step looks the same as two unrelated runs, and gets the same refusal.
-- **Alignment is quadratic in run length.** `--max-steps` (default 2000) is the guard; the wall
-  itself has been projected, not measured (#50).
+- **Alignment is quadratic in run length, in time and in memory.** `--max-steps` (default 2000)
+  is the guard, and it refuses a longer run up front instead of looking hung. Measured end to end
+  on an Apple M5, release build ([notebook 090](docs/notebook.md)):
+
+  | steps per side | wall time | peak memory |
+  |---|---|---|
+  | 100 | 90 ms | 11 MB |
+  | 500 | 2.4 s | 24 MB |
+  | 1000 | 8.3 s | 56 MB |
+  | 2000 (the default guard) | 35 s | 152 MB |
+  | 5000 | 4.6 min | 789 MB |
+
+  There is no banding or linear-space traceback yet, so a 20,000-step run is out of reach on a
+  laptop for memory before it is for time.
 
 ## Where to look
 
@@ -119,8 +131,8 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
 
 v1.0.0 is tagged and published. On `main` since then: the `replay` verb, native Claude Code, Codex,
 ATIF and OpenTelemetry ingest, and the Terminal-Bench and replay measurements. Also on `main`: the guard that refuses runs with no
-common ground. Also measured on `main`: `replay` against a live diff on a longer agent (#65).
-Open before the next release (milestone
-[v1.1](https://github.com/Melvin0070/amberfork/milestone/12)): the scale measurement (#50).
+common ground. Also measured on `main`: `replay` against a live diff on a longer agent (#65), and the scale
+wall (#50). Open before the next release: milestone
+[v1.1](https://github.com/Melvin0070/amberfork/milestone/12).
 [`CONTRIBUTING.md`](CONTRIBUTING.md) describes the working agreement; [`CHANGELOG.md`](CHANGELOG.md)
 has the rest.

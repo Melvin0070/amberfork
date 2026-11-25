@@ -1,0 +1,178 @@
+{
+  "protocol": "scale",
+  "issue": 50,
+  "method": {
+    "command": "amberfork diff <b> --against <a> --json --max-steps <n>",
+    "source": "bench/fixtures/chimera_noise_seed42_dev, sides stitched and cycled to length (as benches/align_scale.rs)",
+    "warmup_runs": 1,
+    "measured_runs": 3,
+    "time": "wall clock, spawn to exit, median of measured runs",
+    "memory": "ru_maxrss of each process from wait4, maximum over measured runs"
+  },
+  "machine": {
+    "os": "Darwin 27.2.0",
+    "arch": "arm64",
+    "cpu": "Apple M5",
+    "logical_cpus": 10,
+    "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+    "commit": "b2d9d7c",
+    "profile": "release"
+  },
+  "sizes": [
+    {
+      "steps": 100,
+      "trace_bytes": [
+        139013,
+        182839
+      ],
+      "median_seconds": 0.08988362501258962,
+      "min_seconds": 0.08944183302810416,
+      "max_seconds": 0.09056833299109712,
+      "peak_rss_bytes": 11436032,
+      "exit_codes": [
+        1
+      ],
+      "runs": [
+        {
+          "seconds": 0.08988362501258962,
+          "peak_rss_bytes": 11436032,
+          "exit": 1
+        },
+        {
+          "seconds": 0.09056833299109712,
+          "peak_rss_bytes": 11321344,
+          "exit": 1
+        },
+        {
+          "seconds": 0.08944183302810416,
+          "peak_rss_bytes": 11304960,
+          "exit": 1
+        }
+      ]
+    },
+    {
+      "steps": 500,
+      "trace_bytes": [
+        727262,
+        865676
+      ],
+      "median_seconds": 2.3994218339794315,
+      "min_seconds": 2.1568475830135867,
+      "max_seconds": 2.432177542010322,
+      "peak_rss_bytes": 25264128,
+      "exit_codes": [
+        1
+      ],
+      "runs": [
+        {
+          "seconds": 2.1568475830135867,
+          "peak_rss_bytes": 25264128,
+          "exit": 1
+        },
+        {
+          "seconds": 2.3994218339794315,
+          "peak_rss_bytes": 22183936,
+          "exit": 1
+        },
+        {
+          "seconds": 2.432177542010322,
+          "peak_rss_bytes": 23379968,
+          "exit": 1
+        }
+      ]
+    },
+    {
+      "steps": 1000,
+      "trace_bytes": [
+        1450771,
+        1729083
+      ],
+      "median_seconds": 8.276279667014023,
+      "min_seconds": 8.178637542005163,
+      "max_seconds": 9.725964125012979,
+      "peak_rss_bytes": 58425344,
+      "exit_codes": [
+        1
+      ],
+      "runs": [
+        {
+          "seconds": 9.725964125012979,
+          "peak_rss_bytes": 52084736,
+          "exit": 1
+        },
+        {
+          "seconds": 8.276279667014023,
+          "peak_rss_bytes": 53035008,
+          "exit": 1
+        },
+        {
+          "seconds": 8.178637542005163,
+          "peak_rss_bytes": 58425344,
+          "exit": 1
+        }
+      ]
+    },
+    {
+      "steps": 2000,
+      "trace_bytes": [
+        2891761,
+        3463225
+      ],
+      "median_seconds": 34.750191874976736,
+      "min_seconds": 34.69892979200813,
+      "max_seconds": 36.39277258398943,
+      "peak_rss_bytes": 159547392,
+      "exit_codes": [
+        1
+      ],
+      "runs": [
+        {
+          "seconds": 34.69892979200813,
+          "peak_rss_bytes": 159481856,
+          "exit": 1
+        },
+        {
+          "seconds": 34.750191874976736,
+          "peak_rss_bytes": 159186944,
+          "exit": 1
+        },
+        {
+          "seconds": 36.39277258398943,
+          "peak_rss_bytes": 159547392,
+          "exit": 1
+        }
+      ]
+    },
+    {
+      "steps": 5000,
+      "trace_bytes": [
+        7243919,
+        8676455
+      ],
+      "median_seconds": 278.38753174999147,
+      "min_seconds": 252.55151320798905,
+      "max_seconds": 293.73539549999987,
+      "peak_rss_bytes": 826900480,
+      "exit_codes": [
+        1
+      ],
+      "runs": [
+        {
+          "seconds": 252.55151320798905,
+          "peak_rss_bytes": 826245120,
+          "exit": 1
+        },
+        {
+          "seconds": 293.73539549999987,
+          "peak_rss_bytes": 825589760,
+          "exit": 1
+        },
+        {
+          "seconds": 278.38753174999147,
+          "peak_rss_bytes": 826900480,
+          "exit": 1
+        }
+      ]
+    }
+  ]
+}

@@ -35,9 +35,9 @@ pub struct AlignParams {
 }
 
 impl AlignParams {
-    /// Default [`Self::max_steps`]. At 2000×2000 the aligner sits near 100 MB and around a
-    /// minute (notebook 022's measured curve) — the largest real traces seen so far stay
-    /// under half of it; 5000 projects to ~3.4 min and ~600 MB, where "slow" reads as hung.
+    /// Default [`Self::max_steps`]. At 2000×2000 a diff takes about 35 s and 152 MB; at
+    /// 5000×5000 it takes about 4.6 min and 789 MB, where "slow" reads as hung (notebook 090,
+    /// measured end to end on an Apple M5).
     pub const DEFAULT_MAX_STEPS: usize = 2000;
 }
 

@@ -327,8 +327,9 @@ invalid input). `amberfork diff` in CI gates on a reference run for free.
 - **A 0-step run "forks at step 0"** — technically true, practically a converter bug:
   check that your script actually emitted steps.
 - **`trace has N steps, over the 2000-step alignment guard`** — alignment memory and time
-  grow with the product of the two runs' lengths (~1000×1000 steps ≈ 13 s today; measured,
-  tracked in [#16](https://github.com/Melvin0070/amberfork/issues/16)), so oversized traces
+  grow with the product of the two runs' lengths (measured: 1000×1000 steps ≈ 8 s and 56 MB,
+  2000×2000 ≈ 35 s and 152 MB, 5000×5000 ≈ 4.6 min and 789 MB —
+  [notebook 090](notebook.md)), so oversized traces
   are refused up front rather than looking hung. When the wait is a choice, raise the
   ceiling: `--max-steps <N>`.
 - **OTLP protobuf and live collectors** — only OTLP/**JSON** files are read. A protobuf export or

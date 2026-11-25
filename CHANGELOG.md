@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **The scale wall is measured, not projected (#50, notebook 090).** `diff` end to end through
+  the release binary: 8.3 s / 56 MB at 1000 steps per side, 35 s / 152 MB at the 2000-step default
+  guard, 4.6 min / 789 MB at 5000. The earlier 5000-step projection (3.4 min, 600 MB) was
+  optimistic; the README now carries the table.
 - **`diff` and `serve` read Codex CLI rollouts directly (#68).** A
   `~/.codex/sessions/…/rollout-*.jsonl` file is recognized by its leading `session_meta` and
   mapped the way Claude Code transcripts are: assistant messages as `llm` steps named

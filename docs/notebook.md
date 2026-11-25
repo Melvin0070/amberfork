@@ -5275,3 +5275,70 @@ they get their own root instead of a second exemption. The recorder still writes
 `bench/data/longrun/`, so a new recording run cannot overwrite the scored tapes.
 
 Governing docs: notebooks 088, 088a, 089.
+
+## 090 · 2026-11-25 · The scale wall, measured end to end: 35 s and 152 MB at the 2000-step guard, 4.6 min and 789 MB at 5000 (#50)
+
+**What prompted it.** 022/023 measured the aligner's time up to 1000 steps inside a criterion
+bench and *projected* the rest: "5000 projects to ~3.4 min and ~600 MB", and the 2000-step figure
+behind `DEFAULT_MAX_STEPS` ("near 100 MB and around a minute") was never measured either. The
+README said so. This replaces the projections with measurements.
+
+**Method.** `spike/measure_scale.py`, through the shipped release binary, so the number is what a
+user waits for — file read, ingest, alignment, fork, field diffs, attribution, JSON out — not the
+aligner alone.
+
+- Runs stitched from the committed seed-42 dev fixture exactly as `benches/align_scale.rs` does
+  (each side's runs concatenated in filename order, cycled to length, re-indexed): real
+  GAIA-derived step content, sanitized, deterministic.
+- One fresh `amberfork diff b.json --against a.json --json --max-steps N` process per measurement.
+  Wall time is a monotonic clock around spawn-to-exit; peak memory is that process's own
+  `ru_maxrss` from `wait4`, so sizes cannot contaminate each other.
+- One discarded warm-up per size, then 3 measured runs. Median time, maximum peak RSS.
+- Machine: Apple M5, 10 logical CPUs, 16 GB, macOS (Darwin 27.2.0), rustc 1.97.0, release
+  profile, commit `b2d9d7c`. Nothing else heavy running; the machine was not otherwise isolated.
+
+**Result** (`bench/results/scale_all.json`; `python3 spike/measure_scale.py --render` re-prints
+this table from it offline).
+
+| steps per side | wall time (median) | vs previous | peak memory |
+|---|---|---|---|
+| 100 | 90 ms | — | 11 MB |
+| 500 | 2.40 s | 26.7× (n² predicts 25.0×) | 24 MB |
+| 1000 | 8.28 s | 3.4× (n² predicts 4.0×) | 56 MB |
+| 2000 | 34.75 s | 4.2× (n² predicts 4.0×) | 152 MB |
+| 5000 | 4.6 min | 8.0× (n² predicts 6.2×) | 789 MB |
+
+Individual runs, seconds: 100 → 0.09 ×3; 500 → 2.16, 2.40, 2.43; 1000 → 9.73, 8.28, 8.18;
+2000 → 34.70, 34.75, 36.39; 5000 → 252.6, 293.7, 278.4.
+
+**Reading.**
+
+- **Quadratic through 2000, as documented.** 1000 steps is 8.28 s end to end against 023's
+  8.18 s for the aligner alone, so ingest, attribution and output are noise next to the matrix.
+- **The 5000-step projection was optimistic on both axes.** 4.6 min, not 3.4; 789 MB, not 600.
+  The last step grows 8.0× where n² predicts 6.2×, and its three runs spread 252–294 s — the
+  likely cause is that a three-quarter-gigabyte matrix no longer fits in cache, but that was not
+  profiled.
+  With three runs that spread is all that can be said about variance.
+- **The default guard was described wrong in the other direction.** At 2000 steps the code
+  comment said "near 100 MB and around a minute". Measured: 152 MB and 35 s. The guard's value is
+  unchanged; its comment now carries the measured figures.
+- **Memory is also quadratic** (152 MB → 789 MB for 2.5× the steps is 5.2×, against 6.25×
+  predicted): the full cost and traceback matrices are held. That, not time, is what would stop a
+  20,000-step run on a laptop — it projects to roughly 12 GB.
+
+**What this is not.** One machine, three runs per size, one stitched corpus whose steps are
+capped-length sanitized text. A trace with much longer step payloads pays more per cell. It is a
+measurement of where the wall is, not a benchmark against any other tool.
+
+**What changes.** README: the scale table and the plain statement of the wall replace "projected,
+not measured". `docs/run-on-your-own-agent.md`: the stale "≈ 13 s" at 1000 steps (the pre-023
+figure) becomes the measured numbers. `nw.rs`: the `DEFAULT_MAX_STEPS` comment. No behaviour
+changes.
+
+**Not done.** The lever 023 named — interning tokens to integer ids so the inner comparison is
+`u32`, and a banded or linear-space traceback for memory — is still unbuilt, on the same trigger
+as before: a real trace that needs it.
+
+Governing docs: notebooks 020, 022, 023; issue #50.
+
