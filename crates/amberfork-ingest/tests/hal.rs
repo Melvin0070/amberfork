@@ -9,8 +9,9 @@
 //!   leaves as turns and drops the redundant litellm wrappers;
 //! - turns are grouped by `attributes.weave_task_id` (a GAIA UUID — the same join key TRAIL's S4a
 //!   lifts) and ordered by `started_at` (RFC3339), NOT by array position;
-//! - each turn is an `LLM` step whose `inputs` keep only `{model, messages}` and `outputs` only
-//!   `{choices, usage}` — client/transport internals (`self`, `extra_headers`, …) are dropped, both
+//! - each turn is an `LLM` step whose `inputs` keep only `{model, messages}` and whose `outputs` is
+//!   the assistant message lifted out of the provider envelope (`usage` moves to `attrs`) —
+//!   client/transport internals (`self`, `extra_headers`, …) are dropped, both
 //!   as fidelity and so a leaked auth header can never ride into a canonical `Run` (issue #43);
 //! - a later turn's newly appended, non-assistant `inputs.messages` (the tool/environment reply
 //!   Weave never logs as its own record) become a synthesized `Tool` step between the two turns
@@ -235,17 +236,25 @@ fn inputs_keep_only_model_and_messages_no_secrets() {
 }
 
 #[test]
-fn outputs_keep_only_choices_and_usage() {
+fn outputs_carry_the_assistant_message_not_the_provider_envelope() {
+    // 070 item 2: the compared text must start at the conversation, not at
+    // `{"choices":[{"finish_reason":…`. The message is lifted out; cost moves to `attrs`.
     let runs = hal::convert_str(HAL_DUMP).unwrap();
-    let Some(Payload::Object(output)) = &runs[0].run.steps[0].outputs else {
+    let step = &runs[0].run.steps[0];
+    let Some(Payload::Object(output)) = &step.outputs else {
         panic!("turn outputs should be a field-diffable object");
     };
     let mut keys: Vec<&str> = output.keys().map(String::as_str).collect();
     keys.sort_unstable();
     assert_eq!(
         keys,
-        ["choices", "usage"],
-        "transport ids dropped, content + cost kept"
+        ["content", "role"],
+        "the message, and nothing around it"
+    );
+    assert_eq!(output["content"], "answer one");
+    assert_eq!(
+        step.attrs["usage"]["total_tokens"], 109,
+        "cost is kept, beside the content"
     );
 }
 
@@ -286,4 +295,175 @@ fn content_free_turn_warns_but_does_not_fail() {
             .any(|w| w.code == WarningCode::ContentAbsent),
         "a content-free turn raises a content-absent advisory"
     );
+}
+
+/// One openai-leaf turn of `task-cccc`, `n` seconds in: the chat history sent, and the assistant
+/// message that came back.
+fn turn(n: u32, messages: serde_json::Value, reply: serde_json::Value) -> serde_json::Value {
+    serde_json::json!({
+        "id": format!("turn-{n}"),
+        "started_at": format!("2025-04-16T10:00:{n:02}.000000+00:00"),
+        "attributes": { "weave_task_id": "task-cccc" },
+        "summary": { "weave": { "trace_name": "openai.chat.completions.create" } },
+        "inputs": { "model": "m", "messages": messages },
+        "output": { "id": "chatcmpl", "choices": [ { "finish_reason": "tool_calls", "index": 0, "message": reply } ],
+                    "usage": { "total_tokens": 7 } },
+    })
+}
+
+fn calls(named: &[(&str, &str)]) -> serde_json::Value {
+    let tool_calls: Vec<serde_json::Value> = named
+        .iter()
+        .map(|(id, name)| {
+            serde_json::json!({ "id": id, "type": "function",
+                                "function": { "name": name, "arguments": "{}" } })
+        })
+        .collect();
+    serde_json::json!({ "role": "assistant", "annotations": [], "tool_calls": tool_calls })
+}
+
+fn user(text: &str) -> serde_json::Value {
+    serde_json::json!({ "role": "user", "content": [ { "type": "text", "text": text } ] })
+}
+
+/// The names of the synthesized tool steps of a one-task dump built from `turns`.
+fn tool_step_names(turns: Vec<serde_json::Value>) -> Vec<String> {
+    let dump = serde_json::json!({ "raw_logging_results": turns }).to_string();
+    let runs = hal::convert_str(&dump).unwrap();
+    runs[0]
+        .run
+        .steps
+        .iter()
+        .filter(|step| step.kind == StepKind::Tool)
+        .map(|step| step.name.clone())
+        .collect()
+}
+
+#[test]
+fn a_tool_step_takes_its_name_from_the_call_that_produced_it() {
+    // 070 item 1. The environment's reply carries no tool name of its own; the preceding turn's
+    // `tool_calls` does.
+    let question = user("q");
+    let first = calls(&[("call_1", "web_search")]);
+    let names = tool_step_names(vec![
+        turn(1, serde_json::json!([question]), first.clone()),
+        turn(
+            2,
+            serde_json::json!([question, first, user("Observation:\nresults")]),
+            calls(&[("call_2", "visit_page")]),
+        ),
+    ]);
+    assert_eq!(names, ["web_search"]);
+}
+
+#[test]
+fn several_calls_to_one_tool_share_its_name() {
+    let question = user("q");
+    let first = calls(&[("call_1", "web_search"), ("call_2", "web_search")]);
+    let names = tool_step_names(vec![
+        turn(1, serde_json::json!([question]), first.clone()),
+        turn(
+            2,
+            serde_json::json!([question, first, user("Observation:\nboth results")]),
+            calls(&[]),
+        ),
+    ]);
+    assert_eq!(names, ["web_search"]);
+}
+
+#[test]
+fn a_call_id_in_the_reply_picks_among_calls_to_different_tools() {
+    let question = user("q");
+    let first = calls(&[("call_1", "web_search"), ("call_2", "visit_page")]);
+    let names = tool_step_names(vec![
+        turn(1, serde_json::json!([question]), first.clone()),
+        turn(
+            2,
+            serde_json::json!([
+                question,
+                first,
+                user("Call id: call_2\nObservation:\npage text"),
+                user("Call id: call_1\nObservation:\nresults"),
+            ]),
+            calls(&[]),
+        ),
+    ]);
+    assert_eq!(names, ["visit_page", "web_search"]);
+}
+
+#[test]
+fn a_reply_that_cannot_be_attributed_keeps_the_generic_name() {
+    // A wrong name is worse than no name: it would manufacture agreement between two runs.
+    let question = user("q");
+    let mixed = calls(&[("call_1", "web_search"), ("call_2", "visit_page")]);
+    let names = tool_step_names(vec![
+        turn(1, serde_json::json!([question]), mixed.clone()),
+        // Different tools, and the reply names no call id.
+        turn(
+            2,
+            serde_json::json!([question, mixed, user("Observation:\nsomething")]),
+            serde_json::json!({ "role": "assistant", "content": "thinking in prose" }),
+        ),
+        // The preceding turn made no tool call at all.
+        turn(
+            3,
+            serde_json::json!([
+                question,
+                mixed,
+                user("Observation:\nsomething"),
+                serde_json::json!({ "role": "assistant", "content": "thinking in prose" }),
+                user("Now proceed and carry out this plan."),
+            ]),
+            calls(&[]),
+        ),
+        // A call id that is not one of the preceding turn's.
+        turn(
+            4,
+            serde_json::json!([
+                question,
+                mixed,
+                user("Observation:\nsomething"),
+                serde_json::json!({ "role": "assistant", "content": "thinking in prose" }),
+                user("Now proceed and carry out this plan."),
+                calls(&[]),
+                user("Call id: call_99\nObservation:\nstale"),
+            ]),
+            calls(&[]),
+        ),
+    ]);
+    assert_eq!(names, ["tool_result", "tool_result", "tool_result"]);
+}
+
+#[test]
+fn an_unwrapped_message_keeps_its_tool_calls_and_drops_empty_annotations() {
+    let dump = serde_json::json!({ "raw_logging_results": [
+        turn(1, serde_json::json!([user("q")]), calls(&[("call_1", "web_search")]))
+    ] })
+    .to_string();
+    let runs = hal::convert_str(&dump).unwrap();
+    let Some(Payload::Object(output)) = &runs[0].run.steps[0].outputs else {
+        panic!("outputs should be the message object");
+    };
+    let mut keys: Vec<&str> = output.keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    assert_eq!(keys, ["role", "tool_calls"]);
+    assert_eq!(output["tool_calls"][0]["function"]["name"], "web_search");
+}
+
+#[test]
+fn a_response_with_no_choice_keeps_whatever_content_it_has() {
+    // No message to lift: fall back to the old projection instead of inventing an empty one.
+    let dump = serde_json::json!({ "raw_logging_results": [ {
+        "id": "t", "started_at": "2025-04-16T10:00:01.000000+00:00",
+        "attributes": { "weave_task_id": "task-cccc" },
+        "summary": { "weave": { "trace_name": "openai.chat.completions.create" } },
+        "inputs": { "model": "m", "messages": [] },
+        "output": { "choices": [], "usage": { "total_tokens": 3 } },
+    } ] })
+    .to_string();
+    let runs = hal::convert_str(&dump).unwrap();
+    let Some(Payload::Object(output)) = &runs[0].run.steps[0].outputs else {
+        panic!("outputs should still be an object");
+    };
+    assert!(output.contains_key("choices") && output.contains_key("usage"));
 }

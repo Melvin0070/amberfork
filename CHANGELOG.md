@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- **HAL adapter: tool steps are named, and outputs carry the message (#66, notebooks 070, 091).**
+  A synthesized tool step takes the name of the call that produced it when that can be told
+  (`web_search`, `visit_page`, …) instead of the generic `tool_result`, and an LLM step's
+  `outputs` is the assistant message itself, lifted out of the `choices` envelope, with `usage`
+  moved to `attrs`. This changes the shape of runs produced by `amberfork_ingest::hal`.
 - **The scale wall is measured, not projected (#50, notebook 090).** `diff` end to end through
   the release binary: 8.3 s / 56 MB at 1000 steps per side, 35 s / 152 MB at the 2000-step default
   guard, 4.6 min / 789 MB at 5000. The earlier 5000-step projection (3.4 min, 600 MB) was

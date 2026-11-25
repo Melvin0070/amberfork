@@ -24,14 +24,22 @@
 //!   its own step. Left alone, a HAL run is roughly half the step count of the TRAIL run it is scored
 //!   against for no reason but a logging artifact, and the aligner sees no tool-result content to
 //!   match against at all. So each turn's *newly appended, non-assistant* messages (the environment's
-//!   reply) are materialized as their own `Tool` step, named generically (`tool_result` — the specific
-//!   tool name is not reconstructed, since it is not this slice's job) between the two `Llm` turns
-//!   that bracket it. Turns and synthesized steps together still form a linear chain, `parent_idx`
-//!   stays `None`.
+//!   reply) are materialized as their own `Tool` step between the two `Llm` turns that bracket it.
+//!   Turns and synthesized steps together still form a linear chain, `parent_idx` stays `None`.
+//! - **A tool step is named for the call that produced it, when that can be told (notebook 070).**
+//!   The reply carries no tool name; the preceding turn's `tool_calls` does. A reply opening with
+//!   `Call id: <id>` takes the name of that call; otherwise, if every call the preceding turn made
+//!   was to one tool, the reply takes that tool's name. Anything else — calls to different tools
+//!   with no id to choose by, or a preceding turn that made no tool call — keeps the generic
+//!   `tool_result`. A wrong name would manufacture agreement between two runs; a generic one only
+//!   withholds it. On real dumps roughly two replies in five are attributable.
 //!
 //! Three boundaries the adapter makes explicit, each mirroring an existing rule:
-//! - **Only semantic content crosses into a step.** `inputs` keeps `{model, messages}` and `outputs`
-//!   `{choices, usage}`; the request's client/transport internals (`self`, `extra_headers`,
+//! - **Only semantic content crosses into a step.** `inputs` keeps `{model, messages}`; `outputs` is
+//!   the assistant message itself, lifted out of the provider envelope (`choices[0].message`, minus
+//!   an empty `annotations`), with `usage` kept in `attrs`. The envelope is plumbing, and left in
+//!   place its keys sort ahead of the message and fill the window the cost model compares
+//!   (notebook 070). The request's client/transport internals (`self`, `extra_headers`,
 //!   `extra_body`, timeouts) and the response's transport ids are dropped. This is fidelity — a
 //!   trajectory is the conversation, not the SDK plumbing — and a safety guard: an `extra_headers`
 //!   auth token can never ride into a committed `Run` (issue #43). Both land as field-diffable
@@ -61,7 +69,8 @@ const OPENAI_LEAF: &str = "openai.chat.completions.create";
 /// client `self`, `extra_headers`/`extra_body`, timeouts) is SDK plumbing and never crosses over.
 const INPUT_KEYS: &[&str] = &["model", "messages"];
 
-/// The response fields that are trajectory content: the completion (`choices`) and its cost
+/// The response fields kept when a response has no assistant message to lift: the completion
+/// (`choices`) and its cost
 /// (`usage`). Transport ids (`id`, `system_fingerprint`, `service_tier`, …) are dropped.
 const OUTPUT_KEYS: &[&str] = &["choices", "usage"];
 
@@ -157,6 +166,7 @@ fn convert_dump(dump: RawHalDump) -> Vec<ConvertedHal> {
             let mut warnings = Vec::new();
             let mut steps: Vec<Step> = Vec::new();
             let mut prev_messages_len = 0usize;
+            let mut prev_calls: Vec<ToolCall> = Vec::new();
             for (turn_idx, record) in records.into_iter().enumerate() {
                 let messages = message_array(&record.inputs);
                 if turn_idx > 0 {
@@ -168,7 +178,7 @@ fn convert_dump(dump: RawHalDump) -> Vec<ConvertedHal> {
                             steps.push(Step {
                                 idx: steps.len(),
                                 kind: StepKind::Tool,
-                                name: "tool_result".to_string(),
+                                name: tool_name(&prev_calls, &text).to_string(),
                                 inputs: None,
                                 outputs: Some(Payload::Text(text)),
                                 attrs: Map::new(),
@@ -180,6 +190,7 @@ fn convert_dump(dump: RawHalDump) -> Vec<ConvertedHal> {
                     }
                 }
                 prev_messages_len = messages.len();
+                prev_calls = tool_calls(&record.output);
                 let idx = steps.len();
                 steps.push(record.into_step(idx, &mut warnings));
             }
@@ -241,6 +252,59 @@ fn message_text(msg: &Value) -> Option<String> {
             (!buf.is_empty()).then_some(buf)
         }
         _ => None,
+    }
+}
+
+/// The generic name of a tool step whose producing call cannot be told.
+const UNATTRIBUTED_TOOL: &str = "tool_result";
+
+/// One tool call a turn's response made: the id a reply may cite, and the tool it called.
+struct ToolCall {
+    id: String,
+    name: String,
+}
+
+/// The assistant message of a response: its first choice's `message`.
+fn assistant_message(output: &Value) -> Option<&Map<String, Value>> {
+    output.get("choices")?.get(0)?.get("message")?.as_object()
+}
+
+/// The tool calls a response made, in order. Empty when it made none.
+fn tool_calls(output: &Value) -> Vec<ToolCall> {
+    let Some(calls) = assistant_message(output)
+        .and_then(|message| message.get("tool_calls"))
+        .and_then(Value::as_array)
+    else {
+        return Vec::new();
+    };
+    calls
+        .iter()
+        .filter_map(|call| {
+            let name = call.get("function")?.get("name")?.as_str()?;
+            let id = call.get("id").and_then(Value::as_str).unwrap_or_default();
+            Some(ToolCall {
+                id: id.to_string(),
+                name: name.to_string(),
+            })
+        })
+        .collect()
+}
+
+/// Name a tool reply for the call that produced it — see the module docs for the rule and for why
+/// an unattributable reply stays generic.
+fn tool_name<'a>(calls: &'a [ToolCall], reply: &str) -> &'a str {
+    let cited = reply
+        .strip_prefix("Call id: ")
+        .and_then(|rest| rest.split_whitespace().next());
+    if let Some(id) = cited {
+        return calls
+            .iter()
+            .find(|call| !call.id.is_empty() && call.id == id)
+            .map_or(UNATTRIBUTED_TOOL, |call| call.name.as_str());
+    }
+    match calls.split_first() {
+        Some((first, rest)) if rest.iter().all(|call| call.name == first.name) => &first.name,
+        _ => UNATTRIBUTED_TOOL,
     }
 }
 
@@ -334,11 +398,31 @@ impl RawHalRecord {
             .trace_name
             .unwrap_or_else(|| OPENAI_LEAF.to_string());
         let inputs = project(&self.inputs, INPUT_KEYS);
-        let outputs = project(&self.output, OUTPUT_KEYS);
+        // The message when there is one; a response with no choice keeps the old projection
+        // rather than an invented empty message.
+        let message = assistant_message(&self.output).map(|message| {
+            let mut message = message.clone();
+            if message
+                .get("annotations")
+                .and_then(Value::as_array)
+                .is_some_and(Vec::is_empty)
+            {
+                message.remove("annotations");
+            }
+            Payload::Object(message)
+        });
+        let usage = message
+            .as_ref()
+            .and_then(|_| self.output.get("usage"))
+            .cloned();
+        let outputs = message.or_else(|| project(&self.output, OUTPUT_KEYS));
 
         // The source Weave call id (and its trace id) are retained so a later slice can trace a step
         // back to the record it came from — the `otel.span_id` provenance discipline of `trail`.
         let mut attrs = Map::new();
+        if let Some(usage) = usage {
+            attrs.insert("usage".to_string(), usage);
+        }
         if !self.id.is_empty() {
             attrs.insert("weave.call_id".to_string(), Value::from(self.id));
         }

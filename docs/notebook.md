@@ -5342,3 +5342,54 @@ as before: a real trace that needs it.
 
 Governing docs: notebooks 020, 022, 023; issue #50.
 
+## 091 · 2026-11-25 · 070 items 1 and 2 implemented in `hal.rs`; nothing scored (#66 slice 1)
+
+Tool-name reconstruction and envelope unwrapping, the two ingest repairs 070 registered, confined
+to `hal.rs` as 071's amendment requires. **No aligner was run and no gold label was read** for
+anything below; 070's decision rule is still not executed. Stratification (item 4) and the scoring
+are the next two slices.
+
+**Item 1 — a tool step is named for the call that produced it, when that can be told.** The
+environment's reply carries no tool name; in this corpus it is a `user` message with no
+`tool_call_id`. The rule, fixed from the record structure of one real dump before implementation:
+
+1. a reply opening with `Call id: <id>` takes the name of the preceding turn's call with that id;
+2. otherwise, if every tool call the preceding turn made was to one tool, the reply takes that name;
+3. otherwise it keeps `tool_result`.
+
+Rule 3 covers calls to different tools with no id to choose by, a cited id that is not one of the
+preceding turn's, and — the large case — a preceding turn that made no tool call at all (the
+agent's code-writing turns, whose "tool" is a code block, not a `tool_calls` entry). A wrong name
+would manufacture agreement between two runs; a generic one only withholds it.
+
+**Item 2 — `outputs` is the assistant message, not the provider envelope.** `choices[0].message`
+is lifted out, an empty `annotations` dropped, and `usage` moved to `attrs`. The result has the
+same keys the TRAIL side's LLM outputs have (`content`, `role`, `tool_calls`). A response with no
+choice keeps the old `{choices, usage}` projection. Nothing in the cost model changes.
+
+**Label-free check against 070's simulation.** The 69-pair set was rebuilt with the repaired
+adapter into `bench/data/pairs_trail_hal_v2/` (gitignored). The failing (TRAIL) side is
+byte-identical in all 69 pairs and all 69 manifests are unchanged, so pairing and gold are as
+before. On the reference (HAL) side:
+
+| | before | after | 070 simulated |
+|---|---|---|---|
+| tool steps carrying a real name | 0 / 2317 | **900 / 2317** | 921 / 2317 |
+| pairs sharing at least one step name | 0 / 69 | **22 / 69** | 22 / 69 |
+| reference steps in total | 4213 | 4213 | — |
+
+Recovered names: `visit_page` 261, `find_on_page_ctrl_f` 257, `web_search` 227, `page_down` 80,
+`find_archived_url` 38, `find_next` 23, `page_up` 9, `inspect_file_as_text` 5. The 21 fewer than
+simulated are rule 3's refusals on mixed-tool turns. 1,417 tool steps stay generic.
+
+**What this does not show.** That the aligner now discriminates. 47 of 69 pairs still share no
+step name, and the two sides still name their LLM steps differently (`LiteLLMModel.__call__`
+against `openai.chat.completions.create`) — harmonizing that was not registered in 070 and is not
+done. Whether 22 pairs with shared tool names are enough is what the registered check measures.
+
+**Blast radius.** Only `hal.rs` and its tests. The chimera, held-out and perturbation corpora
+arrive through other adapters; the full gate, including chimera parity and the pinned per-seed
+counts, passes unchanged. `bench/params.toml` is untouched (sha256 `8ebd95ce…`).
+
+Governing docs: notebooks 070, 071, 087; issue #66.
+
