@@ -167,10 +167,22 @@ impl Server {
     }
 }
 
+/// Lowercase hex of `bytes`' SHA-256. `sha2` 0.11's digest output no longer implements `LowerHex`.
+fn sha256_hex(bytes: &[u8]) -> String {
+    use std::fmt::Write as _;
+
+    let digest = Sha256::digest(bytes);
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        let _ = write!(hex, "{byte:02x}");
+    }
+    hex
+}
+
 fn router<A: RustEmbed + 'static>(document: &Document, full_view: &ViewModel) -> Router {
     let json = serde_json::to_string(document)
         .expect("Document serialization is infallible (no non-string map keys)");
-    let etag = HeaderValue::from_str(&format!("\"{:x}\"", Sha256::digest(json.as_bytes())))
+    let etag = HeaderValue::from_str(&format!("\"{}\"", sha256_hex(json.as_bytes())))
         .expect("a quoted hex digest is valid header ASCII");
     let state = Arc::new(ServerState {
         content: Content {

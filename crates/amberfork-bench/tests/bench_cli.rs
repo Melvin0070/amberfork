@@ -83,7 +83,10 @@ fn judge_prompts_dir() -> PathBuf {
 /// published artifact must echo.
 fn frozen_params_sha256() -> String {
     let bytes = std::fs::read(frozen_params()).expect("committed bench/params.toml reads");
-    format!("{:x}", Sha256::digest(&bytes))
+    Sha256::digest(&bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 
 fn bench() -> Command {

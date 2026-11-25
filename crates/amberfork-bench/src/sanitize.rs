@@ -52,7 +52,6 @@
 
 use crate::pyjson;
 use serde_json::{Map, Value};
-use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -489,7 +488,7 @@ fn match_ci_at(text: &str, start: usize, needle: &str) -> Option<usize> {
 }
 
 fn hash8(text: &str) -> String {
-    let digest = format!("{:x}", Sha256::digest(text.as_bytes()));
+    let digest = crate::hash::sha256_hex(text.as_bytes());
     digest[..8].to_string()
 }
 

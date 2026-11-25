@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Build from source rather than downloading a release: this workflow gates the code in
       # THIS commit, so a published binary would be testing the wrong thing. Users following

@@ -17,7 +17,6 @@
 
 use amberfork_align::{AlignParams, DiffParams, ForkParams, ParamError};
 use serde::Deserialize;
-use sha2::{Digest, Sha256};
 use std::fmt;
 use std::path::{Path, PathBuf};
 
@@ -116,7 +115,7 @@ pub fn load(path: &Path) -> Result<FrozenParams, ParamsError> {
         file: path.to_path_buf(),
         source,
     })?;
-    let sha256 = format!("{:x}", Sha256::digest(&bytes));
+    let sha256 = crate::hash::sha256_hex(&bytes);
 
     let text = std::str::from_utf8(&bytes).map_err(|source| ParamsError::NotUtf8 {
         file: path.to_path_buf(),

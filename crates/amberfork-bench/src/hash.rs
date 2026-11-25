@@ -37,6 +37,20 @@ pub fn unit(state: &mut u64) -> f64 {
     (splitmix64(state) >> 11) as f64 / (1u64 << 53) as f64
 }
 
+/// Lowercase hex of `bytes`' SHA-256. `sha2` 0.11's digest output no longer implements
+/// `LowerHex`, so the encoding lives here, once, for every published content hash.
+pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    use std::fmt::Write as _;
+
+    let digest = Sha256::digest(bytes);
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        let _ = write!(hex, "{byte:02x}");
+    }
+    hex
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

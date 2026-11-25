@@ -22,7 +22,6 @@
 use crate::judge_prompt::JudgeArm;
 use crate::judge_provider::{Decoding, Localizer, PostError, ask_with_retries};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::fmt;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -97,7 +96,7 @@ pub fn key(
         decoding,
     };
     let canonical = serde_json::to_vec(&material).expect("key material serializes");
-    format!("{:x}", Sha256::digest(&canonical))
+    crate::hash::sha256_hex(&canonical)
 }
 
 /// Why a cassette could not be read or written.

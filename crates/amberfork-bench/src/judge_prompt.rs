@@ -30,7 +30,6 @@
 //! (notebook 069).
 
 use amberfork_model::{Payload, Run};
-use sha2::{Digest, Sha256};
 use std::fmt;
 use std::path::{Path, PathBuf};
 
@@ -323,7 +322,7 @@ fn load_one(dir: &Path, arm: JudgeArm) -> Result<FrozenPrompt, PromptError> {
         file: file.clone(),
         source,
     })?;
-    let sha256 = format!("{:x}", Sha256::digest(&bytes));
+    let sha256 = crate::hash::sha256_hex(&bytes);
     if sha256 != arm.registered_sha256() {
         return Err(PromptError::Unregistered {
             file,
@@ -345,7 +344,7 @@ fn load_one(dir: &Path, arm: JudgeArm) -> Result<FrozenPrompt, PromptError> {
 }
 
 fn finish(arm: JudgeArm, text: String) -> Result<Rendered, RenderError> {
-    let sha256 = format!("{:x}", Sha256::digest(text.as_bytes()));
+    let sha256 = crate::hash::sha256_hex(text.as_bytes());
     Ok(Rendered { arm, text, sha256 })
 }
 

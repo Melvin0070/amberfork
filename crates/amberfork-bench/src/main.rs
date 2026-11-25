@@ -812,7 +812,7 @@ fn aggregate_documents(args: &AggregateArgs) -> Result<ExitCode, Box<dyn std::er
             .map_err(|err| format!("read results {}: {err}", path.display()))?;
         sources.push(aggregate::SourceDoc {
             file: path.display().to_string(),
-            sha256: sha256_hex(text.as_bytes()),
+            sha256: hash::sha256_hex(text.as_bytes()),
             results: results::parse(&text, path)?,
         });
     }
@@ -829,11 +829,6 @@ fn aggregate_documents(args: &AggregateArgs) -> Result<ExitCode, Box<dyn std::er
     );
     println!("{}", results::render(&pooled));
     Ok(ExitCode::from(EXIT_OK))
-}
-
-fn sha256_hex(bytes: &[u8]) -> String {
-    use sha2::{Digest, Sha256};
-    format!("{:x}", Sha256::digest(bytes))
 }
 
 /// Construct a Mode A′ pair set (issue #7). A data-prep step, not a scoring run: it emits no
