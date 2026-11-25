@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- **The writeup is rewritten for v1.1 (#57).** `docs/writeup.md` now leads with the measured null
+  on independent runs and the `replay` result, instead of two-run fork localization. Every claim
+  was checked against the committed results by an independent pass; `docs/evidence.md` gained the
+  long-run replay and scale sections it was missing.
+
 - **The TRAIL↔HAL natural-pair corpus is retired as a negative result (#66, notebooks 092, 093).**
   After the registered ingest repair, on the 9 dev pairs judged comparable by a rule fixed before
   scoring, the engine's exact-match rate is 0 of 9 against 1 of 9 for random. Notebook 070 fixed

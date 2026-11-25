@@ -98,8 +98,9 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
   current time diverges at once.
 - **It refuses runs that share nothing.** When no step of one run matches any step of the
   other, `diff` exits 2 ("no common ground") instead of reporting a fork at step 0 — which is what
-  it used to do, at high confidence. `--allow-unrelated` aligns them anyway. A change in the very
-  first step looks the same as two unrelated runs, and gets the same refusal.
+  it used to do, at high confidence. `--allow-unrelated` aligns them anyway. A run that changes at
+  its very first step and never re-syncs looks the same as two unrelated runs, and gets the same
+  refusal.
 - **Alignment is quadratic in run length, in time and in memory.** `--max-steps` (default 2000)
   is the guard, and it refuses a longer run up front instead of looking hung. Measured end to end
   on an Apple M5, release build ([notebook 090](docs/notebook.md)):
