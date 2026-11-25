@@ -131,8 +131,8 @@ jobs:
       - name: Install amberfork
         env:
           # Pin the version: the asset filename embeds it, and pinning is what you want in CI.
-          # `replay` ships in the release after v1.0.0 — build from source until it is tagged.
-          AMBERFORK_VERSION: v1.0.0
+          # `replay` needs v1.1.0 or later.
+          AMBERFORK_VERSION: v1.1.0
           TARGET: x86_64-unknown-linux-gnu
         run: |
           base="https://github.com/Melvin0070/amberfork/releases/download/${AMBERFORK_VERSION}"

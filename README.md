@@ -24,10 +24,10 @@ amberfork demo                 # the same fork in your terminal
 
 ![amberfork demo in the terminal: the two runs align in gray, a rate-limit retry is absorbed as a log-move, and the step where the bad run fetched a stale policy doc glows amber as the fork, closing with a one-line attribution footer.](docs/assets/hero.gif)
 
-> **v1.0.0 is on crates.io. `replay`, and reading Claude Code, Codex, ATIF and OpenTelemetry files directly, are on
-> `main` and ship in the next release** — until then install with
-> `cargo install --git https://github.com/Melvin0070/amberfork amberfork`. (A git build has
-> everything except `serve`, whose web bundle is only packaged into releases.)
+> **`replay`, and reading Claude Code, Codex, ATIF and OpenTelemetry files directly, arrived in
+> v1.1.0.** `amberfork --version` tells you which you have; a 1.0.0 install predates them.
+> Building from a git checkout gives everything except `serve`, whose web bundle is only packaged
+> into releases.
 
 ## What it does
 
@@ -131,10 +131,9 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
 
 ## Status
 
-v1.0.0 is tagged and published. On `main` since then: the `replay` verb, native Claude Code, Codex,
-ATIF and OpenTelemetry ingest, and the Terminal-Bench and replay measurements. Also on `main`: the guard that refuses runs with no
-common ground. Also measured on `main`: `replay` against a live diff on a longer agent (#65), and the scale
-wall (#50). Open before the next release: milestone
-[v1.1](https://github.com/Melvin0070/amberfork/milestone/12).
+v1.1.0 adds the `replay` verb, native Claude Code, Codex, ATIF and OpenTelemetry ingest, the guard
+that refuses runs with no common ground, and the Terminal-Bench, replay and scale measurements:
+[release notes](docs/release-notes-v1.1.0.md). Work that was considered and deferred is in the
+[backlog](https://github.com/Melvin0070/amberfork/milestone/11) and the issue tracker.
 [`CONTRIBUTING.md`](CONTRIBUTING.md) describes the working agreement; [`CHANGELOG.md`](CHANGELOG.md)
 has the rest.

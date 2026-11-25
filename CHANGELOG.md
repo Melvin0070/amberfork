@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-11-25
+
+Record-then-replay becomes the spine, four trace formats load without conversion, and the
+tool's original claim narrows on its own evidence. Summary: `docs/release-notes-v1.1.0.md`.
+
+- **Released on five targets, with the Apple-silicon job moved to `macos-15` (#53, notebooks 094,
+  094a).** A pre-tag dry run found the `macos-14` runner label no longer allocates.
+- **Dependencies:** `sha2` 0.11.1, `clap` 4.6.9, `rust-embed` 8.14.0 (lockfile only).
+
 - **The writeup is rewritten for v1.1 (#57).** `docs/writeup.md` now leads with the measured null
   on independent runs and the `replay` result, instead of two-run fork localization. Every claim
   was checked against the committed results by an independent pass; `docs/evidence.md` gained the
