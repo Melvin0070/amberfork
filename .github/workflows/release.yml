@@ -48,7 +48,7 @@ jobs:
         # ships on the Windows image, so one shell covers all five targets.
         shell: bash
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # The web bundle is built and staged into the server crate's embed folder BEFORE the
       # cargo build below (D13/D5): rust-embed captures ui-dist/ at compile time, so a binary
@@ -160,7 +160,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: guard — tag must match the workspace version
         run: |
