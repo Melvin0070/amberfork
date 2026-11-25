@@ -42,7 +42,7 @@ sha2 = "0.10"
 # specifies (PBKDF2-HMAC-SHA256 over `sha2`, urlsafe-b64 key); `fernet` is the RustCrypto
 # AES-CBC+HMAC decrypt (never hand-rolled); `zip` unwraps the single `.json.encrypted` member.
 pbkdf2 = "0.12"
-base64 = "0.22"
+base64 = "0.23"
 fernet = "0.2"
 zip = { version = "9", default-features = false, features = ["deflate"] }
 proptest = "1"
