@@ -75,6 +75,21 @@ subset today, not a blanket claim.
   paired back by id as the output (`is_error` → `attrs`); a prompt → `other` step named `user`.
   Sidechain (subagent) and meta records and `thinking` blocks are skipped; `outcome` is never set.
   The format is undocumented upstream, so unknown record and block types are skipped, not fatal.
+- **Codex CLI rollouts** (`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`) — **implemented,
+  auto-detected by `amberfork diff` / `serve`** on a leading `session_meta` record
+  (`amberfork_ingest::codex`, one `Run` per rollout). Only `response_item` records — the
+  model-facing transcript — become steps; `event_msg` records are a UI stream that repeats the
+  same content and are skipped, as is all bookkeeping. Assistant `message` → `llm` step named
+  `assistant` (model from the latest `turn_context`, and `phase`, in `attrs`); `user` /
+  `developer` message → `other` step named for the role; `function_call` (JSON arguments decoded
+  to a field-diffable object) and `custom_tool_call` (free-text input) → `tool` step named by
+  `name`, with the `*_output` record of the same `call_id` paired back as the output;
+  inter-agent `agent_message` → `other` step with `author` / `recipient` in `attrs`. `reasoning`
+  is skipped (encrypted on disk); `outcome` is never set. Limits: built against codex-cli 0.171
+  and checked by loading 634 real rollouts, but the format is undocumented; a subagent's own
+  trajectory lives in its own rollout file and is not merged; the replacement history inside a
+  `compacted` record is not expanded; `.zst`-compressed rollouts are not read. Unknown record and
+  payload types are skipped; a line that fails to parse is an error.
 - **ATIF** (Agent Trajectory Interchange Format — Harbor's `trajectory.json`, the format
   Terminal-Bench trials are published in; RFC versions 1.0–1.8) — **implemented, auto-detected by
   `amberfork diff` / `serve`** on a `schema_version` starting `ATIF-` (`amberfork_ingest::atif`,

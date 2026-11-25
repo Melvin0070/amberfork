@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- **`diff` and `serve` read Codex CLI rollouts directly (#68).** A
+  `~/.codex/sessions/…/rollout-*.jsonl` file is recognized by its leading `session_meta` and
+  mapped the way Claude Code transcripts are: assistant messages as `llm` steps named
+  `assistant`, tool calls paired with their outputs by `call_id`, reasoning skipped. Built
+  against codex-cli 0.171; subagent files, compaction history and `.zst` rollouts are not handled.
 - **`diff` and `serve` read OpenTelemetry OTLP/JSON exports directly (#67).** A file with a
   top-level `resourceSpans` is routed to the OpenInference or `gen_ai.*` adapter, chosen from the
   spans' own attributes. Each trace is one run: a multi-trace export exits 2 listing its trace

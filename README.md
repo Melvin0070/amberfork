@@ -24,7 +24,7 @@ amberfork demo                 # the same fork in your terminal
 
 ![amberfork demo in the terminal: the two runs align in gray, a rate-limit retry is absorbed as a log-move, and the step where the bad run fetched a stale policy doc glows amber as the fork, closing with a one-line attribution footer.](docs/assets/hero.gif)
 
-> **v1.0.0 is on crates.io. `replay`, and reading Claude Code, ATIF and OpenTelemetry files directly, are on
+> **v1.0.0 is on crates.io. `replay`, and reading Claude Code, Codex, ATIF and OpenTelemetry files directly, are on
 > `main` and ship in the next release** — until then install with
 > `cargo install --git https://github.com/Melvin0070/amberfork amberfork`. (A git build has
 > everything except `serve`, whose web bundle is only packaged into releases.)
@@ -51,7 +51,8 @@ amberfork diff bad.json --against good.json
 ```
 
 It reads [plain JSON](docs/trace-format.md), `record` cassettes, Claude Code session transcripts
-(`~/.claude/projects/<project>/<session>.jsonl`), [ATIF](docs/trace-format.md) `trajectory.json`
+(`~/.claude/projects/<project>/<session>.jsonl`), Codex CLI rollouts
+(`~/.codex/sessions/…/rollout-*.jsonl`), [ATIF](docs/trace-format.md) `trajectory.json`
 files, and OpenTelemetry OTLP/JSON exports (OpenInference or `gen_ai.*`) as they are — no
 conversion step. [Run it on your own agent →](docs/run-on-your-own-agent.md)
 
@@ -116,7 +117,7 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
 
 ## Status
 
-v1.0.0 is tagged and published. On `main` since then: the `replay` verb, native Claude Code,
+v1.0.0 is tagged and published. On `main` since then: the `replay` verb, native Claude Code, Codex,
 ATIF and OpenTelemetry ingest, and the Terminal-Bench and replay measurements. Also on `main`: the guard that refuses runs with no
 common ground. Also measured on `main`: `replay` against a live diff on a longer agent (#65).
 Open before the next release (milestone

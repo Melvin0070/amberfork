@@ -40,6 +40,7 @@ const CONVERSION_GUIDE_URL: &str = concat!(
 /// onto [`Run`]; each is namespaced so its quirks stay isolated from the canonical format.
 pub mod atif;
 pub mod claudecode;
+pub mod codex;
 pub mod genai;
 pub mod hal;
 pub mod openinference;

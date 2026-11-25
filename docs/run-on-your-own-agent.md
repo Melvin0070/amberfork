@@ -78,6 +78,21 @@ with its result paired back as the output, and each prompt becomes an `other` st
 `user`. Subagent (sidechain) traffic and `thinking` blocks are left out. A transcript does not
 know whether the session succeeded, so the header shows no pass/fail.
 
+### Codex CLI rollouts: no conversion needed
+
+Codex writes each session to `~/.codex/sessions/YYYY/MM/DD/rollout-<timestamp>-<id>.jsonl`.
+Those load as they are:
+
+```sh
+amberfork diff ~/.codex/sessions/2026/11/02/rollout-…-bad.jsonl \
+  --against ~/.codex/sessions/2026/11/01/rollout-…-good.jsonl
+```
+
+The mapping matches the Claude Code one: assistant messages become `llm` steps named
+`assistant`, each tool call becomes a `tool` step with its output paired back, prompts become
+`other` steps, and reasoning is left out (it is encrypted on disk). A subagent's work lives in
+its own rollout file, so a parent session shows only the messages exchanged with it.
+
 ### ATIF trajectories (Harbor, Terminal-Bench): no conversion needed
 
 An [ATIF](https://docs.harborframework.com/agents/atif) `trajectory.json` — what Harbor agents

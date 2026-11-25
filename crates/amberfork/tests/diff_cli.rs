@@ -744,3 +744,91 @@ fn an_otlp_export_with_no_spans_exits_2_and_says_so() {
         "{stderr}"
     );
 }
+
+/// A Codex CLI rollout for the same refund task: the model plans, reads the policy, decides, acts.
+fn codex_rollout(session_id: &str, policy_doc: &str, verdict: &str, action: &str) -> String {
+    let item = |payload: serde_json::Value| serde_json::json!({"timestamp": "2026-11-01T10:00:00Z", "type": "response_item", "payload": payload});
+    let text = |role: &str, kind: &str, text: &str| {
+        item(serde_json::json!({"type": "message", "role": role,
+                                "content": [{"type": kind, "text": text}]}))
+    };
+    let call = |id: &str, input: &str| {
+        item(
+            serde_json::json!({"type": "custom_tool_call", "call_id": id, "name": "exec", "input": input}),
+        )
+    };
+    let output = |id: &str, out: &str| {
+        item(serde_json::json!({"type": "custom_tool_call_output", "call_id": id, "output": out}))
+    };
+    [
+        serde_json::json!({"timestamp": "2026-11-01T10:00:00Z", "type": "session_meta",
+                           "payload": {"id": session_id, "cli_version": "0.171.0"}}),
+        serde_json::json!({"timestamp": "2026-11-01T10:00:00Z", "type": "turn_context",
+                           "payload": {"model": "gpt-6-astra"}}),
+        text("user", "input_text", "Handle the refund for order 8841"),
+        text(
+            "assistant",
+            "output_text",
+            "I'll look up the refund policy first.",
+        ),
+        call("c1", "cat policy/refunds.md"),
+        output("c1", policy_doc),
+        text("assistant", "output_text", verdict),
+        call("c2", action),
+        output("c2", "ok"),
+    ]
+    .iter()
+    .map(serde_json::Value::to_string)
+    .collect::<Vec<_>>()
+    .join("\n")
+}
+
+#[test]
+fn two_codex_rollouts_diff_with_no_conversion_step() {
+    // Steps: 0 user · 1 assistant · 2 exec · 3 assistant · 4 exec. The stale policy is step 2's
+    // output.
+    let dir = tempfile::tempdir().unwrap();
+    let good = dir.path().join("rollout-good.jsonl");
+    let bad = dir.path().join("rollout-bad.jsonl");
+    std::fs::write(
+        &good,
+        codex_rollout(
+            "good",
+            "Refunds v3 (CURRENT). Electronics: 30-day return window, refund to original payment.",
+            "Order is 23 days old, inside the 30-day window. Issuing the refund.",
+            "payments refund --order 8841 --amount 129.00",
+        ),
+    )
+    .unwrap();
+    std::fs::write(
+        &bad,
+        codex_rollout(
+            "bad",
+            "Refunds v1 (ARCHIVED). Electronics: 14 days from delivery, store credit only.",
+            "Past the 14-day limit, so policy says no. Drafting a polite denial.",
+            "crm set-status --order 8841 --status denied",
+        ),
+    )
+    .unwrap();
+
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--json")
+        .assert()
+        .code(EXIT_FORKED);
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let result: DiffResult = serde_json::from_str(&stdout).expect("a valid DiffResult");
+    assert_eq!(result.runs.b.id, "codex_bad");
+    assert_eq!(result.fork_step_observed(), Some(2));
+
+    amberfork()
+        .arg("diff")
+        .arg(&good)
+        .arg("--against")
+        .arg(&good)
+        .assert()
+        .code(EXIT_CONVERGED);
+}

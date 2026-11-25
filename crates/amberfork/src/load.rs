@@ -276,6 +276,11 @@ pub fn load_run(path: &Path, choice: TraceChoice<'_>) -> Result<Ingested, LoadEr
         return amberfork_ingest::claudecode::from_jsonl_str(&text)
             .map_err(|err| LoadError::Ingest(err.with_path(path)));
     }
+    // A Codex rollout is the other transcript already on disk; it opens with `session_meta`.
+    if amberfork_ingest::codex::looks_like_rollout(&text) {
+        return amberfork_ingest::codex::from_jsonl_str(&text)
+            .map_err(|err| LoadError::Ingest(err.with_path(path)));
+    }
     // ATIF shares the `schema_version` key with the canonical trace, so it is told apart by the
     // value (`ATIF-…`) and must be routed before the canonical loader rejects it.
     if amberfork_ingest::atif::looks_like_trajectory(&text) {
