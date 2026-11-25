@@ -63,6 +63,7 @@ mod score;
 mod split;
 mod tbench;
 mod tbench_score;
+mod trail_strata;
 
 use arms::Prediction;
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -114,6 +115,9 @@ enum Command {
     /// Score the Terminal-Bench natural pairs: the gate's false-positive rate and in-sync
     /// discrimination against the positional and length-only baselines (notebook 083).
     ScoreTbench(ScoreTbenchArgs),
+    /// Score the TRAIL↔HAL natural pairs on all pairs and on the comparable stratum, with the
+    /// constant-predictor and null tests fixed in docs/notebook.md 092.
+    ScoreTrailStrata(ScoreTrailStrataArgs),
     /// Fetch the pinned raw upstream data `build-pairs` consumes (issue #7).
     Fetch(FetchArgs),
     /// Decrypt a HAL reference-trace zip into the plaintext dump `hal` ingest reads (issue #41).
@@ -274,6 +278,25 @@ struct ScoreTbenchArgs {
 
     /// Which protocol split to score. Defaults to dev: the test side is sealed and scored
     /// once per release tag (rule 1).
+    #[arg(long, value_enum, default_value_t = SplitSelection::Dev)]
+    split: SplitSelection,
+
+    /// Frozen engine parameters (protocol rule 2).
+    #[arg(long, value_name = "FILE", default_value = "bench/params.toml")]
+    params: PathBuf,
+
+    /// Also write the full results document as JSON.
+    #[arg(long, value_name = "FILE")]
+    json_out: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct ScoreTrailStrataArgs {
+    /// The directory `build-trail-pairs` wrote (`pair_*.json` + run files).
+    #[arg(long, value_name = "DIR")]
+    pairs: PathBuf,
+
+    /// Which protocol split to score. Defaults to dev (rule 1).
     #[arg(long, value_enum, default_value_t = SplitSelection::Dev)]
     split: SplitSelection,
 
@@ -587,6 +610,7 @@ fn main() -> ExitCode {
         Command::BuildPerturbationPairs(args) => build_perturbation_pairs(&args),
         Command::BuildTbenchPairs(args) => build_tbench_pairs(&args),
         Command::ScoreTbench(args) => score_tbench(&args),
+        Command::ScoreTrailStrata(args) => score_trail_strata(&args),
         Command::Fetch(args) => fetch_data(&args),
         Command::HalDecrypt(args) => hal_decrypt(&args),
         Command::HalFetch(args) => hal_fetch_data(&args),
@@ -951,6 +975,34 @@ fn score_tbench(args: &ScoreTbenchArgs) -> Result<ExitCode, Box<dyn std::error::
     }
     println!("params: {} sha256:{}", frozen.source, frozen.sha256);
     print!("{}", tbench_score::render(&results));
+    Ok(ExitCode::from(EXIT_OK))
+}
+
+fn score_trail_strata(args: &ScoreTrailStrataArgs) -> Result<ExitCode, Box<dyn std::error::Error>> {
+    let frozen = params::load(&args.params)?;
+    let set = load_pairs(&args.pairs)?;
+    for exclusion in &set.exclusions {
+        eprintln!(
+            "amberfork-bench: excluded {}: {}",
+            exclusion.name, exclusion.reason
+        );
+    }
+    let scored: Vec<_> = set
+        .pairs
+        .into_iter()
+        .filter(|pair| args.split.admits(pair.split))
+        .collect();
+    if scored.is_empty() {
+        return Err(format!("no pairs on the {} split", args.split.as_str()).into());
+    }
+    let rows = trail_strata::rows(&scored, &frozen.params);
+    let results = trail_strata::summarize(rows, args.split.as_str(), &frozen.sha256);
+    if let Some(path) = &args.json_out {
+        std::fs::write(path, serde_json::to_string_pretty(&results)? + "\n")
+            .map_err(|err| format!("{}: {err}", path.display()))?;
+    }
+    println!("params: {} sha256:{}", frozen.source, frozen.sha256);
+    print!("{}", trail_strata::render(&results));
     Ok(ExitCode::from(EXIT_OK))
 }
 
