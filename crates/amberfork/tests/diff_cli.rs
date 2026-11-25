@@ -516,3 +516,231 @@ fn allow_unrelated_aligns_them_anyway() {
         .assert()
         .code(EXIT_FORKED);
 }
+
+/// One trace of a native OTel GenAI (`gen_ai.*`) OTLP/JSON export, for the same refund task:
+/// the model plans, reads the policy, decides, acts.
+fn otlp_trace(
+    trace_id: &str,
+    policy_doc: &str,
+    verdict: &str,
+    action: &str,
+) -> Vec<serde_json::Value> {
+    let attr =
+        |key: &str, value: &str| serde_json::json!({"key": key, "value": {"stringValue": value}});
+    let span = |n: u64, attributes: Vec<serde_json::Value>| {
+        serde_json::json!({
+            "traceId": trace_id, "spanId": format!("{trace_id}-{n}"), "name": format!("span-{n}"),
+            "startTimeUnixNano": (1_700_000_000_000_000_000u64 + n).to_string(),
+            "attributes": attributes,
+        })
+    };
+    vec![
+        span(
+            1,
+            vec![
+                attr("gen_ai.operation.name", "chat"),
+                attr("gen_ai.input.messages", "Handle the refund for order 8841"),
+                attr(
+                    "gen_ai.output.messages",
+                    "I'll look up the refund policy first.",
+                ),
+            ],
+        ),
+        span(
+            2,
+            vec![
+                attr("gen_ai.operation.name", "execute_tool"),
+                attr("gen_ai.tool.name", "read_file"),
+                attr("gen_ai.tool.call.arguments", "policy/refunds.md"),
+                attr("gen_ai.tool.call.result", policy_doc),
+            ],
+        ),
+        span(
+            3,
+            vec![
+                attr("gen_ai.operation.name", "chat"),
+                attr("gen_ai.input.messages", policy_doc),
+                attr("gen_ai.output.messages", verdict),
+            ],
+        ),
+        span(
+            4,
+            vec![
+                attr("gen_ai.operation.name", "execute_tool"),
+                attr("gen_ai.tool.name", "bash"),
+                attr("gen_ai.tool.call.arguments", action),
+                attr("gen_ai.tool.call.result", "ok"),
+            ],
+        ),
+    ]
+}
+
+fn otlp_good(trace_id: &str) -> Vec<serde_json::Value> {
+    otlp_trace(
+        trace_id,
+        "Refunds v3 (CURRENT). Electronics: 30-day return window, refund to original payment.",
+        "Order is 23 days old, inside the 30-day window. Issuing the refund.",
+        "payments refund --order 8841 --amount 129.00",
+    )
+}
+
+fn otlp_bad(trace_id: &str) -> Vec<serde_json::Value> {
+    otlp_trace(
+        trace_id,
+        "Refunds v1 (ARCHIVED). Electronics: 14 days from delivery, store credit only.",
+        "Past the 14-day limit, so policy says no. Drafting a polite denial.",
+        "crm set-status --order 8841 --status denied",
+    )
+}
+
+fn write_otlp(dir: &Path, name: &str, spans: Vec<serde_json::Value>) -> PathBuf {
+    let path = dir.join(name);
+    let export = serde_json::json!({"resourceSpans": [{"scopeSpans": [{"spans": spans}]}]});
+    std::fs::write(&path, export.to_string()).unwrap();
+    path
+}
+
+#[test]
+fn two_single_trace_otlp_exports_diff_with_no_conversion_step() {
+    // Steps: 0 chat · 1 read_file · 2 chat · 3 bash. The stale policy is step 1's output.
+    let dir = tempfile::tempdir().unwrap();
+    let good = write_otlp(dir.path(), "good.otlp.json", otlp_good("aaaa"));
+    let bad = write_otlp(dir.path(), "bad.otlp.json", otlp_bad("bbbb"));
+
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .arg("--against")
+        .arg(&good)
+        .arg("--json")
+        .assert()
+        .code(EXIT_FORKED);
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let result: DiffResult = serde_json::from_str(&stdout).expect("a valid DiffResult");
+    assert_eq!(result.fork_step_observed(), Some(1));
+
+    amberfork()
+        .arg("diff")
+        .arg(&good)
+        .arg("--against")
+        .arg(&good)
+        .assert()
+        .code(EXIT_CONVERGED);
+}
+
+#[test]
+fn a_multi_trace_export_exits_2_listing_the_trace_ids_and_the_flag_that_picks_one() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut spans = otlp_good("aaaa");
+    spans.extend(otlp_bad("bbbb"));
+    let both = write_otlp(dir.path(), "both.otlp.json", spans);
+    let good = write_otlp(dir.path(), "good.otlp.json", otlp_good("aaaa"));
+
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&both)
+        .arg("--against")
+        .arg(&good)
+        .assert()
+        .code(EXIT_TROUBLE);
+    let output = assert.get_output();
+    assert!(output.stdout.is_empty(), "errors never go to stdout");
+    let stderr = String::from_utf8(output.stderr.clone()).unwrap();
+    assert!(stderr.contains("both.otlp.json"), "{stderr}");
+    assert!(stderr.contains("2 traces"), "{stderr}");
+    assert!(
+        stderr.contains("aaaa") && stderr.contains("bbbb"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("--trace-id"), "{stderr}");
+
+    // The same file on the reference side names the reference side's flag.
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&good)
+        .arg("--against")
+        .arg(&both)
+        .assert()
+        .code(EXIT_TROUBLE);
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(stderr.contains("--against-trace-id"), "{stderr}");
+}
+
+#[test]
+fn trace_id_flags_pick_both_runs_out_of_one_export() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut spans = otlp_good("aaaa");
+    spans.extend(otlp_bad("bbbb"));
+    let both = write_otlp(dir.path(), "both.otlp.json", spans);
+
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&both)
+        .args(["--trace-id", "bbbb"])
+        .arg("--against")
+        .arg(&both)
+        .args(["--against-trace-id", "aaaa"])
+        .arg("--json")
+        .assert()
+        .code(EXIT_FORKED);
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let result: DiffResult = serde_json::from_str(&stdout).expect("a valid DiffResult");
+    assert_eq!(result.runs.a.id, "aaaa");
+    assert_eq!(result.runs.b.id, "bbbb");
+    assert_eq!(result.fork_step_observed(), Some(1));
+}
+
+#[test]
+fn an_unknown_trace_id_exits_2_and_lists_the_ones_that_exist() {
+    let dir = tempfile::tempdir().unwrap();
+    let good = write_otlp(dir.path(), "good.otlp.json", otlp_good("aaaa"));
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&good)
+        .args(["--trace-id", "zzzz"])
+        .arg("--against")
+        .arg(&good)
+        .assert()
+        .code(EXIT_TROUBLE);
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(
+        stderr.contains("zzzz") && stderr.contains("aaaa"),
+        "{stderr}"
+    );
+}
+
+#[test]
+fn a_trace_id_on_a_file_that_is_not_an_otlp_export_exits_2() {
+    // Silently ignoring the flag would let a typo'd path compare the wrong run.
+    let (bad, good, _) = manifest();
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&bad)
+        .args(["--trace-id", "aaaa"])
+        .arg("--against")
+        .arg(&good)
+        .assert()
+        .code(EXIT_TROUBLE);
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(stderr.contains("--trace-id"), "{stderr}");
+    assert!(stderr.contains("OTLP"), "{stderr}");
+}
+
+#[test]
+fn an_otlp_export_with_no_spans_exits_2_and_says_so() {
+    let dir = tempfile::tempdir().unwrap();
+    let empty = write_otlp(dir.path(), "empty.otlp.json", Vec::new());
+    let good = write_otlp(dir.path(), "good.otlp.json", otlp_good("aaaa"));
+    let assert = amberfork()
+        .arg("diff")
+        .arg(&empty)
+        .arg("--against")
+        .arg(&good)
+        .assert()
+        .code(EXIT_TROUBLE);
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(
+        stderr.contains("empty.otlp.json") && stderr.contains("no spans"),
+        "{stderr}"
+    );
+}

@@ -43,6 +43,7 @@ pub mod claudecode;
 pub mod genai;
 pub mod hal;
 pub mod openinference;
+pub mod otel;
 pub mod tape;
 pub mod trail;
 pub mod whowhen;

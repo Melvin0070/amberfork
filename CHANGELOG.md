@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- **`diff` and `serve` read OpenTelemetry OTLP/JSON exports directly (#67).** A file with a
+  top-level `resourceSpans` is routed to the OpenInference or `gen_ai.*` adapter, chosen from the
+  spans' own attributes. Each trace is one run: a multi-trace export exits 2 listing its trace
+  ids, and `--trace-id` / `--against-trace-id` pick one (full id or unique prefix), so both runs
+  can come from a single export. A trace id given for a file that is not an export is an error.
 - **`replay` measured against a live diff on a longer agent (notebooks 088, 089).** 35 recordings
   of a tool-using agent that chooses its own lookups (11–20 exchanges). Unchanged, it replayed
   clean 35 of 35 times; diffing two live unchanged runs forked on 56 of 70 pairs. Replay caught

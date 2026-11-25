@@ -90,6 +90,27 @@ amberfork diff failed-trial/agent/trajectory.json --against passed-trial/agent/t
 Each agent turn fans out into an `llm` step for its message plus one `tool` step per tool
 call, so two turns that made a different number of calls still line up call by call.
 
+### OpenTelemetry exports (OpenInference, OTel GenAI): no conversion needed
+
+An OTLP/JSON span export — what Phoenix, Langfuse and the OpenTelemetry GenAI instrumentations
+write — is read as it is. Whether the spans use `openinference.*` or `gen_ai.*` attributes is
+worked out from the file.
+
+```sh
+amberfork diff bad.otlp.json --against good.otlp.json
+```
+
+Each trace is one run. If an export holds more than one, amberfork lists the trace ids and
+stops; name the one you mean (a unique prefix is enough). Both runs can come from one file:
+
+```sh
+amberfork diff export.json --trace-id 7c1d --against export.json --against-trace-id 4bf9
+```
+
+Two things to know: spans are ordered by start time, not by their order in the file; and a
+span's error status is never read as the run failing. The OTel GenAI conventions are still
+marked "Development" upstream, so that side tracks a moving target.
+
 ### A worked example for any other framework
 
 Any agent framework's log converts with a few dozen lines of script. As a template, here is
@@ -295,6 +316,5 @@ invalid input). `amberfork diff` in CI gates on a reference run for free.
   tracked in [#16](https://github.com/Melvin0070/amberfork/issues/16)), so oversized traces
   are refused up front rather than looking hung. When the wait is a choice, raise the
   ceiling: `--max-steps <N>`.
-- **OTel GenAI / OpenInference exports** — direct ingestion is on the roadmap, not built.
-  Today the plain-JSON format is the way in; the mappings sketched in
-  [`trace-format.md`](trace-format.md) make the conversion mechanical.
+- **OTLP protobuf and live collectors** — only OTLP/**JSON** files are read. A protobuf export or
+  a running collector needs exporting to JSON first.

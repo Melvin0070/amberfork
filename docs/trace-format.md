@@ -87,7 +87,14 @@ subset today, not a blanket claim.
   `subagent_trajectories`. `outcome` is never set (the verdict lives in the harness's result
   file). A version outside the v1 line loads with a `schema-version-mismatch` warning.
 
-  The adapters below are library APIs today — the CLI does not yet route files to them.
+- **OTLP/JSON span exports** (a top-level `resourceSpans`) — **implemented, auto-detected by
+  `amberfork diff` / `serve`** (`amberfork_ingest::otel`). The vocabulary is read off the spans:
+  each span votes `gen_ai.*` or `openinference.*` by its attribute keys, the majority wins, and a
+  tie or an export with neither goes to OpenInference. **One trace is one run.** A single-trace
+  export loads as it is; for an export holding several, name the trace with `--trace-id <ID>`
+  (the observed side) or `--against-trace-id <ID>` (the reference side) — the full id or a unique
+  prefix. Without one, the CLI exits 2 and lists the trace ids with their step counts. Both sides
+  may be the same file. The two vocabularies:
 - **OpenInference** (`openinference.*` / `llm.*` / `tool.*` over OTLP/JSON) — **implemented**
   (`amberfork_ingest::openinference`, one `Run` per `traceId`). Covered: `openinference.span.kind`
   LLM/TOOL/AGENT → `kind` (CHAIN/RETRIEVER/EMBEDDING/… fold to `other`); `tool.name` → `name`;
@@ -110,6 +117,8 @@ subset today, not a blanket claim.
   `content-absent` warning; a non-`gen_ai.*` attribute is preserved to `attrs` + an
   `unmapped-attributes` warning. Deferred: the superseded per-role event convention
   (`gen_ai.user.message`/… ) is not read, only the current span-attribute convention.
+
+  The adapters below are library APIs today — the CLI does not route files to them.
 - **TRAIL / Patronus trace trees** — **implemented** (`amberfork_ingest::trail`, one `Run` per
   trace file). A *different envelope* — a nested `child_spans` tree, not a flat OTLP export — over
   the *same* OpenInference vocabulary, so it shares the mapping above (`openinference.span.kind` →

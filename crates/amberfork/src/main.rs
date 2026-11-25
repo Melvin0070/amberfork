@@ -29,7 +29,7 @@ use amberfork_record::{CaptureProxy, Cassette};
 use amberfork_replay::{LiveUpstream, NoUpstream, ReplayServer, Upstream};
 use amberfork_server::Server;
 use clap::{Args, Parser, Subcommand};
-use load::{LoadError, load_run};
+use load::{LoadError, TraceChoice, load_run};
 use render::{RenderOpts, resolve_color_mode};
 use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
@@ -108,6 +108,15 @@ struct DiffArgs {
     /// The known-good reference run trace (side `a` of the result).
     #[arg(long, value_name = "GOOD")]
     against: PathBuf,
+
+    /// Which trace of BAD to use, when BAD is an OTLP export holding several (each trace is one
+    /// run). The full trace id or a unique prefix.
+    #[arg(long, value_name = "ID")]
+    trace_id: Option<String>,
+
+    /// Which trace of GOOD to use, when GOOD is an OTLP export holding several.
+    #[arg(long, value_name = "ID")]
+    against_trace_id: Option<String>,
 
     /// Refuse runs longer than this many steps — alignment memory and time grow with steps²,
     /// so bigger traces are a choice, not a surprise. Raise it to align them anyway.
@@ -189,6 +198,15 @@ struct ServeArgs {
         conflicts_with = "demo"
     )]
     against: Option<PathBuf>,
+
+    /// Which trace of BAD to use, when BAD is an OTLP export holding several (each trace is one
+    /// run). The full trace id or a unique prefix.
+    #[arg(long, value_name = "ID", conflicts_with = "demo")]
+    trace_id: Option<String>,
+
+    /// Which trace of GOOD to use, when GOOD is an OTLP export holding several.
+    #[arg(long, value_name = "ID", conflicts_with = "demo")]
+    against_trace_id: Option<String>,
 
     /// Serve the bundled sample pair — the fork in the browser with zero setup, no files
     /// needed (the same embedded pair `demo` renders in the terminal).
@@ -324,8 +342,11 @@ fn run_diff(args: &DiffArgs) -> Result<ExitCode, LoadError> {
         args.runs,
     ) {
         Ok(None) => {
-            let good = load_run(&args.against)?;
-            let bad = load_run(&args.bad)?;
+            let good = load_run(
+                &args.against,
+                against_choice(args.against_trace_id.as_deref()),
+            )?;
+            let bad = load_run(&args.bad, bad_choice(args.trace_id.as_deref()))?;
             Ok(diff_and_report(
                 good,
                 bad,
@@ -450,8 +471,12 @@ fn run_serve(args: &ServeArgs) -> Result<ExitCode, LoadError> {
             args.against
                 .as_ref()
                 .expect("clap requires --against unless --demo"),
+            against_choice(args.against_trace_id.as_deref()),
         )?;
-        let bad = load_run(args.bad.as_ref().expect("clap requires BAD unless --demo"))?;
+        let bad = load_run(
+            args.bad.as_ref().expect("clap requires BAD unless --demo"),
+            bad_choice(args.trace_id.as_deref()),
+        )?;
         (good, bad)
     };
     let options = EngineOptions {
@@ -774,6 +799,22 @@ fn exit_code_of(status: &std::process::ExitStatus) -> u8 {
 /// anything user-supplied (--max-steps today, future --tau style flags) routes through
 /// validated() here, and both param and engine refusals (today: the size guard) map to exit
 /// 2 with the same stderr shape as an unreadable input — the engine itself never asserts.
+/// The trace choice for the observed side, naming the flag that sets it.
+fn bad_choice(id: Option<&str>) -> TraceChoice<'_> {
+    TraceChoice {
+        id,
+        flag: "--trace-id",
+    }
+}
+
+/// The trace choice for the reference side, naming the flag that sets it.
+fn against_choice(id: Option<&str>) -> TraceChoice<'_> {
+    TraceChoice {
+        id,
+        flag: "--against-trace-id",
+    }
+}
+
 fn engine_params(max_steps: usize) -> Result<DiffParams, ExitCode> {
     let params = DiffParams {
         align: AlignParams {

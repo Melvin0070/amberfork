@@ -49,6 +49,46 @@ pub enum LoadError {
     /// trace (no `cassette_version`). Only a cassette carries the recorded exchanges a re-run
     /// replays — a passive trace has nothing to re-execute.
     NotACassette { path: PathBuf },
+    /// An OTLP/JSON export with no spans — there is no run in it to load.
+    EmptyExport { path: PathBuf },
+    /// An OTLP/JSON export holding several traces, and nothing said which one is the run.
+    ManyTraces {
+        path: PathBuf,
+        traces: Vec<TraceSummary>,
+        flag: &'static str,
+    },
+    /// A trace id was asked for that the export does not contain (or that matches several).
+    UnknownTrace {
+        path: PathBuf,
+        wanted: String,
+        traces: Vec<TraceSummary>,
+        flag: &'static str,
+    },
+    /// A trace id was given for a file that is not an OTLP export. Ignoring it would let a
+    /// mistyped path compare a run the user did not mean.
+    TraceIdWithoutExport { path: PathBuf, flag: &'static str },
+}
+
+/// One trace in an OTLP export, as listed in an error: its id and how many steps it has.
+#[derive(Debug)]
+pub struct TraceSummary {
+    pub id: String,
+    pub steps: usize,
+}
+
+/// Which trace of a multi-trace OTLP export a side of the diff means, and the flag that says so
+/// — carried together so an error can name the flag for the side that needs it.
+#[derive(Debug, Clone, Copy)]
+pub struct TraceChoice<'a> {
+    pub id: Option<&'a str>,
+    pub flag: &'static str,
+}
+
+fn list_traces(f: &mut fmt::Formatter<'_>, traces: &[TraceSummary]) -> fmt::Result {
+    for trace in traces {
+        write!(f, "\n    {}  ({} steps)", trace.id, trace.steps)?;
+    }
+    Ok(())
 }
 
 impl fmt::Display for LoadError {
@@ -74,6 +114,42 @@ impl fmt::Display for LoadError {
                  format reference: {CASSETTE_FORMAT_URL}",
                 path.display()
             ),
+            Self::EmptyExport { path } => write!(
+                f,
+                "{}: this is an OTLP export (`resourceSpans`) with no spans in it — there is no \
+                 run to load",
+                path.display()
+            ),
+            Self::ManyTraces { path, traces, flag } => {
+                write!(
+                    f,
+                    "{}: this OTLP export holds {} traces, and each trace is one run — pick one \
+                     with `{flag} <ID>` (a unique prefix is enough):",
+                    path.display(),
+                    traces.len()
+                )?;
+                list_traces(f, traces)
+            }
+            Self::UnknownTrace {
+                path,
+                wanted,
+                traces,
+                flag,
+            } => {
+                write!(
+                    f,
+                    "{}: `{flag} {wanted}` does not name exactly one trace in this OTLP export, \
+                     which holds:",
+                    path.display()
+                )?;
+                list_traces(f, traces)
+            }
+            Self::TraceIdWithoutExport { path, flag } => write!(
+                f,
+                "{}: `{flag}` picks a trace out of an OTLP export, but this file is not one (no \
+                 `resourceSpans`)",
+                path.display()
+            ),
         }
     }
 }
@@ -84,7 +160,11 @@ impl std::error::Error for LoadError {
             Self::Io { source, .. } => Some(source),
             Self::Ingest(err) => Some(err),
             Self::Cassette { source, .. } => Some(source),
-            Self::NotACassette { .. } => None,
+            Self::NotACassette { .. }
+            | Self::EmptyExport { .. }
+            | Self::ManyTraces { .. }
+            | Self::UnknownTrace { .. }
+            | Self::TraceIdWithoutExport { .. } => None,
         }
     }
 }
@@ -101,18 +181,82 @@ fn is_cassette(text: &str) -> bool {
         .is_ok_and(|value| value.get("cassette_version").is_some())
 }
 
+/// Pick the one run a side of the diff means out of an OTLP export's traces: the only one, or the
+/// one `choice` names by id or unique id prefix.
+fn pick_trace(
+    path: &Path,
+    mut runs: Vec<Ingested>,
+    choice: TraceChoice<'_>,
+) -> Result<Ingested, LoadError> {
+    let summaries = |runs: &[Ingested]| -> Vec<TraceSummary> {
+        runs.iter()
+            .map(|ingested| TraceSummary {
+                id: ingested.run.id.clone(),
+                steps: ingested.run.steps.len(),
+            })
+            .collect()
+    };
+    let Some(wanted) = choice.id else {
+        return match runs.len() {
+            0 => Err(LoadError::EmptyExport {
+                path: path.to_path_buf(),
+            }),
+            1 => Ok(runs.remove(0)),
+            _ => Err(LoadError::ManyTraces {
+                path: path.to_path_buf(),
+                traces: summaries(&runs),
+                flag: choice.flag,
+            }),
+        };
+    };
+    let exact = runs.iter().position(|ingested| ingested.run.id == wanted);
+    let by_prefix = || {
+        let mut matches = runs
+            .iter()
+            .enumerate()
+            .filter(|(_, ingested)| ingested.run.id.starts_with(wanted));
+        match (matches.next(), matches.next()) {
+            (Some((index, _)), None) => Some(index),
+            _ => None,
+        }
+    };
+    match exact.or_else(by_prefix) {
+        Some(index) => Ok(runs.remove(index)),
+        None => Err(LoadError::UnknownTrace {
+            path: path.to_path_buf(),
+            wanted: wanted.to_owned(),
+            traces: summaries(&runs),
+            flag: choice.flag,
+        }),
+    }
+}
+
 /// Load a run from a file, routing by artifact shape. Reads the bytes once, sniffs, and hands
 /// them to the matching loader; the cassette path normalizes into the same [`Run`] the passive
 /// path produces, so everything downstream is identical.
 ///
 /// # Errors
 /// Returns [`LoadError`] if the file cannot be read, is not a valid cassette (when routed
-/// there), or is not a canonical/foreign trace (when routed there).
-pub fn load_run(path: &Path) -> Result<Ingested, LoadError> {
+/// there), is not a canonical/foreign trace (when routed there), or is an OTLP export from
+/// which `choice` does not select exactly one trace.
+pub fn load_run(path: &Path, choice: TraceChoice<'_>) -> Result<Ingested, LoadError> {
     let text = std::fs::read_to_string(path).map_err(|source| LoadError::Io {
         path: path.to_path_buf(),
         source,
     })?;
+    // An OTLP export is the one shape that can hold several runs, so it is the one shape the
+    // trace choice applies to; on anything else a trace id is a mistake, not a no-op.
+    if amberfork_ingest::otel::looks_like_export(&text) {
+        let runs = amberfork_ingest::otel::from_otlp_json_str(&text)
+            .map_err(|err| LoadError::Ingest(err.with_path(path)))?;
+        return pick_trace(path, runs, choice);
+    }
+    if choice.id.is_some() {
+        return Err(LoadError::TraceIdWithoutExport {
+            path: path.to_path_buf(),
+            flag: choice.flag,
+        });
+    }
     if is_cassette(&text) {
         let run: Run =
             amberfork_record::normalize_str(&text).map_err(|source| LoadError::Cassette {
