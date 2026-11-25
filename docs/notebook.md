@@ -5144,3 +5144,31 @@ Both scripts are committed before recording starts.
 **Cost.** 70 live sessions on a local model; no network, no key.
 
 Governing docs: `BENCHMARK.md` rules 3, 6, 8; notebooks 084, 085, 086; issue #65.
+
+## 088a · 2026-11-25 · AMENDMENT to 088, before any session is recorded: a model server that is down is not an attempt
+
+**No corpus session exists and no model has been asked anything.** This amends the recorder's
+retry rule; it changes nothing about what is measured.
+
+**What happened.** The recorder (`35376e3`) was started while the local model server was no longer
+running. Every `record` invocation failed in about 0.1 s with a refused connection, which the
+agent reports as exit 1. 088's rule re-records on exit 1 at most 3 times and then writes the
+session down as an exclusion, so in under a minute the recorder logged **105 attempts and 35
+exclusions — every reference session — with zero exchanges and zero model calls**, then exited 0.
+
+**Why this is voided rather than counted.** 088's exclusion rule exists so that a session cannot
+be dropped for what the run *did*. These attempts did nothing: no request reached a model, no tape
+was written, there is no outcome that could have been seen. Counting them would make the corpus
+empty for a reason unrelated to the agent; quietly deleting the log would hide that the rule had a
+hole. So the log is kept, unmodified, as `bench/data/longrun/manifest.void-server-down.json`
+(gitignored with the rest of `bench/data/`), and its contents are stated here in full: 105
+entries, all `agent_exit` 1, all `exchanges` null.
+
+**The change.** `record_longrun_sessions.py` now checks, before every attempt, that the server
+answers and lists the model. If not, the whole run aborts with a non-zero exit, records nothing
+and logs nothing. An exit 1 from a session while the server *is* reachable still counts as an
+attempt exactly as 088 says.
+
+**Everything else in 088 stands**: corpus, classes A–D, gold, metrics, prediction, decision rule.
+
+Governing docs: notebook 088; 083a (the precedent for amending a registration before scoring).

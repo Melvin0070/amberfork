@@ -23,8 +23,11 @@ import json
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
+from longrun_agent import MODEL
 from longrun_tape import registered_changes
 from longrun_world import PILOT_TASKS, TASKS
 
@@ -33,6 +36,19 @@ SESSIONS_PER_TASK = 5
 UPSTREAM = "http://127.0.0.1:11434"
 BASE_URL_ENV = "AMBERFORK_BASE_URL"
 AGENT = (Path(__file__).parent / "longrun_agent.py").resolve()
+
+
+def require_model() -> None:
+    """Abort the whole run unless the model server answers and has the model (088a). A session
+    that fails because nothing is listening is not an attempt: no model was asked anything, so it
+    must not spend the retry budget or be written down as an exclusion."""
+    try:
+        with urllib.request.urlopen(f"{UPSTREAM}/api/tags", timeout=10) as resp:
+            names = {m["name"] for m in json.loads(resp.read())["models"]}
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        raise SystemExit(f"error: no model server at {UPSTREAM} ({exc}) — nothing recorded, nothing logged")
+    if MODEL not in names:
+        raise SystemExit(f"error: {UPSTREAM} does not have {MODEL} — nothing recorded, nothing logged")
 
 
 def record_one(amberfork_bin: Path, task_dir: Path, session: str, task: str, change: str | None, log: list) -> bool:
@@ -46,6 +62,7 @@ def record_one(amberfork_bin: Path, task_dir: Path, session: str, task: str, cha
     if change:
         agent += ["--change", change]
     for attempt in range(1, MAX_ATTEMPTS + 1):
+        require_model()
         cassette.unlink(missing_ok=True)
         summary_path.unlink(missing_ok=True)
         started = time.monotonic()
