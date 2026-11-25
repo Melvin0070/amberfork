@@ -5461,3 +5461,80 @@ parameter, `bench/params.toml` untouched.
 
 Governing docs: notebooks 070, 071, 087, 091; `BENCHMARK.md` rules 2, 3, 6, 10.
 
+## 093 · 2026-11-25 · RESULT: the repaired TRAIL↔HAL corpus is still a null on its comparable stratum — the corpus is retired (#66 slice 3)
+
+Scored once at commit `bce6969` (the commit that carries the scorer, pushed first), on the 23 dev
+pairs of the rebuilt set (091), under 070 as amended by 071 and 092. Document:
+`bench/results/trail_hal_strata_dev.json`. Params sha256 `8ebd95ce…`, unchanged.
+
+```sh
+amberfork-bench build-trail-pairs --traces bench/data/trail-traces --gold bench/data/trail-gold \
+  --hal bench/data/hal_decrypted --out bench/data/pairs_trail_hal_v2
+amberfork-bench score-trail-strata --pairs bench/data/pairs_trail_hal_v2 --split dev \
+  --json-out bench/results/trail_hal_strata_dev.json
+```
+
+**The three numbers 070 requires together** (`nw-lexical/resync`, the product arm; exact match):
+
+| | exact | Wilson 95% | ±3 | abstained | random, same pairs |
+|---|---|---|---|---|---|
+| all dev pairs, as published (071), n=23 | 0.000 | [0.00, 0.14] | 0.348 | 0.000 | 0.174 |
+| all dev pairs, guard only (087), n=23 | 0.000 | [0.00, 0.14] | 0.000 | 0.913 | 0.174 |
+| all dev pairs, repaired ingest, n=23 | 0.000 | [0.00, 0.14] | 0.000 | 0.783 | 0.174 |
+| **comparable stratum, repaired ingest, n=9** | **0.000** | [0.00, 0.30] | 0.000 | 0.444 | 0.111 |
+
+Paired difference against `random` on the comparable stratum: −0.111 [−0.333, +0.000].
+
+**Check 1, constant predictor — passes by the letter, and the letter is all it passes.** On the
+comparable stratum the product arm gives three distinct answers, so by 092's definition it is not
+a constant predictor. What those answers are: an abstention on 4 pairs, **step 0 on 4 pairs**
+(golds 18, 26, 12 and 19), and step 11 on one (gold 32). Every answer it actually gives but one is
+still step 0. The repair moved three pairs from "no common ground" to "an answer", and the
+answers are the old constant. 092 fixed the definition before the score and it is reported as
+defined; it would be dishonest to read "PASS" as "the aligner now discriminates".
+`pos-lexical` is a constant (step 0, all 23) and `nw-structural/resync` abstains on all 23.
+
+**Check 2, the null test — a null.** 0 of 9 exact against random's 1 of 9; not higher, and the
+interval does not exclude zero. ±1 and ±3 are also 0 of 9. There is no window at which the engine
+places a fork near the annotated error on any comparable pair.
+
+**So 070's retirement branch fires, as registered.** The repaired ingest still produces a null on
+the comparable stratum; the conclusion is the one fixed in August: *this corpus cannot measure
+fork localization.* The TRAIL↔HAL natural-pair table is retired to a documented negative result.
+Nothing further is tuned against it, and its test-side pairs are not scored.
+
+### Why, as far as the per-pair rows show
+
+- **Shared tool names were not enough to anchor on.** The nine comparable pairs share 1 to 4 step
+  names, all of them tool names recovered by 091. The LLM steps — close to half of all steps on
+  each side (812 of 1,667 failing, 1,896 of 4,213 reference, over the 69 pairs) — still carry
+  different names on the two sides, and 070 did not register harmonizing them.
+- **Where an alignment exists, it forks at the first step.** Four of five answers are step 0: the
+  runs open differently (a different backing model writes a different first plan) and never
+  re-sync under the frozen rule. That is the fork rule working as designed on two runs that are
+  the same task but not the same trajectory.
+- **The gold may not be a fork at all.** TRAIL's annotation marks the step where a human located
+  an error. Nothing guarantees a passing run by a different model diverges *there*. 070 flagged
+  cross-model gold quality as the open risk; this result is consistent with it and cannot
+  separate it from the naming defect.
+
+This is the third representation repair on this corpus (051's two, then 091's two) and the third
+time the null has not moved. That is the evidence for retiring it rather than registering a
+fourth.
+
+### What stands, and what changes
+
+- **The judge result stands** (071): on these pairs three of five LLM-judge arms beat the engine.
+  Nothing here retracts it.
+- **The ingest repairs stay.** Named tool steps and an unwrapped message are more faithful
+  regardless of any score, and were justified that way in 070.
+- **The guard stays** (087). It now abstains on 18 of 23 dev pairs here instead of 21.
+- **Docs:** the README's evidence row and `docs/evidence.md` say the corpus is retired and why.
+- **Not done, deliberately:** LLM step-name harmonization across adapters. It is the obvious next
+  idea and exactly the "needs more tuning" re-read 070 ruled out in advance for this corpus. If
+  it is ever worth doing, it is worth doing for the product, registered against a corpus that
+  can measure it — the replay recordings (089), not this one.
+
+Governing docs: notebooks 070 (registration), 071 (amendment, judge result), 087, 091, 092;
+`BENCHMARK.md` rules 2, 3, 6, 10; issue #66.
+

@@ -284,3 +284,20 @@ strict no-op on the injected-fork dev fixtures (every arm's row identical before
 the headline table is untouched. On the two out-of-domain corpora the engine now abstains where it
 used to answer: 21 of 23 TRAIL↔HAL dev pairs and 3 of 4 Mode A′ pairs. The tables above are the
 numbers as published at the time and are not rewritten; the before-and-after rows are in 087.
+
+## The TRAIL↔HAL corpus is retired
+
+Notebook 070 registered a repair for that corpus and, in advance, what would follow if it failed.
+The repair is done: the HAL adapter now names tool steps for the call that produced them and
+carries the assistant message instead of the provider envelope (notebook 091), and the pairs are
+split into a *comparable* stratum by a rule fixed before scoring — step counts within 3× of each
+other and at least one shared step name (notebook 092). Nine of the 23 dev pairs qualify.
+
+On those nine the engine's exact-match rate is **0 of 9** [0.00, 0.30], against 1 of 9 for the
+random arm; it is 0 of 9 at ±3 as well ([notebook 093](notebook.md)). Of the five pairs where it
+answers at all, four answers are still step 0. Three representation repairs have now left this
+null where it was, so the registered conclusion applies: this corpus cannot measure fork
+localization, the table above stands as a documented negative result, and nothing further is
+tuned against it. The likeliest reasons are that the two sides still name their model steps
+differently, and that a human-annotated error step in one model's run need not be where a
+different model's passing run diverges.

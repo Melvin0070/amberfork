@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **The TRAIL↔HAL natural-pair corpus is retired as a negative result (#66, notebooks 092, 093).**
+  After the registered ingest repair, on the 9 dev pairs judged comparable by a rule fixed before
+  scoring, the engine's exact-match rate is 0 of 9 against 1 of 9 for random. Notebook 070 fixed
+  this outcome's consequence in advance. A `score-trail-strata` bench subcommand reproduces it.
 - **HAL adapter: tool steps are named, and outputs carry the message (#66, notebooks 070, 091).**
   A synthesized tool step takes the name of the call that produced it when that can be told
   (`web_search`, `visit_page`, …) instead of the generic `tool_result`, and an LLM step's

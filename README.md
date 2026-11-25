@@ -75,7 +75,8 @@ offline from a committed file. Several went against the tool; they are here on p
 | Does `replay` round-trip real recordings? | 0 / 30 false positives; 30 / 30 tool changes caught | 30 | Yes, on one short deterministic agent. Not a localization result |
 | Is `replay` quieter than a live diff on a longer agent? (11–20 exchanges, same recordings) | unchanged agent: `replay` alarms on **0 / 35** [0%, 10%], live `diff` on **56 / 70** [69%, 88%] | 35 | **Yes.** `replay` also caught 105 / 105 changes at the exact exchange (1 to 19); live `diff` flagged changed and unchanged runs alike (86% vs 80%). Most live forks are the final answer's wording |
 | Does `--verify` confirm a real fork? | **87%** recovered [62%, 96%], none indeterminate | 15 | Yes, on a toy agent with real sampling variance |
-| Does it beat asking a frontier model? (TRAIL↔HAL) | 3 of 5 LLM-judge arms beat it | 23 | **No** — though no arm cleared random; the corpus shares no step names across sides |
+| Does it beat asking a frontier model? (TRAIL↔HAL) | 3 of 5 LLM-judge arms beat it | 23 | **No** — though no arm cleared random |
+| Does repairing that corpus's ingest rescue it? (comparable pairs only) | exact match **0 / 9**; random 1 / 9 | 9 | **No.** After a registered repair the engine still places no fork near the annotated error. The corpus is retired as a negative result |
 
 Two more nulls (a cross-system corpus at n=4, and a scripted harness where position ties
 alignment), each number's command and file, and how to read every row:
