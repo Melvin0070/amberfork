@@ -5573,3 +5573,19 @@ tag. Still unverified until a real tag: the tag-only `release` job, including th
 
 Governing docs: notebook 073; `.github/workflows/release.yml`; issue #53.
 
+## 094a · 2026-11-25 · The `macos-15` fix is confirmed on a dry run (#53)
+
+`release.yml` dispatched on `main` at `79aa3bc` — run `45631655887`, all five build jobs green,
+`release` skipped as designed. Every artifact downloaded and checked by hand, as in 073:
+
+| target | runner | `file` on the shipped binary | checksum |
+|---|---|---|---|
+| `aarch64-apple-darwin` | macos-15 | Mach-O arm64 | OK |
+| `x86_64-apple-darwin` | macos-15-intel | Mach-O x86_64 | OK |
+| `x86_64-unknown-linux-gnu` | ubuntu-latest | ELF x86-64 | OK |
+| `aarch64-unknown-linux-gnu` | ubuntu-24.04-arm | ELF ARM aarch64 | OK |
+| `x86_64-pc-windows-msvc` | windows-latest | PE32+ x86-64 (`amberfork.exe`) | OK |
+
+The whole run took 8 minutes, set by the Intel macOS job; the Apple-silicon job took 3. Still
+unverified until the v1.1.0 tag: the tag-only `release` job.
+
