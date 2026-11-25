@@ -1,0 +1,2238 @@
+{
+  "protocol": "replay-longrun",
+  "notebook_registration": 88,
+  "model": "qwen3:8b",
+  "gold_rule": "first exchange whose response makes the changed call, plus one",
+  "defects": [],
+  "tape_exchanges": {
+    "n": 35,
+    "min": 11,
+    "median": 18,
+    "max": 20
+  },
+  "A_replay_unchanged": {
+    "false_positive": {
+      "hits": 0,
+      "n": 35,
+      "rate": 0.0,
+      "ci95_lo": 6.938893903907228e-18,
+      "ci95_hi": 0.09890099232440402
+    },
+    "trouble": 0,
+    "per_task": {
+      "account_summary": "0/5",
+      "carrier_review_a": "0/5",
+      "carrier_review_b": "0/5",
+      "delay_credit_a": "0/5",
+      "delay_credit_b": "0/5",
+      "refund_audit_a": "0/5",
+      "refund_audit_b": "0/5"
+    }
+  },
+  "B_replay_changed": {
+    "detected": {
+      "hits": 105,
+      "n": 105,
+      "rate": 1.0,
+      "ci95_lo": 0.9647059230708901,
+      "ci95_hi": 1.0
+    },
+    "exact_exchange": {
+      "hits": 105,
+      "n": 105,
+      "rate": 1.0,
+      "ci95_lo": 0.9647059230708901,
+      "ci95_hi": 1.0
+    },
+    "by_position": {
+      "first": {
+        "detected": {
+          "hits": 35,
+          "n": 35,
+          "rate": 1.0,
+          "ci95_lo": 0.9010990076755959,
+          "ci95_hi": 0.9999999999999999
+        },
+        "exact_exchange": {
+          "hits": 35,
+          "n": 35,
+          "rate": 1.0,
+          "ci95_lo": 0.9010990076755959,
+          "ci95_hi": 0.9999999999999999
+        }
+      },
+      "middle": {
+        "detected": {
+          "hits": 35,
+          "n": 35,
+          "rate": 1.0,
+          "ci95_lo": 0.9010990076755959,
+          "ci95_hi": 0.9999999999999999
+        },
+        "exact_exchange": {
+          "hits": 35,
+          "n": 35,
+          "rate": 1.0,
+          "ci95_lo": 0.9010990076755959,
+          "ci95_hi": 0.9999999999999999
+        }
+      },
+      "last": {
+        "detected": {
+          "hits": 35,
+          "n": 35,
+          "rate": 1.0,
+          "ci95_lo": 0.9010990076755959,
+          "ci95_hi": 0.9999999999999999
+        },
+        "exact_exchange": {
+          "hits": 35,
+          "n": 35,
+          "rate": 1.0,
+          "ci95_lo": 0.9010990076755959,
+          "ci95_hi": 0.9999999999999999
+        }
+      }
+    },
+    "gold_distribution": {
+      "1": 35,
+      "6": 3,
+      "8": 10,
+      "9": 10,
+      "10": 15,
+      "14": 5,
+      "15": 5,
+      "17": 10,
+      "18": 5,
+      "19": 7
+    },
+    "best_constant": {
+      "answer": 1,
+      "hits": 35,
+      "n": 105,
+      "rate": 0.3333333333333333,
+      "ci95_lo": 0.2504591011249202,
+      "ci95_hi": 0.42797225785144977
+    },
+    "trouble": 0
+  },
+  "C_live_diff_unchanged": {
+    "false_positive": {
+      "hits": 56,
+      "n": 70,
+      "rate": 0.8,
+      "ci95_lo": 0.6918335550374695,
+      "ci95_hi": 0.8769526075163705
+    },
+    "trouble": 0,
+    "per_task": {
+      "account_summary": "4/10",
+      "carrier_review_a": "8/10",
+      "carrier_review_b": "9/10",
+      "delay_credit_a": "8/10",
+      "delay_credit_b": "8/10",
+      "refund_audit_a": "9/10",
+      "refund_audit_b": "10/10"
+    }
+  },
+  "D_live_diff_changed": {
+    "detected": {
+      "hits": 30,
+      "n": 35,
+      "rate": 0.8571428571428571,
+      "ci95_lo": 0.7062444591340484,
+      "ci95_hi": 0.9373976892056628
+    },
+    "exact_exchange": {
+      "hits": 0,
+      "n": 35,
+      "rate": 0.0,
+      "ci95_lo": 6.938893903907228e-18,
+      "ci95_hi": 0.09890099232440402
+    },
+    "within_3": {
+      "hits": 0,
+      "n": 35,
+      "rate": 0.0,
+      "ci95_lo": 6.938893903907228e-18,
+      "ci95_hi": 0.09890099232440402
+    },
+    "change_not_reached": 0,
+    "trouble": 0
+  },
+  "raw": {
+    "A": [
+      {
+        "task": "account_summary",
+        "tape": "ref_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_05",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 19 of 19 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 19 of 19 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 19 of 19 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 19 of 19 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_05",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 19 of 19 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 15 of 15 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 15 of 15 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 15 of 15 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 15 of 15 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_05",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 15 of 15 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_05",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 18 of 18 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 20 of 20 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 20 of 20 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 20 of 20 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 20 of 20 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_05",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 20 of 20 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 16 of 16 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 16 of 16 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 16 of 16 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 16 of 16 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_05",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 16 of 16 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_01",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 11 of 11 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_02",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 11 of 11 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_03",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 11 of 11 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_04",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 20 of 20 recorded exchange(s) served, agent exited 0"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_05",
+        "exit": 0,
+        "diverged_at": null,
+        "verdict": "replay followed the tape \u2014 20 of 20 recorded exchange(s) served, agent exited 0"
+      }
+    ],
+    "B": [
+      {
+        "task": "account_summary",
+        "tape": "ref_01",
+        "position": "first",
+        "change": "get_customer:C103",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_01",
+        "position": "middle",
+        "change": "get_shipment:S7022",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_01",
+        "position": "last",
+        "change": "get_shipment:S7026",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_02",
+        "position": "first",
+        "change": "get_customer:C103",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_02",
+        "position": "middle",
+        "change": "get_shipment:S7022",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_02",
+        "position": "last",
+        "change": "get_shipment:S7026",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_03",
+        "position": "first",
+        "change": "get_customer:C103",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_03",
+        "position": "middle",
+        "change": "get_shipment:S7022",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_03",
+        "position": "last",
+        "change": "get_shipment:S7026",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_04",
+        "position": "first",
+        "change": "get_customer:C103",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_04",
+        "position": "middle",
+        "change": "get_shipment:S7022",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_04",
+        "position": "last",
+        "change": "get_shipment:S7026",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_05",
+        "position": "first",
+        "change": "get_customer:C103",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_05",
+        "position": "middle",
+        "change": "get_order:O2024",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_05",
+        "position": "last",
+        "change": "get_shipment:S7026",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_01",
+        "position": "first",
+        "change": "get_customer:C102",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_01",
+        "position": "middle",
+        "change": "get_shipment:S7016",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_01",
+        "position": "last",
+        "change": "get_shipment:S7020",
+        "gold": 18,
+        "exit": 1,
+        "diverged_at": 18,
+        "verdict": "replay diverged at exchange 18 \u2014 POST /api/chat is not on the tape (18 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_02",
+        "position": "first",
+        "change": "get_customer:C102",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_02",
+        "position": "middle",
+        "change": "get_shipment:S7016",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_02",
+        "position": "last",
+        "change": "get_shipment:S7020",
+        "gold": 18,
+        "exit": 1,
+        "diverged_at": 18,
+        "verdict": "replay diverged at exchange 18 \u2014 POST /api/chat is not on the tape (18 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_03",
+        "position": "first",
+        "change": "get_customer:C102",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_03",
+        "position": "middle",
+        "change": "get_shipment:S7016",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_03",
+        "position": "last",
+        "change": "get_shipment:S7020",
+        "gold": 18,
+        "exit": 1,
+        "diverged_at": 18,
+        "verdict": "replay diverged at exchange 18 \u2014 POST /api/chat is not on the tape (18 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_04",
+        "position": "first",
+        "change": "get_customer:C102",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_04",
+        "position": "middle",
+        "change": "get_shipment:S7016",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_04",
+        "position": "last",
+        "change": "get_shipment:S7020",
+        "gold": 18,
+        "exit": 1,
+        "diverged_at": 18,
+        "verdict": "replay diverged at exchange 18 \u2014 POST /api/chat is not on the tape (18 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_05",
+        "position": "first",
+        "change": "get_customer:C102",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_05",
+        "position": "middle",
+        "change": "get_shipment:S7016",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_05",
+        "position": "last",
+        "change": "get_shipment:S7020",
+        "gold": 18,
+        "exit": 1,
+        "diverged_at": 18,
+        "verdict": "replay diverged at exchange 18 \u2014 POST /api/chat is not on the tape (18 of 19 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_01",
+        "position": "first",
+        "change": "get_customer:C106",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_01",
+        "position": "middle",
+        "change": "get_shipment:S7044",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_01",
+        "position": "last",
+        "change": "get_shipment:S7047",
+        "gold": 14,
+        "exit": 1,
+        "diverged_at": 14,
+        "verdict": "replay diverged at exchange 14 \u2014 POST /api/chat is not on the tape (14 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_02",
+        "position": "first",
+        "change": "get_customer:C106",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_02",
+        "position": "middle",
+        "change": "get_shipment:S7044",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_02",
+        "position": "last",
+        "change": "get_shipment:S7047",
+        "gold": 14,
+        "exit": 1,
+        "diverged_at": 14,
+        "verdict": "replay diverged at exchange 14 \u2014 POST /api/chat is not on the tape (14 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_03",
+        "position": "first",
+        "change": "get_customer:C106",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_03",
+        "position": "middle",
+        "change": "get_shipment:S7044",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_03",
+        "position": "last",
+        "change": "get_shipment:S7047",
+        "gold": 14,
+        "exit": 1,
+        "diverged_at": 14,
+        "verdict": "replay diverged at exchange 14 \u2014 POST /api/chat is not on the tape (14 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_04",
+        "position": "first",
+        "change": "get_customer:C106",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_04",
+        "position": "middle",
+        "change": "get_shipment:S7044",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_04",
+        "position": "last",
+        "change": "get_shipment:S7047",
+        "gold": 14,
+        "exit": 1,
+        "diverged_at": 14,
+        "verdict": "replay diverged at exchange 14 \u2014 POST /api/chat is not on the tape (14 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_05",
+        "position": "first",
+        "change": "get_customer:C106",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_05",
+        "position": "middle",
+        "change": "get_shipment:S7044",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_05",
+        "position": "last",
+        "change": "get_shipment:S7047",
+        "gold": 14,
+        "exit": 1,
+        "diverged_at": 14,
+        "verdict": "replay diverged at exchange 14 \u2014 POST /api/chat is not on the tape (14 of 15 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_01",
+        "position": "first",
+        "change": "get_customer:C101",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_01",
+        "position": "middle",
+        "change": "get_shipment:S7008",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_01",
+        "position": "last",
+        "change": "get_shipment:S7012",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_02",
+        "position": "first",
+        "change": "get_customer:C101",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_02",
+        "position": "middle",
+        "change": "get_shipment:S7008",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_02",
+        "position": "last",
+        "change": "get_shipment:S7012",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_03",
+        "position": "first",
+        "change": "get_customer:C101",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_03",
+        "position": "middle",
+        "change": "get_shipment:S7008",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_03",
+        "position": "last",
+        "change": "get_shipment:S7012",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_04",
+        "position": "first",
+        "change": "get_customer:C101",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_04",
+        "position": "middle",
+        "change": "get_shipment:S7008",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_04",
+        "position": "last",
+        "change": "get_shipment:S7012",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_05",
+        "position": "first",
+        "change": "get_customer:C101",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_05",
+        "position": "middle",
+        "change": "get_shipment:S7008",
+        "gold": 9,
+        "exit": 1,
+        "diverged_at": 9,
+        "verdict": "replay diverged at exchange 9 \u2014 POST /api/chat is not on the tape (9 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_05",
+        "position": "last",
+        "change": "get_shipment:S7012",
+        "gold": 17,
+        "exit": 1,
+        "diverged_at": 17,
+        "verdict": "replay diverged at exchange 17 \u2014 POST /api/chat is not on the tape (17 of 18 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_01",
+        "position": "first",
+        "change": "get_customer:C105",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_01",
+        "position": "middle",
+        "change": "get_order:O2037",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_01",
+        "position": "last",
+        "change": "get_shipment:S7041",
+        "gold": 19,
+        "exit": 1,
+        "diverged_at": 19,
+        "verdict": "replay diverged at exchange 19 \u2014 POST /api/chat is not on the tape (19 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_02",
+        "position": "first",
+        "change": "get_customer:C105",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_02",
+        "position": "middle",
+        "change": "get_order:O2037",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_02",
+        "position": "last",
+        "change": "get_shipment:S7041",
+        "gold": 19,
+        "exit": 1,
+        "diverged_at": 19,
+        "verdict": "replay diverged at exchange 19 \u2014 POST /api/chat is not on the tape (19 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_03",
+        "position": "first",
+        "change": "get_customer:C105",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_03",
+        "position": "middle",
+        "change": "get_order:O2037",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_03",
+        "position": "last",
+        "change": "get_shipment:S7041",
+        "gold": 19,
+        "exit": 1,
+        "diverged_at": 19,
+        "verdict": "replay diverged at exchange 19 \u2014 POST /api/chat is not on the tape (19 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_04",
+        "position": "first",
+        "change": "get_customer:C105",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_04",
+        "position": "middle",
+        "change": "get_order:O2037",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_04",
+        "position": "last",
+        "change": "get_shipment:S7041",
+        "gold": 19,
+        "exit": 1,
+        "diverged_at": 19,
+        "verdict": "replay diverged at exchange 19 \u2014 POST /api/chat is not on the tape (19 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_05",
+        "position": "first",
+        "change": "get_customer:C105",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_05",
+        "position": "middle",
+        "change": "get_order:O2037",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_05",
+        "position": "last",
+        "change": "get_shipment:S7041",
+        "gold": 19,
+        "exit": 1,
+        "diverged_at": 19,
+        "verdict": "replay diverged at exchange 19 \u2014 POST /api/chat is not on the tape (19 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_01",
+        "position": "first",
+        "change": "get_customer:C100",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_01",
+        "position": "middle",
+        "change": "get_order:O2002",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_01",
+        "position": "last",
+        "change": "get_shipment:S7005",
+        "gold": 15,
+        "exit": 1,
+        "diverged_at": 15,
+        "verdict": "replay diverged at exchange 15 \u2014 POST /api/chat is not on the tape (15 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_02",
+        "position": "first",
+        "change": "get_customer:C100",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_02",
+        "position": "middle",
+        "change": "get_order:O2002",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_02",
+        "position": "last",
+        "change": "get_shipment:S7005",
+        "gold": 15,
+        "exit": 1,
+        "diverged_at": 15,
+        "verdict": "replay diverged at exchange 15 \u2014 POST /api/chat is not on the tape (15 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_03",
+        "position": "first",
+        "change": "get_customer:C100",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_03",
+        "position": "middle",
+        "change": "get_order:O2002",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_03",
+        "position": "last",
+        "change": "get_shipment:S7005",
+        "gold": 15,
+        "exit": 1,
+        "diverged_at": 15,
+        "verdict": "replay diverged at exchange 15 \u2014 POST /api/chat is not on the tape (15 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_04",
+        "position": "first",
+        "change": "get_customer:C100",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_04",
+        "position": "middle",
+        "change": "get_order:O2002",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_04",
+        "position": "last",
+        "change": "get_shipment:S7005",
+        "gold": 15,
+        "exit": 1,
+        "diverged_at": 15,
+        "verdict": "replay diverged at exchange 15 \u2014 POST /api/chat is not on the tape (15 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_05",
+        "position": "first",
+        "change": "get_customer:C100",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_05",
+        "position": "middle",
+        "change": "get_order:O2002",
+        "gold": 8,
+        "exit": 1,
+        "diverged_at": 8,
+        "verdict": "replay diverged at exchange 8 \u2014 POST /api/chat is not on the tape (8 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_05",
+        "position": "last",
+        "change": "get_shipment:S7005",
+        "gold": 15,
+        "exit": 1,
+        "diverged_at": 15,
+        "verdict": "replay diverged at exchange 15 \u2014 POST /api/chat is not on the tape (15 of 16 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_01",
+        "position": "first",
+        "change": "get_customer:C104",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 11 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_01",
+        "position": "middle",
+        "change": "get_order:O2029",
+        "gold": 6,
+        "exit": 1,
+        "diverged_at": 6,
+        "verdict": "replay diverged at exchange 6 \u2014 POST /api/chat is not on the tape (6 of 11 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_01",
+        "position": "last",
+        "change": "get_order:O2033",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 11 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_02",
+        "position": "first",
+        "change": "get_customer:C104",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 11 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_02",
+        "position": "middle",
+        "change": "get_order:O2029",
+        "gold": 6,
+        "exit": 1,
+        "diverged_at": 6,
+        "verdict": "replay diverged at exchange 6 \u2014 POST /api/chat is not on the tape (6 of 11 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_02",
+        "position": "last",
+        "change": "get_order:O2033",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 11 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_03",
+        "position": "first",
+        "change": "get_customer:C104",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 11 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_03",
+        "position": "middle",
+        "change": "get_order:O2029",
+        "gold": 6,
+        "exit": 1,
+        "diverged_at": 6,
+        "verdict": "replay diverged at exchange 6 \u2014 POST /api/chat is not on the tape (6 of 11 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_03",
+        "position": "last",
+        "change": "get_order:O2033",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 11 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_04",
+        "position": "first",
+        "change": "get_customer:C104",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_04",
+        "position": "middle",
+        "change": "get_order:O2029",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_04",
+        "position": "last",
+        "change": "get_shipment:S7033",
+        "gold": 19,
+        "exit": 1,
+        "diverged_at": 19,
+        "verdict": "replay diverged at exchange 19 \u2014 POST /api/chat is not on the tape (19 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_05",
+        "position": "first",
+        "change": "get_customer:C104",
+        "gold": 1,
+        "exit": 1,
+        "diverged_at": 1,
+        "verdict": "replay diverged at exchange 1 \u2014 POST /api/chat is not on the tape (1 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_05",
+        "position": "middle",
+        "change": "get_order:O2029",
+        "gold": 10,
+        "exit": 1,
+        "diverged_at": 10,
+        "verdict": "replay diverged at exchange 10 \u2014 POST /api/chat is not on the tape (10 of 20 recorded exchange(s) served, agent exited 1)"
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_05",
+        "position": "last",
+        "change": "get_shipment:S7033",
+        "gold": 19,
+        "exit": 1,
+        "diverged_at": 19,
+        "verdict": "replay diverged at exchange 19 \u2014 POST /api/chat is not on the tape (19 of 20 recorded exchange(s) served, agent exited 1)"
+      }
+    ],
+    "C": [
+      {
+        "task": "account_summary",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_02.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "account_summary",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "account_summary",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "account_summary",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "account_summary",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "account_summary",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "account_summary",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "account_summary",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "account_summary",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "account_summary",
+        "good": "ref_04.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_02.cassette.json",
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "good": "ref_04.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_02.cassette.json",
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "good": "ref_04.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_02.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "good": "ref_04.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_02.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "good": "ref_04.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_02.cassette.json",
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "good": "ref_04.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_02.cassette.json",
+        "exit": 1,
+        "fork_b_step": 10
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 10
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 10
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_01.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 10
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_03.cassette.json",
+        "exit": 1,
+        "fork_b_step": 10
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_02.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_04.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_03.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "refund_audit_b",
+        "good": "ref_04.cassette.json",
+        "bad": "ref_05.cassette.json",
+        "exit": 1,
+        "fork_b_step": 19
+      }
+    ],
+    "D": [
+      {
+        "task": "account_summary",
+        "tape": "ref_01",
+        "change": "get_shipment:S7022",
+        "changed_gold": 9,
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_02",
+        "change": "get_shipment:S7022",
+        "changed_gold": 9,
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_03",
+        "change": "get_shipment:S7022",
+        "changed_gold": 9,
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_04",
+        "change": "get_shipment:S7022",
+        "changed_gold": 9,
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "account_summary",
+        "tape": "ref_05",
+        "change": "get_order:O2024",
+        "changed_gold": 12,
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_01",
+        "change": "get_shipment:S7016",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_02",
+        "change": "get_shipment:S7016",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_03",
+        "change": "get_shipment:S7016",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_04",
+        "change": "get_shipment:S7016",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_a",
+        "tape": "ref_05",
+        "change": "get_shipment:S7016",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 18
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_01",
+        "change": "get_shipment:S7044",
+        "changed_gold": 8,
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_02",
+        "change": "get_shipment:S7044",
+        "changed_gold": 8,
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_03",
+        "change": "get_shipment:S7044",
+        "changed_gold": 8,
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_04",
+        "change": "get_shipment:S7044",
+        "changed_gold": 8,
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "carrier_review_b",
+        "tape": "ref_05",
+        "change": "get_shipment:S7044",
+        "changed_gold": 8,
+        "exit": 1,
+        "fork_b_step": 14
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_01",
+        "change": "get_shipment:S7008",
+        "changed_gold": 9,
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_02",
+        "change": "get_shipment:S7008",
+        "changed_gold": 9,
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_03",
+        "change": "get_shipment:S7008",
+        "changed_gold": 9,
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_04",
+        "change": "get_shipment:S7008",
+        "changed_gold": 9,
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "delay_credit_a",
+        "tape": "ref_05",
+        "change": "get_shipment:S7008",
+        "changed_gold": 9,
+        "exit": 1,
+        "fork_b_step": 17
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_01",
+        "change": "get_order:O2037",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_02",
+        "change": "get_order:O2037",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_03",
+        "change": "get_order:O2037",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_04",
+        "change": "get_order:O2037",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "delay_credit_b",
+        "tape": "ref_05",
+        "change": "get_order:O2037",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_01",
+        "change": "get_order:O2002",
+        "changed_gold": 8,
+        "exit": 0,
+        "fork_b_step": null
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_02",
+        "change": "get_order:O2002",
+        "changed_gold": 8,
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_03",
+        "change": "get_order:O2002",
+        "changed_gold": 8,
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_04",
+        "change": "get_order:O2002",
+        "changed_gold": 8,
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_a",
+        "tape": "ref_05",
+        "change": "get_order:O2002",
+        "changed_gold": 8,
+        "exit": 1,
+        "fork_b_step": 15
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_01",
+        "change": "get_order:O2029",
+        "changed_gold": 6,
+        "exit": 1,
+        "fork_b_step": 10
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_02",
+        "change": "get_order:O2029",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_03",
+        "change": "get_order:O2029",
+        "changed_gold": 6,
+        "exit": 1,
+        "fork_b_step": 10
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_04",
+        "change": "get_order:O2029",
+        "changed_gold": 10,
+        "exit": 1,
+        "fork_b_step": 19
+      },
+      {
+        "task": "refund_audit_b",
+        "tape": "ref_05",
+        "change": "get_order:O2029",
+        "changed_gold": 6,
+        "exit": 1,
+        "fork_b_step": 10
+      }
+    ]
+  }
+}

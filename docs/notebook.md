@@ -5172,3 +5172,87 @@ attempt exactly as 088 says.
 **Everything else in 088 stands**: corpus, classes A–D, gold, metrics, prediction, decision rule.
 
 Governing docs: notebook 088; 083a (the precedent for amending a registration before scoring).
+
+## 089 · 2026-11-25 · RESULT: on a longer agent, replay is quiet where live diff is not — 0/35 false positives against 56/70 — and live diff cannot tell the change from the noise
+
+Recorded and scored once at commit `06fc293` (the commit that carries 088a, pushed first).
+Document: `bench/results/replay_longrun_all.json`.
+
+```sh
+cargo build -q --release -p amberfork
+python3 spike/record_longrun_sessions.py --amberfork-bin target/release/amberfork   # live model, 85 min
+python3 spike/score_replay_longrun.py --amberfork-bin target/release/amberfork      # offline
+```
+
+**Corpus as recorded.** 70 sessions, 70 attempts, every one exit 0 on its first attempt; no
+retry, no exclusion (the voided log of 088a aside). No context-limit defect. The 35 reference
+tapes run 11 to 20 exchanges, median 18.
+
+| class | measurement | count | rate | Wilson 95% |
+|---|---|---|---|---|
+| A | replay, unchanged agent → exit 1 (false positive) | 0 / 35 | 0.000 | [0.000, 0.099] |
+| B | replay, changed agent → exit 1 (detected) | 105 / 105 | 1.000 | [0.965, 1.000] |
+| B | replay, changed agent → named the gold exchange | 105 / 105 | 1.000 | [0.965, 1.000] |
+| B | best constant answer ("always exchange 1") | 35 / 105 | 0.333 | [0.250, 0.428] |
+| C | `diff`, two live unchanged runs → exit 1 (false positive) | 56 / 70 | 0.800 | [0.692, 0.877] |
+| D | `diff`, live changed run vs reference → exit 1 (detected) | 30 / 35 | 0.857 | [0.706, 0.937] |
+| D | `diff` fork at the changed run's gold exchange | 0 / 35 | 0.000 | [0.000, 0.099] |
+| D | `diff` fork within ±3 of it | 0 / 35 | 0.000 | [0.000, 0.099] |
+
+No exit 2 in any class. Per task: A is 0/5 in all seven; C is 4/10 (`account_summary`), 8/10,
+9/10, 8/10, 8/10, 9/10, 10/10. B's gold exchanges are 1 (35), 6 (3), 8 (10), 9 (10), 10 (15),
+14 (5), 15 (5), 17 (10), 18 (5), 19 (7) — three or four distinct values in every task. In D every
+changed run reached its altered call (0 not reached).
+
+**The registered prediction held on every count**: A 0/35; B all detected and all exact, gold
+spread over at least three exchanges per task; C above 50%; D detects most pairs and localizes in
+under half (in fact in none).
+
+### What the result is
+
+**1. The primary comparison is not a null this time.** C's lower bound (0.692) is above A's upper
+bound (0.099). By 088's rule, the README and `docs/ci.md` may state both false-positive rates on
+this corpus. On one agent and one set of recordings: replaying an unchanged agent against its tape
+raised no alarm in 35 tries; diffing two live runs of the same unchanged agent raised one in 56 of
+70.
+
+**2. Live diff could not tell a changed agent from an unchanged one.** It flagged 85.7% of changed
+runs and 80.0% of unchanged pairs, and those intervals overlap almost entirely. An alarm that
+fires at the same rate either way carries no information about the change. Replay's two rates are
+0% and 100%.
+
+**3. Replay named the exchange where the change entered, at depth.** 70 of B's 105 golds are
+beyond exchange 1, and "always 1" scores a third. This is the row 086 could not have. It is
+replay *naming the first request that differs*, which is what the mechanism does — not attribution.
+
+### What it is not — read before quoting
+
+- **Where live diff forked is the most important caveat.** 54 of C's 56 forks, and 29 of D's 30,
+  are at the run's *final* exchange: the model's closing prose answer, worded differently on each
+  sample. The lookups before it were close enough across runs to stay in sync. So C's 80% is
+  mostly "two samples phrase the answer differently", and D's 0/35 localization follows from the
+  same thing — the fork lands on the answer, ten exchanges after the change that caused it. That
+  is a true false alarm for a gate, but it is a narrower phenomenon than 084's, where passing runs
+  shared only about a third of their steps.
+- **The agent was less free than 088 hoped.** Nothing scripted its path, yet the model walked
+  nearly the same lookups each time (reference tapes of 11–20 exchanges; one call per exchange).
+  This is a mid-length, tool-driven agent — longer and freer than 086's, far short of 084's
+  median of 49 steps. #65 asked for "tens of exchanges"; the median here is 18.
+- **A and B are still what the design implies** (088 said so before the run). Their value is that
+  105 changes at ten different depths and 35 unchanged replays went through the shipped `record`
+  and `replay` on real model output with no fidelity defect.
+- **One model, one invented world, one agent whose requests are reproducible.** 35 tapes from 7
+  tasks, not independent within a task. 0/35 bounds a rate near 0.10. D is one live sample per tape.
+- **Not measured:** agents with unreproducible request content; any change to the model itself.
+
+### What changes
+
+- `docs/ci.md` and the README evidence table state the A-versus-C rates and the D non-discrimination,
+  with the final-exchange caveat beside them.
+- The README status no longer lists #65 as open and unproven.
+- Nothing may say replay "attributes" or "explains" a regression, and 80% may not be presented as
+  the rate for agents in general.
+
+Governing docs: notebook 088 and 088a (the registration and its amendment), 084, 086;
+`BENCHMARK.md` rules 3, 6, 8; issue #65.
+

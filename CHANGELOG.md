@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- **`replay` measured against a live diff on a longer agent (notebooks 088, 089).** 35 recordings
+  of a tool-using agent that chooses its own lookups (11–20 exchanges). Unchanged, it replayed
+  clean 35 of 35 times; diffing two live unchanged runs forked on 56 of 70 pairs. Replay caught
+  105 of 105 injected changes at the exact exchange, at depths from 1 to 19. Most live-diff forks
+  were the final answer's wording, and the entry says so.
 - **The declared minimum Rust version was wrong, and is now 1.88.** `rust-version` said 1.85 while
   the code used let-chains, which need 1.88 — true of the published v1.0.0 crates as well. A new
   `msrv` CI job checks the workspace on whatever `rust-version` declares, so it cannot drift again.

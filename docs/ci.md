@@ -64,14 +64,24 @@ Both transcripts are real: the agent and recording are
   on every run and will diverge at once. Tool-call ids, which SDKs mint fresh per run, are
   normalized for you; anything else non-deterministic in a request is yours to pin. Treat a
   divergence at exchange 0 on an agent you did not change as a reproducibility problem first.
-- **What has been measured, and how little.** On 30 real recordings of a small tool-using agent
-  (5 tasks, 2 or 4 exchanges each, a local model), an unchanged agent followed its tape 30 times out
-  of 30, and an agent with one tool's return value changed diverged 30 times out of 30
-  ([notebook 086](notebook.md)). That is a round-trip check on one deterministic agent, not a
-  false-positive rate for yours: 0/30 bounds it under about 11% for that agent only. On that same
-  short agent, diffing two live runs was nearly as quiet (2 of 50 forked), so the advantage of
-  replay over live runs — large in principle on long, free-running agents — has not itself been
-  measured.
+- **What has been measured, and how little.** Two corpora, one local model, agents whose requests
+  are reproducible.
+  - *Short agent* ([notebook 086](notebook.md)): 30 recordings, 2 or 4 exchanges each. An unchanged
+    agent followed its tape 30 of 30 times; one with a tool's return value changed diverged 30 of
+    30. Diffing two live runs was nearly as quiet there (2 of 50 forked).
+  - *Longer agent* ([notebook 089](notebook.md)): 35 recordings of a tool-using agent that picks its
+    own lookups, 11 to 20 exchanges each. Unchanged, it followed its tape **35 of 35** times
+    (false-positive rate 0, upper bound about 10%). Diffing two live runs of that same unchanged
+    agent forked on **56 of 70** pairs (80% [69%, 88%]). With one lookup's result changed, replay
+    diverged 105 of 105 times, each time at the exchange where the changed value first reached the
+    model — and those exchanges ranged from 1 to 19. A live diff flagged the changed agent 86% of
+    the time, which is no different from the 80% it flags when nothing changed, and never placed
+    the fork within three exchanges of the change.
+  - *Read it narrowly.* Nearly all of those live-diff forks (54 of 56) are at the final exchange —
+    the model wording its closing answer differently — not at a different sequence of tool calls.
+    The replay numbers are what exact request matching implies; the measurement shows the shipped
+    path has no fidelity defect on real model output, not that it is clever. None of this is a
+    false-positive rate for *your* agent.
 - **The agent's exit code is reported, not returned.** A recording of a failing run replays to
   the same failure, and that is "followed the tape" (exit 0).
 

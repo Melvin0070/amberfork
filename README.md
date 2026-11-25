@@ -71,6 +71,7 @@ offline from a committed file. Several went against the tool; they are here on p
 | Can diffing two independent runs tell a failure from normal variance? (same pairs) | engine 0.614 vs run-length alone 0.614 | 685 | **No.** Two passing runs already share only about a third of their steps |
 | Is diffing two live runs a usable CI gate? | forks on **96.7%** [93.9%, 98.3%] of pairs where both runs passed | 273 | **No** — hence `replay` |
 | Does `replay` round-trip real recordings? | 0 / 30 false positives; 30 / 30 tool changes caught | 30 | Yes, on one short deterministic agent. Not a localization result |
+| Is `replay` quieter than a live diff on a longer agent? (11–20 exchanges, same recordings) | unchanged agent: `replay` alarms on **0 / 35** [0%, 10%], live `diff` on **56 / 70** [69%, 88%] | 35 | **Yes.** `replay` also caught 105 / 105 changes at the exact exchange (1 to 19); live `diff` flagged changed and unchanged runs alike (86% vs 80%). Most live forks are the final answer's wording |
 | Does `--verify` confirm a real fork? | **87%** recovered [62%, 96%], none indeterminate | 15 | Yes, on a toy agent with real sampling variance |
 | Does it beat asking a frontier model? (TRAIL↔HAL) | 3 of 5 LLM-judge arms beat it | 23 | **No** — though no arm cleared random; the corpus shares no step names across sides |
 
@@ -116,9 +117,8 @@ cargo run -q -p amberfork-bench -- report --results bench/results/chimera_noise_
 
 v1.0.0 is tagged and published. On `main` since then: the `replay` verb, native Claude Code and
 ATIF ingest, and the Terminal-Bench and replay measurements. Also on `main`: the guard that refuses runs with no
-common ground. Open before the next release (milestone
-[v1.1](https://github.com/Melvin0070/amberfork/milestone/12)): the scale measurement (#50), and a
-measurement of `replay` on a long, free-running agent (#65) — the one regime where its advantage
-over live runs is expected and unproven.
+common ground. Also measured on `main`: `replay` against a live diff on a longer agent (#65).
+Open before the next release (milestone
+[v1.1](https://github.com/Melvin0070/amberfork/milestone/12)): the scale measurement (#50).
 [`CONTRIBUTING.md`](CONTRIBUTING.md) describes the working agreement; [`CHANGELOG.md`](CHANGELOG.md)
 has the rest.
