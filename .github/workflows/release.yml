@@ -27,7 +27,10 @@ jobs:
         # the acceptance that matters, which an emulator or a missing loader cannot demonstrate.
         include:
           - target: aarch64-apple-darwin
-            runner: macos-14
+            # NOT macos-14: that label stopped allocating ("configuration
+            # 'macos-14-arm64-us-default' is not supported"), which cancels the job in its first
+            # second with no steps run — found by the pre-tag dry run, notebook 094 (#53).
+            runner: macos-15
           - target: x86_64-apple-darwin
             # NOT macos-13: that image is retired, so the label queues forever rather than
             # failing — measured at ~20h pending before it was cancelled (#53). macos-15-intel

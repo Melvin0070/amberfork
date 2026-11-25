@@ -5538,3 +5538,38 @@ fourth.
 Governing docs: notebooks 070 (registration), 071 (amendment, judge result), 087, 091, 092;
 `BENCHMARK.md` rules 2, 3, 6, 10; issue #66.
 
+## 094 · 2026-11-25 · The pre-tag dry run caught a second dead runner label — this one fails fast (#53)
+
+#53's three acceptance boxes were already met by the v1.0.0 tag run (`33870363055`, 2026-09-04:
+five targets green, ten assets, checksums published). Before closing it, `release.yml` was
+dispatched on `main` at `042e453` (run `45625892219`), because the workflow had not run since the
+Dependabot round moved `actions/checkout` to v7, `upload-artifact` to v7 and `download-artifact`
+to v8.
+
+| target | runner | result |
+|---|---|---|
+| `aarch64-apple-darwin` | macos-14 | **cancelled, zero steps run** |
+| `x86_64-apple-darwin` | macos-15-intel | green |
+| `x86_64-unknown-linux-gnu` | ubuntu-latest | green |
+| `aarch64-unknown-linux-gnu` | ubuntu-24.04-arm | green |
+| `x86_64-pc-windows-msvc` | windows-latest | green |
+
+The Apple-silicon job started and completed in the same second with the annotation
+`The configuration 'macos-14-arm64-us-default' is not supported`. A v1.1.0 tag pushed today would
+have skipped the release job entirely (`needs: build`), on the platform most evaluators use.
+
+This is the opposite failure mode to 073's `macos-13`, which queued for ~20 hours without an
+error. Same cause — a hosted label going away — but two different symptoms, so neither "the job
+never starts" nor "the job is cancelled instantly" can be ruled out for the next one. What both
+have in common: nothing in the repository changed, and only running the workflow shows it.
+
+**Change:** the job moves to `macos-15`. Not verified by this entry — a dispatch runs the
+workflow file from the ref, so the confirming dry run can only happen after this commit is on
+`main`. Its result is recorded below as 094a.
+
+**Standing consequence for #64:** dispatch `release.yml` on the release commit before pushing the
+tag. Still unverified until a real tag: the tag-only `release` job, including the
+`download-artifact` v8 step.
+
+Governing docs: notebook 073; `.github/workflows/release.yml`; issue #53.
+
