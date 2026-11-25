@@ -28,6 +28,11 @@ failure; replaying an agent against a recording of itself does.
 - **Natural pairs from Terminal-Bench 2.0** (685 dev pairs). Alignment beats a positional diff
   (AUROC +0.045 [+0.020, +0.069]) but does no better than run length alone, and `diff` reports a
   fork on 96.7% of pairs where both runs passed.
+- **The sealed reveals at this tag.** The Terminal-Bench test side (2,670 pairs, scored once)
+  confirmed that null: the engine trails run length by 0.012 [−0.030, +0.005], beats the
+  positional diff by +0.025 [+0.014, +0.038], and reports a fork on 97.5% of passing pairs. The
+  chimera test split is byte-identical to the v1.0.0 reveal, and the new guard fired on none of
+  its 35 pairs.
 - **The scale wall.** 35 s and 152 MB at the 2000-step default guard; 4.6 min and 789 MB at 5000
   steps per side.
 - **The TRAIL↔HAL corpus is retired.** After a pre-registered ingest repair, the engine scored 0

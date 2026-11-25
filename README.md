@@ -69,9 +69,9 @@ offline from a committed file. Several went against the tool; they are here on p
 | Question | Result | n | Reading |
 |---|---|---|---|
 | Does alignment find a fork under benign noise? (sealed test split, injected forks) | within ±3 steps **0.91** [0.78, 0.97] vs best baseline 0.49 [0.33, 0.64] | 35 | Yes — but the fork is injected, so this measures noise tolerance, not attribution of a natural failure |
-| Does alignment beat a positional diff on real runs? (Terminal-Bench, same agent and task) | AUROC **+0.045** [+0.020, +0.069] | 685 | Yes, modestly — the first such result without injected noise |
-| Can diffing two independent runs tell a failure from normal variance? (same pairs) | engine 0.614 vs run-length alone 0.614 | 685 | **No.** Two passing runs already share only about a third of their steps |
-| Is diffing two live runs a usable CI gate? | forks on **96.7%** [93.9%, 98.3%] of pairs where both runs passed | 273 | **No** — hence `replay` |
+| Does alignment beat a positional diff on real runs? (Terminal-Bench, same agent and task) | AUROC **+0.045** [+0.020, +0.069] on dev, **+0.025** [+0.014, +0.038] on the sealed test side | 685 dev, 2,670 test | Yes, modestly — the first such result without injected noise |
+| Can diffing two independent runs tell a failure from normal variance? (same pairs) | engine 0.614 vs run-length alone 0.614 on dev; 0.593 vs 0.605 on test | 685 dev, 2,670 test | **No.** Two passing runs already share only about a third of their steps |
+| Is diffing two live runs a usable CI gate? | forks on **96.7%** [93.9%, 98.3%] of pairs where both runs passed; 97.5% [96.4%, 98.3%] on test | 273 dev, 1,088 test | **No** — hence `replay` |
 | Does `replay` round-trip real recordings? | 0 / 30 false positives; 30 / 30 tool changes caught | 30 | Yes, on one short deterministic agent. Not a localization result |
 | Is `replay` quieter than a live diff on a longer agent? (11–20 exchanges, same recordings) | unchanged agent: `replay` alarms on **0 / 35** [0%, 10%], live `diff` on **56 / 70** [69%, 88%] | 35 | **Yes.** `replay` also caught 105 / 105 changes at the exact exchange (1 to 19); live `diff` flagged changed and unchanged runs alike (86% vs 80%). Most live forks are the final answer's wording |
 | Does `--verify` confirm a real fork? | **87%** recovered [62%, 96%], none indeterminate | 15 | Yes, on a toy agent with real sampling variance |

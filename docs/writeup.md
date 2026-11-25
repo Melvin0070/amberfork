@@ -56,7 +56,7 @@ fork.
 | Mode A′: a failing run against a passing run from a different agent system | 4 | **Null.** Engine 0.50 within ±3, random 0.75, as published. Runs of 7 to 10 steps make a ±3 window nearly the whole run. Since the guard in section 7, the engine abstains on 3 of the 4 |
 | TRAIL↔HAL: human-annotated failures against passing references, same scaffold, different model | 23 dev | **A loss.** Engine 0.000 exact, random 0.174, and three of five LLM-judge arms beat the engine |
 | Perturbation: a real local agent with one tool's return value swapped | 25 | **A tie.** Engine 1.00 exact, and so is the positional diff it exists to beat |
-| Terminal-Bench 2.0: published trials of the same agent, model and task | 685 dev | **The null that changed the product.** Section 3 |
+| Terminal-Bench 2.0: published trials of the same agent, model and task | 685 dev, 2,670 test | **The null that changed the product.** Section 3 |
 
 **TRAIL↔HAL deserves the detail, because it is a real loss.** I built the baseline the field
 compares against, "just ask a frontier model", and registered it before writing any judge code
@@ -82,30 +82,33 @@ lose. Alignment only earns its keep when runs differ in length or order before t
 
 Terminal-Bench 2.0 publishes many trials of the same agent, model and task, some passing and some
 failing. That gives natural pairs whose structure varies on its own: 685 dev pairs across 23 tasks
-and 9 scaffolds, registered in notebook 083 and scored in 084. There are no step-level cause
+and 9 scaffolds, registered in notebook 083 and scored in 084. The sealed test side, 2,670 pairs
+across 63 tasks, was scored once at the v1.1.0 tag (notebooks 095 and 096). There are no step-level cause
 labels, so the question is simpler: can the diff tell a pass-versus-fail pair from a
 pass-versus-pass pair?
 
-| measurement | result |
-|---|---|
-| `diff` reports a fork when **both runs passed** | **96.7%** [93.9%, 98.3%], n=273 |
-| `diff` reports a fork when one passed and one failed | 95.6% [93.2%, 97.2%], n=412 |
-| AUROC of the engine's in-sync fraction, separating the two classes | 0.614 [0.580, 0.649] |
-| AUROC of a score that knows only the two run lengths | 0.614 [0.580, 0.652] |
-| engine minus positional diff (paired) | +0.045 [+0.020, +0.069] |
+| measurement | dev | sealed test |
+|---|---|---|
+| `diff` reports a fork when **both runs passed** | **96.7%** [93.9%, 98.3%], n=273 | **97.5%** [96.4%, 98.3%], n=1,088 |
+| `diff` reports a fork when one passed and one failed | 95.6% [93.2%, 97.2%], n=412 | 99.1% [98.5%, 99.5%], n=1,582 |
+| AUROC of the engine's in-sync fraction, separating the two classes | 0.614 [0.580, 0.649] | 0.593 [0.574, 0.615] |
+| AUROC of a score that knows only the two run lengths | 0.614 [0.580, 0.652] | 0.605 [0.580, 0.632] |
+| engine minus run length (paired) | −0.000 [−0.033, +0.032] | −0.012 [−0.030, +0.005] |
+| engine minus positional diff (paired) | +0.045 [+0.020, +0.069] | +0.025 [+0.014, +0.038] |
 
 There is one small win in that table. Alignment beats a positional diff on real runs, with an
-interval that excludes zero. It is this project's first such result without injected noise.
+interval that excludes zero on both splits, though the test effect is about half the dev one. It
+is this project's first such result without injected noise.
 
-The rest is a null for the original idea. The engine does no better than run length alone, and it
-reports a fork on nearly every pair of *passing* runs. The likely reason, from an exploratory look
+The rest is a null for the original idea, and the sealed test side confirmed it. On neither split
+does the engine do better than run length alone, and it reports a fork on nearly every pair of
+*passing* runs. The likely reason, from an exploratory look
 that was not registered, is that two passing runs already share only about a third of their
 steps. On this corpus a fork between two independent runs is the normal case, not evidence of a
 failure.
 
-Two limits on that conclusion. It is one corpus, scored on the dev split; the test split is sealed
-until the v1.1.0 tag. And notebook 084 names two things that could be hiding content signal and
-were not tested: observations are truncated at 5,000 characters, and the cost model compares
+Two limits on that conclusion. It is one corpus. And notebook 084 names two things that could be
+hiding content signal and were not tested: observations are truncated at 5,000 characters, and the cost model compares
 outputs only, so most tool calls are matched by name alone.
 
 ## 4. What works instead: record once, replay

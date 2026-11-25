@@ -5675,3 +5675,72 @@ edited: README, `docs/evidence.md`, `docs/writeup.md` section 3, `docs/launch.md
 Governing docs: `BENCHMARK.md` rules 1, 2, 3, 6, 9, 10; notebooks 081 (the sequencing failure this
 avoids), 083 / 083a / 083b and 084 (reveal 2), 071 and 087 (the guard clause in reveal 1); issue #64.
 
+## 096 · 2026-11-25 · REVEAL: both sealed splits at v1.1.0 — the headline is byte-identical, and the Terminal-Bench null is confirmed on test (#64)
+
+Scored once each at commit `38d347e` (the v1.1.0 release-prep commit), before the tag, under
+registration 095 (pushed first, `ff13290`). Clean tree; `bench/params.toml` sha256 `8ebd95ce8f3d…`;
+20 pair manifests in each seed directory, counted before scoring. Commands exactly as 095 gives
+them. Both runs wrote their document on the first attempt.
+
+### Reveal 1 — chimera test split, with the guard: identical
+
+The three per-seed documents (`bench/results/chimera_noise_seed{42,43,44}_test_v1.1.0.json`) are
+**byte-identical** to the v1.0.0 reveal's (`cmp`). The aggregate
+(`chimera_noise_multiseed_test_v1.1.0.json`) has identical arm rows and differs only in the source
+filenames it records.
+
+| arm (test, n=35) | exact | ±1 | ±3 | no-pred |
+|---|---|---|---|---|
+| random | 0.00 | 0.09 | 0.29 | 0 / 35 |
+| pos-lexical | 0.00 | 0.20 | 0.49 [0.33, 0.64] | 0 / 35 |
+| nw-structural/resync | 0.03 | 0.20 | 0.20 | 9 / 35 |
+| **nw-lexical/resync** | **0.49** [0.33, 0.64] | **0.71** | **0.91** [0.78, 0.97] | **0 / 35** |
+
+**The guard fired on no test pair for the engine arm.** `nw-structural/resync`'s 9 abstentions are
+the same 9 as at v1.0.0, so they predate the guard. This is 095's first branch: the headline
+stands as published. 087's no-op proof on dev now holds on the sealed split too.
+
+### Reveal 2 — Terminal-Bench test side: the null is confirmed
+
+`bench/results/tbench_natural_test.json`. 63 tasks, 1,582 pass×fail and 1,088 pass×pass pairs
+scored, as counted in 083a. Two pairs were excluded when the corpus was built, both because a run
+exceeds 2,000 steps (tasks `pypi-server` and `rstan-to-pystan`); dev had none. No exit 2.
+
+| measurement | dev (084) | test |
+|---|---|---|
+| fork reported, both runs passed | 0.967 [0.939, 0.983], n=273 | 0.975 [0.964, 0.983], n=1,088 |
+| fork reported, one passed and one failed | 0.956 [0.932, 0.972], n=412 | 0.991 [0.985, 0.995], n=1,582 |
+| AUROC, run length only | 0.614 [0.580, 0.652] | 0.605 [0.580, 0.632] |
+| AUROC, positional diff | 0.569 [0.532, 0.607] | 0.567 [0.550, 0.586] |
+| AUROC, the engine | 0.614 [0.580, 0.649] | 0.593 [0.574, 0.615] |
+| engine − length (paired) | −0.000 [−0.033, +0.032] | −0.012 [−0.030, +0.005] |
+| engine − positional (paired) | +0.045 [+0.020, +0.069] | +0.025 [+0.014, +0.038] |
+
+Read against 095's branches, in its order:
+
+- **Confirmed.** The engine−length interval includes zero. The engine does not beat run length on
+  either split, and on test the point estimate is slightly below it. Comparing two independent
+  runs does not separate a failure from normal variance on this corpus.
+- **Not overturned.** The win condition needs the engine to beat both baselines; it does not beat
+  length.
+- **The positional result replicates.** The engine−positional interval excludes zero on test. The
+  effect is about half the size dev showed (+0.025 against +0.045), and the two intervals overlap.
+  The sentence 084 allowed stays, quoted with both numbers.
+- **The fork rate on passing pairs** is 97.5% on test; its interval sits inside dev's.
+
+**Observed, not registered, not interpreted:** the fork rate on pass×fail pairs is 99.1% on test
+against 95.6% on dev, and those intervals do not overlap. No branch of 083 or 095 reads this
+number. By scaffold, the engine's AUROC is above run length's on four of the eight scaffolds with
+both classes and below it on the other four; that is descriptive only.
+
+### What changes
+
+- README, `docs/evidence.md`, `docs/writeup.md` section 3, `docs/ci.md`, `docs/launch.md` and the
+  release notes quote test beside dev. The dev numbers are not rewritten.
+- The writeup drops "scored on the dev split" as a limit. The two untested confounds 084 named
+  (the 5,000-character truncation; outputs-only cost) remain and stay in the writeup.
+- No parameter changes. Nothing is tuned on the test side, now or later.
+- The sequencing 081 got wrong is right this time: both reveals ran before the tag.
+
+Governing docs: notebook 095 (the registration), 081, 083 / 083a / 083b, 084, 087;
+`BENCHMARK.md` rules 1, 2, 3, 4, 6, 9, 10; issue #64.

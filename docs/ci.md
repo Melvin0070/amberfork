@@ -27,7 +27,8 @@ not do its job. Treating them alike turns a broken export into a phantom regress
 The obvious gate — run the agent, diff it against a reference run — does not work, and that is a
 measurement, not a caution. On 273 pairs of real agent runs where **both runs passed the task**
 (same agent, same model, same task; 9 scaffolds), `amberfork diff` reported a fork on **96.7%**
-[93.9%, 98.3%] ([notebook 084](notebook.md)). Two independent executions of a real agent diverge
+[93.9%, 98.3%] ([notebook 084](notebook.md)); on the 1,088 such pairs of the sealed test side it
+was 97.5% [96.4%, 98.3%] (notebook 096). Two independent executions of a real agent diverge
 almost immediately whether or not anything is wrong, so a diff between them cannot tell you that
 something is.
 

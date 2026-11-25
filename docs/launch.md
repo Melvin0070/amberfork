@@ -6,8 +6,6 @@ Before posting:
 
 - **Wait for the tag.** `cargo install amberfork` gives v1.0.0, which has no `replay`, until
   v1.1.0 is on crates.io (#64).
-- **Re-check the sealed numbers.** The Terminal-Bench test split is revealed at the tag. If the
-  writeup's section 3 changes, change the matching lines here.
 - **Check each venue's current rules.** The tags and flair below are suggestions and were not
   verified against the sites.
 - Every number is copied from [`writeup.md`](writeup.md). If one is edited there, edit it here.
@@ -42,8 +40,9 @@ positional diff (n=35, sealed test split).
 Then I ran it on natural pairs: 685 pairs of published Terminal-Bench 2.0 trials, same agent,
 model and task. It reported a fork on 96.7% of pairs where both runs passed. Its score separated
 pass/fail pairs from pass/pass pairs no better than a score that only knows the two run lengths
-(AUROC 0.614 for both). Two passing runs just don't share much. That is one corpus on a dev
-split, but it was enough to change the product.
+(AUROC 0.614 for both). Two passing runs just don't share much. The sealed test side, 2,670 more
+pairs scored once at release, said the same: 97.5%, and 0.593 against 0.605 for length. That is
+one corpus, but it was enough to change the product.
 
 What works is narrower. Record a run once, then replay the agent against the recording, and
 report the first request the recording never saw. On 35 recordings of a local tool-using agent
@@ -90,7 +89,8 @@ Author here. This is a writeup of a tool whose first idea failed its own benchma
 The idea was to align a failing agent run against a passing one and report where they fork. It
 holds on injected forks (within 3 steps 91% of the time, against 49% for a positional diff, n=35)
 and fails on natural ones: on 685 Terminal-Bench pairs it reports a fork on 96.7% of pairs where
-both runs passed, and does no better than run length at telling the two kinds of pair apart.
+both runs passed, and does no better than run length at telling the two kinds of pair apart. A
+sealed test side of 2,670 pairs, scored once at release, confirmed both.
 
 What survived is record-and-replay as a CI gate, measured against the live diff it replaced:
 0 of 35 false alarms against 56 of 70.

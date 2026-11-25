@@ -8,7 +8,7 @@ record of how each number was arrived at — registrations, amendments, dead end
 
 Commands below run from the repository root.
 
-## Natural same-agent pairs from Terminal-Bench 2.0 (n=685 dev pairs)
+## Natural same-agent pairs from Terminal-Bench 2.0 (n=685 dev pairs, 2,670 test pairs)
 
 The first natural corpus whose run structure varies on its own: published trials of the same
 agent, model and task, some passing and some failing. One pass×fail pair and one pass×pass pair
@@ -45,7 +45,26 @@ Read it honestly: alignment beats the positional baseline on real runs, with an 
 excludes zero — the first time that has been shown without injected noise. It does **not** beat a
 score that knows only the two runs' lengths, which by the rule fixed in 083 is a null for the
 claim "diff two independent runs to find the failure". Two passing runs of the same agent already
-share only about a third of their steps. The test split is sealed.
+share only about a third of their steps.
+
+**The sealed test side, scored once at the v1.1.0 tag** (63 tasks; registered in notebook 095,
+result in 096; per-pair scores in `bench/results/tbench_natural_test.json`):
+
+| measurement | dev | test |
+|---|---|---|
+| fork reported, both runs passed | 0.967 [0.939, 0.983], n=273 | 0.975 [0.964, 0.983], n=1,088 |
+| fork reported, one passed and one failed | 0.956 [0.932, 0.972], n=412 | 0.991 [0.985, 0.995], n=1,582 |
+| AUROC, run length only | 0.614 [0.580, 0.652] | 0.605 [0.580, 0.632] |
+| AUROC, positional diff | 0.569 [0.532, 0.607] | 0.567 [0.550, 0.586] |
+| AUROC, the engine | 0.614 [0.580, 0.649] | 0.593 [0.574, 0.615] |
+| engine − length (paired) | −0.000 [−0.033, +0.032] | −0.012 [−0.030, +0.005] |
+| engine − positional (paired) | +0.045 [+0.020, +0.069] | +0.025 [+0.014, +0.038] |
+
+Test confirms dev on both counts. The engine still does not beat run length, so the null stands
+on both splits. It still beats the positional diff with an interval that excludes zero, at about
+half the dev effect. Two test pairs were excluded when the corpus was built, both for a run over
+2,000 steps. The pass×fail fork rate is higher on test than on dev with non-overlapping
+intervals; nothing registered reads that number and it is reported without interpretation.
 
 ## The replay gate on real recordings (n=30 tapes)
 
@@ -157,11 +176,12 @@ sustained divergence at the gold step is true *by construction*, which structura
 content-aware alignment arms. What the headline measures is the aligner's tolerance to benign noise
 around a known fork, not attribution on a *natural* failure (for that, see the Mode A′ null below).
 Wilson 95% intervals are wide at these n, and the test split is scored exactly once per release tag
-(protocol rule 2) — scored fresh at every tag since. The v0.4.0, v0.5.0, and now v1.0.0 reveals all
-reproduced these numbers identically on every arm and metric — `bench/results/*_test_v0.4.0.json` /
-`*_test_v0.5.0.json` / `*_test_v1.0.0.json`, notebooks 021, 037, and 081. Six releases and two new
-`amberfork-align` features (consensus, deltas) later, the frozen params and the core alignment path
-haven't moved the number by a single pair. The claim the numbers support is the *shape* —
+(protocol rule 2) — scored fresh at every tag since. The v0.4.0, v0.5.0, v1.0.0 and v1.1.0 reveals
+all reproduced these numbers identically on every arm and metric — `bench/results/*_test_v0.4.0.json`
+/ `*_test_v0.5.0.json` / `*_test_v1.0.0.json` / `*_test_v1.1.0.json`, notebooks 021, 037, 081 and
+096. The v1.1.0 reveal is the first with the no-common-ground guard in the engine, and the guard
+fired on none of the 35 test pairs. The frozen params and the core alignment path haven't moved
+the number by a single pair. The claim the numbers support is the *shape* —
 content-aware alignment localizes within a few steps where position and structure do not.
 
 Reproduce the tables offline — they render from the committed results documents, zero fetch:

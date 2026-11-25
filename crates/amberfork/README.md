@@ -36,7 +36,8 @@ OpenTelemetry OTLP/JSON exports as they are.
 - **Alignment finds an injected fork under noise.** On the sealed test split (n=35) the engine
   places the fork within 3 steps 91% of the time, against 49% for the best baseline.
 - **It does not find a failure's cause by comparing two independent runs.** On 685 natural pairs,
-  two passing runs of the same agent differ about as much as a passing and a failing one.
+  and again on a sealed test side of 2,670, two passing runs of the same agent differ about as
+  much as a passing and a failing one.
 
 Every number, with its command, its caveats and the results that went against the tool:
 [docs/evidence.md](https://github.com/Melvin0070/amberfork/blob/main/docs/evidence.md). The

@@ -7,6 +7,11 @@
 Record-then-replay becomes the spine, four trace formats load without conversion, and the
 tool's original claim narrows on its own evidence. Summary: `docs/release-notes-v1.1.0.md`.
 
+- **Both sealed test splits scored once, before the tag (#64, notebooks 095, 096).** The chimera
+  test split is byte-identical to the v1.0.0 reveal; the no-common-ground guard fired on none of
+  its 35 pairs. The Terminal-Bench test side (63 tasks, 2,670 pairs) confirms the dev null: the
+  engine does not beat run length (−0.012 [−0.030, +0.005]) and still beats the positional diff
+  (+0.025 [+0.014, +0.038]). What each outcome would mean was registered first.
 - **Released on five targets, with the Apple-silicon job moved to `macos-15` (#53, notebooks 094,
   094a).** A pre-tag dry run found the `macos-14` runner label no longer allocates.
 - **Dependencies:** `sha2` 0.11.1, `clap` 4.6.9, `rust-embed` 8.14.0 (lockfile only).
