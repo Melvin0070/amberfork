@@ -20,7 +20,7 @@ publish = false
 amberfork-layout = { path = "../crates/amberfork-layout" }
 leptos = { version = "0.8", default-features = false }
 # csr-only browser glue — kept out of the ssr (test) build entirely via `dep:` gating.
-gloo-net = { version = "0.6", optional = true, default-features = false, features = [
+gloo-net = { version = "0.8", optional = true, default-features = false, features = [
     "http",
     "json",
 ] }
